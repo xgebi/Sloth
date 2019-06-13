@@ -1,4 +1,4 @@
-#SkeletonSlothCMS
+# SkeletonSlothCMS
 
 Name of this project is a joke from my tweet where I called myself "Side Project Necromancer".
 
