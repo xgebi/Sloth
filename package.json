@@ -1,0 +1,12 @@
+{
+  "name": "SkeletonSlothCMS",
+  "version": "0.0.1",
+  "description": "Experimental CMS",
+  "main": "src/php/index.php",
+  "repository": "git@github.com:xgebi/SkeletonSlothCMS.git",
+  "author": "xgebi <sarah@sarahgebauer.com>",
+  "license": "GNU GPLv3",
+  "dependencies": {
+    "gulp": "^4.0.2"
+  }
+}
