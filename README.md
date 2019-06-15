@@ -10,3 +10,4 @@ This is still an experimental project but less ambitious because I'd like to hav
 ### Dependencies
 - flask
 - psycopg2
+- bcrypt
