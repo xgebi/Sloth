@@ -16,11 +16,15 @@ def create_app(config_type):  # dev, test, or prod
     configuration = os.path.join(os.getcwd(), 'config', config_type + '.py')
     app.config.from_pyfile(configuration)
 
+    bcrypt.init_app(app)
+
     from app.entry import entry
     app.register_blueprint(entry)
 
     from app.wizard import wizard
     app.register_blueprint(wizard)
-    bcrypt.init_app(app)
+
+    from app.auth import auth
+    app.register_blueprint(auth)
 
     return app

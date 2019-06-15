@@ -2,7 +2,7 @@
 node_modules
 skeletonsloth
 dist
-__pycache__
+__pycache__/
 
 /tests/e2e/videos/
 /tests/e2e/screenshots/
@@ -26,3 +26,4 @@ yarn-error.log*
 *.sw?
 
 *.pyc
+*/__pycache__/*
