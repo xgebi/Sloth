@@ -6,12 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Wizard | SkeletonSlothCMS</title>
+    <link href="/static/css/wizard.css" rel="stylesheet" />
 </head>
 
 <body>
     <form method="POST" action="/process-registration">
         <label for="username">Username: </label>
-        <input type="text" id="username" value="{{ filled.username }}" />
+        <input type="text" id="username" name="username" value="{{ filled.username }}" />
+        <label for="password">Password: </label>
+        <input type="text" id="password" name="password" />
+        <label for="email">Email: </label>
+        <input type="text" id="email" name="email" value="{{ filled.email }}" />
+        <label for="sitename">Site name: </label>
+        <input type="text" id="sitename" name="sitename" value="{{ filled.sitename }}" />
+        <input type="submit" value="Register" />
     </form>
 </body>
 

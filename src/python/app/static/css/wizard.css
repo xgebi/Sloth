@@ -1,0 +1,32 @@
+:root {
+    --orange: #ff7617;
+    --purple: #4b0054;
+    --white: #fdfdfd;
+    --white-orange: #fff2e3;
+    --black: #0e0e0e;
+    --yellow: #f6ff00;
+}
+
+body {
+    background: var(--orange);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto 1fr;
+    min-height: 100vh;
+}
+
+body form {
+    background: var(--white-orange);
+    box-shadow: 4px 4px 2px var(--purple);
+    grid-row: 2 / 3;
+    grid-column: 2 / 3;
+    padding: .5rem 1rem;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: .5rem;
+}
+
+body form input[type="submit"] {
+    grid-column: 2 / 3;
+}
