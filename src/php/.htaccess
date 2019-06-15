@@ -1,3 +1,0 @@
-RewriteEngine On
-RewriteRule ^/sloth-admin/static/.*$ - [L]
-RewriteRule "^/sloth-admin(/.*)" "/sloth-admin/index.php" [L]

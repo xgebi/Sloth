@@ -1,5 +1,29 @@
-# SkeletonSlothCMS
+# skeleton-sloth-fe
 
-Name of this project is a joke from my tweet where I called myself "Side Project Necromancer".
+## Project setup
+```
+yarn install
+```
 
-This is still an experimental project but less ambitious because I'd like to have a functioning CMS.
+### Compiles and hot-reloads for development
+```
+yarn run serve
+```
+
+### Compiles and minifies for production
+```
+yarn run build
+```
+
+### Run your tests
+```
+yarn run test
+```
+
+### Lints and fixes files
+```
+yarn run lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
