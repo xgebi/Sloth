@@ -22,4 +22,4 @@ def entry_point():
     if (len(items) == 0):
         return redirect("/register", code=302)
 
-    return "Hello"
+    return render_template("spa.html")
