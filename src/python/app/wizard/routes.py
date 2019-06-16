@@ -16,7 +16,6 @@ def registration_processing():
     config = current_app.config
     filled = {}
     filled['username'] = request.form.get('username')
-    filled["display_name"] = request.form.get("display_name")
     filled["password"] = request.form.get("password")
     filled["email"] = request.form.get("email")
     filled["sitename"] = request.form.get("sitename")
@@ -26,8 +25,8 @@ def registration_processing():
     for key,value in filled.items():
         if filled[key] == None:
             missing.append(key)
-    
-    if (len(missing) == 0):
+
+    if (len(missing) > 0):
         filled['password'] = ""
         return render_template("initial_step.html", filled=filled, missing=missing)
 

@@ -11,7 +11,7 @@
 
 <body>
     <form method="POST" action="/process-registration">
-        {% if (missing != None) %}
+        {% if missing %}
         <div>Missing values</div>
         {% endif %}
         <label for="username">Username: </label>

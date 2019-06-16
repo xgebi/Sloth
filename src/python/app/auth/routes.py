@@ -8,7 +8,7 @@ from app.auth import auth
 def login():
     if 'sloth_user' in request.cookies:
         return "it's in cookies"
-    return "it's not in cookies"
+    return render_template("login.html")
 
 def authorization():
     return False
