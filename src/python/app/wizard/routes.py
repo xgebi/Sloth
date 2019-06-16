@@ -36,15 +36,19 @@ def registration_processing():
             "uuid": uuid.uuid4(),
             "username": filled.username,
             "display_name": filled.display_name,
-            "password": "", # TODO deal with hashing
+            "password": bcrypt.hashpw(filled.password.encode("utf-8"), bcrypt.gensalt(rounds=15)),
             "email": filled.email 
         }
         cur.execute(
-            sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES ()")
-               .format(sql.Identifier(filled.username))
+            sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\", \"{4}\")")
+               .format(sql.Identifier(user.uuid),
+                       sql.Identifier(user.username),
+                       sql.Identifier(user.display_name),
+                       sql.Identifier(user.password),
+                       sql.Identifier(user.email))
         )
         cur.execute(
-            sql.SQL("SELECT * FROM sloth_users WHERE username = \"{}\"")
+            sql.SQL("INSERT INTO sloth_settings(settings_name, display_name, settings_value, section_id, section_type, section_name) VALUES (\"{0}\", \"{1}\", \"{2}\", \"{3}\", \"{4}\")")
                .format(sql.Identifier(filled.sitename))
         )
         con.commit()

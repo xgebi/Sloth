@@ -1,5 +1,5 @@
 CREATE TABLE sloth_users (
-    uuid                BIGINT  PRIMARY KEY,
+    uuid                VARCHAR(200) PRIMARY KEY,
     username            VARCHAR(50) UNIQUE,
     display_name        VARCHAR(100),
     password            VARCHAR(500),
