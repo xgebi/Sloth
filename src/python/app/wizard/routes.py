@@ -15,6 +15,7 @@ def registration_processing():
 
     filled = {
         "username": request.values["username"],
+        "display_name": request.values["display_name"],
         "password": request.values["password"],
         "email": request.values["email"],
         "sitename": request.values["sitename"]
@@ -24,10 +25,29 @@ def registration_processing():
 
     cur = con.cursor()
 
-    cur.execute("SELECT * FROM sloth_users")
+    cur.execute(
+            sql.SQL("SELECT * FROM sloth_users WHERE username = \"{}\"")
+               .format(sql.Identifier(filled.username))
+        )
     items = cur.fetchall()
 
-    print(items)
+    if (len(items) == 0):        
+        user = {
+            "uuid": uuid.uuid4(),
+            "username": filled.username,
+            "display_name": filled.display_name,
+            "password": "", # TODO deal with hashing
+            "email": filled.email 
+        }
+        cur.execute(
+            sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES ()")
+               .format(sql.Identifier(filled.username))
+        )
+        cur.execute(
+            sql.SQL("SELECT * FROM sloth_users WHERE username = \"{}\"")
+               .format(sql.Identifier(filled.sitename))
+        )
+        con.commit()
 
     cur.close()
     con.close()

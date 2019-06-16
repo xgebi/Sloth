@@ -25,3 +25,5 @@ yarn-error.log*
 *.sln
 *.sw?
 
+__pycache__
+*.pyc
