@@ -1,2 +1,5 @@
+- TODO user registration logic
 - TODO login screen
+- TODO user login logic
 - TODO login error
+- TODO figure out what to do with Vue.js

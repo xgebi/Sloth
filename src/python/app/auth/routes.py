@@ -4,10 +4,11 @@ import json
 
 from app.auth import auth
 
-@auth.route("/api/authenticate", methods=["POST", "PUT"])
-def authentication():
-    
-    return json.dumps({"loggedin": False})
+@auth.route("/login", methods=["GET","POST"])
+def login():
+    if 'user' in session:
+        return ""
+    return ""
 
 def authorization():
     return False

@@ -1,5 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 import psycopg2
+import uuid
 
 from app.wizard import wizard as wiz
 
