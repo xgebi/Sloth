@@ -31,7 +31,7 @@ def entry_point():
         items = cur.fetchall()
         cur.close()
         con.close()
-        if (len(items) == 0 or items[0].expiry_date < time.time()):
+        if (len(items) == 0 or items[0].token_expiry_time < time.time()):
             return redirect("/login")
 
         return render_template("index.html")

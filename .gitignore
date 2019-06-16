@@ -27,3 +27,4 @@ yarn-error.log*
 
 *.pyc
 */__pycache__/*
+src/python/app/wizard/__pycache__/routes.cpython-37.pyc
