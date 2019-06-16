@@ -6,15 +6,25 @@ import bcrypt
 
 from app.wizard import wizard as wiz
 
-@wiz.route("/register", methods=["GET"])
+@wiz.route("/register", methods=["GET", "POST"])
 def wizard():
-    filled = {}
-    return render_template("initial_step.html", filled=filled)
-
-@wiz.route("/process-registration", methods=["POST"])
-def registration_processing():
     config = current_app.config
+    con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+    cur = con.cursor()
     filled = {}
+
+    try:
+        cur.execute("SELECT count(uuid) FROM sloth_users")
+        items = cur.fetchone()
+    except e:
+        return render_template("initial_step.html", filled=filled)
+
+    if items[0] > 0:
+        return redirect("/login")
+
+    if request.method == "GET":
+        return render_template("initial_step.html", filled=filled)
+
     filled['username'] = request.form.get('username')
     filled["password"] = request.form.get("password")
     filled["email"] = request.form.get("email")
@@ -28,17 +38,13 @@ def registration_processing():
 
     if (len(missing) > 0):
         filled['password'] = ""
-        return render_template("initial_step.html", filled=filled, missing=missing)
-
-    con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-
-    cur = con.cursor()
+        return render_template("initial_step.html", filled=filled, missing=missing)    
 
     items = {}
 
     try:
         cur.execute(
-                sql.SQL("SELECT * FROM sloth_users WHERE username = '{}'")
+                sql.SQL("SELECT * FROM sloth_users WHERE username = '{0}'")
                 .format(sql.Identifier(filled['username']))
             )
         items = cur.fetchall()

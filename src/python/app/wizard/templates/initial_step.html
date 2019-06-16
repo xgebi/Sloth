@@ -10,18 +10,18 @@
 </head>
 
 <body>
-    <form method="POST" action="/process-registration">
+    <form method="POST" action="/register">
         {% if missing %}
         <div>Missing values</div>
         {% endif %}
         <label for="username">Username: </label>
-        <input type="text" id="username" name="username" value="{{ filled.username }}" />
+        <input type="text" id="username" name="username" value="{{ filled.username if filled.username }}" />
         <label for="password">Password: </label>
         <input type="password" id="password" name="password" />
         <label for="email">Email: </label>
-        <input type="text" id="email" name="email" value="{{ filled.email }}" />
+        <input type="text" id="email" name="email" value="{{ filled.email if filled.email }}" />
         <label for="sitename">Site name: </label>
-        <input type="text" id="sitename" name="sitename" value="{{ filled.sitename }}" />
+        <input type="text" id="sitename" name="sitename" value="{{ filled.sitename if filled.sitename }}" />
         <input type="submit" value="Register" />
     </form>
 </body>
