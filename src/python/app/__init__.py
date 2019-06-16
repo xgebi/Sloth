@@ -27,4 +27,10 @@ def create_app(config_type):  # dev, test, or prod
     from app.auth import auth
     app.register_blueprint(auth)
 
+    from app.administration import administration
+    app.register_blueprint(administration)
+
+    from app.administration.dashboard import dashboard
+    app.register_blueprint(dashboard)
+
     return app

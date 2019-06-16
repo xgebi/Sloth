@@ -4,8 +4,8 @@
 - ~~login screen~~
 - ~~user login logic~~
 - ~~login error~~
-- TODO display navbar
-- TODO display empty dashboard
+- ~~display navbar~~
+- ~~display empty dashboard~~
 - TODO display settings
 - TODO disable registration after first user
 
