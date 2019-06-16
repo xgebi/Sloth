@@ -25,6 +25,3 @@ yarn-error.log*
 *.sln
 *.sw?
 
-*.pyc
-*/__pycache__/*
-src/python/app/wizard/__pycache__/routes.cpython-37.pyc
