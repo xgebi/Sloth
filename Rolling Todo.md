@@ -1,4 +1,4 @@
-- ~~TODO user registration logic~~
+- ~~user registration logic~~
 - TODO login screen
 - TODO user login logic
 - TODO login error
