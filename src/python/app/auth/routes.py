@@ -6,9 +6,9 @@ from app.auth import auth
 
 @auth.route("/login", methods=["GET","POST"])
 def login():
-    if 'user' in session:
-        return ""
-    return ""
+    if 'sloth_user' in request.cookies:
+        return "it's in cookies"
+    return "it's not in cookies"
 
 def authorization():
     return False

@@ -21,17 +21,31 @@ def registration_processing():
     filled["email"] = request.form.get("email")
     filled["sitename"] = request.form.get("sitename")
 
-    print(filled)
+    missing = []
+
+    for key,value in filled.items():
+        if filled[key] == None:
+            missing.append(key)
+    
+    if (len(missing) == 0):
+        filled['password'] = ""
+        return render_template("initial_step.html", filled=filled, missing=missing)
 
     con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
 
     cur = con.cursor()
 
-    cur.execute(
-            sql.SQL("SELECT * FROM sloth_users WHERE username = '{}'")
-               .format(sql.Identifier(filled['username']))
-        )
-    items = cur.fetchall()
+    items = {}
+
+    try:
+        cur.execute(
+                sql.SQL("SELECT * FROM sloth_users WHERE username = '{}'")
+                .format(sql.Identifier(filled['username']))
+            )
+        items = cur.fetchall()
+    except e:
+        filled['password'] = ""
+        return render_template("initial_step.html", filled=filled, error="Database error")
     
     if (len(items) == 0):        
         user = {}
@@ -39,20 +53,25 @@ def registration_processing():
         user["username"] = filled["username"]
         user["password"] = bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode("utf-8")
         user["email"] = filled["email"]
-        print(user)
-        cur.execute(
-            sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}')")
-               .format(sql.Identifier(user["uuid"]),
-                       sql.Identifier(user["username"]),
-                       sql.Identifier(user["username"]),
-                       sql.Identifier(user["password"]),
-                       sql.Identifier(user["email"]))
-        )
-        cur.execute(
-            sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', '{0}', '0', 'parent', 'Settings')")
-               .format(sql.Identifier(filled["sitename"]))
-        )
-        con.commit()
+        
+        try:
+            cur.execute(
+                sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}')")
+                .format(sql.Identifier(user["uuid"]),
+                        sql.Identifier(user["username"]),
+                        sql.Identifier(user["username"]),
+                        sql.Identifier(user["password"]),
+                        sql.Identifier(user["email"]))
+            )
+            cur.execute(
+                sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', '{0}', '0', 'parent', 'Settings')")
+                .format(sql.Identifier(filled["sitename"]))
+            )
+            con.commit()
+        except e:
+            filled['password'] = ""
+            return render_template("initial_step.html", filled=filled, error="Database error")
+
         cur.close()
         con.close()
 

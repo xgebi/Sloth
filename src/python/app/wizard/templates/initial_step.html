@@ -11,6 +11,9 @@
 
 <body>
     <form method="POST" action="/process-registration">
+        {% if (missing != None) %}
+        <div>Missing values</div>
+        {% endif %}
         <label for="username">Username: </label>
         <input type="text" id="username" name="username" value="{{ filled.username }}" />
         <label for="password">Password: </label>
