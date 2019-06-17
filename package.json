@@ -1,6 +1,7 @@
 {
-  "name": "skeleton-sloth-cms",
+  "name": "sloth-cms",
   "version": "0.0.17",
+  "devPhase": "Skeleton Sloth",
   "description": "Experimental CMS",
   "repository": "git@github.com:xgebi/SkeletonSlothCMS.git",
   "author": "Sarah Gebauer <sarah@sarahgebauer.com>",
