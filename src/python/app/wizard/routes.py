@@ -48,7 +48,7 @@ def wizard():
                 .format(sql.Identifier(filled['username']))
             )
         items = cur.fetchall()
-    except e:
+    except Exception:
         filled['password'] = ""
         return render_template("initial_step.html", filled=filled, error="Database error")
     

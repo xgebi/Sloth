@@ -24,13 +24,16 @@ def create_app(config_type):  # dev, test, or prod
     from app.wizard import wizard
     app.register_blueprint(wizard)
 
-    from app.auth import auth
-    app.register_blueprint(auth)
+    from app.authentication import authentication
+    app.register_blueprint(authentication)
 
     from app.administration import administration
     app.register_blueprint(administration)
 
     from app.administration.dashboard import dashboard
     app.register_blueprint(dashboard)
+
+    from app.administration.settings import settings
+    app.register_blueprint(settings)
 
     return app
