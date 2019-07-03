@@ -44,8 +44,8 @@ def wizard():
 
     try:
         cur.execute(
-                sql.SQL("SELECT * FROM sloth_users WHERE username = '{0}'")
-                .format(sql.Identifier(filled['username']))
+                sql.SQL("SELECT * FROM sloth_users WHERE username = %s"),
+                [filled['username']]
             )
         items = cur.fetchall()
     except Exception:
@@ -61,16 +61,12 @@ def wizard():
         
         try:
             cur.execute(
-                sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}')")
-                .format(sql.Identifier(user["uuid"]),
-                        sql.Identifier(user["username"]),
-                        sql.Identifier(user["username"]),
-                        sql.Identifier(user["password"]),
-                        sql.Identifier(user["email"]))
+                sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 0)"),
+                ( user["uuid"], user["username"], user["username"], user["password"], user["email"])
             )
             cur.execute(
-                sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', '{0}', '0', 'parent', 'Settings')")
-                .format(sql.Identifier(filled["sitename"]))
+                sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', %s, '0', 'parent', 'Settings')"),
+                [filled["sitename"]]
             )
             con.commit()
         except e:
