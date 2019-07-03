@@ -68,18 +68,19 @@ class User:
             cur.close()
             con.close()            
             return False
+        import pdb; pdb.set_trace()
         
         if (permissions_level > items[0]):
             cur.close()
             con.close()
             return False
 
-        if (time() < items[1]):
+        if (time() > items[1]):
             cur.close()
             con.close()
             return False
 
-        if (self.token != items[3]):
+        if (self.token != items[2]):
             cur.close()
             con.close()
             return False
