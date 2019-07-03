@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app
+from flask import render_template, request, flash, redirect, url_for, current_app, make_response
 import psycopg2
 from psycopg2 import sql
 import bcrypt
@@ -18,9 +18,15 @@ def login():
             return render_template("login.html", error="Username or password are incorrect")
 
         user = User()
+        cookie_info = user.login_user(filled["username"], filled["password"])
+        
+        if cookie_info is not None:
 
-        if user.login_user(filled["username"], filled["password"]):
-            return redirect("/dashboard")
+            resp = make_response(redirect("/dashboard"))
+            resp.set_cookie('userID', cookie_info[0])
+            resp.set_cookie('userToken', cookie_info[1])
+            
+            return resp
         else:
             return render_template("login.html", error="Username or password are incorrect")
 
