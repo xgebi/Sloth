@@ -11,18 +11,18 @@ def settings():
     con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
     cur = con.cursor()
 
-    items = []
+    raw_items = []
 
     try:            
         cur.execute(
             "SELECT settings_name, display_name, settings_value FROM sloth_settings WHERE section_id = 'main'"
         )
-        items = cur.fetchall()
-    except Exception:
-        print("Expection thrown")
-        return render_template('settings.html')
+        raw_items = cur.fetchall()
+    except Exception as e:
+        # TODO throw here 500
+        return render_template('error.html')
 
-    print(items)
+    items = {}
     # TODO fetch settings from database
     return render_template('settings.html')
 

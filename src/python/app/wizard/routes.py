@@ -48,7 +48,7 @@ def wizard():
                 [filled['username']]
             )
         items = cur.fetchall()
-    except Exception:
+    except Exception as e:
         filled['password'] = ""
         return render_template("initial_step.html", filled=filled, error="Database error")
     

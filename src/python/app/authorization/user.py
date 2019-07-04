@@ -24,7 +24,7 @@ class User:
                 [username]
             )
             items = cur.fetchone()
-        except Exception:
+        except Exception as e:
             return None
         
         trimmed_items = (items[0], items[1])
@@ -39,7 +39,7 @@ class User:
                     sql.SQL("UPDATE sloth_users SET token = %s, expiry_date = %s WHERE uuid = %s"), (token, expiry_time, trimmed_items[0])
                 )
                 con.commit()
-            except Exception:
+            except Exception as e:
                 cur.close()
                 con.close()
                 return None
@@ -64,7 +64,7 @@ class User:
                 sql.SQL("SELECT permissions_level, expiry_date, token FROM sloth_users WHERE uuid = %s"), [self.uuid]
             )
             items = cur.fetchone()
-        except Exception:
+        except Exception as e:
             cur.close()
             con.close()            
             return False
@@ -90,7 +90,7 @@ class User:
                 (time() + 1800, self.uuid)
             )
             con.commit()
-        except Exception:
+        except Exception as e:
             cur.close()
             con.close()
             return False
