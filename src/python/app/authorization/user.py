@@ -68,7 +68,6 @@ class User:
             cur.close()
             con.close()            
             return False
-        import pdb; pdb.set_trace()
         
         if (permissions_level > items[0]):
             cur.close()
