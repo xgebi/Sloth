@@ -1,5 +1,6 @@
 {% extends "template.html" %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-This is settings
+<label for="sitename">Sitename</label>
+<input type="text" value="{{ sloth_settings.sitename[2] }}" />
 {% endblock %}

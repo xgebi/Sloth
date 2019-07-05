@@ -5,8 +5,6 @@ from app.administration.settings import settings as sloth_settings
 
 @sloth_settings.route('/settings', methods=['GET', 'POST'])
 def settings():
-    #import pdb; pdb.set_trace()
-
     config = current_app.config
     con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
     cur = con.cursor()
@@ -21,10 +19,8 @@ def settings():
     except Exception as e:
         # TODO throw here 500
         return render_template('error.html')
-
-    items = {}
-    # TODO fetch settings from database
-    return render_template('settings.html')
+    items = {item[0]:item for item in raw_items}
+    return render_template('settings.html', sloth_settings = items)
 
 def save_settings(self, settings):
     pass
