@@ -4,8 +4,8 @@
 - ~~login error~~
 - ~~display navbar~~
 - ~~display empty dashboard~~
-- TODO display settings
-- TODO disable registration after first user
+- ~~display settings~~
+- ~~disable registration after first user~~
 - TODO add theme settings
 - TODO add theme loading
 - TODO add static site generation
