@@ -1,6 +1,7 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 import psycopg2
 import os
+import json
 
 from app.administration.settings import settings as sloth_settings
 
@@ -30,6 +31,11 @@ def save_settings(self, settings):
 def theme_settings():
     config = current_app.config
     theme_folders = os.listdir(config["THEMES_PATH"])
-    themes = [theme for theme in theme_folders if os.path.isfile(os.path.join(config["THEMES_PATH"], theme, "theme.json"))]
+    valid_themes = [theme for theme in theme_folders if os.path.isfile(os.path.join(config["THEMES_PATH"], theme, "theme.json"))]
 
-    return render_template('theme_settings.html')
+    themes_data = []
+    for theme in valid_themes:
+        with open(os.path.join(config["THEMES_PATH"], theme, "theme.json")) as f:
+            themes_data.append(json.load(f))
+
+    return render_template('theme_settings.html', themes = themes_data)
