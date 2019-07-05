@@ -14,7 +14,9 @@ def create_app(config_type):  # dev, test, or prod
 
     app = Flask(__name__)
     configuration = os.path.join(os.getcwd(), 'config', config_type + '.py')
+    
     app.config.from_pyfile(configuration)
+    app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
 
     bcrypt.init_app(app)
 

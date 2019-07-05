@@ -1,5 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 import psycopg2
+import os
 
 from app.administration.settings import settings as sloth_settings
 
@@ -27,6 +28,8 @@ def save_settings(self, settings):
 
 @sloth_settings.route('/settings/themes', methods=['GET', 'POST'])
 def theme_settings():
-    # TODO fetch theme settings
-    # TODO fetch list of themes
+    config = current_app.config
+    theme_folders = os.listdir(config["THEMES_PATH"])
+    themes = [theme for theme in theme_folders if os.path.isfile(os.path.join(config["THEMES_PATH"], theme, "theme.json"))]
+
     return render_template('theme_settings.html')
