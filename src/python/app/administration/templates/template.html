@@ -12,6 +12,14 @@
 <body>
     <nav>
         <a href="/dashboard">Dashboard</a>
+        {% for post_type in post_types %}
+        <div>
+            <a href="/post_type/{{ post_type[0] }}/list">{{ post_type[1] }}s</a>
+            <a href="/post_type/{{ post_type[0] }}/add">Add new {{ post_type[1] }}</a>
+            <a href="/post_type/{{ post_type[0] }}/categories">Categories</a>
+            <a href="/post_type/{{ post_type[0] }}/tags">Tags</a>
+        </div>
+        {% endfor %}
         <a href="/settings">Settings</a>
     </nav>
 
