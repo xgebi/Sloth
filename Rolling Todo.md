@@ -18,3 +18,5 @@
 - TODO WP importer
 
 - ~~figure out what to do with Vue.js~~
+
+- TODO deploy
