@@ -8,6 +8,3 @@ CREATE TABLE sloth_users (
 	expiry_date double precision,
 	permissions_level integer DEFAULT 0 NOT NULL
 );
-
-
---ALTER TABLE sloth_users OWNER TO sloth;

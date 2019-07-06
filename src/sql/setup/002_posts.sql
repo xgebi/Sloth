@@ -11,5 +11,3 @@ CREATE TABLE sloth_posts (
 	tags text[],
 	categories text[]
 );
-
---ALTER TABLE sloth_posts OWNER TO sloth;

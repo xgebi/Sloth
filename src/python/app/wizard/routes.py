@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app
+from flask import render_template, request, flash, redirect, url_for, current_app, abort
 import psycopg2
 from psycopg2 import sql, errors
 import uuid
@@ -17,8 +17,10 @@ def wizard():
 	try:
 		cur.execute("SELECT count(uuid) FROM sloth_users")
 		items = cur.fetchone()
-	except errors.UndefinedTable:		
-		set_tables() 
+	except errors.UndefinedTable:
+		con.rollback()
+		set_tables(con) 
+		items = [0]
 	except Exception as e:
 		return render_template("initial_step.html", filled=filled)
 
@@ -87,12 +89,18 @@ def wizard():
 	filled['password'] = ""
 	return render_template("initial_step.html", filled=filled)
 
-def set_tables():
+def set_tables(con):
 	sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "sql", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "sql", "setup", sql_file))]
-	import pdb; pdb.set_trace()
-	print(sqls)	
-	#with open(os.path.join(os.getcwd(), "src", "sql", filename)) as f:
-			#themes_data.append(json.load(f))
+
+	cur = con.cursor()
+	for filename in sqls:
+		with open(os.path.join(os.getcwd(), "src", "sql", "setup", filename)) as f:
+			scrpt = str(f.read())
+			try:
+				cur.execute( scrpt )
+				con.commit()
+			except Exception as e:
+				abort(500)
 
 @wiz.route("/registered", methods=["GET"])
 def registered():

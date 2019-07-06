@@ -6,5 +6,3 @@ CREATE TABLE sloth_settings (
 	setting_type        VARCHAR(100) NOT NULL DEFAULT 'core',
 	section_name        VARCHAR(60) NOT NULL
 );
-
---ALTER TABLE sloth_settings OWNER TO sloth;

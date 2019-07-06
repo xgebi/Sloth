@@ -6,5 +6,3 @@ CREATE TABLE sloth_post_types (
 	categories_enabled boolean,
     archive_enabled boolean
 );
-
---ALTER TABLE sloth_post_types OWNER TO sloth;
