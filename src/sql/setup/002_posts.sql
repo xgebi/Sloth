@@ -1,6 +1,7 @@
 CREATE TABLE sloth_posts (
 	uuid character varying(200) NOT NULL PRIMARY KEY,
 	slug character varying(200) UNIQUE,
+	post_type character varying(200),
 	title character varying(220),
 	content text,
 	css_file character varying(220),

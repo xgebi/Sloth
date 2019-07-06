@@ -1,0 +1,1 @@
+INSERT INTO sloth_post_types VALUES ('1adbec5d-f4a1-401d-9274-3552f1219f36', 'post', 'Post', true, true, true );
