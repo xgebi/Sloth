@@ -8,82 +8,82 @@ from app.wizard import wizard as wiz
 
 @wiz.route("/register", methods=["GET", "POST"])
 def wizard():
-    config = current_app.config
-    con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-    cur = con.cursor()
-    filled = {}
+	config = current_app.config
+	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+	cur = con.cursor()
+	filled = {}
 
-    try:
-        cur.execute("SELECT count(uuid) FROM sloth_users")
-        items = cur.fetchone()
-    except e:
-        return render_template("initial_step.html", filled=filled)
+	try:
+		cur.execute("SELECT count(uuid) FROM sloth_users")
+		items = cur.fetchone()
+	except e:
+		return render_template("initial_step.html", filled=filled)
 
-    if items[0] > 0:
-        return redirect("/login")
+	if items[0] > 0:
+		return redirect("/login")
 
-    if request.method == "GET":
-        return render_template("initial_step.html", filled=filled)
+	if request.method == "GET":
+		return render_template("initial_step.html", filled=filled)
 
-    filled['username'] = request.form.get('username')
-    filled["password"] = request.form.get("password")
-    filled["email"] = request.form.get("email")
-    filled["sitename"] = request.form.get("sitename")
+	filled['username'] = request.form.get('username')
+	filled["password"] = request.form.get("password")
+	filled["email"] = request.form.get("email")
+	filled["sitename"] = request.form.get("sitename")
 
-    missing = []
+	missing = []
 
-    for key,value in filled.items():
-        if filled[key] == None:
-            missing.append(key)
+	for key,value in filled.items():
+		if filled[key] == None:
+			missing.append(key)
 
-    if (len(missing) > 0):
-        filled['password'] = ""
-        return render_template("initial_step.html", filled=filled, missing=missing)    
+	if (len(missing) > 0):
+		filled['password'] = ""
+		return render_template("initial_step.html", filled=filled, missing=missing)    
 
-    items = {}
+	items = {}
 
-    try:
-        cur.execute(
-                sql.SQL("SELECT * FROM sloth_users WHERE username = %s"),
-                [filled['username']]
-            )
-        items = cur.fetchall()
-    except Exception as e:
-        filled['password'] = ""
-        return render_template("initial_step.html", filled=filled, error="Database error")
-    
-    if (len(items) == 0):        
-        user = {}
-        user["uuid"] = str(uuid.uuid4())
-        user["username"] = filled["username"]
-        user["password"] = bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode("utf-8")
-        user["email"] = filled["email"]
-        
-        try:
-            cur.execute(
-                sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 0)"),
-                ( user["uuid"], user["username"], user["username"], user["password"], user["email"])
-            )
-            cur.execute(
-                sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', %s, '0', 'parent', 'Settings')"),
-                [filled["sitename"]]
-            )
-            con.commit()
-        except e:
-            filled['password'] = ""
-            return render_template("initial_step.html", filled=filled, error="Database error")
+	try:
+		cur.execute(
+				sql.SQL("SELECT * FROM sloth_users WHERE username = %s"),
+				[filled['username']]
+			)
+		items = cur.fetchall()
+	except Exception as e:
+		filled['password'] = ""
+		return render_template("initial_step.html", filled=filled, error="Database error")
+	
+	if (len(items) == 0):        
+		user = {}
+		user["uuid"] = str(uuid.uuid4())
+		user["username"] = filled["username"]
+		user["password"] = bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode("utf-8")
+		user["email"] = filled["email"]
+		
+		try:
+			cur.execute(
+				sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 0)"),
+				( user["uuid"], user["username"], user["username"], user["password"], user["email"])
+			)
+			cur.execute(
+				sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', %s, '0', 'parent', 'Settings')"),
+				[filled["sitename"]]
+			)
+			con.commit()
+		except e:
+			filled['password'] = ""
+			return render_template("initial_step.html", filled=filled, error="Database error")
 
-        cur.close()
-        con.close()
+		cur.close()
+		con.close()
 
-        return redirect("/registered")
-    
-    cur.close()
-    con.close()
-    
-    filled['password'] = ""
-    return render_template("initial_step.html", filled=filled)
+		return redirect("/registered")
+	
+	cur.close()
+	con.close()
+	
+	filled['password'] = ""
+	return render_template("initial_step.html", filled=filled)
 
 @wiz.route("/registered", methods=["GET"])
 def registered():
-    return render_template("final_step.html")
+	return render_template("final_step.html")

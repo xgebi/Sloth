@@ -17,4 +17,4 @@
 - TODO RSS generator
 - TODO WP importer
 
-- TODO figure out what to do with Vue.js
+- ~~figure out what to do with Vue.js~~

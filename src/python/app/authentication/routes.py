@@ -9,28 +9,28 @@ from app.authorization.user import User
 
 @authentication.route("/login", methods=["GET","POST"])
 def login():
-    if (request.method == "POST"):
-        filled = {}
-        filled['username'] = request.form.get('username')
-        filled["password"] = request.form.get("password")
+	if (request.method == "POST"):
+		filled = {}
+		filled['username'] = request.form.get('username')
+		filled["password"] = request.form.get("password")
 
-        if (filled['username'] == None or filled['password'] == None):
-            return render_template("login.html", error="Username or password are incorrect")
+		if (filled['username'] == None or filled['password'] == None):
+			return render_template("login.html", error="Username or password are incorrect")
 
-        user = User()
-        cookie_info = user.login_user(filled["username"], filled["password"])
-        
-        if cookie_info is not None:
+		user = User()
+		cookie_info = user.login_user(filled["username"], filled["password"])
+		
+		if cookie_info is not None:
 
-            resp = make_response(redirect("/dashboard"))
-            resp.set_cookie('userID', cookie_info[0])
-            resp.set_cookie('userToken', cookie_info[1])
-            
-            return resp
-        else:
-            return render_template("login.html", error="Username or password are incorrect")
+			resp = make_response(redirect("/dashboard"))
+			resp.set_cookie('userID', cookie_info[0])
+			resp.set_cookie('userToken', cookie_info[1])
+			
+			return resp
+		else:
+			return render_template("login.html", error="Username or password are incorrect")
 
-    return render_template("login.html")
+	return render_template("login.html")
 
 def authorization():
-    return False
+	return False
