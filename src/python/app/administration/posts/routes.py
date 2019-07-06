@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 
-from app.posts import posts
+from app.administration.posts import posts
 
 @posts.route("/post_type/<uuid>")
 def redirect_to_list(uuid):

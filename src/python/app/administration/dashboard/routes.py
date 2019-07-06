@@ -3,7 +3,7 @@ import psycopg2
 
 from app.administration.dashboard import dashboard
 from app.authorization.user import User
-from app.posts.post_types import PostTypes
+from app.administration.posts.post_types import PostTypes
 
 @dashboard.route("/dashboard", methods=["GET"])
 def dashboard():
