@@ -2,6 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, current_ap
 
 from app.administration.posts import posts
 
+# Posts
 @posts.route("/post_type/<uuid>")
 def redirect_to_list(uuid):
 	return redirect(f"/post_type/{uuid}/list")
@@ -18,6 +19,7 @@ def add_post_screen(uuid):
 def create_new_post(uuid):
 	pass
 
+# Post types
 @posts.route("/post_types")
 def redirect_to_post_type_list(uuid):
 	return redirect(f"/post_types/{uuid}/list")
