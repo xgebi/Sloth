@@ -1,13 +1,14 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 import psycopg2
-from psycopg2 import sql
+from psycopg2 import sql, errors
 import uuid
 import bcrypt
+import os
 
 from app.wizard import wizard as wiz
 
 @wiz.route("/register", methods=["GET", "POST"])
-def wizard():
+def wizard():	
 	config = current_app.config
 	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
 	cur = con.cursor()
@@ -16,7 +17,9 @@ def wizard():
 	try:
 		cur.execute("SELECT count(uuid) FROM sloth_users")
 		items = cur.fetchone()
-	except e:
+	except errors.UndefinedTable:		
+		set_tables() 
+	except Exception as e:
 		return render_template("initial_step.html", filled=filled)
 
 	if items[0] > 0:
@@ -38,7 +41,7 @@ def wizard():
 
 	if (len(missing) > 0):
 		filled['password'] = ""
-		return render_template("initial_step.html", filled=filled, missing=missing)    
+		return render_template("initial_step.html", filled=filled, missing=missing)   	
 
 	items = {}
 
@@ -69,7 +72,7 @@ def wizard():
 				[filled["sitename"]]
 			)
 			con.commit()
-		except e:
+		except Exception as e:
 			filled['password'] = ""
 			return render_template("initial_step.html", filled=filled, error="Database error")
 
@@ -83,6 +86,13 @@ def wizard():
 	
 	filled['password'] = ""
 	return render_template("initial_step.html", filled=filled)
+
+def set_tables():
+	sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "sql", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "sql", "setup", sql_file))]
+	import pdb; pdb.set_trace()
+	print(sqls)	
+	#with open(os.path.join(os.getcwd(), "src", "sql", filename)) as f:
+			#themes_data.append(json.load(f))
 
 @wiz.route("/registered", methods=["GET"])
 def registered():

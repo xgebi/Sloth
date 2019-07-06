@@ -10,4 +10,4 @@ CREATE TABLE sloth_users (
 );
 
 
-ALTER TABLE sloth_users OWNER TO sloth;
+--ALTER TABLE sloth_users OWNER TO sloth;

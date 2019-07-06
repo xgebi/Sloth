@@ -12,4 +12,4 @@ CREATE TABLE sloth_posts (
 	categories text[]
 );
 
-ALTER TABLE sloth_posts OWNER TO sloth;
+--ALTER TABLE sloth_posts OWNER TO sloth;

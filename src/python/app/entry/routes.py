@@ -12,9 +12,12 @@ def entry_point():
 	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
 
 	cur = con.cursor()
-
-	cur.execute("SELECT * FROM sloth_users")
-	items = cur.fetchall()
+	items = []
+	try:
+		cur.execute("SELECT * FROM sloth_users")
+		items = cur.fetchall()
+	except Exception as e:
+		return redirect("/register", code=302)
 
 	cur.close()
 	con.close()
