@@ -5,7 +5,7 @@ import json
 
 from app.administration.settings import settings as sloth_settings
 
-@sloth_settings.route('/settings', methods=['GET', 'POST'])
+@sloth_settings.route('/settings')
 def settings():
 	config = current_app.config
 	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
@@ -23,18 +23,10 @@ def settings():
 	items = {item[0]:item for item in raw_items}
 	return render_template('settings.html', sloth_settings = items)
 
+@sloth_settings.route('/settings/save')
 def save_settings(self, settings):
 	pass
-
-@sloth_settings.route('/settings/themes', methods=['GET', 'POST'])
-def theme_settings():
-	config = current_app.config
-	theme_folders = os.listdir(config["THEMES_PATH"])
-	valid_themes = [theme for theme in theme_folders if os.path.isfile(os.path.join(config["THEMES_PATH"], theme, "theme.json"))]
-
-	themes_data = []
-	for theme in valid_themes:
-		with open(os.path.join(config["THEMES_PATH"], theme, "theme.json")) as f:
-			themes_data.append(json.load(f))
-
-	return render_template('theme_settings.html', themes = themes_data)
+	# TODO privilege checks
+	# TODO get all post args
+	# TODO update settings table in database
+	# TODO redirect to settings page display
