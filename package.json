@@ -1,6 +1,6 @@
 {
 	"name": "sloth-cms",
-	"version": "0.0.32",
+	"version": "0.0.33",
 	"devPhase": "Skeleton Sloth",
 	"description": "Experimental CMS",
 	"repository": "git@github.com:xgebi/SlothCMS.git",

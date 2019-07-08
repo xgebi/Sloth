@@ -35,51 +35,84 @@ def show_theme_list():
 			with open(os.path.join(config["THEMES_PATH"], theme, "theme.json")) as f:
 				themes_data.append(json.load(f))
 
-		return render_template('themes_list.html', themes = themes_data, post_types = post_types)
-	return redirect("/dashboard")
+		return render_template('themes_list.html', themes = themes_data)
+	return redirect("/login")
 
 # TODO select theme and generate content
 @themes.route("/themes/use/<name>")
 def use_theme(name):
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-	cur = con.cursor()
-	post_types = PostTypes.get_post_type_list(None, con)
+	userId = request.cookies.get('userID')
+	userToken = request.cookies.get('userToken')
+	user = User(userId, userToken)
+	if user.authorize_user(0):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+		post_types = PostTypes.get_post_type_list(None, con)
 
-	# TODO update active theme indicator in database
-	cur.close()
-	con.close()
-	# TODO regenerate files
+		try:
+			cur.execute("UPDATE sloth_settings SET settings_value = %s", name)
+			con.commit()
+		except expression as identifier:
+			abort(500)
+		cur.close()
+		con.close()
+		# TODO regenerate files
+
+	return redirect("/login")
 
 @themes.route("/themes/settings")
 def display_theme_settings():
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-	cur = con.cursor()
-	post_types = PostTypes.get_post_type_list(None, con)
+	userId = request.cookies.get('userID')
+	userToken = request.cookies.get('userToken')
+	user = User(userId, userToken)
+	if user.authorize_user(0):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+		post_types = PostTypes.get_post_type_list(None, con)
 
-	# TODO get all settings related to active theme
-	try:
-		cur.execute("SELECT settings_name, display_name, settings_value, section_name FROM sloth_settings WHERE section_name IN (SELECT LOWER(settings_value) FROM sloth_settings WHERE settings_name = 'active_theme')")
-	except expression as identifier:
-		abort(500)
-	cur.close()
-	con.close()
+		raw_items = []
+		theme_name = ""
+		try:
+			cur.execute("SELECT settings_value FROM sloth_settings WHERE settings_name = 'active_theme'")
+			theme_name = cur.fetchone()		
+			cur.execute("SELECT settings_name, display_name, settings_value FROM sloth_settings WHERE section_name = %s", theme_name)
+			raw_items = cur.fetchall()
+		except expression as identifier:
+			abort(500)
+		cur.close()
+		con.close()
 
-	# TODO display settings page
-	return render_template("theme_settings.html")
+		items = {setting[0]: setting for setting in raw_items}
+		
+		return render_template("theme_settings.html", theme_name = theme_name[0], options = items, post_types = post_types)
+	return redirect("/login")
 
 
 
 @themes.route("/themes/settings/save", methods = ['POST'])
 def save_theme_settings():
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-	cur = con.cursor()
-	post_types = PostTypes.get_post_type_list(None, con)
+	userId = request.cookies.get('userID')
+	userToken = request.cookies.get('userToken')
+	user = User(userId, userToken)
+	if user.authorize_user(0):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+		post_types = PostTypes.get_post_type_list(None, con)
 
-
-	# TODO update theme options in database
-	# TODO regenerate files
-	cur.close()
-	con.close()
+		try:
+			con.rollback()
+			for option in request.form:
+				cur.execute("UPDATE sloth_settings SET settings_value = %s WHERE settings_name = %s", (request.form.get(option), option))				
+			con.commit()
+		except Exception as e:
+			print(e)
+			abort(500)
+		
+		# TODO regenerate files
+		cur.close()
+		con.close()
+		return redirect("/themes/settings")
+	return redirect("/login")

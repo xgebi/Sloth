@@ -1,6 +1,10 @@
 {% extends "template.html" %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<h1>Theme Setting: {{ theme.name }}</h1>
+<h1>Themes</h1>
+{% for theme in themes %}
+<div>
+    <a href="/themes/use/{{theme.name}}">Use {{ theme.name }}</a>
+</div>
 {% endfor %}
 {% endblock %}

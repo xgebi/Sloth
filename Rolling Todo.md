@@ -6,7 +6,7 @@
 - ~~display empty dashboard~~
 - ~~display settings~~
 - ~~disable registration after first user~~
-- TODO add theme settings *
+- ~~add theme settings~~
 - TODO add theme loading *
 - TODO add static site generation
 - TODO add new post screen
