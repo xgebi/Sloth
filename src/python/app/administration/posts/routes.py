@@ -39,17 +39,55 @@ def list_posts(uuid):
 	
 	return redirect("/login")
 
-@posts.route("/post_type/<uuid>/add")
+@posts.route("/post_type/<uuid>/save", methods = ["POST", "PUT"])
 def add_post_screen(uuid):
 	return render_template("new_post.html")
 
-@posts.route("/post_type/<uuid>/create")
+@posts.route("/post_type/<uuid>/add")
 def create_new_post(uuid):
-	pass
+	userId = request.cookies.get('userID')
+	userToken = request.cookies.get('userToken')
+	user = User(userId, userToken)
+	if user.authorize_user(0):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+		post_types = PostTypes.get_post_type_list(None, con)
+		cur.close()
+		con.close()
+		
+		return render_template("post.html", post_types = post_types, post = {}, post_type = uuid)
+	
+	return redirect("/login")
 
 @posts.route("/post_type/<uuid>/edit/<post_uuid>")
 def edit_post(uuid, post_uuid):
-	return "Hello and bye"
+	userId = request.cookies.get('userID')
+	userToken = request.cookies.get('userToken')
+	user = User(userId, userToken)
+	if user.authorize_user(0):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+		post_types = PostTypes.get_post_type_list(None, con)
+
+		try:
+			cur.execute(
+				"SELECT uuid, slug, post_type, title, content, css_file, js_file, publish_date, update_date, post_status, tags, categories FROM sloth_posts WHERE uuid = %s AND post_type = %s",
+				[post_uuid, uuid]
+			)
+			raw_items = cur.fetchone()
+		except Exception as e:
+			print(e)
+			abort(500)
+
+
+		cur.close()
+		con.close()
+		
+		return render_template("post.html", post_types = post_types, post = raw_items, post_type = uuid)
+	
+	return redirect("/login")
 
 # Post types
 @posts.route("/post_types")

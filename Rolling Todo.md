@@ -9,9 +9,9 @@
 - ~~add theme settings~~
 - TODO add theme loading *
 - TODO add static site generation
-- TODO add new post screen
+- ~~add new post screen~~
 - TODO process changes/create new post
-- TODO add list all posts screen
+- ~~add list all posts screen~~
 - TODO add post type settings screen *
 - TODO process post type settings *
 - TODO RSS generator
