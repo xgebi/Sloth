@@ -47,4 +47,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.errors import errors
 	app.register_blueprint(errors)
 
+	from app.api.initialization import initialization
+	app.register_blueprint(initialization)
+
 	return app

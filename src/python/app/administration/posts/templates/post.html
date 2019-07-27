@@ -2,7 +2,7 @@
 {% block title %}List of [post_type_to_be_changed]{% endblock %}
 {% block content %}
 <!-- uuid, slug, post_type, title, content, css_file, js_file, publish_date, update_date, post_status, tags, categories -->
-<form method="POST" action="">
+<form method="POST" action="/post_type/{{ post_type }}/save/{{ post[0] }}">
 	<label for="title">Title:</label>
 	<input id="title" name="title" value="{{ post[3] }}" />
 	<label for="content">Content</label>

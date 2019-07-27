@@ -38,7 +38,6 @@ def show_theme_list():
 		return render_template('themes_list.html', themes = themes_data)
 	return redirect("/login")
 
-# TODO select theme and generate content
 @themes.route("/themes/use/<name>")
 def use_theme(name):
 	userId = request.cookies.get('userID')
