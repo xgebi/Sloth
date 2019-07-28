@@ -1,14 +1,21 @@
 from flask import render_template, request, flash, redirect, url_for, current_app, abort
-import psycopg2
-from psycopg2 import sql, errors
-import uuid
-import bcrypt
+
+import json
 import os
+import psycopg2
+import uuid
+from psycopg2 import sql, errors
+import bcrypt
+from pathlib import Path
 
-from app.wizard import wizard as wiz
+from app.api.registration import registration
 
-@wiz.route("/register", methods=["GET", "POST"])
-def wizard():	
+@registration.route("/api/register", methods=['POST'])
+def initial_settings():
+	registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
+	if (registration_lock_file.is_file()):
+		return json.dumps({ "error" : "Registration locked"}), 403
+
 	config = current_app.config
 	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
 	cur = con.cursor()
@@ -22,28 +29,20 @@ def wizard():
 		set_tables(con) 
 		items = [0]
 	except Exception as e:
-		return render_template("initial_step.html", filled=filled)
+		return json.dumps({"error": "Database connection error"}), 500
 
 	if items[0] > 0:
-		return redirect("/login")
+		return json.dumps({"error": "Registration can be done only once"}), 403
 
-	if request.method == "GET":
-		return render_template("initial_step.html", filled=filled)
-
-	filled['username'] = request.form.get('username')
-	filled["password"] = request.form.get("password")
-	filled["email"] = request.form.get("email")
-	filled["sitename"] = request.form.get("sitename")
-
-	missing = []
+	filled = json.loads(request.data);
+	
+	print(filled)
+	
+	import pdb; pdb.set_trace()
 
 	for key,value in filled.items():
 		if filled[key] == None:
-			missing.append(key)
-
-	if (len(missing) > 0):
-		filled['password'] = ""
-		return render_template("initial_step.html", filled=filled, missing=missing)   	
+			return json.dumps({"error" : "Missing values"}), 400
 
 	items = {}
 
@@ -54,9 +53,8 @@ def wizard():
 			)
 		items = cur.fetchall()
 	except Exception as e:
-		filled['password'] = ""
-		return render_template("initial_step.html", filled=filled, error="Database error")
-	
+		return json.dumps({ "error": "Database error"}), 500
+
 	if (len(items) == 0):        
 		user = {}
 		user["uuid"] = str(uuid.uuid4())
@@ -75,19 +73,19 @@ def wizard():
 			)
 			con.commit()
 		except Exception as e:
-			filled['password'] = ""
-			return render_template("initial_step.html", filled=filled, error="Database error")
+			return json.dumps({ "error": "Database error"}), 500
 
 		cur.close()
 		con.close()
 
-		return redirect("/registered")
+		with open(os.path.join(os.getcwd(), 'registration.lock'), 'w') as f:
+				f.write("registration locked")
+		return json.dumps({"status": "setup"}), 201
 	
 	cur.close()
 	con.close()
 	
-	filled['password'] = ""
-	return render_template("initial_step.html", filled=filled)
+	return json.dumps({"error": "Registration can be done only once"}), 403
 
 def set_tables(con):
 	sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "sql", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "sql", "setup", sql_file))]
@@ -101,7 +99,3 @@ def set_tables(con):
 				con.commit()
 			except Exception as e:
 				abort(500)
-
-@wiz.route("/registered", methods=["GET"])
-def registered():
-	return render_template("final_step.html")
