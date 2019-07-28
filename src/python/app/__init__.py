@@ -23,9 +23,6 @@ def create_app(config_type):  # dev, test, or prod
 	from app.entry import entry
 	app.register_blueprint(entry)
 
-	from app.authentication import authentication
-	app.register_blueprint(authentication)
-
 	from app.administration import administration
 	app.register_blueprint(administration)
 
@@ -49,5 +46,8 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.api.registration import registration
 	app.register_blueprint(registration)
+
+	from app.api.login import login
+	app.register_blueprint(login)
 
 	return app

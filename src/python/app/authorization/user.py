@@ -20,23 +20,27 @@ class User:
 
 		try:            
 			cur.execute(
-				sql.SQL("SELECT uuid, password FROM sloth_users WHERE username = %s"),
+				sql.SQL("SELECT uuid, password, display_name FROM sloth_users WHERE username = %s"),
 				[username]
 			)
 			items = cur.fetchone()
 		except Exception as e:
 			return None
 		
-		trimmed_items = (items[0], items[1])
+		trimmed_items = {
+			"uuid": items[0], 
+			"password": items[1],
+			"display_name": items[2]
+			}
 		token = ""
 		
-		if bcrypt.checkpw(password.encode('utf8'), trimmed_items[1].encode('utf8')):
+		if bcrypt.checkpw(password.encode('utf8'), trimmed_items["password"].encode('utf8')):
 			token = str(uuid.uuid4())
 			expiry_time = time() + 1800 # 30 minutes
 
 			try:            
 				cur.execute(
-					sql.SQL("UPDATE sloth_users SET token = %s, expiry_date = %s WHERE uuid = %s"), (token, expiry_time, trimmed_items[0])
+					sql.SQL("UPDATE sloth_users SET token = %s, expiry_date = %s WHERE uuid = %s"), (token, expiry_time, trimmed_items["uuid"])
 				)
 				con.commit()
 			except Exception as e:
@@ -46,7 +50,12 @@ class User:
 			
 			cur.close()
 			con.close()
-			return (trimmed_items[0], token)
+			return { 
+				"uuid" : trimmed_items["uuid"],
+				"displayName": trimmed_items["display_name"],
+				"token": token,
+				"expiryTime": expiry_time * 1000
+			}
 		
 		cur.close()
 		con.close()

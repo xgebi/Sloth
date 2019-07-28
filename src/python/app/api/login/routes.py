@@ -8,7 +8,7 @@ from app.authorization.user import User
 
 from app.api.login import login
 
-@login.route("/api/login")
+@login.route("/api/login", methods=["POST"])
 def login():
 	filled = json.loads(request.data);
 
