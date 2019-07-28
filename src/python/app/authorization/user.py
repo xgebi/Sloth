@@ -20,7 +20,7 @@ class User:
 
 		try:            
 			cur.execute(
-				sql.SQL("SELECT uuid, password, display_name FROM sloth_users WHERE username = %s"),
+				sql.SQL("SELECT uuid, password, display_name, permissions_level FROM sloth_users WHERE username = %s"),
 				[username]
 			)
 			items = cur.fetchone()
@@ -30,7 +30,8 @@ class User:
 		trimmed_items = {
 			"uuid": items[0], 
 			"password": items[1],
-			"display_name": items[2]
+			"display_name": items[2],
+			"permissions_level": items[3]
 			}
 		token = ""
 		
@@ -54,7 +55,8 @@ class User:
 				"uuid" : trimmed_items["uuid"],
 				"displayName": trimmed_items["display_name"],
 				"token": token,
-				"expiryTime": expiry_time * 1000
+				"expiryTime": expiry_time * 1000,
+				"permissionsLevel": trimmed_items["permissions_level"]
 			}
 		
 		cur.close()
@@ -108,5 +110,53 @@ class User:
 		con.close()
 		return True
 
-	def logout_user(self):
-		pass
+	def logout_user(self, info):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+
+		try:            
+			cur.execute(
+				sql.SQL("UPDATE sloth_users SET expiry_date = %s, token = %s WHERE uuid = %s"), (0, "-", info["uuid"])
+			)
+			con.commit()
+		except Exception as e:
+			cur.close()
+			con.close()
+			return None
+		cur.close()
+		con.close()
+
+		return False
+
+	def refresh_login(self, info):
+		config = current_app.config
+		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+		cur = con.cursor()
+
+		try:            
+			cur.execute(
+				sql.SQL("SELECT token, expiry_date FROM sloth_users WHERE uuid = %s"), [info["uuid"]]
+			)
+
+			item = cur.fetchone()
+			if (item[1] < time()):
+				return json.dumps({ "error": "Authorization timeout" }), 403
+			
+			if (item[0] != info["token"]):
+				return json.dumps({ "error": "Unauthorized" }), 403
+
+			expiry_time = time() + 1800 # 30 minutes
+
+			cur.execute(
+				sql.SQL("UPDATE sloth_users SET expiry_date = %s WHERE uuid = %s"), (expiry_time, info["uuid"])
+			)
+			con.commit()
+		except Exception as e:
+			cur.close()
+			con.close()
+			return None
+		cur.close()
+		con.close()
+
+		return True

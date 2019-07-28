@@ -47,7 +47,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.registration import registration
 	app.register_blueprint(registration)
 
-	from app.api.login import login
-	app.register_blueprint(login)
+	from app.api.sloth_login import sloth_login
+	app.register_blueprint(sloth_login)
 
 	return app
