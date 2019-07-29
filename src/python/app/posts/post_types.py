@@ -16,4 +16,11 @@ class PostTypes:
 			raw_items = cur.fetchall()
 		except Exception as e:
 			abort(500)
-		return raw_items
+		cur.close()
+		items = []
+		for item in raw_items:
+			items.append({
+				"uuid": item[0],
+				"displayName": item[1]
+			})
+		return items

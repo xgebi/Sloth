@@ -26,9 +26,6 @@ def create_app(config_type):  # dev, test, or prod
 	from app.administration import administration
 	app.register_blueprint(administration)
 
-	from app.administration.dashboard import dashboard
-	app.register_blueprint(dashboard)
-
 	from app.administration.settings import settings
 	app.register_blueprint(settings)
 
@@ -49,5 +46,8 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.api.sloth_login import sloth_login
 	app.register_blueprint(sloth_login)
+
+	from app.api.dashboard import dashboard
+	app.register_blueprint(dashboard)
 
 	return app
