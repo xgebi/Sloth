@@ -50,4 +50,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.dashboard import dashboard
 	app.register_blueprint(dashboard)
 
+	from app.api.sloth_settings import sloth_settings
+	app.register_blueprint(sloth_settings)
+
 	return app

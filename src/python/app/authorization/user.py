@@ -80,7 +80,7 @@ class User:
 			con.close()            
 			return False
 		
-		if (permissions_level > items[0]):
+		if (permissions_level < items[0]):
 			cur.close()
 			con.close()
 			return False

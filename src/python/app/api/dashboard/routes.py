@@ -7,13 +7,13 @@ import os
 import psycopg2
 import uuid
 from app.posts.post_types import PostTypes
-from app.authorization.authing import authing
+from app.authorization.authorize import authorize
 
 from app.api.dashboard import dashboard
 
 
 @dashboard.route("/api/dashboard-information")
-@authing(0)
+@authorize(0)
 def dashboard_information():
 	config = current_app.config
 	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")

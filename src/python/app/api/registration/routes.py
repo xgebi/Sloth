@@ -64,7 +64,7 @@ def initial_settings():
 		
 		try:
 			cur.execute(
-				sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 0)"),
+				sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 1)"),
 				( user["uuid"], user["username"], user["username"], user["password"], user["email"])
 			)
 			cur.execute(
