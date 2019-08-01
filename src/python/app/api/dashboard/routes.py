@@ -8,18 +8,20 @@ import psycopg2
 import uuid
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
+from app.utilities.db_connection import db_connection
 
 from app.api.dashboard import dashboard
 
 
 @dashboard.route("/api/dashboard-information")
 @authorize(0)
-def dashboard_information():
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+@db_connection
+def dashboard_information(*args, connection=None, **kwargs):
+	if connection is None:
+		abort(500)
 
 	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(con)
+	postTypesResult = postTypes.get_post_type_list(connection)
 
-	con.close()
+	connection.close()
 	return json.dumps({ "postTypes": postTypesResult })

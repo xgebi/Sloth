@@ -8,24 +8,25 @@ from psycopg2 import sql, errors
 import bcrypt
 from pathlib import Path
 
+from app.utilities.db_connection import db_connection
+
 from app.api.registration import registration
 
 @registration.route("/api/register", methods=['POST'])
-def initial_settings():
+@db_connection
+def initial_settings(*args, connection=None, **kwargs):
 	registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
 	if (registration_lock_file.is_file()):
 		return json.dumps({ "error" : "Registration locked"}), 403
 
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-	cur = con.cursor()
+	cur = connection.cursor()
 	filled = {}
 
 	try:
 		cur.execute("SELECT count(uuid) FROM sloth_users")
 		items = cur.fetchone()
 	except errors.UndefinedTable:
-		con.rollback()
+		connection.rollback()
 		set_tables(con) 
 		items = [0]
 	except Exception as e:
@@ -71,19 +72,19 @@ def initial_settings():
 				sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', %s, '0', 'parent', 'Settings')"),
 				[filled["sitename"]]
 			)
-			con.commit()
+			connection.commit()
 		except Exception as e:
 			return json.dumps({ "error": "Database error"}), 500
 
 		cur.close()
-		con.close()
+		connection.close()
 
 		with open(os.path.join(os.getcwd(), 'registration.lock'), 'w') as f:
 				f.write("registration locked")
 		return json.dumps({"status": "setup"}), 201
 	
 	cur.close()
-	con.close()
+	connection.close()
 	
 	return json.dumps({"error": "Registration can be done only once"}), 403
 

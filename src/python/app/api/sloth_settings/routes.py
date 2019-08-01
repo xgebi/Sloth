@@ -5,19 +5,21 @@ import bcrypt
 import json
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
+from app.utilities.db_connection import db_connection
 
 from app.api.sloth_settings import sloth_settings
 
 @sloth_settings.route("/api/settings", methods=["GET"])
 @authorize(1)
-def show_settings():
-	config = current_app.config
-	con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
+@db_connection
+def show_settings(*args, connection=None, **kwargs):
+	if connection is None:
+		abort(500)
 
 	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(con)
+	postTypesResult = postTypes.get_post_type_list(connection)
 
-	cur = con.cursor()
+	cur = connection.cursor()
 
 	raw_items = []
 	try:		
@@ -30,7 +32,7 @@ def show_settings():
 		abort(500)
 
 	cur.close()
-	con.close()
+	connection.close()
 
 	items = []
 	for item in raw_items:
