@@ -53,4 +53,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.sloth_settings import sloth_settings
 	app.register_blueprint(sloth_settings)
 
+	from app.api.posts.posts_list import posts_list
+	app.register_blueprint(posts_list)
+
 	return app

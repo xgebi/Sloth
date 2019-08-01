@@ -11,7 +11,7 @@ from app.authorization.authorize import authorize
 from app.utilities.db_connection import db_connection
 
 from app.api.dashboard import dashboard
-
+from app.posts.post_types import PostTypes
 
 @dashboard.route("/api/dashboard-information")
 @authorize(0)
