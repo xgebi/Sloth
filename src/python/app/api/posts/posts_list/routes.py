@@ -2,6 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, current_ap
 import json
 import psycopg2
 from psycopg2 import sql, errors
+import uuid
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes

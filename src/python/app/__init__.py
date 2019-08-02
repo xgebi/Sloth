@@ -23,18 +23,6 @@ def create_app(config_type):  # dev, test, or prod
 	from app.entry import entry
 	app.register_blueprint(entry)
 
-	from app.administration import administration
-	app.register_blueprint(administration)
-
-	from app.administration.settings import settings
-	app.register_blueprint(settings)
-
-	from app.administration.posts import posts
-	app.register_blueprint(posts)
-
-	from app.administration.themes import themes
-	app.register_blueprint(themes)
-
 	from app.errors import errors
 	app.register_blueprint(errors)
 
@@ -55,5 +43,8 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.api.posts.posts_list import posts_list
 	app.register_blueprint(posts_list)
+
+	from app.api.post import post
+	app.register_blueprint(post)
 
 	return app
