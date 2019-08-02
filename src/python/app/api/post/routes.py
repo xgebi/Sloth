@@ -74,12 +74,13 @@ def save_post(*args, connection=None, **kwargs):
 	if connection is None:
 		abort(500)
 
+	import pdb; pdb.set_trace()
+
 	try:
 		cur = connection.cursor()
 
-		# TODO here must be update instead
 		cur.execute(
-			sql.SQL("SELECT uuid, title, slug, content, js_file, css_file, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), [post_id]
+			sql.SQL("UPDATE sloth_posts SET uuid = %s, title = %s, slug = %s, content = %s, js_file = %s, css_file = %s, post_status = %s, publish_date = %s, update_date = %s, categories = %s, tags = %s WHERE uuid = %s"), [post_id]
 		)
 		raw_item = cur.fetchone()
 		cur.close()

@@ -1,7 +1,0 @@
-{% extends "template.html" %}
-{% block title %}List of [post_type_to_be_changed]{% endblock %}
-{% block content %}
-{% for post in posts %}
-<a href="/post_type/{{ post_type }}/edit/{{ post[0] }}">{{ post[1] }}</a>
-{% endfor %}
-{% endblock %}
