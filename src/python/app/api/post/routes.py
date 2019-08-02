@@ -27,7 +27,7 @@ def get_post_information(*args, post_id, connection=None, **kwargs):
 		cur = connection.cursor()
 
 		cur.execute(
-			sql.SQL("SELECT uuid, title, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), [post_id]
+			sql.SQL("SELECT uuid, title, slug, content, js_file, css_file, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), [post_id]
 		)
 		raw_item = cur.fetchone()
 		cur.close()
@@ -35,11 +35,15 @@ def get_post_information(*args, post_id, connection=None, **kwargs):
 		item = {
 			"uuid": raw_item[0],
 			"title": raw_item[1],
-			"postStatus": raw_item[2],
-			"publishDate": raw_item[3],
-			"updateDate": raw_item[4],
-			"categories": raw_item[5],
-			"tags": raw_item[6]
+			"slug": raw_item[2],
+			"content": raw_item[3],
+			"jsFilePath": raw_item[4],
+			"cssFilePath": raw_item[5],
+			"postStatus": raw_item[6],
+			"publishDate": raw_item[7],
+			"updateDate": raw_item[8],
+			"categories": raw_item[9],
+			"tags": raw_item[10]
 		}
 	except Exception as e:
 		print(e)
@@ -58,6 +62,85 @@ def prepare_new_post(*args, post_id, connection=None, **kwargs):
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
+
+	connection.close()
+	return json.dumps({ "postTypes": postTypesResult, "newPostUuid": str(uuid.uuid4()) })
+
+
+@post.route("/api/post/save", methods=['PUT'])
+@authorize(0)
+@db_connection
+def save_post(*args, connection=None, **kwargs):
+	if connection is None:
+		abort(500)
+
+	try:
+		cur = connection.cursor()
+
+		# TODO here must be update instead
+		cur.execute(
+			sql.SQL("SELECT uuid, title, slug, content, js_file, css_file, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), [post_id]
+		)
+		raw_item = cur.fetchone()
+		cur.close()
+
+		item = {
+			"uuid": raw_item[0],
+			"title": raw_item[1],
+			"slug": raw_item[2],
+			"content": raw_item[3],
+			"jsFilePath": raw_item[4],
+			"cssFilePath": raw_item[5],
+			"postStatus": raw_item[6],
+			"publishDate": raw_item[7],
+			"updateDate": raw_item[8],
+			"categories": raw_item[9],
+			"tags": raw_item[10]
+		}
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
+
+
+	connection.close()
+	return json.dumps({ "postTypes": postTypesResult, "newPostUuid": str(uuid.uuid4()) })
+
+@post.route("/api/post/create", methods=['POST'])
+@authorize(0)
+@db_connection
+def create_new_post(*args, connection=None, **kwargs):
+	if connection is None:
+		abort(500)
+
+	try:
+		cur = connection.cursor()
+
+		# TODO here must be insert instead
+		cur.execute(
+			sql.SQL("SELECT uuid, title, slug, content, js_file, css_file, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), [post_id]
+		)
+		raw_item = cur.fetchone()
+		cur.close()
+
+		item = {
+			"uuid": raw_item[0],
+			"title": raw_item[1],
+			"slug": raw_item[2],
+			"content": raw_item[3],
+			"jsFilePath": raw_item[4],
+			"cssFilePath": raw_item[5],
+			"postStatus": raw_item[6],
+			"publishDate": raw_item[7],
+			"updateDate": raw_item[8],
+			"categories": raw_item[9],
+			"tags": raw_item[10]
+		}
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
+
 
 	connection.close()
 	return json.dumps({ "postTypes": postTypesResult, "newPostUuid": str(uuid.uuid4()) })
