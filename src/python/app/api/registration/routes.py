@@ -21,25 +21,22 @@ def initial_settings(*args, connection=None, **kwargs):
 
 	cur = connection.cursor()
 	filled = {}
-
+	
 	try:
 		cur.execute("SELECT count(uuid) FROM sloth_users")
 		items = cur.fetchone()
 	except errors.UndefinedTable:
 		connection.rollback()
-		set_tables(con) 
+		set_tables(connection) 
 		items = [0]
 	except Exception as e:
+		print(e)
 		return json.dumps({"error": "Database connection error"}), 500
 
 	if items[0] > 0:
 		return json.dumps({"error": "Registration can be done only once"}), 403
 
 	filled = json.loads(request.data);
-	
-	print(filled)
-	
-	import pdb; pdb.set_trace()
 
 	for key,value in filled.items():
 		if filled[key] == None:
@@ -54,6 +51,7 @@ def initial_settings(*args, connection=None, **kwargs):
 			)
 		items = cur.fetchall()
 	except Exception as e:
+		print(e)
 		return json.dumps({ "error": "Database error"}), 500
 
 	if (len(items) == 0):        
@@ -69,11 +67,12 @@ def initial_settings(*args, connection=None, **kwargs):
 				( user["uuid"], user["username"], user["username"], user["password"], user["email"])
 			)
 			cur.execute(
-				sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', %s, '0', 'parent', 'Settings')"),
+				sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', 'text', 'sloth', %s)"),
 				[filled["sitename"]]
 			)
 			connection.commit()
 		except Exception as e:
+			print(e)
 			return json.dumps({ "error": "Database error"}), 500
 
 		cur.close()
@@ -99,4 +98,5 @@ def set_tables(con):
 				cur.execute( scrpt )
 				con.commit()
 			except Exception as e:
+				print(e)
 				abort(500)

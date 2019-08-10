@@ -5,6 +5,7 @@ import json
 import os
 
 import psycopg2
+from psycopg2 import sql, errors
 import uuid
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
@@ -17,11 +18,52 @@ from app.posts.post_types import PostTypes
 @authorize(0)
 @db_connection
 def dashboard_information(*args, connection=None, **kwargs):
-	if connection is None:
-		abort(500)
+    if connection is None:
+        abort(500)
 
-	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(connection)
+    postTypes = PostTypes()
+    postTypesResult = postTypes.get_post_type_list(connection)
 
-	connection.close()
-	return json.dumps({ "postTypes": postTypesResult })
+    cur = connection.cursor()
+    raw_recent_posts = []
+    raw_upcoming_posts = []
+    raw_drafts = []
+
+    try:
+        cur.execute(
+            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"), ['published']
+        )
+        raw_recent_posts = cur.fetchall()
+
+        cur.execute(
+            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"), ['scheduled']
+        )
+        raw_upcoming_posts = cur.fetchall()
+
+        cur.execute(
+            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"), ['draft']
+        )
+        raw_drafts = cur.fetchall()
+
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    connection.close()
+    return json.dumps({ 
+        "postTypes": postTypesResult,
+        "recentPosts": formatPostData(raw_recent_posts),
+        "upcomingPosts": formatPostData(raw_upcoming_posts),
+        "drafts": formatPostData(raw_drafts)
+    })
+
+def formatPostData(postArr):
+    posts = [];
+    for post in postArr:
+        posts.append({
+            "uuid": post[0],
+            "title": post[1],
+            "publishDate": post[2],
+            "postType": post[3]
+        })
+    return posts
