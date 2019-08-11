@@ -7,7 +7,6 @@ import uuid
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
-from app.utilities.db_connection import db_connection
 
 from app.api.posts.posts_list import posts_list
 
