@@ -27,7 +27,7 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 		cur = connection.cursor()
 
 		cur.execute(
-			sql.SQL("SELECT uuid, title, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE post_type = %s"), [post_id]
+			sql.SQL("SELECT uuid, title, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE post_type = %s AND deleted <> true OR deleted IS null"), [post_id]
 		)
 		raw_items = cur.fetchall()
 		cur.close()
@@ -47,5 +47,11 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 		connection.close()
 		abort(500)
 
+	current_post_type = {}
+	for post_type in postTypesResult:
+		if (post_type["uuid"] == post_id):
+			current_post_type = post_type
+			break
+
 	connection.close()
-	return json.dumps({ "postTypes": postTypesResult, "posts": items })
+	return json.dumps({ "currentPostType": current_post_type, "postTypes": postTypesResult, "posts": items })

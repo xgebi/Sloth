@@ -10,5 +10,6 @@ CREATE TABLE sloth_posts (
 	update_date double precision,
 	post_status character  varying(10),
 	tags text[],
-	categories text[]
+	categories text[],
+	deleted boolean
 );

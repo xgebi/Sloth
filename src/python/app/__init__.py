@@ -47,4 +47,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.post import post
 	app.register_blueprint(post)
 
+	from app.api.themes import themes
+	app.register_blueprint(themes)
+
 	return app
