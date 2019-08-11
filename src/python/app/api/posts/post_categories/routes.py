@@ -1,6 +1,11 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 from app.api.posts.post_categories import post_categories as post_categories
 
+import json
+import psycopg2
+from psycopg2 import sql, errors
+import uuid
+
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
@@ -14,3 +19,30 @@ def show_categories_list(*args, post_id, connection=None, **kwargs):
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
+
+	cur = connection.cursor()
+
+	raw_items = []
+	try:		
+		cur.execute(
+			sql.SQL("SELECT uuid, display_name FROM sloth_categories WHERE post_type = %s"), [post_id]
+		)
+		raw_items = cur.fetchall()
+	except Exception as e:
+		print(e)
+		abort(500)
+
+	cur.close()
+	connection.close()
+
+	categories = []
+	for category in raw_items:
+		categories.append({
+			"uuid": category[0],
+			"displayName": category[1]
+		})
+
+	return json.dumps({
+		"postTypes": postTypesResult,
+		"categories": categories
+	})

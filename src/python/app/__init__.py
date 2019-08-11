@@ -41,11 +41,14 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.sloth_settings import sloth_settings
 	app.register_blueprint(sloth_settings)
 
+	from app.api.post import post
+	app.register_blueprint(post)
+
 	from app.api.posts.posts_list import posts_list
 	app.register_blueprint(posts_list)
 
-	from app.api.post import post
-	app.register_blueprint(post)
+	from app.api.posts.post_categories import post_categories
+	app.register_blueprint(post_categories)
 
 	from app.api.themes import themes
 	app.register_blueprint(themes)
