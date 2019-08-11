@@ -50,6 +50,9 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.posts.post_categories import post_categories
 	app.register_blueprint(post_categories)
 
+	from app.api.posts.post_types import post_types
+	app.register_blueprint(post_types)
+
 	from app.api.themes import themes
 	app.register_blueprint(themes)
 
