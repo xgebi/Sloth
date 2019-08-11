@@ -24,3 +24,19 @@ def show_post_type_information(*args, connection=None, **kwargs):
 	return json.dumps({
 		"postTypes": postTypesResult
 	})
+
+@post_types.route("/api/post-type/<post_type_id>/detail")
+@authorize(1)
+@db_connection
+def show_post_type_detail(*args, post_type_id, connection=None, **kwargs):
+	if connection is None:
+		abort(500)
+
+	postTypes = PostTypes()
+	postTypesResult = postTypes.get_post_type_list(connection)
+	postTypeDetail = postTypes.get_post_type(connection, post_type_id)
+
+	return json.dumps({
+		"postTypes": postTypesResult,
+		"postTypeDetail": postTypeDetail
+	})
