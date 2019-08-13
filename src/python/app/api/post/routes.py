@@ -163,8 +163,24 @@ def create_new_post(*args, connection=None, **kwargs):
 		connection.commit()
 
 		cur.execute(
-			# uuid, slug, post_type, title, content, css_file, js_file, publish_date, update_date, post_status, tags, categories, deleted
-			sql.SQL("SELECT uuid, title, slug, content, js_file, css_file, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE uuid = %s"), 
+			sql.SQL("""SELECT A.uuid AS post_id, 
+							  A.title,
+							  A.slug, 							   
+							  A.content, 
+							  A.js_file,
+							  A.css_file, 	
+							  A.post_status, 						   
+							  A.publish_date, 
+							  A.update_date, 							  
+							  A.categories,
+							  A.tags, 							   
+							  B.uuid AS post_type_id, 
+							  B.slug AS post_type_slug, 
+							  B.tags_enabled, 
+							  B.categories_enabled, 
+							  B.archive_enabled 
+						FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON A.post_type = B.uuid 
+						WHERE A.uuid = %s"""),
 			[post_data["uuid"]]
 		)
 
@@ -180,16 +196,12 @@ def create_new_post(*args, connection=None, **kwargs):
 			"publishDate": raw_item[7],
 			"updateDate": raw_item[8],
 			"categories": raw_item[9],
-			"tags": raw_item[10]
+			"tags": raw_item[10],
+			"post_type_slug": raw_post_type[12],
+			"tags_enabled": raw_post_type[13],
+			"categories_enabled": raw_post_type[14],
+			"archive_enabled": raw_post_type[15]
 		}
-
-		cur.execute(
-			# uuid, slug, post_type, title, content, css_file, js_file, publish_date, update_date, post_status, tags, categories, deleted
-			sql.SQL("SELECT slug, tags_enabled, categories_enabled, archive_enabled FROM sloth_post_types WHERE uuid = %s"), 
-			[post_data["postType"]]
-		)
-
-		raw_post_type = cur.fetchone()
 
 
 		cur.close()
