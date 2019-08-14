@@ -179,7 +179,7 @@ def create_new_post(*args, connection=None, **kwargs):
 							  B.tags_enabled, 
 							  B.categories_enabled, 
 							  B.archive_enabled 
-						FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON A.post_type = B.uuid 
+						FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type
 						WHERE A.uuid = %s"""),
 			[post_data["uuid"]]
 		)
