@@ -1,22 +1,19 @@
-- ~~user registration logic~~
-- ~~login screen~~
-- ~~user login logic~~
-- ~~login error~~
-- ~~display navbar~~
-- ~~display empty dashboard~~
-- ~~display settings~~
-- ~~disable registration after first user~~
-- ~~add theme settings~~
-- TODO add theme loading *
-- TODO add static site generation
-- ~~add new post screen~~
-- TODO process changes/create new post
-- ~~add list all posts screen~~
-- TODO add post type settings screen *
-- TODO process post type settings *
-- TODO RSS generator
-- TODO WP importer
+# Stages
 
-- ~~figure out what to do with Vue.js~~
+Beyond Skeleton Sloth it's a wishlist
 
-- TODO deploy
+## Skeleton Sloth
+- basic CMS functionality
+  - post types
+  - theme support
+- single user
+- static files generation
+
+## Skeleton Mage Sloth
+- multi user support
+- IndieWeb support
+- email support
+- ThymeLeaf based markup language for themes
+
+## Spectral Sloth
+- 
