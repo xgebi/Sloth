@@ -6,5 +6,5 @@ CREATE TABLE sloth_users (
 	email character varying(350) UNIQUE NOT NULL,
 	token character varying(350),
 	expiry_date double precision,
-	permissions_level integer DEFAULT 0 NOT NULL,
+	permissions_level integer DEFAULT 0 NOT NULL
 );
