@@ -13,7 +13,7 @@ from app.utilities.db_connection import db_connection
 class PostsGenerator:
 	post = {}
 	config = {}
-	theme_setting = ""
+	settings = {}
 	is_runnable = True
 
 	@db_connection
@@ -26,10 +26,15 @@ class PostsGenerator:
 		cur = connection.cursor()
 		try:
 			cur.execute(
-				sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = %s"), ['active_theme']
+				sql.SQL("SELECT settings_name, settings_value, settings_value_type FROM sloth_settings WHERE settings_name = %s OR settings_type = %s"), ['active_theme', 'sloth']
 			)
-			theme_setting = cur.fetchone()
-			self.theme_setting = theme_setting[0]
+			raw_items = cur.fetchall()
+			for item in raw_items:
+				self.settings[str(item[0])] = {
+					"settings_name": item[0],
+					"settings_value": item[1],
+					"settings_value_type": item[2]
+				}
 		except Exception as e:
 			print(e)
 
@@ -56,14 +61,13 @@ class PostsGenerator:
 
 	def generate_post(self):
 		post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], self.post["slug"])
-		theme_path = Path(self.config["THEMES_PATH"], self.theme_setting)
+		theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
 		post_template_path = Path(theme_path, "post.html")
 		if (Path(theme_path, "post-" + self.post["post_type_slug"] + ".html").is_file()):
 			post_template_path = Path(theme_path, "post-" + self.post["post_type_slug"] + ".html")
 
 		template = ""
-		print(post_template_path)
 		with open(post_template_path, 'r') as f:			
 			template = Template(f.read())
 		
@@ -71,7 +75,7 @@ class PostsGenerator:
 			os.makedirs(post_path_dir)
 
 		with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
-			f.write(template.render(post=self.post, sitename="TBD"))
+			f.write(template.render(post=self.post, sitename=self.settings["sitename"]["settings_value"]))
 
 	def generate_tags(self):
 		tag_template_path = Path(theme_path, "tag.html")

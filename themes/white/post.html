@@ -8,9 +8,22 @@
 	<title>{{ sitename }}</title>
 
 	<link href="assets/styles.css" rel="stylesheet" />
+	{{ post,jsFilePath }}
+	{% if post.jsFilePath %}
+	<script src="{{ post.jsFilePath }}"></script>
+	{% endif %}
+	{% if post.cssFilePath %}
+	<link href="{{ post['cssFilePath'] }}" rel="stylesheet" />
+	{% endif %}
 </head>
 
 <body>
+	<main>
+		<article>
+			<h1>{{ post.title }}</h1>
+			{{ post.content }}
+		</article>
+	</main>
 
 </body>
 
