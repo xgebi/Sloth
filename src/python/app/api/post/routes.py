@@ -3,6 +3,7 @@ import json
 import psycopg2
 from psycopg2 import sql, errors
 import uuid
+from time import time
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
@@ -227,8 +228,10 @@ def create_new_post(*args, connection=None, **kwargs):
 				sql.SQL("SELECT uuid FROM sloth_posts WHERE uuid = %s"), [post_data["uuid"]]
 			)
 			raw_item = cur.fetchone()
-
-		status = "draft" if not data["publish"] else ("scheduled" if data["publish"] and not post_data.get("publishDate") else "published")
+		
+		status = "draft" if not data["publish"] else ("published" if data["publish"] else "scheduled")
+		if data["publish"] and not post_data.get("publishDate"):
+			post_data["publishDate"] = time() * 1000;
 		
 		cur.execute(
 			sql.SQL("INSERT INTO sloth_posts (uuid, slug, post_type, title, content, css_file, js_file, publish_date, update_date, post_status, tags, categories, deleted) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'f')"), # possible case for returning
@@ -305,6 +308,7 @@ def create_new_post(*args, connection=None, **kwargs):
 				"updateDate": raw_item[8],
 				"categories": raw_item[9],
 				"tags": raw_item[10],
+				"post_type": raw_item[11],
 				"post_type_slug": raw_item[12],
 				"tags_enabled": raw_item[13],
 				"categories_enabled": raw_item[14],

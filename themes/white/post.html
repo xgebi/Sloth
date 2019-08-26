@@ -8,7 +8,7 @@
 	<title>{{ sitename }}</title>
 
 	<link href="assets/styles.css" rel="stylesheet" />
-	{{ post,jsFilePath }}
+	{{ post.jsFilePath }}
 	{% if post.jsFilePath %}
 	<script src="{{ post.jsFilePath }}"></script>
 	{% endif %}
