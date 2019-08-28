@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2 import sql, errors
 from flask import current_app
 from jinja2 import Template
+import xml.etree.ElementTree as ET
 
 import threading
 import time
@@ -56,14 +57,16 @@ class PostsGenerator:
 		if (self.post["tags_enabled"]):
 			self.generate_tags()
 		
-		#if (self.post["categories_enabled"]):
-		#	generate_categories()
+		if (self.post["categories_enabled"]):
+			self.generate_categories()
 		
-		#if (self.post["archive_enabled"]):
-		#	generate_archive()
+		if (self.post["archive_enabled"]):
+			self.generate_archive()
 		
-		# regenerate home if newly published
+		self.generate_home()
 
+	# generate_post
+	# generates a file with post data
 	def generate_post(self):
 		post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], self.post["slug"])
 		self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
@@ -146,7 +149,7 @@ class PostsGenerator:
 			try:
 				cur = self.connection.cursor()
 				cur.execute(
-					sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND %s = ANY (tags) AND post_status = %s"), [self.post["post_type"], category, 'published']
+					sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND %s = ANY (categories) AND post_status = %s"), [self.post["post_type"], category, 'published']
 				)
 				raw_items = cur.fetchall()
 				for item in raw_items:
@@ -176,28 +179,102 @@ class PostsGenerator:
 				os.makedirs(post_path_dir)
 			
 			if not os.path.exists(os.path.join(post_path_dir, category)):
-				os.makedirs(os.path.join(post_path_dir, tag))
+				os.makedirs(os.path.join(post_path_dir, category))
 			
 			for i in range(math.ceil(len(categories_posts_list[category])/10)):
 				if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
-					os.makedirs(os.path.join(post_path_dir, tag, str(i)))
+					os.makedirs(os.path.join(post_path_dir, category, str(i)))
 				
 				with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
 					lower = 10 * i
 					upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
 					
-					f.write(template.render(posts = categories_posts_list[category][lower: upper], tag = category, sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category))
+					f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category))
 	
 	def generate_archive(self):
-		tags_template_path = Path(self.theme_path, "archive.html")
+		post_list = []
+		try:
+			cur = self.connection.cursor()
+			cur.execute(
+				sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s"), [self.post["post_type"], 'published']
+			)
+			raw_items = cur.fetchall()
+			for item in raw_items:
+				post_list.append({
+					"uuid": item[0],
+					"title": item[1],
+					"publish_date": item[2]
+				})
+			cur.close()
+		except Exception as e:
+			print(e)
+
+		archive_template_path = Path(self.theme_path, "archive.html")
 		if (Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html").is_file()):
-			post_template_path = Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html")
+			archive_template_path = Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html")
+		elif (not archive_template_path.is_file()):
+			archive_template_path = Path(self.theme_path, "archive.html")
 
 		template = ""
-		with open(post_template_path, 'r') as f:
+		with open(archive_template_path, 'r') as f:
 			template = Template(f.read())
 
-		with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
-			f.write(template.render())
+		post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"])
 
+		if not os.path.exists(post_path_dir):
+			os.makedirs(post_path_dir)
 		
+		for i in range(math.ceil(len(post_list)/10)):
+			lower = 10 * i
+			upper = (10*i) + 10 if (10*i) + 10 < len(post_list) else len(post_list)
+
+			if i == 0:
+				self.generate_rss(post_list[lower: upper], post_path_dir)
+
+			if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
+				os.makedirs(os.path.join(post_path_dir, str(i)))
+			
+			with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+				f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
+
+	def generate_rss(self, posts, path):
+		root = ET.Element("rss")
+		root.set('xmlns:content','http://purl.org/rss/1.0/modules/content/')
+		root.set('xmlns:wfw','http://wellformedweb.org/CommentAPI/')
+		root.set('xmlns:dc','http://purl.org/dc/elements/1.1/')
+		root.set('xmlns:atom','http://www.w3.org/2005/Atom')
+		root.set('xmlns:sy','http://purl.org/rss/1.0/modules/syndication/')
+		root.set('xmlns:slash','http://purl.org/rss/1.0/modules/slash/')
+
+		channel = ET.SubElement(root, "channel")
+
+		ET.SubElement(channel, "title").text=self.settings["sitename"]["settings_value"]
+		ET.SubElement(channel, "atom:link", href="http://www.sarahgebauer.com/feed/", rel="self", type="application/rss+xml")
+		ET.SubElement(channel, "link").text=self.settings["site_description"]["settings_value"] 
+
+		tree = ET.ElementTree(root)
+		tree.write(str(path) + "/feed.xml", encoding='utf-8', xml_declaration=True)
+
+	def generate_home(self):
+		# get all post types
+		post_type_list = []
+		try:
+			cur = self.connection.cursor()
+			cur.execute(
+				sql.SQL("SELECT uuid, slug FROM sloth_post_types")
+			)
+			raw_items = cur.fetchall()
+			for item in raw_items:
+				post_type_list.append({
+					"uuid": item[0],
+					"slug": item[1]
+				})
+			cur.close()
+		except Exception as e:
+			print(e)
+
+		# get 10 latest posts for each post type
+
+		# get template
+
+		# write file
