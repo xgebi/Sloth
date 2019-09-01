@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2 import sql, errors
 from flask import current_app
 from jinja2 import Template
-import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
 import threading
 import time
@@ -238,22 +238,91 @@ class PostsGenerator:
 				f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
 
 	def generate_rss(self, posts, path):
-		root = ET.Element("rss")
-		root.set('xmlns:content','http://purl.org/rss/1.0/modules/content/')
-		root.set('xmlns:wfw','http://wellformedweb.org/CommentAPI/')
-		root.set('xmlns:dc','http://purl.org/dc/elements/1.1/')
-		root.set('xmlns:atom','http://www.w3.org/2005/Atom')
-		root.set('xmlns:sy','http://purl.org/rss/1.0/modules/syndication/')
-		root.set('xmlns:slash','http://purl.org/rss/1.0/modules/slash/')
+		doc = minidom.Document()
+		root_node = doc.createElement('rss')
+		
+		root_node.setAttribute('xmlns:content','http://purl.org/rss/1.0/modules/content/')
+		root_node.setAttribute('xmlns:wfw','http://wellformedweb.org/CommentAPI/')
+		root_node.setAttribute('xmlns:dc','http://purl.org/dc/elements/1.1/')
+		root_node.setAttribute('xmlns:atom','http://www.w3.org/2005/Atom')
+		root_node.setAttribute('xmlns:sy','http://purl.org/rss/1.0/modules/syndication/')
+		root_node.setAttribute('xmlns:slash','http://purl.org/rss/1.0/modules/slash/')
+		doc.appendChild(root_node)
 
-		channel = ET.SubElement(root, "channel")
+		channel = doc.createElement("channel")
 
-		ET.SubElement(channel, "title").text=self.settings["sitename"]["settings_value"]
-		ET.SubElement(channel, "atom:link", href="http://www.sarahgebauer.com/feed/", rel="self", type="application/rss+xml")
-		ET.SubElement(channel, "link").text=self.settings["site_description"]["settings_value"] 
+		title = doc.createElement("title")
+		title_text = doc.createTextNode(self.settings["sitename"]["settings_value"])
+		title.appendChild(title_text)
+		channel.appendChild(title)
 
-		tree = ET.ElementTree(root)
-		tree.write(str(path) + "/feed.xml", encoding='utf-8', xml_declaration=True)
+		atom_link = doc.createElement("atom:link")
+		atom_link.setAttribute('href', self.settings["site_url"]["settings_value"])
+		atom_link.setAttribute('rel', 'self')
+		atom_link.setAttribute('type', 'application/rss+xml')
+		channel.appendChild(atom_link)
+
+		link = doc.createElement('link')
+		link_text = doc.createTextNode(self.settings["site_url"]["settings_value"])
+		link.appendChild(link_text)
+		channel.appendChild(link)
+
+		description = doc.createElement('description')
+		description_text = doc.createTextNode(self.settings["site_description"]["settings_value"])
+		description.appendChild(description_text)
+		channel.appendChild(description)
+		#<lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>
+		last_build = doc.createElement('lastBuildDate')
+		d = date.fromtimestamp(time.time())
+		last_build_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S ') + "CET")
+		last_build.appendChild(last_build_text)
+		channel.appendChild(last_build)
+		#<language>en-US</language>
+		language = doc.createElement('language')
+		language_text = doc.createTextNode('en-US')
+		language.appendChild(language_text)
+		channel.appendChild(language)
+		#<sy:updatePeriod>hourly</sy:updatePeriod>
+		update_period = doc.createElement('sy:updatePeriod')
+		update_period_text = doc.createTextNode('hourly')
+		update_period.appendChild(update_period_text)
+		channel.appendChild(update_period)
+		#<sy:updateFrequency>1</sy:updateFrequency>
+		update_frequency = doc.createElement('sy:updateFrequency')
+		update_frequency_text = doc.createTextNode('1')
+		update_frequency.appendChild(update_frequency_text)
+		channel.appendChild(update_frequency)
+		#<generator>https://wordpress.org/?v=5.2.2</generator>
+		generator = doc.createElement('generator')
+		generator_text = doc.createTextNode('SlothCMS')
+		generator.appendChild(generator_text)
+		channel.appendChild(generator)
+
+		for post in posts:
+			#<item>
+			post_item = doc.createElement('item')
+			#	<title>Irregular Batch of Interesting Links #10</title>
+			post_title = doc.createElement('title')
+			post_title_text = doc.createTextNode(post['title'])
+			post_title.appendChild(post_title_text)
+			post_item.appendChild(post_title)
+			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>
+			post_link = doc.createElement('link')
+			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['title']}")
+			post_link.appendChild(post_link_text)
+			post_item.appendChild(post_link)
+			#	<pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
+			#	<dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
+			#	<category><![CDATA[Interesting links]]></category>
+			#	<guid isPermaLink="false">
+			#	<description><![CDATA[
+			#	<content:encoded><![CDATA[
+
+
+		doc.writexml( open(str(path) + "/feed.xml", 'w'),
+               indent="  ",
+               addindent="  ",
+               newl='\n')
 
 	def generate_home(self):
 		# get all post types
@@ -274,7 +343,32 @@ class PostsGenerator:
 			print(e)
 
 		# get 10 latest posts for each post type
+		posts = {}
+		try:
+			cur = self.connection.cursor()
+			for post_type in post_type_list:
+				cur.execute(
+					sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s LIMIT 10"), [post_type, 'published']
+				)
+				raw_items = cur.fetchall()
+				for item in raw_items:
+					post_type_list.append({
+						"uuid": item[0],
+						"slug": item[1]
+					})
+				cur.close()
+		except Exception as e:
+			print(e)
+
 
 		# get template
+		home_template_path = Path(self.theme_path, "home.html")
+		template = ""
+		with open(home_template_path, 'r') as f:
+			template = Template(f.read())
 
 		# write file
+		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
+
+		with open(home_path_dir, 'w') as f:
+			f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))

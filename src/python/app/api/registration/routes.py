@@ -70,6 +70,14 @@ def initial_settings(*args, connection=None, **kwargs):
 				sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', 'text', 'sloth', %s)"),
 				[filled["sitename"]]
 			)
+			cur.execute(
+				sql.SQL("INSERT INTO sloth_settings VALUES ('site_description', 'Description', 'text', 'sloth', %s)"),
+				[filled["siteDescription"]]
+			)
+			cur.execute(
+				sql.SQL("INSERT INTO sloth_settings VALUES ('site_url', 'URL', 'text', 'sloth', %s)"),
+				[filled["siteUrl"]]
+			)
 			connection.commit()
 		except Exception as e:
 			print(e)
