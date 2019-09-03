@@ -54,3 +54,12 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 
 	connection.close()
 	return json.dumps({ "currentPostType": current_post_type, "postTypes": postTypesResult, "posts": items })
+
+@posts_list.route("/api/posts/<post_id>/delete")
+@authorize(0)
+@db_connection
+def delete_post(*args, post_id, connection=None, **kwargs):
+	pass
+	# get post information from database - post slug, categories, tags and post type slug
+	# delete post from database
+	# delete folder post type slug/post slug

@@ -6,6 +6,7 @@ from xml.dom import minidom
 
 import threading
 import time
+from datetime import datetime
 import os
 import math
 from pathlib import Path
@@ -196,14 +197,26 @@ class PostsGenerator:
 		try:
 			cur = self.connection.cursor()
 			cur.execute(
-				sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s"), [self.post["post_type"], 'published']
+				sql.SQL("""SELECT A.uuid, 
+							  A.title,
+							  A.slug, 							   
+							  A.content, 							   
+							  A.publish_date, 							  
+							  A.categories,						   
+							  B.slug AS post_type_slug
+						FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type
+						WHERE A.post_type = %s AND A.post_status = %s"""), [self.post["post_type"], 'published']
 			)
 			raw_items = cur.fetchall()
 			for item in raw_items:
 				post_list.append({
 					"uuid": item[0],
 					"title": item[1],
-					"publish_date": item[2]
+					"slug": item[2],
+					"content": item[3],
+					"publish_date": item[4],
+					"categories": item[5],
+					"post_type_slug": item[6]
 				})
 			cur.close()
 		except Exception as e:
@@ -273,8 +286,8 @@ class PostsGenerator:
 		channel.appendChild(description)
 		#<lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>
 		last_build = doc.createElement('lastBuildDate')
-		d = date.fromtimestamp(time.time())
-		last_build_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S ') + "CET")
+		d = datetime.fromtimestamp(time.time()).astimezone()
+		last_build_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S %z'))
 		last_build.appendChild(last_build_text)
 		channel.appendChild(last_build)
 		#<language>en-US</language>
@@ -298,7 +311,7 @@ class PostsGenerator:
 		generator.appendChild(generator_text)
 		channel.appendChild(generator)
 
-		for post in posts:
+		for post in posts:			
 			#<item>
 			post_item = doc.createElement('item')
 			#	<title>Irregular Batch of Interesting Links #10</title>
@@ -306,18 +319,32 @@ class PostsGenerator:
 			post_title_text = doc.createTextNode(post['title'])
 			post_title.appendChild(post_title_text)
 			post_item.appendChild(post_title)
-			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>
+			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>			
 			post_link = doc.createElement('link')
-			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['title']}")
+			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['title']}")
 			post_link.appendChild(post_link_text)
 			post_item.appendChild(post_link)
 			#	<pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
+			pub_date = doc.createElement('pubDate')
+			d = datetime.fromtimestamp(post['publish_date'] / 1000).astimezone()
+			pub_date_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S %z'))
+			pub_date.appendChild(pub_date_text)
+			post_item.appendChild(pub_date)
+
 			#	<dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
 			#	<category><![CDATA[Interesting links]]></category>
-			#	<guid isPermaLink="false">
-			#	<description><![CDATA[
+			for category in post['categories']:
+				category_node = doc.createElement('category')
+				category_text = doc.createCDATASection(category)
+				category_node.appendChild(category_text)
+				post_item.appendChild(category_node)
 			#	<content:encoded><![CDATA[
-
+			content = doc.createElement('content:encoded')
+			content_text = doc.createCDATASection(post['content'])
+			content.appendChild(content_text)
+			post_item.appendChild(content)
+			channel.appendChild(post_item)
+		root_node.appendChild(channel)
 
 		doc.writexml( open(str(path) + "/feed.xml", 'w'),
                indent="  ",
@@ -331,7 +358,7 @@ class PostsGenerator:
 			cur = self.connection.cursor()
 			cur.execute(
 				sql.SQL("SELECT uuid, slug FROM sloth_post_types")
-			)
+			)			
 			raw_items = cur.fetchall()
 			for item in raw_items:
 				post_type_list.append({
@@ -340,6 +367,7 @@ class PostsGenerator:
 				})
 			cur.close()
 		except Exception as e:
+			print(371)
 			print(e)
 
 		# get 10 latest posts for each post type
@@ -348,18 +376,23 @@ class PostsGenerator:
 			cur = self.connection.cursor()
 			for post_type in post_type_list:
 				cur.execute(
-					sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s LIMIT 10"), [post_type, 'published']
+					sql.SQL("SELECT uuid, title, slug, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s ORDER BY publish_date DESC LIMIT 10"), [post_type['uuid'], 'published']
 				)
+				
 				raw_items = cur.fetchall()
+				temp_list = []
 				for item in raw_items:
-					post_type_list.append({
+					temp_list.append({
 						"uuid": item[0],
-						"slug": item[1]
+						"title": item[1],
+						"slug": item[2],
+						"publish_date": item[3]
 					})
-				cur.close()
+				posts[post_type['slug']] = temp_list
+			cur.close()
 		except Exception as e:
+			print(390)
 			print(e)
-
 
 		# get template
 		home_template_path = Path(self.theme_path, "home.html")
@@ -371,4 +404,22 @@ class PostsGenerator:
 		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
 
 		with open(home_path_dir, 'w') as f:
-			f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))
+			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))
+
+	def regenerate_all(self):
+		# get all post types
+		# generate all posts
+		# generate all categories
+		# generate all tags
+		# generate all archives
+		# generate home
+
+		pass
+
+	def delete_all(self):
+		pass
+		# get all posts
+		# call self.delete_post
+
+	def delete_post(self, post_type_slug, post_slug):
+		pass
