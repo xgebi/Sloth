@@ -50,7 +50,6 @@ def show_settings(*args, connection=None, **kwargs):
 @db_connection
 def save_settings(*args, connection=None, **kwargs):
 	updated_settings = json.loads(request.data);
-	print(updated_settings)
 
 	cur = connection.cursor()
 	raw_items = []

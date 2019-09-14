@@ -71,7 +71,6 @@ def create_draft(*args, connection=None, **kwargs):
     slug = re.sub('[^0-9a-zA-Z\-]+', '', slug)
 
     cur = connection.cursor()
-    print(draft)
     try:
         cur.execute(
             sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date) VALUES (%s, %s, %s, %s, %s, 'draft', %s)"),

@@ -56,4 +56,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.themes import themes
 	app.register_blueprint(themes)
 
+	from app.api.content_management import content_management
+	app.register_blueprint(content_management)
+
 	return app

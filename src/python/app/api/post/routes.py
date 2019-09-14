@@ -379,7 +379,8 @@ def create_new_post(*args, connection=None, **kwargs):
 @db_connection
 def upload_image(*args, file_name, connection=None, **kwargs):
 	ext = file_name[file_name.rfind("."):]
-	import pdb; pdb.set_trace()
+	if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"):
+		abort(500)
 	with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
 		f.write(request.data)
 
