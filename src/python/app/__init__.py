@@ -17,7 +17,6 @@ def create_app(config_type):  # dev, test, or prod
 	
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
-	app.config["OUTPUT_PATH"] = os.path.join(os.getcwd(), 'site')
 
 	bcrypt.init_app(app)
 

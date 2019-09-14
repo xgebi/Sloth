@@ -7,6 +7,7 @@ import uuid
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
+from app.posts.posts_generator import PostsGenerator
 
 from app.api.posts.posts_list import posts_list
 
@@ -59,7 +60,32 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 @authorize(0)
 @db_connection
 def delete_post(*args, post_id, connection=None, **kwargs):
-	pass
 	# get post information from database - post slug, categories, tags and post type slug
-	# delete post from database
-	# delete folder post type slug/post slug
+	item = {}
+	try:
+		cur = connection.cursor()
+
+		cur.execute(
+			sql.SQL("SELECT A.slug, A.categories, A.tags, B.slug FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON A.post_type = B.uuid WHERE A.uuid = %s"), [post_id]
+		)
+		raw_item = cur.fetchone()		
+
+		item = {
+			"post_slug": raw_item[0],				
+			"categories": raw_item[1],
+			"tags": raw_item[2],
+			"post_type_slug": raw_item[3]
+		}
+		# delete post from database
+		cur.execute(
+			sql.SQL("DELETE FROM sloth_posts WHERE uuid = %s"), [post_id]
+		)
+		cur.close()
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
+
+	generator = PostsGenerator(current_app.config)
+	generator.delete_post(item)	
+	

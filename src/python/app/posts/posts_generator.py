@@ -22,7 +22,7 @@ class PostsGenerator:
 	connection = {}
 
 	@db_connection
-	def __init__(self, post, config, connection=None):
+	def __init__(self, config, post=None, connection=None):
 		if connection is None:
 			self.is_runnable = False
 
@@ -416,10 +416,9 @@ class PostsGenerator:
 
 		pass
 
-	def delete_all(self):
-		pass
-		# get all posts
-		# call self.delete_post
-
 	def delete_post(self, post_type_slug, post_slug):
 		pass
+		# regenerate categories
+		# regenerate tags
+		# regenerate archive
+		# delete folder post type slug/post slug

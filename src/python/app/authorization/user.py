@@ -66,6 +66,7 @@ class User:
 
 
 	def authorize_user(self, permissions_level):
+		print(self)
 		config = current_app.config
 		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
 		cur = con.cursor()

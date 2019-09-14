@@ -86,6 +86,10 @@ def initial_settings(*args, connection=None, **kwargs):
 		cur.close()
 		connection.close()
 
+		if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"])):
+				os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"]))
+		if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")):
+				os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content"))				
 		with open(os.path.join(os.getcwd(), 'registration.lock'), 'w') as f:
 				f.write("registration locked")
 		return json.dumps({"status": "setup"}), 201

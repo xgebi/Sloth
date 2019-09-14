@@ -225,7 +225,7 @@ def save_post(*args, connection=None, **kwargs):
 	connection.close()
 	
 	if data["publish"]:
-		post_gen = PostsGenerator(item_to_generate, current_app.config)
+		post_gen = PostsGenerator(current_app.config, item_to_generate)
 		post_gen.run() # TODO pass arguments to rename generated folders
 
 	return json.dumps({ "postInformation": item }), 201
@@ -369,7 +369,36 @@ def create_new_post(*args, connection=None, **kwargs):
 	connection.close()
 	
 	if data["publish"]:
-		post_gen = PostsGenerator(item_to_generate, current_app.config)
+		post_gen = PostsGenerator(current_app.config, item_to_generate)
 		post_gen.run()
 
 	return json.dumps({ "postInformation": item }), 201
+
+@post.route("/api/upload-file/<file_name>", methods=['PUT', 'POST'])
+@authorize(0)
+@db_connection
+def upload_image(*args, file_name, connection=None, **kwargs):
+	ext = file_name[file_name.rfind("."):]
+	import pdb; pdb.set_trace()
+	with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
+		f.write(request.data)
+
+	url = ""
+
+	try:
+		cur = connection.cursor()
+		cur.execute(
+			sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = %s"), ["site_url"]
+		)
+		url = cur.fetchone()
+		cur.close()
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
+	
+	temp_files = [f for f in os.listdir(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")) if os.path.isfile(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", f)) and f[f.rfind(".") + 1:].lower() in ("jpg", "jpeg", "png", "svg", "bmp", "tiff")]
+
+	files = [url[0] + "/sloth-content/" + f for f in temp_files]
+
+	return json.dumps({ "galleryList": files }), 201
