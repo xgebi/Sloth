@@ -9,6 +9,7 @@ import bcrypt
 from pathlib import Path
 
 from app.utilities.db_connection import db_connection
+from app.posts.posts_generator import PostsGenerator
 
 from app.api.registration import registration
 
@@ -87,11 +88,14 @@ def initial_settings(*args, connection=None, **kwargs):
 		connection.close()
 
 		if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"])):
-				os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"]))
+			os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"]))
 		if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")):
-				os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content"))				
+			os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content"))				
 		with open(os.path.join(os.getcwd(), 'registration.lock'), 'w') as f:
-				f.write("registration locked")
+			f.write("registration locked")
+			
+		generator = PostsGenerator(current_app.config)
+		generator.regenerate_all()
 		return json.dumps({"status": "setup"}), 201
 	
 	cur.close()
@@ -112,3 +116,9 @@ def set_tables(con):
 			except Exception as e:
 				print(e)
 				abort(500)
+	try:
+		cur.execute("UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1)")
+		con.commit()
+	except Exception as e:
+		print(e)
+		abort(500)

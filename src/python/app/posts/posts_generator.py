@@ -311,7 +311,11 @@ class PostsGenerator:
 		generator.appendChild(generator_text)
 		channel.appendChild(generator)
 
-		for post in posts:			
+		i = 0
+		for post in posts[::-1]:			
+			if (i >= 10):
+				break
+			i+=1
 			#<item>
 			post_item = doc.createElement('item')
 			#	<title>Irregular Batch of Interesting Links #10</title>
@@ -321,7 +325,7 @@ class PostsGenerator:
 			post_item.appendChild(post_title)
 			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>			
 			post_link = doc.createElement('link')
-			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['title']}")
+			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}")
 			post_link.appendChild(post_link_text)
 			post_item.appendChild(post_link)
 			#	<pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
