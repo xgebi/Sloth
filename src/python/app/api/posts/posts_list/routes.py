@@ -25,9 +25,9 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 	items = []
 	try:
 		cur = connection.cursor()
-
+		print(post_id)
 		cur.execute(
-			sql.SQL("SELECT uuid, title, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE post_type = %s AND deleted <> true OR deleted IS null"), [post_id]
+			sql.SQL("SELECT uuid, title, post_status, publish_date, update_date, categories, tags FROM sloth_posts WHERE post_type = %s AND post_status <> 'trash' ORDER BY publish_date DESC, update_date DESC"), [post_id]
 		)
 		raw_items = cur.fetchall()
 		cur.close()

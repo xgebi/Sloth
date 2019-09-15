@@ -412,13 +412,45 @@ class PostsGenerator:
 
 	def regenerate_all(self):
 		# get all post types
+		post_types = []
+		try:
+			cur.execute(
+				sql.SQL("SELECT uuid, slug, tags_enable, categories_enabled, archive_enabled FROM sloth_post_types")
+			)
+			raw_items = cur.fetchall()
+			for item in raw_items:
+				post_types.append({
+					"uuid": item[0],
+					"slug": item[1],
+					"tags_enabled": item[2],
+					"categories_enabled": item[3],
+					"archive_enabled": item[4]
+				})
+		except Exception as e:
+			print(e)
 		# generate all posts
-		# generate all categories
-		# generate all tags
-		# generate all archives
-		# generate home
-
-		pass
+		for post_type in post_types:
+			posts = []
+			try:
+				cur.execute(
+					sql.SQL("SELECT A.uuid, A.slug, A.post_type, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid WHERE A.post_type = %s AND A.post_status = 'published'"),
+					[post_type["uuid"]]
+				)
+				raw_items = cur.fetchall()
+				for item in raw_items:
+					post_types.append({
+						"uuid": item[0],
+						"slug": item[1],
+						"tags_enabled": item[2],
+						"categories_enabled": item[3],
+						"archive_enabled": item[4]
+					})
+			except Exception as e:
+				print(e)
+			# generate all categories
+			# generate all tags
+			# generate all archives
+			# generate home
 
 	def delete_post(self, post_type_slug, post_slug):
 		pass

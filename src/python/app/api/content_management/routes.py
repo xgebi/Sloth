@@ -5,8 +5,10 @@ import bcrypt
 import json
 import http.client
 import os
+import re
 from xml.dom import minidom
 import dateutil.parser
+import uuid
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
 from app.utilities.db_connection import db_connection
@@ -68,7 +70,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 		if post_type == 'post' or post_type == 'page':
 			posts.append(item)
 	
-	#process_attachments(attachments)
+	process_attachments(attachments)
 	process_posts(posts, connection)
 	generator = PostsGenerator(current_app.config)
 	generator.regenerate_all()
@@ -93,9 +95,27 @@ def process_attachments(items):
 def process_posts(items, connection):
 	try:
 		cur = connection.cursor()
+		cur.execute(
+			sql.SQL("SELECT slug, uuid FROM sloth_post_types")
+		)
+		raw_post_types = cur.fetchall()
+		post_types = {}
+		for post_type in raw_post_types:
+			post_types[post_type[0]] = post_type[1]
+		raw_post_types = None
 		for item in items:
 			#	title
 			title = item.getElementsByTagName('title')[0].firstChild.wholeText
+			slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
+			cur.execute(
+				sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s"),
+				[slug + "%"]
+			)
+			similar = cur.fetchone()[0]
+			print(slug, similar)
+			if int(similar) > 0:
+				slug = f"${slug}-${str(int(similar) + 1)}"
+				
 			#	link
 			link = item.getElementsByTagName('link')[0].firstChild.wholeText
 			#	pubDate or wp:post_date
@@ -106,6 +126,8 @@ def process_posts(items, connection):
 			content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
 			#	wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
 			status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
+			if status == "publish" or status == "private":
+				status = "published"
 			#	wp:post_type (attachment, nav_menu_item, illustration, page, post)
 			post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
 			#	category domain (post_tag, category) nicename
@@ -114,27 +136,23 @@ def process_posts(items, connection):
 			for thing in item.getElementsByTagName('category'):
 				domain = thing.getAttribute('domain')
 				if (domain == 'post_tag'):
-					tag.append(thing.getAttribute('nicename'))
+					tags.append(thing.getAttribute('nicename'))
 				if (domain == 'category'):
-					tag.append(thing.getAttribute('nicename'))
+					categories.append(thing.getAttribute('nicename'))
 
-
-
+			if not post_types[post_type]:
+				cur.execute(
+					sql.SQL("INSERT INTO sloth_post_types (uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled) VALUES (%s, %s, %s, true, true, true) RETURNING slug, uuid"),
+					[str(uuid.uuid4()), post_type, post_type]
+				)
+				returned = cur.fetchone()
+				post_types[returned[0]] = returned[1]
+			# uuid, title, slug, content, post_type, post_status, update_date, tags, categories
 			cur.execute(
-				sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date) VALUES (%s, %s, %s, %s, %s, 'draft', %s)"),
-				[str(uuid.uuid4()), draft['title'], slug, draft['text'], draft['postType'], time() * 1000]
+				sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, tags, categories) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"),
+				[str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000, tags if not tags is [] else null, categories if not categories is [] else null]
 			)
-			
-			
-			# post_type character varying(200), needs processing
-			# author character varying(200) NULL, needs processing
-			# publish_date double precision,
-			# update_date double precision,
-			# post_status character varying(10),
-			# tags text[],
-			# categories text[],
-
-			connection.commit()
+		connection.commit()
 		cur.close()
 	except Exception as e:
 		print("117")
