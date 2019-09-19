@@ -5,6 +5,7 @@ import json
 import psycopg2
 from psycopg2 import sql, errors
 import uuid
+import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
@@ -29,7 +30,7 @@ def show_categories_list(*args, post_id, connection=None, **kwargs):
 		)
 		raw_items = cur.fetchall()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		abort(500)
 
 	cur.close()

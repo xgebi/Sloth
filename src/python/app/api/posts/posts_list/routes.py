@@ -3,6 +3,7 @@ import json
 import psycopg2
 from psycopg2 import sql, errors
 import uuid
+import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
@@ -43,7 +44,7 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 				"tags": item[6]
 			})
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		connection.close()
 		abort(500)
 
@@ -82,7 +83,7 @@ def delete_post(*args, post_id, connection=None, **kwargs):
 		)
 		cur.close()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		connection.close()
 		abort(500)
 

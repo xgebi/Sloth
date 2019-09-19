@@ -9,6 +9,7 @@ import re
 from xml.dom import minidom
 import dateutil.parser
 import uuid
+import traceback
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
 from app.utilities.db_connection import db_connection
@@ -70,13 +71,13 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 		if post_type == 'post' or post_type == 'page':
 			posts.append(item)
 	
-	process_attachments(attachments)
+	process_attachments(attachments, connection)
 	process_posts(posts, connection)
 	generator = PostsGenerator(current_app.config)
 	generator.regenerate_all()
 	return json.dumps({ "ok": True })
 
-def process_attachments(items):
+def process_attachments(items, connection):
 	conn = {}
 	for item in items:
 		if conn == {}:
@@ -89,6 +90,24 @@ def process_attachments(items):
 
 		with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", item.getElementsByTagName('guid')[0].firstChild.wholeText[item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]), 'wb') as f:
 			f.write(data)
+		meta_infos = item.getElementsByTagName('wp:postmeta')
+		alt = ""
+		for info in meta_infos:
+			if (info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_wp_attachment_image_alt'):
+				alt = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText
+		try:
+			cur = connection.cursor()
+			cur.execute(
+				sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s)"),
+				[uuid.uuid4(), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", item.getElementsByTagName('guid')[0].firstChild.wholeText[item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]), alt, int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)]
+			)
+			raw_post_types = cur.fetchall()
+		except Exception as e:
+			print("100")
+			print(traceback.format_exc())
+			abort(500)
+	connection.commit()
+	cur.close()
 	if conn:
 		conn.close()
 
@@ -139,6 +158,12 @@ def process_posts(items, connection):
 					tags.append(thing.getAttribute('nicename'))
 				if (domain == 'category'):
 					categories.append(thing.getAttribute('nicename'))
+			
+			meta_infos = item.getElementsByTagName('wp:postmeta')
+			thumbnail_id = ""
+			for info in meta_infos:
+				if (info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_thumbnail_id'):
+					thumbnail_id = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText
 
 			if not post_types[post_type]:
 				cur.execute(
@@ -149,12 +174,12 @@ def process_posts(items, connection):
 				post_types[returned[0]] = returned[1]
 			# uuid, title, slug, content, post_type, post_status, update_date, tags, categories
 			cur.execute(
-				sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, tags, categories) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"),
-				[str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000, tags if not tags is [] else null, categories if not categories is [] else null]
+				sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, tags, categories, thumbnail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s))"),
+				[str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000, tags if not tags is [] else null, categories if not categories is [] else null, thumbnail_id]
 			)
 		connection.commit()
 		cur.close()
 	except Exception as e:
 		print("117")
-		print(e)
+		print(traceback.format_exc())
 		abort(500)

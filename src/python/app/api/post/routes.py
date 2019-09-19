@@ -5,6 +5,7 @@ from psycopg2 import sql, errors
 import uuid
 from time import time
 import os
+import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
@@ -13,6 +14,8 @@ from app.utilities.db_connection import db_connection
 from app.posts.posts_generator import PostsGenerator
 
 from app.api.post import post
+
+reserved_folder_names = ('tag', 'category')
 
 
 @post.route("/api/post/<post_id>/edit")
@@ -54,7 +57,7 @@ def get_post_information(*args, post_id, connection=None, **kwargs):
 		url = cur.fetchone()
 		cur.close()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		connection.close()
 		abort(500)
 
@@ -84,7 +87,7 @@ def prepare_new_post(*args, post_id, connection=None, **kwargs):
 		url = cur.fetchone()
 		cur.close()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		connection.close()
 		abort(500)
 
@@ -106,6 +109,9 @@ def save_post(*args, connection=None, **kwargs):
 
 	data = json.loads(request.data)
 	post_data = data["postInfo"]
+
+	if (post_data.get("slug") in reserved_folder_names or post_data.get("slug").isdigit()):
+		return json.dumps({ "error": "Invalid slug" }), 400
 
 	item = {}
 	post_type_item = {}
@@ -240,6 +246,9 @@ def create_new_post(*args, connection=None, **kwargs):
 
 	data = json.loads(request.data)
 	post_data = data["postInfo"]
+
+	if (post_data.get("slug") in reserved_folder_names or post_data.get("slug").isdigit()):
+		return json.dumps({ "error": "Invalid slug" }), 400
 
 	item = {}
 	post_type_item = {}
@@ -394,7 +403,7 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 		url = cur.fetchone()
 		cur.close()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		connection.close()
 		abort(500)
 	

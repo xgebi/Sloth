@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 import math
 from pathlib import Path
+import traceback
 
 from app.utilities.db_connection import db_connection
 
@@ -42,7 +43,7 @@ class PostsGenerator:
 					"settings_value_type": item[2]
 				}
 		except Exception as e:
-			print(e)
+			print(traceback.format_exc())
 		self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
 	def run(self):
@@ -108,7 +109,7 @@ class PostsGenerator:
 					})
 				cur.close()
 			except Exception as e:
-				print(e)
+				print(traceback.format_exc())
 		
 		tag_template_path = Path(self.theme_path, "tag.html")
 		if (Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html").is_file()):
@@ -161,7 +162,7 @@ class PostsGenerator:
 					})
 				cur.close()
 			except Exception as e:
-				print(e)
+				print(traceback.format_exc())
 
 		category_template_path = Path(self.theme_path, "category.html")
 		if (Path(self.theme_path, "category-" + self.post["post_type_slug"] + ".html").is_file()):
@@ -220,7 +221,7 @@ class PostsGenerator:
 				})
 			cur.close()
 		except Exception as e:
-			print(e)
+			print(traceback.format_exc())
 
 		archive_template_path = Path(self.theme_path, "archive.html")
 		if (Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html").is_file()):
@@ -372,7 +373,7 @@ class PostsGenerator:
 			cur.close()
 		except Exception as e:
 			print(371)
-			print(e)
+			print(traceback.format_exc())
 
 		# get 10 latest posts for each post type
 		posts = {}
@@ -396,7 +397,7 @@ class PostsGenerator:
 			cur.close()
 		except Exception as e:
 			print(390)
-			print(e)
+			print(traceback.format_exc())
 
 		# get template
 		home_template_path = Path(self.theme_path, "home.html")
@@ -413,9 +414,10 @@ class PostsGenerator:
 	def regenerate_all(self):
 		# get all post types
 		post_types = []
+		cur = self.connection.cursor()
 		try:
 			cur.execute(
-				sql.SQL("SELECT uuid, slug, tags_enable, categories_enabled, archive_enabled FROM sloth_post_types")
+				sql.SQL("SELECT uuid, slug, tags_enabled, categories_enabled, archive_enabled FROM sloth_post_types")
 			)
 			raw_items = cur.fetchall()
 			for item in raw_items:
@@ -427,7 +429,7 @@ class PostsGenerator:
 					"archive_enabled": item[4]
 				})
 		except Exception as e:
-			print(e)
+			print(traceback.format_exc())
 		# generate all posts
 		for post_type in post_types:
 			posts = []
@@ -446,7 +448,7 @@ class PostsGenerator:
 						"archive_enabled": item[4]
 					})
 			except Exception as e:
-				print(e)
+				print(traceback.format_exc())
 			# generate all categories
 			# generate all tags
 			# generate all archives

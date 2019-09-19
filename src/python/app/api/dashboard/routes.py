@@ -7,6 +7,7 @@ import psycopg2
 from psycopg2 import sql, errors
 import uuid
 from time import time
+import traceback
 
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize
@@ -47,7 +48,7 @@ def dashboard_information(*args, connection=None, **kwargs):
         raw_drafts = cur.fetchall()
 
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
         abort(500)
 
     connection.close()
@@ -82,7 +83,7 @@ def create_draft(*args, connection=None, **kwargs):
         )
         raw_drafts = cur.fetchall()
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
         return json.dumps({ "error": "Database error"}), 500
 
     cur.close()

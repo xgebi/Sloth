@@ -7,6 +7,7 @@ import uuid
 from psycopg2 import sql, errors
 import bcrypt
 from pathlib import Path
+import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.posts_generator import PostsGenerator
@@ -31,7 +32,7 @@ def initial_settings(*args, connection=None, **kwargs):
 		set_tables(connection) 
 		items = [0]
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		return json.dumps({"error": "Database connection error"}), 500
 
 	if items[0] > 0:
@@ -52,7 +53,7 @@ def initial_settings(*args, connection=None, **kwargs):
 			)
 		items = cur.fetchall()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		return json.dumps({ "error": "Database error"}), 500
 
 	if (len(items) == 0):        
@@ -81,7 +82,7 @@ def initial_settings(*args, connection=None, **kwargs):
 			)
 			connection.commit()
 		except Exception as e:
-			print(e)
+			print(traceback.format_exc())
 			return json.dumps({ "error": "Database error"}), 500
 
 		cur.close()
@@ -114,11 +115,11 @@ def set_tables(con):
 				cur.execute( scrpt )
 				con.commit()
 			except Exception as e:
-				print(e)
+				print(traceback.format_exc())
 				abort(500)
 	try:
 		cur.execute("UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1)")
 		con.commit()
 	except Exception as e:
-		print(e)
+		print(traceback.format_exc())
 		abort(500)
