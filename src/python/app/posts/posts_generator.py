@@ -8,6 +8,7 @@ import threading
 import time
 from datetime import datetime
 import os
+import shutil
 import math
 from pathlib import Path
 import traceback
@@ -431,31 +432,175 @@ class PostsGenerator:
 		except Exception as e:
 			print(traceback.format_exc())
 		# generate all posts
+		home_posts = {}
 		for post_type in post_types:
+			shutil.rmtree(Path(self.config["OUTPUT_PATH"], post_type["slug"]))
 			posts = []
 			try:
 				cur.execute(
-					sql.SQL("SELECT A.uuid, A.slug, A.post_type, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid WHERE A.post_type = %s AND A.post_status = 'published'"),
+					sql.SQL("SELECT A.uuid, A.slug, A.post_type, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid WHERE A.post_type = %s AND A.post_status = 'published' ORDER BY A.publish_date DESC"),
 					[post_type["uuid"]]
 				)
 				raw_items = cur.fetchall()
 				for item in raw_items:
-					post_types.append({
+					posts.append({
 						"uuid": item[0],
 						"slug": item[1],
-						"tags_enabled": item[2],
-						"categories_enabled": item[3],
-						"archive_enabled": item[4]
+						"post_type": item[2],
+						"title": item[3],
+						"content": item[4],
+						"css": item[5],
+						"js": item[6],
+						"publish_date": item[7],
+						"update_date": item[8],
+						"tags": item[9],
+						"categories": item[10],
+						"user_display_name": item[11]
 					})
 			except Exception as e:
 				print(traceback.format_exc())
-			# generate all categories
-			# generate all tags
-			# generate all archives
-			# generate home
+			#generate post
+			for post in posts:
+				post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
+				self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
-	def delete_post(self, post_type_slug, post_slug):
-		pass
+				post_template_path = Path(self.theme_path, "post.html")
+				if (Path(self.theme_path, "post-" + post_type["slug"] + ".html").is_file()):
+					post_template_path = Path(self.theme_path, "post-" + post_type["slug"] + ".html")
+
+				template = ""
+				with open(post_template_path, 'r') as f:			
+					template = Template(f.read())
+				
+				if not os.path.exists(post_path_dir):
+					os.makedirs(post_path_dir)
+
+				with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
+					f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"]))
+
+			# generate archive
+			archive_template_path = Path(self.theme_path, "archive.html")
+			if (Path(self.theme_path, "archive-" + post_type["slug"] + ".html").is_file()):
+				archive_template_path = Path(self.theme_path, "archive-" + post_type["slug"] + ".html")
+			elif (not archive_template_path.is_file()):
+				archive_template_path = Path(self.theme_path, "archive.html")
+
+			template = ""
+			with open(archive_template_path, 'r') as f:
+				template = Template(f.read())
+
+			post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+
+			if not os.path.exists(post_path_dir):
+				os.makedirs(post_path_dir)
+			
+			for i in range(math.ceil(len(post_list)/10)):
+				lower = 10 * i
+				upper = (10*i) + 10 if (10*i) + 10 < len(post_list) else len(post_list)
+
+				if i == 0:
+					self.generate_rss(post_list[lower: upper], post_path_dir)
+					home_posts[post_type["slug"]] = post_list[lower: upper]
+
+				if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
+					os.makedirs(os.path.join(post_path_dir, str(i)))
+				
+				with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+					f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
+
+			# generate all categories
+			categories = {}
+			# generate all tags
+			tags = {}
+			for post in posts:
+				for tag in post["tags"]:
+					if tags[tag] is None:
+						tags[tag] = []
+					tags[tag].append(post)
+				for category in post["categories"]:
+					if categories[category] is None:
+						categories[category] = []
+					categories[category].append(post)
+
+			tag_template_path = Path(self.theme_path, "tag.html")
+			if (Path(self.theme_path, "tag-" + post_type["slug"] + ".html").is_file()):
+				tag_template_path = Path(self.theme_path, "tag-" + post_type["slug"] + ".html")
+			elif (not tag_template_path.is_file()):
+				tag_template_path = Path(self.theme_path, "archive.html")	
+
+			template = ""
+			with open(tag_template_path, 'r') as f:
+				template = Template(f.read())		
+
+			for tag in tags_list:
+				post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], 'tag')
+
+				if not os.path.exists(post_path_dir):
+					os.makedirs(post_path_dir)
+				
+				if not os.path.exists(os.path.join(post_path_dir, tag)):
+					os.makedirs(os.path.join(post_path_dir, tag))
+				
+				for i in range(math.ceil(len(tags_posts_list[tag])/10)):
+					if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag, str(i))):
+						os.makedirs(os.path.join(post_path_dir, tag, str(i)))
+					
+					with open(os.path.join(post_path_dir, tag, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+						lower = 10 * i
+						upper = (10*i) + 10 if (10*i) + 10 < len(tags_posts_list[tag]) else len(tags_posts_list[tag])
+						
+						f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag))
+			
+			category_template_path = Path(self.theme_path, "category.html")
+			if (Path(self.theme_path, "category-" + post_type["slug"] + ".html").is_file()):
+				category_template_path = Path(self.theme_path, "category-" + post_type["slug"] + ".html")
+			elif (not category_template_path.is_file()):
+				category_template_path = Path(self.theme_path, "archive.html")
+
+			template = ""
+			with open(category_template_path, 'r') as f:
+				template = Template(f.read())
+
+			for category in categories_list:
+				post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], 'category')
+
+				if not os.path.exists(post_path_dir):
+					os.makedirs(post_path_dir)
+				
+				if not os.path.exists(os.path.join(post_path_dir, category)):
+					os.makedirs(os.path.join(post_path_dir, category))
+				
+				for i in range(math.ceil(len(categories_posts_list[category])/10)):
+					if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
+						os.makedirs(os.path.join(post_path_dir, category, str(i)))
+					
+					with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+						lower = 10 * i
+						upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
+						
+						f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category))
+
+		# generate home
+		home_template_path = Path(self.theme_path, "home.html")
+		template = ""
+		with open(home_template_path, 'r') as f:
+			template = Template(f.read())
+
+		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
+
+		with open(home_path_dir, 'w') as f:
+			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))
+
+	def delete_post(self, post_type_slug, post_slug):		
+		post_types = []
+		cur = self.connection.cursor()
+		try:
+			cur.execute(
+				sql.SQL("SELECT tags, categories FROM sloth_posts WHERE post_slug = %s"), [post_slug]
+			)
+		except Exception as e:
+			print(traceback.format_exc())
+		# get all post types
 		# regenerate categories
 		# regenerate tags
 		# regenerate archive

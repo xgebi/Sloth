@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app
+from flask import render_template, request, flash, url_for, current_app
 from app.api.posts.post_categories import post_categories as post_categories
 
 import json

@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app, make_response
+from flask import render_template, request, flash, url_for, current_app, make_response
 import psycopg2
 from psycopg2 import sql
 import bcrypt

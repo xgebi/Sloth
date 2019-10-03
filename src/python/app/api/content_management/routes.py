@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app, make_response, abort
+from flask import render_template, request, flash, url_for, current_app, make_response, abort
 import psycopg2
 from psycopg2 import sql
 import bcrypt
@@ -59,8 +59,9 @@ def show_content(*args, connection=None, **kwargs):
 def import_wordpress_content(*args, connection=None, **kwargs):
 	if connection is None:
 		return
-
+	
 	xml_data = minidom.parseString(request.data)
+	base_import_link = xml_data.getElementsByTagName('wp:base_blog_url')[0].firstChild.wholeText
 	items = xml_data.getElementsByTagName('item')
 	posts = []
 	attachments = []
@@ -72,7 +73,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 			posts.append(item)
 	
 	process_attachments(attachments, connection)
-	process_posts(posts, connection)
+	process_posts(posts, connection, base_import_link)
 	generator = PostsGenerator(current_app.config)
 	generator.regenerate_all()
 	return json.dumps({ "ok": True })
@@ -111,7 +112,7 @@ def process_attachments(items, connection):
 	if conn:
 		conn.close()
 
-def process_posts(items, connection):
+def process_posts(items, connection, base_import_link):
 	try:
 		cur = connection.cursor()
 		cur.execute(
@@ -143,6 +144,7 @@ def process_posts(items, connection):
 			creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
 			#	content:encoded (CDATA)
 			content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
+			
 			#	wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
 			status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
 			if status == "publish" or status == "private":

@@ -20,17 +20,14 @@ def create_app(config_type):  # dev, test, or prod
 
 	bcrypt.init_app(app)
 
-	from app.entry import entry
-	app.register_blueprint(entry)
-
 	from app.errors import errors
 	app.register_blueprint(errors)
 
 	from app.api.initialization import initialization
 	app.register_blueprint(initialization)
 
-	from app.api.registration import registration
-	app.register_blueprint(registration)
+	from app.api.registration import registration as api_registration
+	app.register_blueprint(api_registration)
 
 	from app.api.sloth_login import sloth_login
 	app.register_blueprint(sloth_login)
@@ -58,5 +55,11 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.api.content_management import content_management
 	app.register_blueprint(content_management)
+
+	from app.web.root import root
+	app.register_blueprint(root)
+
+	from app.web.registration import registration as web_registration
+	app.register_blueprint(web_registration)
 
 	return app
