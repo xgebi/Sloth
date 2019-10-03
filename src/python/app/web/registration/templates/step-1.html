@@ -6,10 +6,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>SlothCMS registration | Step 1</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename = 'css/registration-wizard.css') }}">
 </head>
 
 <body>
-
+	<main>
+		<form method="POST" action="/register">
+			<label for="username">Username: </label>
+			<input type="text" id="username" name="username" />
+			<label for="password">Password: </label>
+			<input type="password" id="password" name="password" />
+			<label for="email">Email: </label>
+			<input type="text" id="email" name="email" />
+			<label for="sitename">Site name: </label>
+			<input type="text" id="sitename" name="sitename" />
+			<label for="description">Site description: </label>
+			<input type="text" id="description" name="description" />
+			<label for="url">URL: </label>
+			<input type="text" id="url" name="url" />
+			<input type="submit" value="Register" />
+		</form>
+	</main>
 </body>
 
 </html>
