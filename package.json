@@ -1,9 +1,9 @@
 {
 	"name": "sloth-cms",
-	"version": "0.0.75",
+	"version": "0.0.76",
 	"devPhase": "Skeleton Sloth",
 	"description": "Experimental CMS",
 	"repository": "git@github.com:xgebi/SlothCMS.git",
 	"author": "Sarah Gebauer <sarah@sarahgebauer.com>",
-	"license": "GNU GPLv3"
+	"license": "Hippocratic license"
 }
