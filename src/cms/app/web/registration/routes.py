@@ -11,13 +11,20 @@ def registration_steps(*args, connection=None, **kwargs):
 		return render_template("step-1.html")
 
 	if connection is None:
-		return render_template("step-1.html", errors="database")
+		return render_template("step-1.html", errors="Error connecting to database"), 500
 	# registration
+	user_data = request.form.to_dict()
 	register = Registration(connection)
-	result = register.initial_settings()
+	result = register.initial_settings(filled=user_data)
 	#success
-	return render_template("step-2.html")
+	if (result.get("state") is not None and result.get("state") == "ok"):
+		return render_template("step-2.html"), result["status"]
 
 	#failure
-	return render_template("step-1.html", data=user_data, error="general")
+	error="Unknown error"
+	status = result["status"] if result.get("status") else 500
+	
+	if (result.get("error") is not None):
+		error = result["error"]
+	return render_template("step-1.html", data=user_data, error=error), status
 	

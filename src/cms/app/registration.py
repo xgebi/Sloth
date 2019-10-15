@@ -1,34 +1,45 @@
+from flask import current_app
+import os
+import psycopg2
+from psycopg2 import sql, errors
+from pathlib import Path
+import json
+import uuid
+import bcrypt
+import traceback
+from app.posts.posts_generator import PostsGenerator
+
 class Registration:
 	connection = {}
 
 	def __init__(self, connection):
 		self.connection = connection
 
-	def initial_settings(self, *args, **kwargs):
+	def initial_settings(self, *args, filled = {}, **kwargs):
 		registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
 		if (registration_lock_file.is_file()):
 			return {"error": "Registration locked", "status": 403}
 
 		cur = self.connection.cursor()
-		filled = {}
 		
 		try:
 			cur.execute("SELECT count(uuid) FROM sloth_users")
 			items = cur.fetchone()
 		except errors.UndefinedTable:
+			print("hey")
 			self.connection.rollback()
 			result = self.set_tables() 
-			if (result["error"]):
+
+			if (result.get("error") is not None):
 				return result
 			items = [0]
 		except Exception as e:
+			print("ho")
 			print(traceback.format_exc())
 			return {"error": "Database connection error", "status": 500}
 
 		if items[0] > 0:
 			return {"error": "Registration can be done only once", "status": 403}
-
-		filled = json.loads(request.data);
 
 		for key,value in filled.items():
 			if filled[key] == None:
@@ -60,15 +71,15 @@ class Registration:
 				)
 				cur.execute(
 					sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', 'text', 'sloth', %s)"),
-					[filled["sitename"]]
+					[filled.get("sitename")]
 				)
 				cur.execute(
 					sql.SQL("INSERT INTO sloth_settings VALUES ('site_description', 'Description', 'text', 'sloth', %s)"),
-					[filled["siteDescription"]]
+					[filled.get("description")]
 				)
 				cur.execute(
 					sql.SQL("INSERT INTO sloth_settings VALUES ('site_url', 'URL', 'text', 'sloth', %s)"),
-					[filled["siteUrl"]]
+					[filled.get("url")]
 				)
 				self.connection.commit()
 			except Exception as e:
@@ -95,22 +106,26 @@ class Registration:
 		return {"error": "Registration can be done only once", "status": 403}
 
 	def set_tables(self):
-		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "sql", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "sql", "setup", sql_file))]
+		print("chichi")
+		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "database", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "database", "setup", sql_file))]
 
 		cur = self.connection.cursor()
 		for filename in sqls:
-			with open(os.path.join(os.getcwd(), "src", "sql", "setup", filename)) as f:
+			with open(os.path.join(os.getcwd(), "src", "database", "setup", filename)) as f:
 				scrpt = str(f.read())
 				try:
 					cur.execute( scrpt )
 					self.connection.commit()
 				except Exception as e:
+					print("hihi")
 					print(traceback.format_exc())
 					return { "error": "Database error", "status": 500}
 		try:
+			print("chuchu")
 			cur.execute("UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1)")
 			self.connection.commit()
 		except Exception as e:
+			print("haha")
 			print(traceback.format_exc())
 			return { "error": "Database error", "status": 500}
 		return {"state": "ok"}

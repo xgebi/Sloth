@@ -1,5 +1,6 @@
 DEBUG = True
 DATABASE_URL = 'localhost'
+DATABASE_PORT = 5433
 DATABASE_USER = 'sloth'
 DATABASE_PASSWORD = 'sloth'
 DATABASE_NAME = 'sloth'

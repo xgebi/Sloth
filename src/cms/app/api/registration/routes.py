@@ -19,7 +19,7 @@ from app.api.registration import registration
 @db_connection
 def initial_settings(*args, connection=None, **kwargs):
 	register = Registration(connection)
-	result = register.initial_settings()
+	result = register.initial_settings(filled=json.loads(request.data))
 	if result["error"]:
 		return json.dumps({"error": result["error"]}), result["status"]
 	return json.dumps({"status": result["state"]}), result["status"]

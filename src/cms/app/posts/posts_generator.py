@@ -434,7 +434,8 @@ class PostsGenerator:
 		# generate all posts
 		home_posts = {}
 		for post_type in post_types:
-			shutil.rmtree(Path(self.config["OUTPUT_PATH"], post_type["slug"]))
+			if (os.path.exists(Path(self.config["OUTPUT_PATH"], post_type["slug"]))):
+				shutil.rmtree(Path(self.config["OUTPUT_PATH"], post_type["slug"]))
 			posts = []
 			try:
 				cur.execute(
@@ -493,20 +494,20 @@ class PostsGenerator:
 
 			if not os.path.exists(post_path_dir):
 				os.makedirs(post_path_dir)
-			
-			for i in range(math.ceil(len(post_list)/10)):
+			import pdb; pdb.set_trace()
+			for i in range(math.ceil(len(posts)/10)):
 				lower = 10 * i
-				upper = (10*i) + 10 if (10*i) + 10 < len(post_list) else len(post_list)
+				upper = (10*i) + 10 if (10*i) + 10 < len(posts) else len(posts)
 
 				if i == 0:
-					self.generate_rss(post_list[lower: upper], post_path_dir)
-					home_posts[post_type["slug"]] = post_list[lower: upper]
+					self.generate_rss(posts[lower: upper], post_path_dir)
+					home_posts[post_type["slug"]] = posts[lower: upper]
 
 				if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
 					os.makedirs(os.path.join(post_path_dir, str(i)))
 				
 				with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-					f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
+					f.write(template.render(posts = posts[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
 
 			# generate all categories
 			categories = {}
