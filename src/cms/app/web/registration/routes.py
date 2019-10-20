@@ -8,10 +8,10 @@ from app.web.registration import registration
 @db_connection
 def registration_steps(*args, connection=None, **kwargs):
 	if (request.method.upper() == "GET"):
-		return render_template("step-1.html")
+		return render_template("step-1.html", data={})
 
 	if connection is None:
-		return render_template("step-1.html", errors="Error connecting to database"), 500
+		return render_template("step-1.html", error="Error connecting to database"), 500
 	# registration
 	user_data = request.form.to_dict()
 	register = Registration(connection)

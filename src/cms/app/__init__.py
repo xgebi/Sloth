@@ -62,4 +62,13 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.registration import registration as web_registration
 	app.register_blueprint(web_registration)
 
+	from app.web.login import login
+	app.register_blueprint(login)
+
+	from app.web.login import login
+	app.register_blueprint(login)
+
+	from app.web.dashboard import dashboard as dash
+	app.register_blueprint(dash)
+
 	return app

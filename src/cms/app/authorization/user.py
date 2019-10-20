@@ -6,15 +6,19 @@ from time import time
 import random
 import uuid
 
+from app.utilities.db_connection import db_connection
+
 class User:
 	def __init__(self, uuid = None, token = None):
 		self.uuid = uuid
 		self.token = token
 
-	def login_user(self, username, password):
+	@db_connection
+	def login_user(self, username, password, connection=None):
 		config = current_app.config
-		con = psycopg2.connect("dbname='"+config["DATABASE_NAME"]+"' user='"+config["DATABASE_USER"]+"' host='"+config["DATABASE_URL"]+"' password='"+config["DATABASE_PASSWORD"]+"'")
-		cur = con.cursor()
+		if connection is None:
+			return None
+		cur = connection.cursor()
 
 		items = []
 
@@ -43,14 +47,14 @@ class User:
 				cur.execute(
 					sql.SQL("UPDATE sloth_users SET token = %s, expiry_date = %s WHERE uuid = %s"), (token, expiry_time, trimmed_items["uuid"])
 				)
-				con.commit()
+				connection.commit()
 			except Exception as e:
 				cur.close()
-				con.close()
+				connection.close()
 				return None
 			
 			cur.close()
-			con.close()
+			connection.close()
 			return { 
 				"uuid" : trimmed_items["uuid"],
 				"displayName": trimmed_items["display_name"],
@@ -60,7 +64,7 @@ class User:
 			}
 		
 		cur.close()
-		con.close()
+		connection.close()
 
 		return None
 

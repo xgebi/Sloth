@@ -54,3 +54,11 @@ input:not([type="submit"]) {
 	font-size: 1.25rem;
 	padding: .5rem 1rem;
 }
+
+.registration-error {
+	font-weight: 700;
+	color: crimson;
+	grid-column: 1/3;
+	text-align: center;
+	font-size: 2rem;
+}
