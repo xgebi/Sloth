@@ -1,3 +1,31 @@
+@font-face {
+  font-family: 'Cabin';
+  src: url('/static/fonts/Cabin-Regular.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Cabin';
+  src: url('/static/fonts/Cabin-Bold.ttf');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Cabin';
+  src: url('/static/fonts/Cabin-Italic.ttf');
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Cabin';
+  src: url('/static/fonts/Cabin-BoldItalic.ttf');
+  font-weight: bold;
+  font-style: italic;
+}
+
 :root {
 	--purple: hsl(280, 100%, 30%);
 	--white: hsl(0, 0%, 98%);
@@ -11,7 +39,7 @@ body {
 	font-family: Cabin, sans-serif;
 }
 
-main {
+main.user-dialog {
 	display: grid;
 	grid-template-rows: 1fr auto 1fr;
 	grid-template-columns: 1fr auto 1fr;
@@ -19,7 +47,7 @@ main {
 	background: var(--purple);
 }
 
-.user-dialog {
+form {
 	grid-row: 2/3;
 	grid-column: 2/3;
 	background: var(--white);

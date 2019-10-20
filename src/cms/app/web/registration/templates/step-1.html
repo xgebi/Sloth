@@ -10,8 +10,8 @@
 </head>
 
 <body>
-	<main>
-		<form class="user-dialog" method="POST" action="/registration">
+	<main class="user-dialog">
+		<form method="POST" action="/registration">
 			{% if error is defined %}
 			<p class="error">{{ error }}</p>
 			{% endif %}

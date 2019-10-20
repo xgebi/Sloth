@@ -10,8 +10,8 @@
 </head>
 
 <body>
-	<main>
-		<form class="user-dialog" method="POST" action="/login/process">
+	<main class="user-dialog">
+		<form method="POST" action="/login/process">
 			{% if error is defined %}
 			<p class="error-message">Your username or password are incorrect</p>
 			{% endif %}
