@@ -29,6 +29,13 @@ form {
 	grid-row-gap: 1rem;
 }
 
+.success-message {
+	grid-row: 2/3;
+	grid-column: 2/3;
+	background: var(--white);
+	padding: 2rem 2rem;
+}
+
 input:not([type="submit"]) {
 	background: var(--white);
 	padding: .25rem .5rem;

@@ -327,6 +327,7 @@ class PostsGenerator:
 			post_item.appendChild(post_title)
 			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>			
 			post_link = doc.createElement('link')
+			
 			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}")
 			post_link.appendChild(post_link_text)
 			post_item.appendChild(post_link)
@@ -437,9 +438,10 @@ class PostsGenerator:
 			if (os.path.exists(Path(self.config["OUTPUT_PATH"], post_type["slug"]))):
 				shutil.rmtree(Path(self.config["OUTPUT_PATH"], post_type["slug"]))
 			posts = []
+			
 			try:
 				cur.execute(
-					sql.SQL("SELECT A.uuid, A.slug, A.post_type, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid WHERE A.post_type = %s AND A.post_status = 'published' ORDER BY A.publish_date DESC"),
+					sql.SQL("SELECT A.uuid, A.slug, A.post_type, C.slug, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid INNER JOIN sloth_post_types as C on A.post_type = C.uuid WHERE A.post_type = %s AND A.post_status = 'published' ORDER BY A.publish_date DESC"),
 					[post_type["uuid"]]
 				)
 				raw_items = cur.fetchall()
@@ -448,15 +450,16 @@ class PostsGenerator:
 						"uuid": item[0],
 						"slug": item[1],
 						"post_type": item[2],
-						"title": item[3],
-						"content": item[4],
-						"css": item[5],
-						"js": item[6],
-						"publish_date": item[7],
-						"update_date": item[8],
-						"tags": item[9],
-						"categories": item[10],
-						"user_display_name": item[11]
+						"post_type_slug": item[3],
+						"title": item[4],
+						"content": item[5],
+						"css": item[6],
+						"js": item[7],
+						"publish_date": item[8],
+						"update_date": item[9],
+						"tags": item[10],
+						"categories": item[11],
+						"user_display_name": item[12]
 					})
 			except Exception as e:
 				print(traceback.format_exc())
@@ -494,7 +497,7 @@ class PostsGenerator:
 
 			if not os.path.exists(post_path_dir):
 				os.makedirs(post_path_dir)
-			import pdb; pdb.set_trace()
+				
 			for i in range(math.ceil(len(posts)/10)):
 				lower = 10 * i
 				upper = (10*i) + 10 if (10*i) + 10 < len(posts) else len(posts)
@@ -510,9 +513,9 @@ class PostsGenerator:
 					f.write(template.render(posts = posts[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
 
 			# generate all categories
-			categories = {}
+			categories_list = {}
 			# generate all tags
-			tags = {}
+			tags_list = {}
 			for post in posts:
 				for tag in post["tags"]:
 					if tags[tag] is None:

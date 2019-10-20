@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, url_for, current_app, abort
+from flask import render_template, request, flash, url_for, current_app, abort, redirect
 from app.utilities.db_connection import db_connection
 from app.registration import Registration
 
@@ -18,7 +18,7 @@ def registration_steps(*args, connection=None, **kwargs):
 	result = register.initial_settings(filled=user_data)
 	#success
 	if (result.get("state") is not None and result.get("state") == "ok"):
-		return render_template("step-2.html"), result["status"]
+		return redirect("/registration/done")
 
 	#failure
 	error="Unknown error"
@@ -27,4 +27,8 @@ def registration_steps(*args, connection=None, **kwargs):
 	if (result.get("error") is not None):
 		error = result["error"]
 	return render_template("step-1.html", data=user_data, error=error), status
+
+@registration.route('/registration/done', methods=["GET"])
+def registration_done(*args, **kwargs):
+	return render_template("step-2.html")
 	

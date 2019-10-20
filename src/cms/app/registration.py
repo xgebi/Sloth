@@ -26,7 +26,6 @@ class Registration:
 			cur.execute("SELECT count(uuid) FROM sloth_users")
 			items = cur.fetchone()
 		except errors.UndefinedTable:
-			print("hey")
 			self.connection.rollback()
 			result = self.set_tables() 
 
@@ -85,6 +84,8 @@ class Registration:
 			except Exception as e:
 				print(traceback.format_exc())
 				return { "error": "Database error", "status": 500}
+			
+			self.set_data()
 
 			cur.close()
 			self.connection.close()
@@ -106,7 +107,6 @@ class Registration:
 		return {"error": "Registration can be done only once", "status": 403}
 
 	def set_tables(self):
-		print("chichi")
 		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "database", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "database", "setup", sql_file))]
 
 		cur = self.connection.cursor()
@@ -120,12 +120,19 @@ class Registration:
 					print("hihi")
 					print(traceback.format_exc())
 					return { "error": "Database error", "status": 500}
-		try:
-			print("chuchu")
-			cur.execute("UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1)")
-			self.connection.commit()
-		except Exception as e:
-			print("haha")
-			print(traceback.format_exc())
-			return { "error": "Database error", "status": 500}
+		return {"state": "ok"}
+
+	def set_data(self):
+		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "database", "setup_data")) if os.path.isfile(os.path.join(os.getcwd(), "src", "database", "setup_data", sql_file))]
+
+		cur = self.connection.cursor()
+		for filename in sqls:
+			with open(os.path.join(os.getcwd(), "src", "database", "setup_data", filename)) as f:
+				scrpt = str(f.read())
+				try:
+					cur.execute( scrpt )
+					self.connection.commit()
+				except Exception as e:
+					print(traceback.format_exc())
+					return { "error": "Database error", "status": 500}
 		return {"state": "ok"}
