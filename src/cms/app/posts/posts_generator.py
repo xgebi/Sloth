@@ -256,6 +256,7 @@ class PostsGenerator:
 		doc = minidom.Document()
 		root_node = doc.createElement('rss')
 		
+		root_node.setAttribute('version','2.0')
 		root_node.setAttribute('xmlns:content','http://purl.org/rss/1.0/modules/content/')
 		root_node.setAttribute('xmlns:wfw','http://wellformedweb.org/CommentAPI/')
 		root_node.setAttribute('xmlns:dc','http://purl.org/dc/elements/1.1/')
@@ -320,6 +321,7 @@ class PostsGenerator:
 			i+=1
 			#<item>
 			post_item = doc.createElement('item')
+			post_item.setAttribute("guid", post['uuid'])
 			#	<title>Irregular Batch of Interesting Links #10</title>
 			post_title = doc.createElement('title')
 			post_title_text = doc.createTextNode(post['title'])
@@ -346,6 +348,9 @@ class PostsGenerator:
 				category_node.appendChild(category_text)
 				post_item.appendChild(category_node)
 			#	<content:encoded><![CDATA[
+			description = doc.createElement('description')
+			post_item.appendChild(description)
+			
 			content = doc.createElement('content:encoded')
 			content_text = doc.createCDATASection(post['content'])
 			content.appendChild(content_text)
