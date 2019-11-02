@@ -56,3 +56,29 @@ def process_tag(*args, tag, new_tree=None, parent_element=None, path=None, **kwa
 """
 	{ "1": "ELEMENT_NODE", "2": "ATTRIBUTE_NODE", "3": "TEXT_NODE", "4": "CDATA_SECTION_NODE", "5": "ENTITY_REFERENCE_NODE", "6": "ENTITY_NODE", "7": "PROCESSING_INSTRUCTION_NODE", "8": "COMMENT_NODE", "9": "DOCUMENT_NODE", "10": "DOCUMENT_TYPE_NODE", "11": "DOCUMENT_FRAGMENT_NODE", "12": "NOTATION_NODE" }	
 """
+
+class Toe:
+	tree = {}
+	path_to_templates = ""
+	template_load_error
+
+	__init__(self, path_to_templates, template):
+		self.path_to_templates = path_to_templates
+
+		template_file = ""
+		if template.endswith(".html") or template.endswith(".htm"):
+			with open(os.path.join(path_to_templates, template)) as f:			
+					template_file = str(f.read())
+		else:
+			self.template_load_error = True
+			return
+
+		self.tree = minidom.parseString(template_file)
+	
+	process_tree(self):
+		pass
+
+	process_import_tag(self, parent_element, element):
+		pass
+
+	process_for_attribute(self, parent_element, element)

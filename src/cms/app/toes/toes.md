@@ -1,10 +1,6 @@
 # Toes language
 
-`<toe:doctype />`
-
 `<toe:import file="header.html" />`
-
-`<toe:page-end />`
 
 `<tag toe:if="expression">`
 
