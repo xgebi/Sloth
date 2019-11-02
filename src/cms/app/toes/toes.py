@@ -7,49 +7,8 @@ def render_toe(*args, template, path_to_templates, **kwargs):
 	if path_to_templates is None:
 		return None
 
-	template_file = ""
-	if template.endswith(".html") or template.endswith(".htm"):
-		with open(os.path.join(path_to_templates, template)) as f:			
-				template_file = str(f.read())
-	else:
-		template_file = template_file
-
-	xml_data = minidom.parseString(template_file)
-
-	result = process_tag(*args, tag=xml_data, path=path_to_templates, **kwargs)
-
-	return "<!DOCTYPE html>" + result.toprettyxml()[result.toprettyxml().find('?>') + 2:]
-
-def process_tag(*args, tag, new_tree=None, parent_element=None, path=None, **kwargs):	
-	if tag.nodeType == 3:
-		return None
-
-	if tag.nodeType == 9:
-		new_tree = minidom.Document()
-		for node in tag.childNodes:
-			if node.nodeType == 1:
-				return process_tag(*args, tag=tag.firstChild, parent_element=new_tree, path=path, **kwargs)
-		return None
-
-	if tag.nodeType == 1:
-		if tag.tagName.find('toe') != -1:
-			if len(tag.tagName) == 3:
-				for node in tag.childNodes:
-					result = process_tag(*args, tag=node, parent_element=new_tree, path=path, **kwargs)
-					if result is not None:
-						parent_element.appendChild(result)
-				
-			if tag.tagName.find('import') != -1:
-				import pdb; pdb.set_trace()
-				attrs = dict(tag.attributes.items())
-				for attr in attrs.keys():
-					if (attr == "file"):
-						template_file = ""
-						with open(os.path.join(path, attrs.get(attr))) as f:			
-							template_file = str(f.read())
-							print(template_file)
-				return "aa"
-	return new_tree
+	toe_engine = Toe(path_to_templates, template, kwargs)
+	return toe_engine.process_tree()
 
 
 	
@@ -60,9 +19,9 @@ def process_tag(*args, tag, new_tree=None, parent_element=None, path=None, **kwa
 class Toe:
 	tree = {}
 	path_to_templates = ""
-	template_load_error
+	template_load_error = False
 
-	__init__(self, path_to_templates, template):
+	def __init__(self, path_to_templates, template, data):
 		self.path_to_templates = path_to_templates
 
 		template_file = ""
@@ -74,11 +33,16 @@ class Toe:
 			return
 
 		self.tree = minidom.parseString(template_file)
+		import pdb; pdb.set_trace()
 	
-	process_tree(self):
+	def process_tree(self):
 		pass
 
-	process_import_tag(self, parent_element, element):
+	def process_import_tag(self, parent_element, element):
 		pass
 
-	process_for_attribute(self, parent_element, element)
+	def process_if_attribute(self, parent_element, element):
+		pass
+
+	def process_for_attribute(self, parent_element, element):
+		pass
