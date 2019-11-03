@@ -28,7 +28,6 @@ class Toe:
 	def __init__(self, path_to_templates, template, data):
 		self.path_to_templates = path_to_templates
 
-		import pdb; pdb.set_trace()
 		impl = minidom.getDOMImplementation()
 		doctype = impl.createDocumentType('html', None, None) 
 		self.new_tree = impl.createDocument(xml.dom.XHTML_NAMESPACE, 'html', doctype)
@@ -47,23 +46,41 @@ class Toe:
 		self.process_tree()		
 	
 	def process_tree(self):
-		#import pdb; pdb.set_trace()
-
 		# There can only be one root element
 		if len(self.tree.childNodes) != 1:
 			return None
 
-		for tag in self.tree.childNodes[0].childNodes:
-			pass
+		for node in self.tree.childNodes[0].childNodes:
+			self.process_subtree(self.new_tree, node)
 
 		return self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
+	
+	def process_subtree(self, new_tree_parent, tree):
+		"""
+		Params:
+			new_tree_parent: Document or Node object
+			tree: Document or Node object
+		Returns
+			Document or Node object
+		"""
+		# check for toe attributes
+		attributes = dict(tree.attributes).keys()
+		for attribute in attributes:
+			import pdb; pdb.set_trace()
+			if attribute == 'toe:if':
+				self.process_if_attribute(new_tree_parent, tree)
+
+		# check for toe tags
+		# append regular element to parent element
+		for child in tree.childNodes:
+			self.process_subtree(None, child)
 
 
 	def process_import_tag(self, parent_element, element):
 		pass
 
 	def process_if_attribute(self, parent_element, element):
-		pass
+		print("if thing")
 
 	def process_for_attribute(self, parent_element, element):
 		pass
