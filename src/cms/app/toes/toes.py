@@ -24,9 +24,11 @@ class Toe:
 	new_tree = {}
 	path_to_templates = ""
 	template_load_error = False
+	variables = {}
 
 	def __init__(self, path_to_templates, template, data):
 		self.path_to_templates = path_to_templates
+		self.variables["top_level"] = data # this will be reworked in the future when variable scope will be implemented
 
 		impl = minidom.getDOMImplementation()
 		doctype = impl.createDocumentType('html', None, None) 
@@ -51,7 +53,10 @@ class Toe:
 			return None
 
 		for node in self.tree.childNodes[0].childNodes:
-			self.process_subtree(self.new_tree, node)
+			#self.new_tree.appendChild(
+			res = self.process_subtree(self.new_tree, node)#)
+			import pdb; pdb.set_trace()
+			print(res)
 
 		return self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
 	
@@ -63,26 +68,58 @@ class Toe:
 		Returns
 			Document or Node object
 		"""
+		# check for toe tags
+		if (tree.tagName.startswith('toe:')):
+			return self.process_toe_tag(new_tree_parent, tree)
+
 		# check for toe attributes
 		attributes = dict(tree.attributes).keys()
 		for attribute in attributes:
-			import pdb; pdb.set_trace()
 			if attribute == 'toe:if':
-				self.process_if_attribute(new_tree_parent, tree)
+				return self.process_if_attribute(new_tree_parent, tree)				
+			if attribute == 'toe:for':
+				return self.process_for_attribute(new_tree_parent, tree)				
+			if attribute == 'toe:while':
+				return self.process_while_attribute(new_tree_parent, tree)				
 
-		# check for toe tags
 		# append regular element to parent element
-		for child in tree.childNodes:
-			self.process_subtree(None, child)
+		new_tree_node = self.new_tree.createElement(tree.tagName)
+		for node in tree.childNodes:
+			new_tree_node.appendChild(self.process_subtree(new_tree_node, node))
+
+		return new_tree_node
+		
 
 
-	def process_import_tag(self, parent_element, element):
-		pass
+	def process_toe_tag(self, parent_element, element):
+		if element.tagName.find('import'):
+			return self.process_toe_import_tag(parent_element, element)
+
+	def process_toe_import_tag(self, parent_element, element):
+		file_name = element.getAttribute('file')
+		imported_tree = {}
+
+		if file_name.endswith(".html") or file_name.endswith(".htm"):
+			with open(os.path.join(self.path_to_templates, file_name)) as f:			
+					imported_tree = minidom.parseString(str(f.read()))
+		if type(imported_tree) is xml.dom.minidom.Document:
+			self.remove_blanks(imported_tree)
+			imported_tree.normalize()
+		
+			top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
+			for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:
+				import pdb; pdb.set_trace()
+				top_node.appendChild(self.process_subtree(top_node, imported_tree))
+			return top_node
+		return None
 
 	def process_if_attribute(self, parent_element, element):
 		print("if thing")
 
 	def process_for_attribute(self, parent_element, element):
+		pass
+
+	def process_while_attribute(self, parent_element, element):
 		pass
 
 	"""
