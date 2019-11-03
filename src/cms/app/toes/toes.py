@@ -1,4 +1,7 @@
 from xml.dom import minidom
+from xml.dom.minidom import Node
+import xml
+
 from pathlib import Path
 import os
 
@@ -18,11 +21,17 @@ def render_toe(*args, template, path_to_templates, **kwargs):
 
 class Toe:
 	tree = {}
+	new_tree = {}
 	path_to_templates = ""
 	template_load_error = False
 
 	def __init__(self, path_to_templates, template, data):
 		self.path_to_templates = path_to_templates
+
+		import pdb; pdb.set_trace()
+		impl = minidom.getDOMImplementation()
+		doctype = impl.createDocumentType('html', None, None) 
+		self.new_tree = impl.createDocument(xml.dom.XHTML_NAMESPACE, 'html', doctype)
 
 		template_file = ""
 		if template.endswith(".html") or template.endswith(".htm"):
@@ -33,10 +42,22 @@ class Toe:
 			return
 
 		self.tree = minidom.parseString(template_file)
-		import pdb; pdb.set_trace()
+		self.remove_blanks(self.tree)
+		self.tree.normalize()
+		self.process_tree()		
 	
 	def process_tree(self):
-		pass
+		#import pdb; pdb.set_trace()
+
+		# There can only be one root element
+		if len(self.tree.childNodes) != 1:
+			return None
+
+		for tag in self.tree.childNodes[0].childNodes:
+			pass
+
+		return self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
+
 
 	def process_import_tag(self, parent_element, element):
 		pass
@@ -46,3 +67,19 @@ class Toe:
 
 	def process_for_attribute(self, parent_element, element):
 		pass
+
+	"""
+		Node.parentNode
+		Node.removeChild(oldChild)
+		Node.replaceChild(newChild, oldChild)
+		Node.insertBefore(newChild, refChild)
+	"""
+
+	# Adapted from https://stackoverflow.com/a/16919069/6588356
+	def remove_blanks(self, node):
+		for x in node.childNodes:
+			if x.nodeType == Node.TEXT_NODE:
+				if x.nodeValue:
+					x.nodeValue = x.nodeValue.strip()
+			elif x.nodeType == Node.ELEMENT_NODE:
+				self.remove_blanks(x)
