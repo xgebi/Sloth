@@ -56,7 +56,8 @@ class Toe:
 			#self.new_tree.appendChild(
 			res = self.process_subtree(self.new_tree, node)#)
 			import pdb; pdb.set_trace()
-			print(res)
+			if res is not None:
+				self.new_tree.appendChild(res)
 
 		return self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
 	
@@ -68,6 +69,10 @@ class Toe:
 		Returns
 			Document or Node object
 		"""
+		if tree.nodeType == Node.TEXT_NODE:
+			return self.new_tree.createTextNode(tree.wholeText)
+			
+
 		# check for toe tags
 		if (tree.tagName.startswith('toe:')):
 			return self.process_toe_tag(new_tree_parent, tree)
@@ -85,7 +90,9 @@ class Toe:
 		# append regular element to parent element
 		new_tree_node = self.new_tree.createElement(tree.tagName)
 		for node in tree.childNodes:
-			new_tree_node.appendChild(self.process_subtree(new_tree_node, node))
+			res = self.process_subtree(new_tree_node, node)
+			if res is not None:
+				new_tree_node.appendChild(res)
 
 		return new_tree_node
 		
@@ -97,6 +104,10 @@ class Toe:
 
 	def process_toe_import_tag(self, parent_element, element):
 		file_name = element.getAttribute('file')
+		if len(element.getAttribute('toe:if')) > 0:
+			if not self.process_condition(element.getAttribute('toe:if')):
+				return None
+
 		imported_tree = {}
 
 		if file_name.endswith(".html") or file_name.endswith(".htm"):
@@ -107,20 +118,27 @@ class Toe:
 			imported_tree.normalize()
 		
 			top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
-			for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:
+			for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:				
+				new_node = self.process_subtree(top_node, child_node)
 				import pdb; pdb.set_trace()
-				top_node.appendChild(self.process_subtree(top_node, imported_tree))
+				top_node.appendChild(new_node)
 			return top_node
 		return None
 
 	def process_if_attribute(self, parent_element, element):
-		print("if thing")
+		if not self.process_condition(element.getAttribute('toe:if')):
+			return None
+		new_node = self.new_tree.createElement(element.tagName)
+		parent_element.appendChild(new_node)
 
 	def process_for_attribute(self, parent_element, element):
 		pass
 
 	def process_while_attribute(self, parent_element, element):
 		pass
+
+	def process_condition(self, condition):
+		return True
 
 	"""
 		Node.parentNode
