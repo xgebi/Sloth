@@ -45,7 +45,6 @@ class Toe:
 		self.tree = minidom.parseString(template_file)
 		self.remove_blanks(self.tree)
 		self.tree.normalize()
-		self.process_tree()		
 	
 	def process_tree(self):
 		# There can only be one root element
@@ -53,11 +52,10 @@ class Toe:
 			return None
 
 		for node in self.tree.childNodes[0].childNodes:
-			#self.new_tree.appendChild(
-			res = self.process_subtree(self.new_tree, node)#)
-			import pdb; pdb.set_trace()
-			if res is not None:
-				self.new_tree.appendChild(res)
+			res = self.process_subtree(self.new_tree.childNodes[1], node)
+
+			if res is not None:				
+				self.new_tree.childNodes[1].appendChild(res)
 
 		return self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
 	
@@ -83,14 +81,16 @@ class Toe:
 			if attribute == 'toe:if':
 				return self.process_if_attribute(new_tree_parent, tree)				
 			if attribute == 'toe:for':
-				return self.process_for_attribute(new_tree_parent, tree)				
-			if attribute == 'toe:while':
-				return self.process_while_attribute(new_tree_parent, tree)				
+				return self.process_for_attribute(new_tree_parent, tree)			
 
 		# append regular element to parent element
 		new_tree_node = self.new_tree.createElement(tree.tagName)
-		for node in tree.childNodes:
+		for node in tree.childNodes:			
 			res = self.process_subtree(new_tree_node, node)
+
+			if type(res) is list:
+				for temp_node in res:
+					new_tree_node.appendChild(temp_node)	
 			if res is not None:
 				new_tree_node.appendChild(res)
 
@@ -120,7 +120,6 @@ class Toe:
 			top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
 			for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:				
 				new_node = self.process_subtree(top_node, child_node)
-				import pdb; pdb.set_trace()
 				top_node.appendChild(new_node)
 			return top_node
 		return None
@@ -128,24 +127,30 @@ class Toe:
 	def process_if_attribute(self, parent_element, element):
 		if not self.process_condition(element.getAttribute('toe:if')):
 			return None
-		new_node = self.new_tree.createElement(element.tagName)
-		parent_element.appendChild(new_node)
+		element.removeAttribute('toe:if')
+		return self.process_subtree(parent_element, element)
 
 	def process_for_attribute(self, parent_element, element):
 		pass
 
-	def process_while_attribute(self, parent_element, element):
-		pass
-
 	def process_condition(self, condition):
-		return True
+		condition = condition.strip()
+		if condition.find(" ") == -1:
+			return self.variables["top_level"].get(condition)
 
-	"""
-		Node.parentNode
-		Node.removeChild(oldChild)
-		Node.replaceChild(newChild, oldChild)
-		Node.insertBefore(newChild, refChild)
-	"""
+		if condition.find("<="):
+			pass
+		if condition.find("<"):
+			pass
+		if condition.find(">="):
+			pass
+		if condition.find(">"):
+			pass
+		if condition.find("!="):
+			pass
+		if condition.find("=="):
+			pass
+		return False
 
 	# Adapted from https://stackoverflow.com/a/16919069/6588356
 	def remove_blanks(self, node):

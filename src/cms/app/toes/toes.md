@@ -6,7 +6,7 @@
 
 `<tag toe:for="expression">`
 
-`<tag toe:while="expression">`
+`<tag toe:while="expression">` Not gonna happen until I find a good use case for this
 
 `<tag toe:value="value" />`
 
