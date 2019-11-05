@@ -24,11 +24,13 @@ class Toe:
 	new_tree = {}
 	path_to_templates = ""
 	template_load_error = False
-	variables = {}
+	variables = None
+	current_scope = None
 
 	def __init__(self, path_to_templates, template, data):
 		self.path_to_templates = path_to_templates
-		self.variables["top_level"] = data # this will be reworked in the future when variable scope will be implemented
+		self.variables = Variable_Scope(data, None)
+		self.current_scope = self.variables
 
 		impl = minidom.getDOMImplementation()
 		doctype = impl.createDocumentType('html', None, None) 
@@ -155,3 +157,20 @@ class Toe:
 					x.nodeValue = x.nodeValue.strip()
 			elif x.nodeType == Node.ELEMENT_NODE:
 				self.remove_blanks(x)
+
+class Variable_Scope:
+	variables = {}
+	parent_scope = None
+
+	def __init__(self, variable_dict, parent_scope = None):
+		self.variables = variable_dict
+		self.parent_scope = parent_scope
+
+	def find_variable(self, variable_name):
+		if self.variables.get(variable_name):
+			return self.variables.get(variable_name)
+		if parent_scope is not None:
+			return self.parent_scope.find_variable(variable_name)
+		else:
+			return None
+	
