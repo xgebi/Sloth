@@ -133,9 +133,20 @@ class Toe:
 		return self.process_subtree(parent_element, element)
 
 	def process_for_attribute(self, parent_element, element):
-		pass
+		# get toe:for attribute
+		# split string between " in "
+		# find variable on the right side
+		# create python for loop
+		# local scope creation
+		local_scope = Variable_Scope({}, self.current_scope)
+		current_scope = local_scope
+
+		# local scope destruction
+		current_scope = current_scope.parent_scope
+		local_scope = None
 
 	def process_condition(self, condition):
+		# Look at https://github.com/xgebi/SlothCMS-archive/blob/c4520ac6519de36a0ef5a42d0827e3b1f467504d/src/php/services/template/TemplateService.php#L251
 		condition = condition.strip()
 		if condition.find(" ") == -1:
 			return self.variables["top_level"].get(condition)
