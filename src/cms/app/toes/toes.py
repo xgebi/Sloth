@@ -4,6 +4,7 @@ import xml
 
 from pathlib import Path
 import os
+from collections.abc import Iterable
 
 
 def render_toe(*args, template, path_to_templates, **kwargs):
@@ -12,12 +13,6 @@ def render_toe(*args, template, path_to_templates, **kwargs):
 
 	toe_engine = Toe(path_to_templates, template, kwargs)
 	return toe_engine.process_tree()
-
-
-	
-"""
-	{ "1": "ELEMENT_NODE", "2": "ATTRIBUTE_NODE", "3": "TEXT_NODE", "4": "CDATA_SECTION_NODE", "5": "ENTITY_REFERENCE_NODE", "6": "ENTITY_NODE", "7": "PROCESSING_INSTRUCTION_NODE", "8": "COMMENT_NODE", "9": "DOCUMENT_NODE", "10": "DOCUMENT_TYPE_NODE", "11": "DOCUMENT_FRAGMENT_NODE", "12": "NOTATION_NODE" }	
-"""
 
 class Toe:
 	tree = {}
@@ -35,6 +30,11 @@ class Toe:
 		impl = minidom.getDOMImplementation()
 		doctype = impl.createDocumentType('html', None, None) 
 		self.new_tree = impl.createDocument(xml.dom.XHTML_NAMESPACE, 'html', doctype)
+
+		for node in self.new_tree.childNodes:
+			if node.nodeType == Node.ELEMENT_NODE:
+				lang = self.current_scope.find_variable('lang')
+				node.setAttribute('lang', lang if lang is not None else 'en')
 
 		template_file = ""
 		if template.endswith(".html") or template.endswith(".htm"):
@@ -83,10 +83,16 @@ class Toe:
 			if attribute == 'toe:if':
 				return self.process_if_attribute(new_tree_parent, tree)				
 			if attribute == 'toe:for':
-				return self.process_for_attribute(new_tree_parent, tree)			
+				return self.process_for_attribute(new_tree_parent, tree)	
+			if attribute == 'toe:while':
+				return self.process_while_attribute(new_tree_parent, tree)			
 
 		# append regular element to parent element
 		new_tree_node = self.new_tree.createElement(tree.tagName)
+		if tree.attributes is not None or len(tree.attributes) > 0:
+			for key in tree.attributes.keys():
+				new_tree_node.setAttribute(key, tree.getAttribute(key))
+
 		for node in tree.childNodes:			
 			res = self.process_subtree(new_tree_node, node)
 
@@ -97,18 +103,17 @@ class Toe:
 				new_tree_node.appendChild(res)
 
 		return new_tree_node
-		
-
 
 	def process_toe_tag(self, parent_element, element):
+		if len(element.getAttribute('toe:if')) > 0:
+			if not self.process_condition(element.getAttribute('toe:if')):
+				return None
+
 		if element.tagName.find('import'):
 			return self.process_toe_import_tag(parent_element, element)
 
 	def process_toe_import_tag(self, parent_element, element):
 		file_name = element.getAttribute('file')
-		if len(element.getAttribute('toe:if')) > 0:
-			if not self.process_condition(element.getAttribute('toe:if')):
-				return None
 
 		imported_tree = {}
 
@@ -135,12 +140,59 @@ class Toe:
 	def process_for_attribute(self, parent_element, element):
 		result_nodes = []
 		# get toe:for attribute
-		iterable_cond = element.getAttribute('toe:if')
+		iterable_cond = element.getAttribute('toe:for')
 		# split string between " in "
 		items = iterable_cond.split(" in ")
 		# find variable on the right side
 		# create python for loop
-		for thing in items[1]:
+		iterable_item = self.current_scope.find_variable(items[1])
+		if iterable_item is None:
+			return None
+
+		element.removeAttribute('toe:for')
+
+		for thing in iterable_item:
+		# local scope creation
+			local_scope = Variable_Scope({}, self.current_scope)
+			self.current_scope = local_scope
+
+			self.current_scope.variables[items[0]] = thing
+
+			# process subtree
+			result_node = self.process_subtree(parent_element, element)
+			if result_node is not None:
+				result_nodes.append(result_node)
+
+			# local scope destruction
+			self.current_scope = self.current_scope.parent_scope
+			local_scope = None
+		return result_nodes
+
+	def process_while_attribute(self, parent_element, element):
+		result_nodes = []
+		# get toe:for attribute
+		iterable_cond = element.getAttribute('toe:while')
+		
+		if iterable_cond.find(" "):
+			contains_condition = False
+			for cond in (" gt ", " gte ", " lt ", " lte ", " eq ", " neq "):
+				if cond in iterable_cond:
+					contains_condition = True
+			
+			if not contains_condition:
+				return None
+		else:
+			iterable_item = self.current_scope.find_variable(iterable_cond)
+			if not isinstance(iterable_item, Iterable):
+				return None
+
+		# create python for loop
+		if iterable_item is None:
+			return None
+
+		element.removeAttribute('toe:while')
+
+		for thing in iterable_item:
 		# local scope creation
 			local_scope = Variable_Scope({}, self.current_scope)
 			self.current_scope = local_scope
@@ -161,19 +213,19 @@ class Toe:
 		# Look at https://github.com/xgebi/SlothCMS-archive/blob/c4520ac6519de36a0ef5a42d0827e3b1f467504d/src/php/services/template/TemplateService.php#L251
 		condition = condition.strip()
 		if condition.find(" ") == -1:
-			return self.variables["top_level"].get(condition)
+			return self.current_scope.find_variable(condition)
 
-		if condition.find("<="):
+		if condition.find(" gte "):
 			pass
-		if condition.find("<"):
+		if condition.find(" gt "):
 			pass
-		if condition.find(">="):
+		if condition.find(" lte "):
 			pass
-		if condition.find(">"):
+		if condition.find(" lt "):
 			pass
-		if condition.find("!="):
+		if condition.find(" neq "):
 			pass
-		if condition.find("=="):
+		if condition.find(" eq "):
 			pass
 		return False
 
@@ -195,10 +247,10 @@ class Variable_Scope:
 		self.parent_scope = parent_scope
 
 	def find_variable(self, variable_name):
-		if self.variables.get(variable_name):
+		if self.variables.get(variable_name) is not None:
 			return self.variables.get(variable_name)
-		if parent_scope is not None:
+		
+		if self.parent_scope is not None:
 			return self.parent_scope.find_variable(variable_name)
-		else:
-			return None
+		return None
 	

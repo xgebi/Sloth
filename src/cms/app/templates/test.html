@@ -6,12 +6,12 @@
 		<main>
       <h1 toe:if="enabled">Dashboard</h1>
       This is dashboard
-      <p toe:if="x>5">Lorem</p>
-      <p toe:if="x>=5">Ipsum</p>
-      <p toe:if="x<5">sit</p>
-      <p toe:if="x<=5">dolor</p>
-      <p toe:if="x==5">amet</p>
-      <p toe:if="x!=5">adipiscing</p>
+      <p toe:if="x gt 5">Lorem</p>
+      <p toe:if="x gte 5">Ipsum</p>
+      <p toe:if="x lt 5">sit</p>
+      <p toe:if="x lte 5">dolor</p>
+      <p toe:if="x eq 5">amet</p>
+      <p toe:if="x neq 5">adipiscing</p>      
 
       <p toe:for="val in way_out" toe:content="val" />
 		</main>
