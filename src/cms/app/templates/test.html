@@ -2,8 +2,8 @@
 <toe xmlns:toe="toe">
   <toe:import file="header.html" />
 
-	<body>
-		<main>
+  <body>
+    <main>
       <h1 toe:if="enabled">Dashboard</h1>
       This is dashboard
       <p toe:if="x gt 5">Lorem</p>
@@ -11,9 +11,11 @@
       <p toe:if="x lt 5">sit</p>
       <p toe:if="x lte 5">dolor</p>
       <p toe:if="x eq 5">amet</p>
-      <p toe:if="x neq 5">adipiscing</p>      
+      <p toe:if="x neq 5">adipiscing</p>
 
       <p toe:for="val in way_out" toe:content="val" />
-		</main>
-	</body>
+
+      <tag toe:computed-content="'Hello ${hi}'" />
+    </main>
+  </body>
 </toe>
