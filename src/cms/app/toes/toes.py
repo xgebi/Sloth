@@ -192,6 +192,7 @@ class Toe:
 
 		element.removeAttribute('toe:while')
 
+		# Rework things below
 		for thing in iterable_item:
 		# local scope creation
 			local_scope = Variable_Scope({}, self.current_scope)
