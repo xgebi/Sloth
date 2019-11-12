@@ -212,21 +212,37 @@ class Toe:
 
 	def process_condition(self, condition):
 		# Look at https://github.com/xgebi/SlothCMS-archive/blob/c4520ac6519de36a0ef5a42d0827e3b1f467504d/src/php/services/template/TemplateService.php#L251
-		condition = condition.strip()
-		if condition.find(" ") == -1:
-			return self.current_scope.find_variable(condition)
+		if type(condition) == str:
+			condition = {
+				"value": condition,
+				"processed": False
+			}
 
-		if condition.find(" gte "):
+		if condition.value[0] == "(" and condition.value[-1] == ")":
+			condition.value = condition.value[1: len(condition.value) - 1].strip()
+
+		condition.value = condition.value.strip()
+		if condition.value.find(" ") == -1:
+			if condition.value.lower() == "true" or condition.value.lower() == "false":
+				raise ValueError('Condition not allowed')
+			return { "value": self.current_scope.find_variable(condition.value), "processed": True }
+
+
+
+		if (condition.value.count("and") > 0 or condition.value.count("or") > 0):
+			raise ValueError('Invalid expression')
+
+		if condition.value.find(" gte "):
 			pass
-		if condition.find(" gt "):
+		if condition.value.find(" gt "):
 			pass
-		if condition.find(" lte "):
+		if condition.value.find(" lte "):
 			pass
-		if condition.find(" lt "):
+		if condition.value.find(" lt "):
 			pass
-		if condition.find(" neq "):
+		if condition.value.find(" neq "):
 			pass
-		if condition.find(" eq "):
+		if condition.value.find(" eq "):
 			pass
 		return False
 
