@@ -113,6 +113,15 @@ class Toe:
 		if element.tagName.find('import'):
 			return self.process_toe_import_tag(parent_element, element)
 
+		if element.tagName.find('assign'):
+			return self.process_assign_tag(element)
+
+		if element.tagName.find('create'):
+			return self.process_create_tag(element)
+
+		if element.tagName.find('modify'):
+			return self.process_modify_tag(element)
+
 	def process_toe_import_tag(self, parent_element, element):
 		file_name = element.getAttribute('file')
 
@@ -242,17 +251,18 @@ class Toe:
 			raise ValueError('At least one side has to be a variable')
 
 		if condition.value.find(" gte "):
-			pass
+			return sides[0] >= sides[1]
 		if condition.value.find(" gt "):
-			pass
+			return sides[0] > sides[1]
 		if condition.value.find(" lte "):
-			pass
+			return sides[0] <= sides[1]
 		if condition.value.find(" lt "):
-			pass
+			return sides[0] < sides[1]
 		if condition.value.find(" neq "):
-			pass
+			return sides[0] != sides[1]
 		if condition.value.find(" eq "):
-			pass
+			return sides[0] == sides[1]
+		#default is false
 		return False
 
 	# Adapted from https://stackoverflow.com/a/16919069/6588356
