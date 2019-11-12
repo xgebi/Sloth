@@ -5,6 +5,7 @@ import xml
 from pathlib import Path
 import os
 from collections.abc import Iterable
+import re
 
 
 def render_toe(*args, template, path_to_templates, **kwargs):
@@ -211,7 +212,6 @@ class Toe:
 		return result_nodes
 
 	def process_condition(self, condition):
-		# Look at https://github.com/xgebi/SlothCMS-archive/blob/c4520ac6519de36a0ef5a42d0827e3b1f467504d/src/php/services/template/TemplateService.php#L251
 		if type(condition) == str:
 			condition = {
 				"value": condition,
@@ -230,7 +230,16 @@ class Toe:
 
 
 		if (condition.value.count("and") > 0 or condition.value.count("or") > 0):
-			raise ValueError('Invalid expression')
+			raise ValueError('Complicated expressions aren\'t implemented yet')
+
+		# split condition.value by " xxx? "
+		sides = re.split(" [a-z][a-z][a-z]? ", condition.value)
+		# at least one side has to be a variable
+		if len(sides) != 2:
+			raise ValueError('Unsupported expression')
+
+		if not self.current_scope.is_variable(sides[0]) and not self.current_scope.is_variable(sides[1]):
+			raise ValueError('At least one side has to be a variable')
 
 		if condition.value.find(" gte "):
 			pass
@@ -270,4 +279,11 @@ class Variable_Scope:
 		if self.parent_scope is not None:
 			return self.parent_scope.find_variable(variable_name)
 		return None
+
+	def is_variable(self, variable_name):
+		if self.variables.get(variable_name) is not None:
+			return True
+		if self.parent_scope.is_variable(variable_name) is not None:
+			return True
+		return False
 	
