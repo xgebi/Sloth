@@ -141,6 +141,90 @@ class Toe:
 			return top_node
 		return None
 
+	def process_assign_tag(self, element):
+		var_name = element.getAttribute('var')
+		var_value = element.getAttribute('value')
+
+		if var_name is None or len(var_name) == 0:
+			raise ValueError('Variable cannot have no name')
+
+		variable = self.current_scope.find_variable(var_name)
+		if variable is None:
+			raise ValueError('Variable doesn\'t exist')
+
+		variable = var_value
+		return None
+
+	def process_create_tag(self, element):
+		var_name = element.getAttribute('var')
+		var_value = element.getAttribute('value')
+
+		if var_name is None or len(var_name) == 0:
+			raise ValueError('Variable cannot have no name')
+
+		if self.current_scope.is_variable_in_current_scope(var_name):
+			raise ValueError('Variable cannot be created twice')
+
+		self.current_scope.variables[var_name] = var_value
+		return None
+
+	def process_modify_tag(self, element):
+		var_name = element.getAttribute('var')
+		var_value = element.getAttribute('value')
+
+		if var_name is None or len(var_name) == 0:
+			raise ValueError('Variable cannot have no name')
+
+		variable = self.current_scope.find_variable(var_name)
+		if variable is None:
+			raise ValueError('Variable doesn\'t exist')
+
+		if element.hasAttribute('toe:inc'):
+			if type(variable) == int or type(variable) == float:
+				variable += 1
+				return None
+		
+		if element.hasAttribute('toe:dec'):
+			if type(variable) == int or type(variable) == float:
+				variable -= 1
+				return None
+
+		if element.hasAttribute('toe:add'):
+			if (type(variable) == int or type(variable) == float):
+				variable += float(element.getAttribute('toe:add'))
+				return None
+
+		if element.hasAttribute('toe:sub'):
+			if (type(variable) == int or type(variable) == float):
+				variable -= float(element.getAttribute('toe:sub'))
+				return None
+
+		if element.hasAttribute('toe:mul'):
+			if (type(variable) == int or type(variable) == float):
+				variable -= float(element.getAttribute('toe:mul'))
+				return None
+
+		if element.hasAttribute('toe:div'):
+			if (type(variable) == int or type(variable) == float):
+				if (float(element.getAttribute('toe:div')) != 0):
+					variable -= float(element.getAttribute('toe:div'))
+					return None
+
+		if element.hasAttribute('toe:mod'):
+			if (type(variable) == int or type(variable) == float):
+				if (float(element.getAttribute('toe:mod')) != 0):
+					variable =variable % float(element.getAttribute('toe:mod'))
+					return None
+
+		if element.hasAttribute('toe:pow'):
+			if (type(variable) == int or type(variable) == float):
+					variable = variable ** float(element.getAttribute('toe:pow'))
+					return None
+
+		return None
+
+
+
 	def process_if_attribute(self, parent_element, element):
 		if not self.process_condition(element.getAttribute('toe:if')):
 			return None
@@ -202,9 +286,8 @@ class Toe:
 
 		element.removeAttribute('toe:while')
 
-		# Rework things below
-		for thing in iterable_item:
-		# local scope creation
+		while self.process_condition(iterable_cond):
+			# local scope creation
 			local_scope = Variable_Scope({}, self.current_scope)
 			self.current_scope = local_scope
 
@@ -284,7 +367,7 @@ class Variable_Scope:
 
 	def find_variable(self, variable_name):
 		if self.variables.get(variable_name) is not None:
-			return self.variables.get(variable_name)
+			return self.variables[variable_name]
 		
 		if self.parent_scope is not None:
 			return self.parent_scope.find_variable(variable_name)
@@ -296,4 +379,7 @@ class Variable_Scope:
 		if self.parent_scope.is_variable(variable_name) is not None:
 			return True
 		return False
+
+	def is_variable_in_current_scope(self, variable_name):
+		return self.variables.get(variable_name) is not None
 	
