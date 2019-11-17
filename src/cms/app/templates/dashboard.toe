@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<toe xmlns:toe="toe">
-	<toe:import file="header.html" />
-
+<toe
+	xmlns:toe="toe">
+	<toe:import file="header.toe" />
 	<body>
-		<main toe:if="True">
+		<main>
 			This is dashboard
 		</main>
 	</body>

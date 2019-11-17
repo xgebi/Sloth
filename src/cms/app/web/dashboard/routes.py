@@ -9,5 +9,4 @@ from app.web.dashboard import dashboard
 
 @dashboard.route('/dashboard')
 def show_dashboard():
-   import pdb; pdb.set_trace()
-   return render_toe('dashboard.toe')
+   return render_toe(template="dashboard.toe", path_to_templates=current_app.config["TEMPLATES_PATH"])
