@@ -7,6 +7,9 @@ import json
 import uuid
 import bcrypt
 import traceback
+
+import toes
+
 from app.posts.posts_generator import PostsGenerator
 
 class Registration:
