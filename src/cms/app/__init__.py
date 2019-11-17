@@ -72,4 +72,7 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.dashboard import dashboard as dash
 	app.register_blueprint(dash)
 
+	from app.web.settings import settings as web_settings
+	app.register_blueprint(web_settings)
+
 	return app

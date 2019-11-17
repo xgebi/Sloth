@@ -7,12 +7,11 @@ from app.web.login import login
 
 @login.route("/login")
 def show_login():
-	import pdb; pdb.set_trace()
-	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"])
+	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "page_title": "SlothCMS login" })
 
 @login.route("/login/error")
 def show_login_error():
-	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": True })
+	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": True, "page_title": "SlothCMS login" })
 
 
 @login.route('/login/process', methods=["POST"])
