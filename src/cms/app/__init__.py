@@ -17,6 +17,7 @@ def create_app(config_type):  # dev, test, or prod
 	
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
+	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
 
 	bcrypt.init_app(app)
 

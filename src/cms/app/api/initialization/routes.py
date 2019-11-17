@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, url_for, current_app, abort
+from flask import request, flash, url_for, current_app, abort
 
 from pathlib import Path
 import json

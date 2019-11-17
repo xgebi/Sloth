@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, url_for, current_app
+from flask import request, flash, url_for, current_app
 from app.api.themes import themes as themes
 import app
 import os

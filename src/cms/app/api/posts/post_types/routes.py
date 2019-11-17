@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, url_for, current_app, abort
+from flask import request, flash, url_for, current_app, abort
 import json
 import psycopg2
 from psycopg2 import sql, errors

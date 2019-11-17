@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, url_for, current_app, abort, redirect
+from flask import request, flash, url_for, current_app, abort, redirect
 
 from app.authorization.user import User
 
@@ -6,11 +6,11 @@ from app.web.login import login
 
 @login.route("/login")
 def show_login():
-	return render_template('login.html')
+	return render_toe('login.toe')
 
 @login.route("/login/error")
 def show_login_error():
-	return render_template('login.html', error=True)
+	return render_toe('login.toe', data={"error":True})
 
 
 @login.route('/login/process', methods=["POST"])

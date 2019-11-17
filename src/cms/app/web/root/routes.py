@@ -1,8 +1,10 @@
-from flask import render_template, request, flash, url_for, current_app, abort
+from flask import request, flash, url_for, current_app, abort
+
+from toes.toes import render_toe
 
 from app.web.root import root
 
 @root.route("/")
 def serve_root():
 	print("He?")
-	return render_template('root.html')
+	return render_toe('root.html')
