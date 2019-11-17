@@ -7,4 +7,5 @@ SlothCMS is an experimental project during which I'd like to learn Python and tr
 ### Dependencies
 - flask
 - psycopg2
-- bcrypt
+- flask_bcrypt (findout why)
+- python-dateutil
