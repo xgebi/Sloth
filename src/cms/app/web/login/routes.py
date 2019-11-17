@@ -1,4 +1,5 @@
 from flask import request, flash, url_for, current_app, abort, redirect
+from toes.toes import render_toe
 
 from app.authorization.user import User
 
@@ -6,11 +7,12 @@ from app.web.login import login
 
 @login.route("/login")
 def show_login():
-	return render_toe('login.toe')
+	import pdb; pdb.set_trace()
+	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"])
 
 @login.route("/login/error")
 def show_login_error():
-	return render_toe('login.toe', data={"error":True})
+	return render_toe(template="login.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": True })
 
 
 @login.route('/login/process', methods=["POST"])
