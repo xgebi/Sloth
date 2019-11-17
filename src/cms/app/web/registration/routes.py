@@ -8,6 +8,7 @@ from app.web.registration import registration
 @registration.route('/registration', methods=["GET", "POST"])
 @db_connection
 def registration_steps(*args, connection=None, **kwargs):	
+	import pdb; pdb.set_trace()
 	if (request.method.upper() == "GET"):
 		return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"])
 
@@ -27,9 +28,10 @@ def registration_steps(*args, connection=None, **kwargs):
 	
 	if (result.get("error") is not None):
 		error = result["error"]
-	return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "user_data": user_data, "error":error}), status
+	return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "filled": user_data, "error":error}), status
 
 @registration.route('/registration/done', methods=["GET"])
 def registration_done(*args, **kwargs):
+	import pdb; pdb.set_trace()
 	return render_toe(template="step-2.toe", path_to_templates=current_app.config["TEMPLATES_PATH"])
 	

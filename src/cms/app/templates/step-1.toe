@@ -1,30 +1,29 @@
 <?xml version="1.0"?>
-<toe xmlns:toe="toe">
-
+<toe
+	xmlns:toe="toe">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-		<title>SlothCMS registration | Step 1</title>
-		<link rel="stylesheet" href="static/css/styles.css" />
+		<title toe:content="page_title">SlothCMS registration | Step 1</title>
+		<link rel="stylesheet" href="/static/css/styles.css" />
 	</head>
-
 	<body>
 		<main class="user-dialog">
 			<form method="POST" action="/registration">
 				<p class="error" toe:if="error">{{ error }}</p>
 				<label for="username">Username: </label>
-				<input type="text" id="username" name="username" value="{{data['username']}}" />
+				<input type="text" id="username" name="username" toe:value="filled['username']" />
 				<label for="password">Password: </label>
 				<input type="password" id="password" name="password" />
 				<label for="email">Email: </label>
-				<input type="text" id="email" name="email" value="{{data['email']}}" />
+				<input type="text" id="email" name="email" toe:value="filled['email']" />
 				<label for="sitename">Site name: </label>
-				<input type="text" id="sitename" name="sitename" value="{{data['sitename']}}" />
+				<input type="text" id="sitename" name="sitename" toe:value="filled['sitename']" />
 				<label for="description">Site description: </label>
-				<input type="text" id="description" name="description" value="{{data['description']}}" />
+				<input type="text" id="description" name="description" toe:value="filled['description']" />
 				<label for="url">URL: </label>
-				<input type="text" id="url" name="url" value="{{data['url']}}" />
+				<input type="text" id="url" name="url" toe:value="filled['url']" />
 				<div class="button">
 					<input type="submit" value="Register" />
 				</div>
