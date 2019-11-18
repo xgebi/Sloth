@@ -7,14 +7,14 @@ import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.posts.posts_generator import PostsGenerator
 
 from app.api.posts.posts_list import posts_list
 
 
 @posts_list.route("/api/posts/<post_id>/list")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def show_posts_list(*args, post_id, connection=None, **kwargs):
 	if connection is None:
@@ -58,7 +58,7 @@ def show_posts_list(*args, post_id, connection=None, **kwargs):
 	return json.dumps({ "currentPostType": current_post_type, "postTypes": postTypesResult, "posts": items })
 
 @posts_list.route("/api/posts/<post_id>/delete")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def delete_post(*args, post_id, connection=None, **kwargs):
 	# get post information from database - post slug, categories, tags and post type slug

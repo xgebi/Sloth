@@ -11,14 +11,14 @@ import dateutil.parser
 import uuid
 import traceback
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 from app.posts.posts_generator import PostsGenerator
 
 from app.api.content_management import content_management
 
 @content_management.route("/api/content/information", methods=["GET"])
-@authorize(1)
+@authorize_rest(1)
 @db_connection
 def show_content(*args, connection=None, **kwargs):
 	if connection is None:
@@ -54,7 +54,7 @@ def show_content(*args, connection=None, **kwargs):
 	return json.dumps({ "postTypes": postTypesResult, "settings": items })
 
 @content_management.route("/api/content/import/wordpress", methods=["PUT", "POST"])
-@authorize(1)
+@authorize_rest(1)
 @db_connection
 def import_wordpress_content(*args, connection=None, **kwargs):
 	if connection is None:

@@ -9,7 +9,7 @@ import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 from app.posts.posts_generator import PostsGenerator
 
@@ -19,7 +19,7 @@ reserved_folder_names = ('tag', 'category')
 
 
 @post.route("/api/post/<post_id>/edit")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def get_post_information(*args, post_id, connection=None, **kwargs):
 	if connection is None:
@@ -70,7 +70,7 @@ def get_post_information(*args, post_id, connection=None, **kwargs):
 	return json.dumps({ "postTypes": postTypesResult, "postInformation": item, "galleryList": files })
 
 @post.route("/api/posts/<post_id>/new")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def prepare_new_post(*args, post_id, connection=None, **kwargs):
 	if connection is None:
@@ -101,7 +101,7 @@ def prepare_new_post(*args, post_id, connection=None, **kwargs):
 
 
 @post.route("/api/post/save", methods=['PUT'])
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def save_post(*args, connection=None, **kwargs):
 	if connection is None:
@@ -238,7 +238,7 @@ def save_post(*args, connection=None, **kwargs):
 
 
 @post.route("/api/post/create", methods=['POST'])
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def create_new_post(*args, connection=None, **kwargs):
 	if connection is None:
@@ -384,7 +384,7 @@ def create_new_post(*args, connection=None, **kwargs):
 	return json.dumps({ "postInformation": item }), 201
 
 @post.route("/api/upload-file/<file_name>", methods=['PUT', 'POST'])
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def upload_image(*args, file_name, connection=None, **kwargs):
 	ext = file_name[file_name.rfind("."):]

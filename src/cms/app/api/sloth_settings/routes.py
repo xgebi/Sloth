@@ -4,13 +4,13 @@ from psycopg2 import sql
 import bcrypt
 import json
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 from app.api.sloth_settings import sloth_settings
 
 @sloth_settings.route("/api/settings", methods=["GET"])
-@authorize(1)
+@authorize_rest(1)
 @db_connection
 def show_settings(*args, connection=None, **kwargs):
 	if connection is None:
@@ -46,7 +46,7 @@ def show_settings(*args, connection=None, **kwargs):
 	return json.dumps({ "postTypes": postTypesResult, "settings": items })
 
 @sloth_settings.route("/api/settings/save", methods=["PUT", "POST"])
-@authorize(1)
+@authorize_rest(1)
 @db_connection
 def save_settings(*args, connection=None, **kwargs):
 	updated_settings = json.loads(request.data);

@@ -1,14 +1,19 @@
 <?xml version="1.0"?>
 <toe
 	xmlns:toe="toe">
-	<nav>
-		<ul>
-			<li>
-				<a href="/dashboard">Dashboard</a>
-			</li>
-			<li>
-				<a href="/settings">Settings</a>
-			</li>
-		</ul>
-	</nav>
+	<header>
+		<div id="userbox">
+			<a href="/logout">Log out</a>
+		</div>
+		<nav>
+			<ul>
+				<li>
+					<a href="/dashboard">Dashboard</a>
+				</li>
+				<li>
+					<a href="/settings">Settings</a>
+				</li>
+			</ul>
+		</nav>
+	</header>
 </toe>

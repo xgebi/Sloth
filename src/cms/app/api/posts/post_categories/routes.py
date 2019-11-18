@@ -9,10 +9,10 @@ import traceback
 
 from app.utilities.db_connection import db_connection
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 
 @post_categories.route("/api/posts/<post_id>/categories-information")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def show_categories_list(*args, post_id, connection=None, **kwargs):
 	if connection is None:

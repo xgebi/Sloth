@@ -8,11 +8,11 @@ from psycopg2 import sql
 import bcrypt
 import json
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 @themes.route("/api/themes/list", methods=["GET"])
-@authorize(1)
+@authorize_rest(1)
 @db_connection
 def show_themes_list(*args, connection=None, **kwargs):
 	if connection is None:

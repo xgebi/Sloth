@@ -10,14 +10,14 @@ from time import time
 import traceback
 
 from app.posts.post_types import PostTypes
-from app.authorization.authorize import authorize
+from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 from app.api.dashboard import dashboard
 from app.posts.post_types import PostTypes
 
 @dashboard.route("/api/dashboard-information")
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def dashboard_information(*args, connection=None, **kwargs):
     if connection is None:
@@ -60,7 +60,7 @@ def dashboard_information(*args, connection=None, **kwargs):
     })
 
 @dashboard.route("/api/dashboard-information/create-draft", methods=["POST"])
-@authorize(0)
+@authorize_rest(0)
 @db_connection
 def create_draft(*args, connection=None, **kwargs):
     if connection is None:
