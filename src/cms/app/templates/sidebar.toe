@@ -10,6 +10,9 @@
 				<li>
 					<a href="/dashboard">Dashboard</a>
 				</li>
+				<li toe:for="pt in post_types">
+					<a toe:attr-href="'/post/' + pt['uuid']" toe:content="pt['displayName']" />
+				</li>
 				<li>
 					<a href="/settings">Settings</a>
 				</li>

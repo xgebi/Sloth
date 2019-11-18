@@ -5,7 +5,13 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			This is settings
+			<p toe:if="error" toe:content="error">Database error</p>
+			<form>
+				<div toe:for="item in settings">
+					<label toe:attr-for="item['settingsName']" toe:content="item['displayName']"></label>
+					<input toe:attr-name="item['settingsName']" toe:attr-id="item['settingsName']" toe:attr-type="item['settingsValueType']" toe:value="item['settingsValue']" />
+				</div>
+			</form>
 		</main>
 	</body>
 </toe>

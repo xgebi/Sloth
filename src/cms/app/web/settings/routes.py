@@ -1,12 +1,18 @@
 from flask import request, flash, url_for, current_app, abort, redirect
 
 from toes.toes import render_toe
+from app.utilities.db_connection import db_connection
+
+from app.posts.post_types import PostTypes
 
 from app.web.settings import settings
 
 @settings.route("/settings")
 # do something about security!!!
-def show_settings():
+@db_connection
+def show_settings(*args, connection, **kwargs):
+	if connection is None:
+		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
 	settings = {}
 
 	postTypes = PostTypes()
@@ -36,4 +42,4 @@ def show_settings():
 			"settingsValueType": item[3]
 		})
 
-	return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data=settings)
+	return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "settings": items, "post_types": postTypesResult })
