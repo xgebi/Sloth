@@ -107,6 +107,10 @@ input:not([type="submit"]) {
 	padding: 1rem;
 }
 
+.admin-section nav ul ul {
+	margin-left: 1rem;
+}
+
 .admin-section main {
 	padding: 1rem;
 }
