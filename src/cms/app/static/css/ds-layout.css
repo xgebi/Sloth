@@ -1,0 +1,23 @@
+.sticky-nav {
+	position: sticky;
+	padding: 1rem 2rem;
+	background: var(--purple);
+	color: var(--white);
+}
+
+.sticky-nav a,
+.sticky-nav a:visited,
+.sticky-nav a:active {
+	color: var(--white);
+}
+
+.ds-layout {
+  padding-top: 3rem;
+  display: grid;
+  grid-template-columns: 1fr minmax(60rem, 50%) 1fr;
+  row-gap: 2rem;
+}
+
+.ds-layout > * {
+  grid-column: 2 / 3;
+}

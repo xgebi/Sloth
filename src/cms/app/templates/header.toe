@@ -8,5 +8,8 @@
 		<title toe:content="page_title">SlothCMS</title>
 		<link rel="stylesheet" href="/static/css/minireset.css" />
 		<link rel="stylesheet" href="/static/css/styles.css" />
+		<link rel="stylesheet" href="/static/css/prism.css" />
+		<link toe:if="design_system" rel="stylesheet" href="/static/css/ds-layout.css" />
+		<link rel="shortcut icon" href="/static/favicon.ico" />
 	</head>
 </toe>

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<toe
+	xmlns:toe="toe">
+	<toe:import file="header.toe" />
+  <body>
+    <nav class="sticky-nav">
+      <ul>
+        <li><a href="#colors">Colors</a></li>
+      </ul>
+    </nav>
+    <main class="ds-layout">
+      <h1>Design system for Sloth</h1>
+      <p toe:content="'Look at non-existent variables in Toes and fail them gracefully, please. Fix importing JavaScript files. They always have to have closing tags'" />
+      <section id="colors">
+        <h2>Colors</h2>
+        <div toe:content="test" />
+      </section>
+    </main>
+    <script>
+      alert('Hi!');
+    </script>
+  </body>
+</toe>
