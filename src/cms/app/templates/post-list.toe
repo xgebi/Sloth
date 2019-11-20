@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<toe
+	xmlns:toe="toe">
+	<toe:import file="header.toe" />
+	<body class="admin-section">
+		<toe:import file="sidebar.toe" />
+		<main>
+			<h1 toe:content="'List of ' + post_type_name">Posts list</h1>
+			<table>
+				<thead>
+					<tr>
+						<th>Title</th>
+						<th>Published / Updated</th>
+						<th>Categories</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr toe:for="post in post_list">
+						<td toe:content="post['title']" />
+						<td toe:content="post['published'] +' / ' + post['updated]" />
+						<td toe:content="post['categories']" />
+						<td>
+							<a toe:attr-href="'/posts/'+post_type_uuid + '/' + post['uuid']">Edit</a>
+
+							<a toe:attr-href="'/posts/'+post_type_uuid + '/' + post['uuid'] + '/delete'">Delete</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</main>
+	</body>
+</toe>

@@ -5,11 +5,15 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
+			<h1>Settings</h1>
 			<p toe:if="error" toe:content="error">Database error</p>
-			<form>
+			<form method="POST" action="/settings/save">
 				<div toe:for="item in settings">
 					<label toe:attr-for="item['settingsName']" toe:content="item['displayName']"></label>
 					<input toe:attr-name="item['settingsName']" toe:attr-id="item['settingsName']" toe:attr-type="item['settingsValueType']" toe:value="item['settingsValue']" />
+				</div>
+				<div class="button">
+					<input type="submit" value="Save" />
 				</div>
 			</form>
 		</main>

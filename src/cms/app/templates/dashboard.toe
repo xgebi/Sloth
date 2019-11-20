@@ -5,7 +5,7 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			This is dashboard
+			<h1>Dashboard</h1>
 		</main>
 	</body>
 </toe>
