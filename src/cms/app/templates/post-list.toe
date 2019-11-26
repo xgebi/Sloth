@@ -5,25 +5,27 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			<h1 toe:content="'List of ' + post_type_name">Posts list</h1>
+			<h1 toe:content="'List of ' + post_type['name']">Posts list</h1>
 			<table>
 				<thead>
 					<tr>
 						<th>Title</th>
 						<th>Published / Updated</th>
-						<th>Categories</th>
+						<th>Status</th>
+						<th>Author</th>
 						<th>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr toe:for="post in post_list">
+					<tr toe:for="post in posts_list">
 						<td toe:content="post['title']" />
-						<td toe:content="post['published'] +' / ' + post['updated]" />
-						<td toe:content="post['categories']" />
+						<td toe:content="post['publish_date'] +' / ' + post['update_date']" />
+						<td toe:content="post['status']" />
+						<td toe:content="post['author']" />
 						<td>
-							<a toe:attr-href="'/posts/'+post_type_uuid + '/' + post['uuid']">Edit</a>
-
-							<a toe:attr-href="'/posts/'+post_type_uuid + '/' + post['uuid'] + '/delete'">Delete</a>
+							<a toe:attr-href="'/posts/' + post_type['uuid'] + '/' + post['uuid']">Edit</a>
+							<br />
+							<a toe:attr-href="'/posts/' + post_type['uuid'] + '/' + post['uuid'] + '/delete'">Delete</a>
 						</td>
 					</tr>
 				</tbody>

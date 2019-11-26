@@ -28,6 +28,7 @@
 
 :root {
 	--purple: hsl(280, 100%, 30%);
+	--light-purple: hsl(280, 100%, 80%);
 	--white: hsl(0, 0%, 98%);
 	--black: hsl(0, 0%, 8%);
 	--red: hsl(0, 100%, 25%);
@@ -204,4 +205,20 @@ form {
 
 form > div {
 	display: contents;
+}
+
+table {
+	border: 1px solid var(--purple);
+	min-width: calc(100vw - 20rem);
+}
+
+table th {
+	background: var(--light-purple);
+	padding: .25rem .5rem;
+	border: 1px solid var(--purple);
+}
+
+table td {
+	padding: .25rem .5rem;
+	border: 1px solid var(--purple);
 }

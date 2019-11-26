@@ -11,13 +11,13 @@
 					<a href="/dashboard">Dashboard</a>
 				</li>
 				<li toe:for="pt in post_types">
-					<a toe:attr-href="'/post/' + pt['uuid']" toe:content="pt['displayName']" />
+					<a toe:attr-href="'/posts/' + pt['uuid']" toe:content="pt['displayName']" />
 					<ul>
 						<li>
-							<a toe:attr-href="'/post/' + pt['uuid']" toe:content="'List of ' + pt['displayName']" />
+							<a toe:attr-href="'/posts/' + pt['uuid']" toe:content="'List of ' + pt['displayName']" />
 						</li>
 						<li>
-							<a toe:attr-href="'/post/' + pt['uuid'] + '/new'" toe:content="'Add ' + pt['displayName']" />
+							<a toe:attr-href="'/posts/' + pt['uuid'] + '/new'" toe:content="'Add ' + pt['displayName']" />
 						</li>
 					</ul>
 				</li>

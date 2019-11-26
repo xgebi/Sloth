@@ -84,3 +84,8 @@
 	background: var(--light-red);
 	color: var(--black);
 }
+
+.color-square.color-square-light-purple {
+	background: var(--light-purple);
+	color: var(--black);
+}
