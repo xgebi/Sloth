@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<toe
+	xmlns:toe="toe">
+	<toe:import file="header.toe" />
+	<body class="admin-section">
+		<toe:import file="sidebar.toe" />
+		<main>
+			<form toe:attr-action="/posts/' + post_type['uuid'] + '/' + post['uuid'] + '/save'">
+				<!-- Do something about image uploads!!!! -->
+			</form>
+		</main>
+	</body>
+</toe>
