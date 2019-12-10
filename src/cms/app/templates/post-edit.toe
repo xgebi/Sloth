@@ -5,9 +5,13 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			<form toe:attr-action="/posts/' + post_type['uuid'] + '/' + post['uuid'] + '/save'">
-				<!-- Do something about image uploads!!!! -->
+			<form id="main-form">
+				<div>
+					<label for="post-title">Post title</label>
+					<input type="text" id="post-title" name="post-title" toe:value="post['title']" />
+				</div>
 			</form>
 		</main>
+		<script src="/static/js/post-edit.js"/>
 	</body>
 </toe>

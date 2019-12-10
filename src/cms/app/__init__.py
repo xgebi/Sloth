@@ -75,6 +75,9 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.settings import settings as web_settings
 	app.register_blueprint(web_settings)
 
+	from app.web.settings.themes import settings_themes as web_settings_themes
+	app.register_blueprint(web_settings_themes)
+
 	from app.web.posts import posts as web_posts
 	app.register_blueprint(web_posts)
 

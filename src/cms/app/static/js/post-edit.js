@@ -1,0 +1,1 @@
+// toe:attr-action="/posts/' + post_type['uuid'] + '/' + post['uuid'] + '/save'"
