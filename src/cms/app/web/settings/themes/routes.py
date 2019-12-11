@@ -1,24 +1,33 @@
 from flask import request, flash, url_for, current_app, abort, redirect
 import psycopg2
 from psycopg2 import sql
+
+import app
+import os
+from pathlib import Path
+import bcrypt
+import json
+
 from toes.toes import render_toe
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
 from app.posts.post_types import PostTypes
 
-from app.web.settings import settings
+from app.web.settings.themes import settings_themes
 
-@settings.route("/settings/themes")
+@settings_themes.route("/settings/themes")
 @authorize_web(1)
 @db_connection
 def show_theme_settings(*args, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings_themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
 	settings = {}
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
+	
+	config = current_app.config
 
 	cur = connection.cursor()
 
@@ -47,4 +56,4 @@ def show_theme_settings(*args, connection, **kwargs):
 				if (theme["choosable"]):
 					themes.append(theme)
 
-	return render_toe(template="settings_themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "themes": themes, "post_types": postTypesResult })
+	return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "themes": themes, "post_types": postTypesResult })
