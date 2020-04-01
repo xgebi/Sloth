@@ -64,12 +64,11 @@ class Registration:
 			user["uuid"] = str(uuid.uuid4())
 			user["username"] = filled["username"]
 			user["password"] = bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode("utf-8")
-			user["email"] = filled["email"]
 			
 			try:
 				cur.execute(
-					sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, email, permissions_level) VALUES (%s, %s, %s, %s, %s, 1)"),
-					( user["uuid"], user["username"], user["username"], user["password"], user["email"])
+					sql.SQL("INSERT INTO sloth_users(uuid, username, display_name, password, permissions_level) VALUES (%s, %s, %s, %s, 1)"),
+					( user["uuid"], user["username"], user["username"], user["password"])
 				)
 				cur.execute(
 					sql.SQL("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', 'text', 'sloth', %s)"),

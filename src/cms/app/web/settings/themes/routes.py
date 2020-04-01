@@ -53,7 +53,13 @@ def show_theme_settings(*args, connection, **kwargs):
 		if (theme_file.is_file()):
 			with open(theme_file, 'r') as f:
 				theme = json.loads(f.read())
-				if (theme["choosable"]):
+				if (theme["choosable"] and theme["name"].find(" ") == -1):
 					themes.append(theme)
-
+	import pdb; pdb.set_trace()
 	return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "themes": themes, "post_types": postTypesResult })
+
+@settings_themes.route("/settings/themes/activate/<theme_name>")
+@authorize_web(1)
+@db_connection
+def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
+	pass

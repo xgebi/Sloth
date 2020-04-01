@@ -12,9 +12,17 @@ def registration_steps(*args, connection=None, **kwargs):
 		return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "page_title": "SlothCMS registration | Step 1"})
 
 	if connection is None:
+		print("heee");
 		return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error":"Error connecting to database", "page_title": "SlothCMS registration | Step 1"}), 500
 	# registration
 	user_data = request.form.to_dict()
+
+	# TODO check pass code
+	if current_app.config["PASSCODE"] != user_data["passcode"]:
+		print("haaa");
+		import pdb; pdb.set_trace()
+		return render_toe(template="step-1.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error":"Not authorized to register", "page_title": "SlothCMS registration | Step 1"}), 500
+
 	register = Registration(connection)
 	result = register.initial_settings(filled=user_data)
 	#success

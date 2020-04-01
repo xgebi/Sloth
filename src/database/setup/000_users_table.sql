@@ -3,7 +3,7 @@ CREATE TABLE sloth_users (
 	username character varying(50) UNIQUE NOT NULL,
 	display_name character varying(100),
 	password character varying(500) NOT NULL,
-	email character varying(350) UNIQUE NOT NULL,
+	email character varying(350) UNIQUE,
 	description text,
 	token character varying(350),
 	expiry_date double precision,

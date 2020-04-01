@@ -1,8 +1,10 @@
 # app/__init__.py
 import os
-from flask import Flask
+from flask import Flask, request, redirect, url_for
 #from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+import os
+from pathlib import Path
 
 #login_manager = LoginManager()
 #login_manager.login_view = 'authentication.do_the_login'
@@ -20,6 +22,12 @@ def create_app(config_type):  # dev, test, or prod
 	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
 
 	bcrypt.init_app(app)
+
+	@app.before_request
+	def before_first_request():
+		registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
+		if not (request.path.startswith('/api') or request.path.startswith('/registration') or request.path.startswith('/design')  or request.path.startswith('/static')) and not registration_lock_file.is_file():
+			return redirect('/registration')
 
 	from app.errors import errors
 	app.register_blueprint(errors)

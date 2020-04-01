@@ -1,4 +1,4 @@
-CREATE TYPE sloth_settings_type AS ENUM ('boolean', 'text');
+CREATE TYPE sloth_settings_type AS ENUM ('boolean', 'text', 'text-long');
 
 CREATE TABLE sloth_settings (
 	settings_name			VARCHAR(80) PRIMARY KEY,

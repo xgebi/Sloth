@@ -1,5 +1,8 @@
 CREATE TABLE sloth_posts (
 	uuid character varying(200) NOT NULL,
+	secondary_uuid character varying(200),
+	original_lang_entry_uuid character varying(200),
+	lang character varying(5) NOT NULL,
 	slug character varying(200) UNIQUE,
 	post_type character varying(200),
 	author character varying(200) NULL,
@@ -8,7 +11,7 @@ CREATE TABLE sloth_posts (
 	description text,
 	css text,
 	js text,
-	thumbnail integer NULL,
+	thumbnail integer NULL, -- TODO change this to something?
 	publish_date double precision,
 	update_date double precision,
 	post_status character varying(10),

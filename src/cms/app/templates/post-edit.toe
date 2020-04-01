@@ -5,13 +5,9 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			<form id="main-form">
-				<div>
-					<label for="post-title">Post title</label>
-					<input type="text" id="post-title" name="post-title" toe:value="post['title']" />
-				</div>
-			</form>
+			<algae-editor />
 		</main>
-		<script src="/static/js/post-edit.js"/>
+		<script src="/static/js/vue.js"/>
+		<script src="/static/js/algae-editor.min.js"/>
 	</body>
 </toe>
