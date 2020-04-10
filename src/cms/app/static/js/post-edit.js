@@ -1,1 +1,1 @@
-// toe:attr-action="/posts/' + post_type['uuid'] + '/' + post['uuid'] + '/save'"
+document.querySelector("main").appendChild(document.createElement("algae-editor"));

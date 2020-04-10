@@ -63,7 +63,6 @@ def show_post_edit(connection, post_id, action):
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
 
-	import pdb; pdb.set_trace()
 	cur = connection.cursor()
 
 	#try:
@@ -76,5 +75,5 @@ def show_post_edit(connection, post_id, action):
 	connection.close()
 
 	token = "aaaaaa"
-
+	import pdb; pdb.set_trace()
 	return render_toe(template="post-edit.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "token": token, "uuid": post_id, "post_types": postTypesResult })

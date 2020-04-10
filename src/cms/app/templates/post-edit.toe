@@ -5,8 +5,9 @@
 	<body class="admin-section">
 		<toe:import file="sidebar.toe" />
 		<main>
-			<algae-editor />
+			<h1>Post edit</h1>
 		</main>
+		<script src="/static/js/post-edit.js"/>
 		<script src="/static/js/vue.js"/>
 		<script src="/static/js/algae-editor.min.js"/>
 	</body>
