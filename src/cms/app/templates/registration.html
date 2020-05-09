@@ -8,6 +8,29 @@
 </head>
 
 <body>
+	<main class="gatekeeper">
+		<h1>Registration</h1>
+		{% if error %}
+		<section class="error">
+			There was an error during registration process
+		</section>
+		{% endif %}
+		<section class="registration-items">
+			<form action="/registration" method="POST">
+				<label for="website-name">Website name:</label> <input type="text" id="website-name"
+					value="{{registration.name}}" />
+				<label for="website-url">Website URL:</label> <input type="text" id="website-url"
+					value="{{registration.url}}" />
+				<label for="timezone">Website name:</label> <input type="text" id="timezone"
+					value="{{registration.timezone}}" />
+				<label for="admin-name">Website name:</label> <input type="text" id="admin-name"
+					value="{{registration.admin_name}}" />
+				<label for="admin-password">Website password:</label> <input type="text" id="admin-password"
+					value="{{registration.admin_password}}" />
+				<input type="submit" value="Register" />
+			</form>
+		</section>
+	</main>
 
 </body>
 

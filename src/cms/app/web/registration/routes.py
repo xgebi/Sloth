@@ -8,8 +8,7 @@ from app.web.registration import registration
 @db_connection
 def registration_steps(*args, connection=None, **kwargs):	
 	if (request.method.upper() == "GET"):
-		import pdb; pdb.set_trace()
-		return render_template("registration.html")
+		return render_template("registration.html", registration={})
 
 	if connection is None:
 		print("heee");
@@ -20,7 +19,6 @@ def registration_steps(*args, connection=None, **kwargs):
 	# TODO check pass code
 	if current_app.config["PASSCODE"] != user_data["passcode"]:
 		print("haaa");
-		import pdb; pdb.set_trace()
 		return render_template("registration.html"), 500
 
 	register = Registration(connection)
