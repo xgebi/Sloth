@@ -35,9 +35,6 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.initialization import initialization
 	app.register_blueprint(initialization)
 
-	from app.api.registration import registration as api_registration
-	app.register_blueprint(api_registration)
-
 	from app.api.sloth_login import sloth_login
 	app.register_blueprint(sloth_login)
 
@@ -68,8 +65,8 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.root import root
 	app.register_blueprint(root)
 
-	from app.web.registration import registration as web_registration
-	app.register_blueprint(web_registration)
+	from app.web.registration import registration
+	app.register_blueprint(registration)
 
 	from app.web.login import login
 	app.register_blueprint(login)
