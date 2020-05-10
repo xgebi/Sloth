@@ -13,12 +13,11 @@ def registration_steps(*args, connection=None, **kwargs):
 		return render_template("registration.html", registration={}, timezones=pytz.all_timezones)
 
 	if connection is None:		
-		return render_template("registration.html", registration={}, timezones=pytz.all_timezones), 500
+		return render_template("registration.html", registration={}, timezones=pytz.all_timezones, error=True), 500
 	# registration
 	user_data = request.form.to_dict()
 
 	register = Registration(connection)
-	import pdb; pdb.set_trace()
 	result = register.initial_settings(filled=user_data)
 	#success
 	if (result.get("state") is not None and result.get("state") == "ok"):
@@ -30,5 +29,5 @@ def registration_steps(*args, connection=None, **kwargs):
 	
 	if (result.get("error") is not None):
 		error = result["error"]
-	return render_template("registration.html", registration={}, timezones=pytz.all_timezones), status
+	return render_template("registration.html", registration={}, timezones=pytz.all_timezones, error=error), status
 	

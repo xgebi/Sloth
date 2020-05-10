@@ -285,7 +285,7 @@ class PostsGenerator:
 
 		description = doc.createElement('description')
 		import pdb; pdb.set_trace();
-		description_text = doc.createTextNode(self.settings["site_description"]["settings_value"] if self.settings["site_description"] else "")
+		description_text = doc.createTextNode(self.settings["site_description"]["settings_value"])
 		description.appendChild(description_text)
 		channel.appendChild(description)
 		#<lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>

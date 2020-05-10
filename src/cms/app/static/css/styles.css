@@ -49,6 +49,11 @@ body {
 }
 
 /* Form elements */
+input:not([type="button"]):not([type="submit"]),
+select {
+	border: 2px solid var(--orange);
+}
+
 .button input {
 	padding: .8rem 1.25rem;
 	border: 0;
