@@ -1,4 +1,6 @@
 from flask import request, flash, url_for, current_app, abort, redirect, render_template
+import pytz
+
 from app.utilities.db_connection import db_connection
 from app.registration.registration import Registration
 
@@ -8,24 +10,19 @@ from app.web.registration import registration
 @db_connection
 def registration_steps(*args, connection=None, **kwargs):	
 	if (request.method.upper() == "GET"):
-		return render_template("registration.html", registration={})
+		return render_template("registration.html", registration={}, timezones=pytz.all_timezones)
 
-	if connection is None:
-		print("heee");
-		return render_template("registration.html"), 500
+	if connection is None:		
+		return render_template("registration.html", registration={}, timezones=pytz.all_timezones), 500
 	# registration
 	user_data = request.form.to_dict()
 
-	# TODO check pass code
-	if current_app.config["PASSCODE"] != user_data["passcode"]:
-		print("haaa");
-		return render_template("registration.html"), 500
-
 	register = Registration(connection)
+	import pdb; pdb.set_trace()
 	result = register.initial_settings(filled=user_data)
 	#success
 	if (result.get("state") is not None and result.get("state") == "ok"):
-		return redirect("/registration/done")
+		return redirect("/login")
 
 	#failure
 	error="Unknown error"
@@ -33,9 +30,5 @@ def registration_steps(*args, connection=None, **kwargs):
 	
 	if (result.get("error") is not None):
 		error = result["error"]
-	return render_template("registration.html"), status
-
-@registration.route('/registration/done', methods=["GET"])
-def registration_done(*args, **kwargs):
-	return render_template(template="step-2.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "page_title": "SlothCMS registration done "})
+	return render_template("registration.html", registration={}, timezones=pytz.all_timezones), status
 	

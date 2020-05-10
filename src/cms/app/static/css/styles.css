@@ -2,7 +2,7 @@
 	--white: hsl(36, 26%, 98%);
 	--black: hsl(36, 100%, 6%);
 	--red: hsl(360, 100%, 34%);
-	--orange: hsl(38, 100%, 548%);
+	--orange: hsl(36, 100%, 48%);
 	--green: hsl(126, 69%, 50%);
 	font-family: Cabin, sans-serif;
 }
@@ -16,3 +16,46 @@ body {
 
 
 /* Login and registration */
+.gatekeeper {
+	background: var(--orange);
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	min-height: 100vh;
+	grid-template-rows: 1fr auto 1fr;
+}
+
+.gatekeeper > main {
+	grid-column: 2 / 3;
+	grid-row: 2 / 3;
+	background: var(--white);
+	border-radius: .5rem;
+	padding: 1.25rem 3.75rem 2.5rem;
+}
+
+.gatekeeper h1 {
+	text-align: center;
+}
+
+.gatekeeper > main form {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-gap: .625rem;
+	column-gap: 0;
+	row-gap: .625rem;
+}
+
+.gatekeeper .button {
+	grid-column: 2 / 3;	
+}
+
+/* Form elements */
+.button input {
+	padding: .8rem 1.25rem;
+	border: 0;
+	font-size: 1.125rem;
+}
+
+.button.success input {
+	background: var(--green);
+	color: var(--black);
+}

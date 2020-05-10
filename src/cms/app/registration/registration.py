@@ -75,8 +75,11 @@ class Registration:
 					[filled.get("sitename")]
 				)
 				cur.execute(
-					sql.SQL("INSERT INTO sloth_settings VALUES ('site_description', 'Description', 'text', 'sloth', %s)"),
-					[filled.get("description")]
+					sql.SQL("INSERT INTO sloth_settings VALUES ('site_timezone', 'Timezone', 'text', 'sloth', %s)"),
+					[filled.get("timezone")]
+				)
+				cur.execute(
+					sql.SQL("INSERT INTO sloth_settings VALUES ('site_description', 'Description', 'text', 'sloth', '')")
 				)
 				cur.execute(
 					sql.SQL("INSERT INTO sloth_settings VALUES ('site_url', 'URL', 'text', 'sloth', %s)"),
