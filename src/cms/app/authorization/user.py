@@ -30,6 +30,9 @@ class User:
 			items = cur.fetchone()
 		except Exception as e:
 			return None
+
+		if items is None:
+			return None
 		
 		trimmed_items = {
 			"uuid": items[0], 
@@ -84,17 +87,7 @@ class User:
 			con.close()            
 			return False
 		
-		if (permissions_level > items[0]):
-			cur.close()
-			con.close()
-			return False
-
-		if (time() > items[1]):
-			cur.close()
-			con.close()
-			return False
-
-		if (self.token != items[2]):
+		if (items is None or permissions_level > items[0] or time() > items[1] or self.token != items[2]):
 			cur.close()
 			con.close()
 			return False
@@ -112,7 +105,7 @@ class User:
 
 		cur.close()
 		con.close()
-		return True
+		return (True, items[0])
 
 	def logout_user(self):
 		config = current_app.config

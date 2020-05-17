@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{% block title%}{% endblock %}</title>
+	<link href="/static/css/styles.css" rel="stylesheet">
+</head>
+
+<body class="inner-city">
+	<nav>
+		<ul>
+			<li><a href="/dashboard">Dashboard</a></li>
+			<li><a href="/messages">Messages</a></li>
+			{% for post_type in post_types %}
+			<li><a href="/post/{{post_type['uuid']}}">{{post_type['displayName']}}</a>
+				<ul>
+					<li><a href="/post/{{post_type['uuid']}}/new">Add New {{post_type['displayName']}}</a></li>
+					<li><a href="/post/{{post_type['uuid']}}/taxonomy">Taxonomy</a></li>
+				</ul>
+			</li>
+			{% endfor %}
+			<li><a href="/post-types">Post Types</a></li>			
+			<li><a href="/my-account">My account</a></li>
+			{% if  permission_level >= 1 %}
+			<li><a href="/users">Users</a></li>
+			<li><a href="/themes">Themes</a></li>	
+			<li><a href="/settings">Settings</a></li>
+			{% endif %}
+		</ul>
+	</nav>
+	<main>
+		{% block body %}{% endblock %}
+	</main>
+</body>
+
+</html>

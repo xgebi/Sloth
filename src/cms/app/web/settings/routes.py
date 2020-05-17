@@ -1,7 +1,6 @@
-from flask import request, flash, url_for, current_app, abort, redirect
+from flask import request, flash, url_for, current_app, abort, redirect, render_template
 import psycopg2
 from psycopg2 import sql
-from toes.toes import render_toe
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
@@ -12,7 +11,7 @@ from app.web.settings import settings
 @settings.route("/settings")
 @authorize_web(1)
 @db_connection
-def show_settings(*args, connection, **kwargs):
+def show_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
 		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
 	settings = {}
@@ -44,12 +43,12 @@ def show_settings(*args, connection, **kwargs):
 			"settingsValueType": item[3]
 		})
 
-	return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "settings": items, "post_types": postTypesResult })
+	return render_template("settings.html", post_types=postTypesResult, permission_level=permission_level, settings=items)
 
 @settings.route("/settings/save", methods=["POST"])
 @authorize_web(1)
 @db_connection
-def save_settings(*args, connection, **kwargs):
+def save_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
 		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
 	filled = request.form

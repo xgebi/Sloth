@@ -27,9 +27,14 @@ def authorize_web(permission_level):
 			if len(auth) != 3:
 				return redirect("/login")
 			user = User(auth[1], auth[2])
-			if (user.authorize_user(permission_level)):
+			pass_token = user.authorize_user(permission_level)
+
+			if (not pass_token):
+				return redirect("/login")	
+				
+			if (pass_token[0]):
 				user.refresh_login()
-				return fn(*args, **kwargs)
+				return fn(*args, permission_level=pass_token[1], **kwargs)
 			return redirect("/login")
 		return wrapper
 	return inner

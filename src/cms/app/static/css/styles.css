@@ -36,6 +36,14 @@ body {
 	text-align: center;
 }
 
+.gatekeeper .error {
+	background: var(--red);
+	color: var(--white);
+	text-align: center;
+	padding: .5rem 1rem;
+	margin: 1rem 0;
+}
+
 .gatekeeper > main form {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -63,4 +71,23 @@ select {
 .button.success input {
 	background: var(--green);
 	color: var(--black);
+}
+
+.inner-city {
+	display: grid;
+	grid-template-columns: 15rem auto;
+}
+
+.inner-city nav {
+
+}
+
+.inner-city nav ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.inner-city nav ul ul {
+	padding: 0 0 0 2rem;
 }

@@ -1,4 +1,4 @@
-from flask import request, flash, url_for, current_app, abort, redirect
+from flask import request, flash, url_for, current_app, abort, redirect, render_template
 import psycopg2
 from psycopg2 import sql
 
@@ -8,7 +8,6 @@ from pathlib import Path
 import bcrypt
 import json
 
-from toes.toes import render_toe
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
@@ -19,7 +18,7 @@ from app.web.settings.themes import settings_themes
 @settings_themes.route("/settings/themes")
 @authorize_web(1)
 @db_connection
-def show_theme_settings(*args, connection, **kwargs):
+def show_theme_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
 		return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
 	settings = {}
@@ -55,8 +54,8 @@ def show_theme_settings(*args, connection, **kwargs):
 				theme = json.loads(f.read())
 				if (theme["choosable"] and theme["name"].find(" ") == -1):
 					themes.append(theme)
-	import pdb; pdb.set_trace()
-	return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "themes": themes, "post_types": postTypesResult })
+	import pdb; pdb.set_trace()	
+	return render_template("themes-list.html", post_types=postTypesResult, permission_level=permission_level, themes=themes)
 
 @settings_themes.route("/settings/themes/activate/<theme_name>")
 @authorize_web(1)

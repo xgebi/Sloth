@@ -44,12 +44,6 @@ def create_app(config_type):  # dev, test, or prod
 	from app.api.sloth_settings import sloth_settings
 	app.register_blueprint(sloth_settings)
 
-	from app.api.post import post
-	app.register_blueprint(post)
-
-	from app.api.posts.posts_list import posts_list
-	app.register_blueprint(posts_list)
-
 	from app.api.posts.post_categories import post_categories
 	app.register_blueprint(post_categories)
 
@@ -83,10 +77,13 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.settings.themes import settings_themes as web_settings_themes
 	app.register_blueprint(web_settings_themes)
 
-	from app.web.posts import posts as web_posts
-	app.register_blueprint(web_posts)
+	from app.web.post import post
+	app.register_blueprint(post)
 
 	from app.web.design import design
 	app.register_blueprint(design)
+
+	from app.web.messages import messages
+	app.register_blueprint(messages)
 
 	return app
