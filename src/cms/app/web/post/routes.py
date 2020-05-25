@@ -58,7 +58,8 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 @post.route("/post/<post_id>/edit")
 @authorize_web(0)
 @db_connection
-def show_post_edit(permission_level, connection, post_id, action):	
+def show_post_edit(permission_level, connection, post_id):	
+	import pdb; pdb.set_trace()
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
 	post_type_info = {
@@ -90,7 +91,7 @@ def show_post_edit(permission_level, connection, post_id, action):
 @post.route("/post/<post_id>/new")
 @authorize_web(0)
 @db_connection
-def show_post_new(permission_level, connection, post_id, action):	
+def show_post_new(permission_level, connection, post_id):	
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
 	post_type_info = {
@@ -127,23 +128,20 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
 	postTypesResult = postTypes.get_post_type_list(connection)
 
 	cur = connection.cursor()
-	media = []
-	try:
+	taxonomy = []
+	try:		
 		cur.execute(
-			sql.SQL("SELECT uuid, secondary_uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, description, css, js, thumbnail, publish_date, update_date, post_status, tags, categories FROM sloth_posts WHERE uuid = %", [type_id])
-		)
-
-		cur.execute(
-			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
+			sql.SQL("SELECT uuid, slug, display_name, taxonomy_type FROM sloth_taxonomy WHERE post_type = %s"), [type_id]
 		)	
-		media = cur.fetchall()
+		taxonomy = cur.fetchall()
 	except Exception as e:
+		import pdb; pdb.set_trace()
 		print("db error")
 		abort(500)
 
 	cur.close()
 	connection.close()
 
-	token = "aaaaaa"
-	import pdb; pdb.set_trace()
-	return render_template("post-edit.html", post_types=postTypesResult, post_type=post_type_info, permission_level=permission_level, token=token, uuid=post_id)
+	
+	
+	return render_template("taxonomy-list.html", post_types=postTypesResult, permission_level=permission_level, token=token)

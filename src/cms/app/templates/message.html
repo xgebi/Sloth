@@ -1,9 +1,9 @@
 {% extends 'layout.html' %}
 
-{% block title %}List of messages{% endblock %}
+{% block title %}Message from {{message['name']}}{% endblock %}
 
 {% block body %}
-<h1>List of messages</h1>
+<h1>Message from {{message['name']}}</h1>
 
 <table>
 	<thead>

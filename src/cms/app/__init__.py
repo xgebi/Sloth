@@ -1,6 +1,7 @@
 # app/__init__.py
 import os
 from flask import Flask, request, redirect, url_for
+from flask_cors import CORS
 #from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 import os
@@ -15,11 +16,14 @@ bcrypt = Bcrypt()
 def create_app(config_type):  # dev, test, or prod
 
 	app = Flask(__name__)
+	cors = CORS(app)
 	configuration = os.path.join(os.getcwd(), 'config', config_type + '.py')
 	
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
 	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
+	app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 	bcrypt.init_app(app)
 
@@ -85,5 +89,8 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.web.messages import messages
 	app.register_blueprint(messages)
+
+	from app.api.site import site
+	app.register_blueprint(site)
 
 	return app
