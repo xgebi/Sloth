@@ -27,7 +27,7 @@ def show_message_list(*args, permission_level, connection, **kwargs):
 		)
 		raw_messages = cur.fetchall()
 	except Exception as e:
-		print("db error")
+		print("db error d")
 		abort(500)
 
 	cur.close()
@@ -38,7 +38,7 @@ def show_message_list(*args, permission_level, connection, **kwargs):
 		messages.append({
 			"uuid": message[0],
 			"name": message[1],
-			"sent_date": datetime.datetime.fromtimestamp(float(message[2])/1000.0).strftime("%Y-%m-%d"),
+			"sent_date": datetime.datetime.fromtimestamp(float(message[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
 			"status": message[3]
 		})
 
@@ -59,23 +59,22 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
 	raw_items = []
 	try:
 		cur.execute(
-			sql.SQL("SELECT name, sent_date, status, body FROM sloth_messages WHERE uuid = %"), [msg]
+			sql.SQL("SELECT name, sent_date, status, body, email FROM sloth_messages WHERE uuid = %s"), [msg]
 		)
-		raw_messages = cur.fetchone()
+		raw_message = cur.fetchone()
 	except Exception as e:
-		print("db error")
+		print("db error e")
 		abort(500)
 
 	cur.close()
 	connection.close()
-	import pdb; pdb.set_trace()
-	messages = []
-	for message in raw_items:
-		messages.append({
-			"name": message[0],
-			"sent_date": datetime.datetime.fromtimestamp(float(message[1])/1000.0).strftime("%Y-%m-%d"),
-			"status": message[2],
-			"body": message[3]
-		})
 
-	return render_template("message.html", post_types=postTypesResult, permission_level=permission_level, messages=messages)
+	message = {
+		"name": raw_message[0].strip(),
+		"sent_date": datetime.datetime.fromtimestamp(float(raw_message[1])/1000.0).strftime("%Y-%m-%d"),
+		"status": raw_message[2].strip(),
+		"body": raw_message[3].strip(),
+		"email": raw_message[4].strip()
+	}
+	
+	return render_template("message.html", post_types=postTypesResult, permission_level=permission_level, message=message)

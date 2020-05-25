@@ -28,7 +28,7 @@ def show_settings(*args, connection=None, **kwargs):
 		)
 		raw_items = cur.fetchall()
 	except Exception as e:
-		print("db error")
+		print("db error b")
 		abort(500)
 
 	cur.close()
@@ -66,7 +66,7 @@ def save_settings(*args, connection=None, **kwargs):
 		)
 		raw_items = cur.fetchall()
 	except Exception as e:
-		print("db error")
+		print("db error c")
 		abort(500)
 
 	cur.close()

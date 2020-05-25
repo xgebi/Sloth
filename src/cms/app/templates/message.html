@@ -5,23 +5,12 @@
 {% block body %}
 <h1>Message from {{message['name']}}</h1>
 
-<table>
-	<thead>
-		<tr>
-			<th>From</th>
-			<th>Message sent</th>
-			<th>Status</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for message in messages %}
-		<tr>
-			<td><a href="/messages/{{message['uuid']}}">From {{message['name']}}</a></td>
-			<td>{{message['sent_date']}}</td>
-			<td>{{ message['status'] }}</td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<p>Sent: {{ message['sent_date'] }}</p>
+<p>Email: {{ message['email'] }}</p>
+<h2>Body</h2>
+<article>
+{{ message['body'] }}
+</article>
+
 
 {% endblock %}

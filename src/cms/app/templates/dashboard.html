@@ -38,8 +38,8 @@
 	<h2>Messages</h2>
 	{% for msg in messages %}
 	<article>
-		<h3>From <a href="/post/{{post['uuid']}}">{{msg["name"]}}</a></h3>
-		<div>Sent: {{ post['sent_date'] }}</div>
+		<h3><a href="/messages/{{msg['uuid']}}">From {{msg["name"]}}</a></h3>
+		<div>Sent: {{ msg['sent_date'] }}</div>
 	</article>
 	{% endfor %}
 </section>

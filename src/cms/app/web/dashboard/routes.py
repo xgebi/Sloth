@@ -5,6 +5,7 @@ from app.posts.post_types import PostTypes
 from app.utilities.db_connection import db_connection
 import psycopg2
 from psycopg2 import sql
+import datetime
 
 from app.web.dashboard import dashboard
 
@@ -60,7 +61,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         recent_posts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
 
@@ -68,7 +69,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         upcoming_posts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
 
@@ -76,7 +77,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         drafts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
     
@@ -84,7 +85,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         messages.append({
             "uuid": msg[0],
             "name": msg[1],
-            "sent_date": datetime.datetime.fromtimestamp(float(msg[2])/1000.0).strftime("%Y-%m-%d"),
+            "sent_date": datetime.datetime.fromtimestamp(float(msg[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
             "status": msg[3]
         })
     

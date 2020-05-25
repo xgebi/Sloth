@@ -36,7 +36,7 @@ def show_content(*args, connection=None, **kwargs):
 		)
 		raw_items = cur.fetchall()
 	except Exception as e:
-		print("db error")
+		print("db error a")
 		abort(500)
 
 	cur.close()
