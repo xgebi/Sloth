@@ -4,8 +4,15 @@
 
 {% block body %}
 <h1>Settings</h1>
-
-<form action="/settings" method="POST">
+{% if error %}
+<h1>Database error</h1>
+{% endif %}
+<form action="/settings/save" method="POST">	
+	{% for setting in settings %}
+	<label for="{{ setting["settings_name"] }}">{{ setting["display_name"] }}:</label>
+	<input type="text" name="{{ setting["settings_name"] }}" id="{{ setting["settings_name"] }}" value="{{ setting["settings_value"] }}" />
+	{% endfor %}
+	<input type="submit" value="save" />
 </form>
 
 {% endblock %}

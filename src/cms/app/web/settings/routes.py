@@ -37,12 +37,12 @@ def show_settings(*args, permission_level, connection, **kwargs):
 	items = []
 	for item in raw_items:
 		items.append({
-			"settingsName": item[0],
-			"displayName": item[1],
-			"settingsValue": item[2],
-			"settingsValueType": item[3]
+			"settings_name": item[0],
+			"display_name": item[1],
+			"settings_value": item[2],
+			"settings_value_type": item[3]
 		})
-
+	
 	return render_template("settings.html", post_types=postTypesResult, permission_level=permission_level, settings=items)
 
 @settings.route("/settings/save", methods=["POST"])
@@ -50,7 +50,7 @@ def show_settings(*args, permission_level, connection, **kwargs):
 @db_connection
 def save_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return render_template("settings.html", post_types=postTypesResult, permission_level=permission_level, settings={}, error="db")
 	filled = request.form
 
 	cur = connection.cursor()
