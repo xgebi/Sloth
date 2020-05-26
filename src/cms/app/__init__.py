@@ -78,8 +78,11 @@ def create_app(config_type):  # dev, test, or prod
 	from app.web.settings import settings as web_settings
 	app.register_blueprint(web_settings)
 
-	from app.web.settings.themes import settings_themes as web_settings_themes
-	app.register_blueprint(web_settings_themes)
+	from app.web.settings.themes import settings_themes
+	app.register_blueprint(settings_themes)
+
+	from app.web.settings.users import settings_users
+	app.register_blueprint(settings_users)
 
 	from app.web.post import post
 	app.register_blueprint(post)
@@ -92,5 +95,6 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.api.site import site
 	app.register_blueprint(site)
+
 
 	return app

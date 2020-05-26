@@ -13,7 +13,7 @@ from app.web.messages import messages
 @db_connection
 def show_message_list(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return redirect("/database-error")	
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
@@ -49,7 +49,7 @@ def show_message_list(*args, permission_level, connection, **kwargs):
 @db_connection
 def show_message(*args, permission_level, connection, msg, **kwargs):
 	if connection is None:
-		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return redirect("/database-error")	
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)

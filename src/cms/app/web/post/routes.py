@@ -5,6 +5,7 @@ from app.posts.post_types import PostTypes
 import psycopg2
 from psycopg2 import sql
 import datetime
+import uuid
 
 from app.web.post import post
 
@@ -13,7 +14,7 @@ from app.web.post import post
 @db_connection
 def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 	if connection is None:
-		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return redirect("/database-error")	
 	post_type_info = {
 		"uuid": post_type
 	}
@@ -58,13 +59,11 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 @post.route("/post/<post_id>/edit")
 @authorize_web(0)
 @db_connection
-def show_post_edit(permission_level, connection, post_id):	
+def show_post_edit(*args, permission_level, connection, post_id, **kwargs):	
 	import pdb; pdb.set_trace()
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
-	post_type_info = {
-		"uuid": post_type
-	}
+
 
 	cur = connection.cursor()
 	media = []
@@ -76,7 +75,7 @@ def show_post_edit(permission_level, connection, post_id):
 		cur.execute(
 			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
 		)	
-		media = cur.fetchall()
+		media = cur.fetchone()
 	except Exception as e:
 		print("db error")
 		abort(500)
@@ -84,9 +83,9 @@ def show_post_edit(permission_level, connection, post_id):
 	cur.close()
 	connection.close()
 
-	token = "aaaaaa"
+	token = uuid.uuid4()
 	import pdb; pdb.set_trace()
-	return render_template("post-edit.html", post_types=postTypesResult, post_type=post_type_info, permission_level=permission_level, token=token, uuid=post_id)
+	return render_template("post-edit.html", post_types=postTypesResult, permission_level=permission_level, token=token, uuid=post_id)
 
 @post.route("/post/<post_id>/new")
 @authorize_web(0)

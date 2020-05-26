@@ -13,15 +13,14 @@ from app.authorization.authorize import authorize_web
 
 from app.posts.post_types import PostTypes
 
-from app.web.settings.themes import settings_themes
+from app.web.settings.users import settings_users
 
-@settings_themes.route("/settings/users")
+@settings_users.route("/settings/users")
 @authorize_web(1)
 @db_connection
-def show_theme_settings(*args, permission_level, connection, **kwargs):
+def show_users_list(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
-	settings = {}
+		return redirect("/database-error")	
 
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
@@ -30,13 +29,12 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
 
 	cur = connection.cursor()
 
-	active_theme = ""
+	raw_users = []
 	try:		
 		cur.execute(
-			"SELECT settings_value FROM sloth_settings WHERE settings_name = 'active_theme'"
+			"SELECT uuid, username, display_name FROM sloth_users"
 		)
-		raw_items = cur.fetchone()
-		active_theme = raw_items[0]
+		raw_users = cur.fetchall()
 	except Exception as e:
 		print("db error")
 		abort(500)
@@ -44,21 +42,61 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
 	cur.close()
 	connection.close()
 
-	listOfDirs = os.listdir(config["THEMES_PATH"])
-	themes = []	
+	user_list = []
+	for user in raw_users:
+		user_list.append({
+			"uuid": user[0],
+			"username": user[1],
+			"display_name": user[2]
+		})
 
-	for folder in listOfDirs:
-		theme_file = Path(config["THEMES_PATH"], folder, 'theme.json')
-		if (theme_file.is_file()):
-			with open(theme_file, 'r') as f:
-				theme = json.loads(f.read())
-				if (theme["choosable"] and theme["name"].find(" ") == -1):
-					themes.append(theme)
-	import pdb; pdb.set_trace()	
-	return render_template("themes-list.html", post_types=postTypesResult, permission_level=permission_level, themes=themes)
+	return render_template("users-list.html", post_types=postTypesResult, permission_level=permission_level, user_list=user_list)
 
-@settings_themes.route("/settings/users/<theme_name>/save")
-@authorize_web(1)
+@settings_users.route("/settings/users/<user>")
+@authorize_web(0)
 @db_connection
-def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
+def show_user(*args, permission_level, connection=None, user, **kwargs):
+	token = request.cookies.get('sloth_session').split(":")
+
+	if (permission_level == 0 and token[1] != user):
+		return redirect("/unauthorized")
+
+	if connection is None:
+		return redirect("/database-error")		
+
+	postTypes = PostTypes()
+	postTypesResult = postTypes.get_post_type_list(connection)
+	
+	config = current_app.config
+
+	cur = connection.cursor()
+
+	raw_users = []
+	try:		
+		cur.execute(
+			sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE user = %s"),
+			[token[1]]
+		)
+		raw_user = cur.fetchone()
+	except Exception as e:
+		print("db error")
+		abort(500)
+
+	cur.close()
+	connection.close()
+
+	user = {
+		"uuid": raw_user[0],
+		"username": raw_user[1],
+		"display_name": raw_user[2],
+		"email": raw_user[3],
+		"permissions_level": raw_user[4]
+	}
+
+	return render_template("user.html", ost_types=postTypesResult, permission_level=permission_level, user=user)
+
+@settings_users.route("/settings/users/<user>/save")
+@authorize_web(0)
+@db_connection
+def save_user(*args, user, connection=None, **kwargs):
 	pass

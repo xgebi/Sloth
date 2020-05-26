@@ -13,7 +13,7 @@ from app.web.settings import settings
 @db_connection
 def show_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return redirect("/database-error")	
 	settings = {}
 
 	postTypes = PostTypes()

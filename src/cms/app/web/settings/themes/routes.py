@@ -20,7 +20,7 @@ from app.web.settings.themes import settings_themes
 @db_connection
 def show_theme_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_toe(template="settings-themes.toe", path_to_templates=current_app.config["TEMPLATES_PATH"], data={ "error": "No connection to database" })
+		return redirect("/database-error")	
 	settings = {}
 
 	postTypes = PostTypes()
