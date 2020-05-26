@@ -71,10 +71,10 @@ def show_user(*args, permission_level, connection=None, user, **kwargs):
 
 	cur = connection.cursor()
 
-	raw_users = []
+	raw_user = []
 	try:		
 		cur.execute(
-			sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE user = %s"),
+			sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
 			[token[1]]
 		)
 		raw_user = cur.fetchone()
@@ -98,5 +98,46 @@ def show_user(*args, permission_level, connection=None, user, **kwargs):
 @settings_users.route("/settings/users/<user>/save")
 @authorize_web(0)
 @db_connection
-def save_user(*args, user, connection=None, **kwargs):
-	pass
+def save_user(*args, permissions_level, connection=None, user, **kwargs):
+	token = request.cookies.get('sloth_session').split(":")
+
+	if (permission_level == 0 and token[1] != user):
+		return redirect("/unauthorized")
+
+	if connection is None:
+		return redirect("/database-error")		
+
+	postTypes = PostTypes()
+	postTypesResult = postTypes.get_post_type_list(connection)
+	
+	config = current_app.config
+
+	cur = connection.cursor()
+
+	raw_user = []
+	try:		
+		cur.execute(
+			sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
+			[token[1]]
+		)
+		raw_user = cur.fetchone()
+		#cur.execute(
+		#	sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
+		#	[token[1]]
+		#)
+	except Exception as e:
+		print("db error")
+		abort(500)
+
+	cur.close()
+	connection.close()
+
+	user = {
+		"uuid": raw_user[0],
+		"username": raw_user[1],
+		"display_name": raw_user[2],
+		"email": raw_user[3],
+		"permissions_level": raw_user[4]
+	}
+
+	return render_template("user.html", ost_types=postTypesResult, permission_level=permission_level, user=user)
