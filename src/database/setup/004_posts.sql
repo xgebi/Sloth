@@ -8,7 +8,7 @@ CREATE TABLE sloth_posts (
 	author character varying(200) NULL,
 	title character varying(220),
 	content text,
-	description text,
+	excerpt text,
 	css text,
 	js text,
 	thumbnail integer NULL, -- TODO change this to something?

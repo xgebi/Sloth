@@ -36,23 +36,11 @@ def create_app(config_type):  # dev, test, or prod
 	from app.errors import errors
 	app.register_blueprint(errors)
 
-	from app.api.initialization import initialization
-	app.register_blueprint(initialization)
-
-	from app.api.sloth_login import sloth_login
-	app.register_blueprint(sloth_login)
-
 	from app.api.dashboard import dashboard
 	app.register_blueprint(dashboard)
 
-	from app.api.sloth_settings import sloth_settings
-	app.register_blueprint(sloth_settings)
-
-	from app.api.posts.post_categories import post_categories
-	app.register_blueprint(post_categories)
-
-	from app.api.posts.post_types import post_types
-	app.register_blueprint(post_types)
+	from app.api.post import post as post_api
+	app.register_blueprint(post_api)
 
 	from app.api.themes import themes
 	app.register_blueprint(themes)
@@ -65,9 +53,6 @@ def create_app(config_type):  # dev, test, or prod
 
 	from app.web.registration import registration
 	app.register_blueprint(registration)
-
-	from app.web.login import login
-	app.register_blueprint(login)
 
 	from app.web.login import login
 	app.register_blueprint(login)

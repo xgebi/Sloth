@@ -60,22 +60,30 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 @authorize_web(0)
 @db_connection
 def show_post_edit(*args, permission_level, connection, post_id, **kwargs):	
-	import pdb; pdb.set_trace()
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
 
-
 	cur = connection.cursor()
 	media = []
+	post_type_name = ""
+	post = {}
 	try:
-		cur.execute(
-			sql.SQL("SELECT uuid, secondary_uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, description, css, js, thumbnail, publish_date, update_date, post_status, tags, categories FROM sloth_posts WHERE uuid = %", [post_id])
-		)
-
 		cur.execute(
 			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
 		)	
-		media = cur.fetchone()
+		media = cur.fetchall()		
+
+		cur.execute(
+			sql.SQL("SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"),
+			[post_type]
+		)
+		post = cur.fetchone()
+
+		cur.execute(
+			sql.SQL("SELECT lang, slug, post_type, FROM sloth_post_types WHERE uuid = %s"),
+			[post[12]]
+		)
+		post_type_name = cur.fetchone()[0]
 	except Exception as e:
 		print("db error")
 		abort(500)
@@ -84,30 +92,44 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 	connection.close()
 
 	token = uuid.uuid4()
-	import pdb; pdb.set_trace()
-	return render_template("post-edit.html", post_types=postTypesResult, permission_level=permission_level, token=token, uuid=post_id)
 
-@post.route("/post/<post_id>/new")
+	data = {
+		"title": post[0],
+		"excerpt": post[1],
+		"description": post[2],
+		"css": post[3],
+		"js": post[4],
+		"thumbnail": post[5],
+		"publish_date": post[6],
+		"update_date": post[7],
+		"post_status": post[8],
+		"tags": post[9],
+		"categories": post[10],
+		"display_name": post[11]
+	}	
+
+	return render_template("post-edit.html", post_types=postTypesResult, permission_level=permission_level, token=token, post_type_name=post_type_name, data=data)
+
+@post.route("/post/<post_type>/new")
 @authorize_web(0)
 @db_connection
-def show_post_new(permission_level, connection, post_id):	
+def show_post_new(*args, permission_level, connection, post_type, **kwargs):	
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
-	post_type_info = {
-		"uuid": post_type
-	}
 
 	cur = connection.cursor()
 	media = []
 	try:
-		cur.execute(
-			sql.SQL("SELECT uuid, secondary_uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, description, css, js, thumbnail, publish_date, update_date, post_status, tags, categories FROM sloth_posts WHERE uuid = %", [post_id])
-		)
 
 		cur.execute(
 			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
 		)	
 		media = cur.fetchall()
+		cur.execute(
+			sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
+			[post_type]
+		)
+		post_type_name = cur.fetchone()[0]
 	except Exception as e:
 		print("db error")
 		abort(500)
@@ -115,9 +137,63 @@ def show_post_new(permission_level, connection, post_id):
 	cur.close()
 	connection.close()
 
-	token = "aaaaaa"
-	import pdb; pdb.set_trace()
-	return render_template("post-edit.html", post_types=postTypesResult, post_type=post_type_info, permission_level=permission_level, token=token, uuid=post_id)
+	token = uuid.uuid4()
+	
+	return render_template("post-edit.html", post_types=postTypesResult, permission_level=permission_level, token=token, post_type_name=post_type_name, data={"new": True})
+
+@post.route("/post/<post_id>/save", methods=["POST", "PUT"])
+@authorize_web(0)
+@db_connection
+def save_post(*args, permission_level, connection, post_id, **kwargs):	
+	postTypes = PostTypes()
+	postTypesResult = postTypes.get_post_type_list(connection)
+
+	cur = connection.cursor()
+	media = []
+	post_type_name = ""
+	post = {}
+	try:
+		cur.execute(
+			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
+		)	
+		media = cur.fetchall()		
+
+		cur.execute(
+			sql.SQL("SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"),
+			[post_type]
+		)
+		post = cur.fetchone()
+
+		cur.execute(
+			sql.SQL("SELECT lang, slug, post_type, FROM sloth_post_types WHERE uuid = %s"),
+			[post[12]]
+		)
+		post_type_name = cur.fetchone()[0]
+	except Exception as e:
+		print("db error")
+		abort(500)
+
+	cur.close()
+	connection.close()
+
+	token = uuid.uuid4()
+
+	data = {
+		"title": post[0],
+		"excerpt": post[1],
+		"description": post[2],
+		"css": post[3],
+		"js": post[4],
+		"thumbnail": post[5],
+		"publish_date": post[6],
+		"update_date": post[7],
+		"post_status": post[8],
+		"tags": post[9],
+		"categories": post[10],
+		"display_name": post[11]
+	}	
+
+	return render_template("post-edit.html", post_types=postTypesResult, permission_level=permission_level, token=token, post_type_name=post_type_name, data=data)
 
 @post.route("/post/<type_id>/taxonomy")
 @authorize_web(0)
