@@ -85,6 +85,10 @@ class Registration:
 					sql.SQL("INSERT INTO sloth_settings VALUES ('site_url', 'URL', 'text', 'sloth', %s)"),
 					[filled.get("url")]
 				)
+				cur.execute(
+					sql.SQL("INSERT INTO sloth_settings VALUES ('api_url', 'URL', 'text', 'sloth', %s)"),
+					[filled.get("admin-url")]
+				)
 				self.connection.commit()
 			except Exception as e:
 				print(traceback.format_exc())

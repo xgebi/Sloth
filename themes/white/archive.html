@@ -13,12 +13,18 @@
 <body>
 	{{ posts }}
 	<h1>{{ page_name }}</h1>
+	{% if posts|length == 0 %}
+	<section>
+		No posts here yet
+	</section>
+	{% endif %}
 	{% for post in posts %}
 	<article>
 		<h2>{{ post.title }}</h2>
 		{{ post.publish_date }}
 	</article>
 	{% endfor %}
+	{{ sloth_footer }}
 </body>
 
 </html>

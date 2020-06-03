@@ -86,7 +86,7 @@ class PostsGenerator:
 			os.makedirs(post_path_dir)
 
 		with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
-			f.write(template.render(post=self.post, sitename=self.settings["sitename"]["settings_value"]))
+			f.write(template.render(post=self.post, sitename=self.settings["sitename"]["settings_value"], api_url=self.settings["api_url"]["settings_value"]))
 
 	def generate_tags(self):
 		if len(self.post["tags"]) == 0:
@@ -139,7 +139,7 @@ class PostsGenerator:
 					lower = 10 * i
 					upper = (10*i) + 10 if (10*i) + 10 < len(tags_posts_list[tag]) else len(tags_posts_list[tag])
 					
-					f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag))
+					f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag, api_url=self.settings["api_url"]["settings_value"]))
 
 	def generate_categories(self):
 		if len(self.post["categories"]) == 0:
@@ -192,10 +192,11 @@ class PostsGenerator:
 					lower = 10 * i
 					upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
 					
-					f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category))
+					f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category, api_url=self.settings["api_url"]["settings_value"]))
 	
 	def generate_archive(self):
 		post_list = []
+		import pdb; pdb.set_trace()
 		try:
 			cur = self.connection.cursor()
 			cur.execute(
@@ -250,7 +251,9 @@ class PostsGenerator:
 				os.makedirs(os.path.join(post_path_dir, str(i)))
 			
 			with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-				f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
+				f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
+		if len(post_list) == 0:
+			f.write(template.render(posts = [], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
 
 	def generate_rss(self, posts, path):
 		doc = minidom.Document()
@@ -284,7 +287,7 @@ class PostsGenerator:
 		channel.appendChild(link)
 
 		description = doc.createElement('description')
-		import pdb; pdb.set_trace();
+		
 		description_text = doc.createTextNode(self.settings["site_description"]["settings_value"])
 		description.appendChild(description_text)
 		channel.appendChild(description)
@@ -417,7 +420,7 @@ class PostsGenerator:
 		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
 
 		with open(home_path_dir, 'w') as f:
-			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))
+			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home", api_url=self.settings["api_url"]["settings_value"]))
 
 	def regenerate_all(self):
 		# get all post types
@@ -486,7 +489,7 @@ class PostsGenerator:
 					os.makedirs(post_path_dir)
 
 				with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
-					f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"]))
+					f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"], api_url=self.settings["api_url"]["settings_value"]))
 
 			# generate archive
 			archive_template_path = Path(self.theme_path, "archive.html")
@@ -516,7 +519,7 @@ class PostsGenerator:
 					os.makedirs(os.path.join(post_path_dir, str(i)))
 				
 				with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-					f.write(template.render(posts = posts[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name"))
+					f.write(template.render(posts = posts[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
 
 			# generate all categories
 			categories_list = {}
@@ -559,7 +562,7 @@ class PostsGenerator:
 						lower = 10 * i
 						upper = (10*i) + 10 if (10*i) + 10 < len(tags_posts_list[tag]) else len(tags_posts_list[tag])
 						
-						f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag))
+						f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag, api_url=self.settings["api_url"]["settings_value"]))
 			
 			category_template_path = Path(self.theme_path, "category.html")
 			if (Path(self.theme_path, "category-" + post_type["slug"] + ".html").is_file()):
@@ -588,7 +591,7 @@ class PostsGenerator:
 						lower = 10 * i
 						upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
 						
-						f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category))
+						f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category, api_url=self.settings["api_url"]["settings_value"]))
 
 		# generate home
 		home_template_path = Path(self.theme_path, "home.html")
@@ -599,7 +602,7 @@ class PostsGenerator:
 		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
 
 		with open(home_path_dir, 'w') as f:
-			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home"))
+			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home", api_url=self.settings["api_url"]["settings_value"]))
 
 	def delete_post(self, post_type_slug, post_slug):		
 		post_types = []

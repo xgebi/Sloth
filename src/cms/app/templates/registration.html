@@ -22,6 +22,8 @@
 					value="{{registration.name}}" />
 				<label for="website-url">Website URL:</label> <input type="text" name="url" id="website-url"
 					value="{{registration.url}}" />
+				<label for="admin-url">Administration URL:</label> <input type="text" name="admin-url" id="admin-url"
+					value="{{registration.admin_url}}" />
 				<label for="timezone">Timezone:</label>
 				<select id="timezone" name="timezone" value="{{registration.timezone}}">
 					{% for timezone in timezones %}
@@ -42,6 +44,12 @@
 			</form>
 		</section>
 	</main>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', (event) => {
+			document.querySelector("#admin-url").value = window.location.origin;
+		});
+	</script>
 
 </body>
 

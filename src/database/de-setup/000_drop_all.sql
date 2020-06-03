@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS sloth_settings;
 DROP TABLE IF EXISTS sloth_users;
 DROP TABLE IF EXISTS sloth_media;
 DROP TABLE IF EXISTS sloth_messages;
+DROP TABLE IF EXISTS sloth_analytics;
 DROP TYPE IF EXISTS sloth_settings_type;
 DROP TYPE IF EXISTS sloth_message_type;
 DROP TYPE IF EXISTS sloth_taxonomy_type;
