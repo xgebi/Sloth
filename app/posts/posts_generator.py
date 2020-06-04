@@ -550,9 +550,9 @@ class PostsGenerator:
 					categories[category].append(post)
 
 			tag_template_path = Path(self.theme_path, "tag.html")
-			if (Path(self.theme_path, "tag-" + post_type["slug"] + ".html").is_file()):
+			if Path(self.theme_path, "tag-" + post_type["slug"] + ".html").is_file():
 				tag_template_path = Path(self.theme_path, "tag-" + post_type["slug"] + ".html")
-			elif (not tag_template_path.is_file()):
+			elif not tag_template_path.is_file():
 				tag_template_path = Path(self.theme_path, "archive.html")	
 
 			template = ""
@@ -616,7 +616,10 @@ class PostsGenerator:
 		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
 
 		with open(home_path_dir, 'w') as f:
-			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home", api_url=self.settings["api_url"]["settings_value"]))
+			f.write(template.render(
+				posts=posts, sitename=self.settings["sitename"]["settings_value"], page_name="Home",
+				api_url=self.settings["api_url"]["settings_value"])
+			)
 
 	def delete_post(self, post_type_slug, post_slug):		
 		post_types = []

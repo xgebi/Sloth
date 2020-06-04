@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="slothcms",
-    version="0.0.120",
+    version="0.0.121",
     author="Sarah Gebauer",
     author_email="sarah@sarahgebauer.com",
     description="Sloth Content Management System",
@@ -19,5 +19,5 @@ setuptools.setup(
         "License :: Hippocratic License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
 )
