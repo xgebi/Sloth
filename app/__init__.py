@@ -17,7 +17,7 @@ def create_app(config_type):  # dev, test, or prod
 
 	app = Flask(__name__)
 	cors = CORS(app)
-	configuration = os.path.join(os.getcwd(), 'config', config_type + '.py')
+	configuration = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
 	
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')

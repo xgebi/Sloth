@@ -1,5 +1,4 @@
 from flask import request, flash, url_for, current_app, abort, redirect, make_response, render_template
-from toes.toes import render_toe
 from authlib.jose import jwt
 
 from app.authorization.user import User

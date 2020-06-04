@@ -8,8 +8,6 @@ import uuid
 import bcrypt
 import traceback
 
-import toes
-
 from app.posts.posts_generator import PostsGenerator
 
 class Registration:
@@ -116,11 +114,11 @@ class Registration:
 		return {"error": "Registration can be done only once", "status": 403}
 
 	def set_tables(self):
-		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "database", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "src", "database", "setup", sql_file))]
+		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "database", "setup")) if os.path.isfile(os.path.join(os.getcwd(), "database", "setup", sql_file))]
 
 		cur = self.connection.cursor()
 		for filename in sqls:
-			with open(os.path.join(os.getcwd(), "src", "database", "setup", filename)) as f:
+			with open(os.path.join(os.getcwd(), "database", "setup", filename)) as f:
 				scrpt = str(f.read())
 				try:
 					cur.execute( scrpt )
@@ -132,11 +130,11 @@ class Registration:
 		return {"state": "ok"}
 
 	def set_data(self):
-		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "src", "database", "setup_data")) if os.path.isfile(os.path.join(os.getcwd(), "src", "database", "setup_data", sql_file))]
+		sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "database", "setup_data")) if os.path.isfile(os.path.join(os.getcwd(), "database", "setup_data", sql_file))]
 
 		cur = self.connection.cursor()
 		for filename in sqls:
-			with open(os.path.join(os.getcwd(), "src", "database", "setup_data", filename)) as f:
+			with open(os.path.join(os.getcwd(), "database", "setup_data", filename)) as f:
 				scrpt = str(f.read())
 				try:
 					cur.execute( scrpt )

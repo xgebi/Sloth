@@ -15,6 +15,7 @@ import traceback
 
 from app.utilities.db_connection import db_connection
 
+
 class PostsGenerator:
 	post = {}
 	config = {}
@@ -34,7 +35,8 @@ class PostsGenerator:
 		cur = connection.cursor()
 		try:
 			cur.execute(
-				sql.SQL("SELECT settings_name, settings_value, settings_value_type FROM sloth_settings WHERE settings_name = %s OR settings_type = %s"), ['active_theme', 'sloth']
+				sql.SQL("""SELECT settings_name, settings_value, settings_value_type 
+						FROM sloth_settings WHERE settings_name = %s OR settings_type = %s"""), ['active_theme', 'sloth']
 			)
 			raw_items = cur.fetchall()
 			for item in raw_items:
@@ -57,13 +59,13 @@ class PostsGenerator:
 	def generateContent(self):
 		self.generate_post()
 
-		if (self.post["tags_enabled"]):
+		if self.post["tags_enabled"]:
 			self.generate_tags()
 		
-		if (self.post["categories_enabled"]):
+		if self.post["categories_enabled"]:
 			self.generate_categories()
 		
-		if (self.post["archive_enabled"]):
+		if self.post["archive_enabled"]:
 			self.generate_archive()
 		
 		self.generate_home()
@@ -75,7 +77,7 @@ class PostsGenerator:
 		self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
 		post_template_path = Path(self.theme_path, "post.html")
-		if (Path(self.theme_path, "post-" + self.post["post_type_slug"] + ".html").is_file()):
+		if Path(self.theme_path, "post-" + self.post["post_type_slug"] + ".html").is_file():
 			post_template_path = Path(self.theme_path, "post-" + self.post["post_type_slug"] + ".html")
 
 		template = ""
@@ -113,9 +115,9 @@ class PostsGenerator:
 				print(traceback.format_exc())
 		
 		tag_template_path = Path(self.theme_path, "tag.html")
-		if (Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html").is_file()):
+		if Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html").is_file():
 			tag_template_path = Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html")
-		elif (not tag_template_path.is_file()):
+		elif not tag_template_path.is_file():
 			tag_template_path = Path(self.theme_path, "archive.html")	
 
 		template = ""
@@ -152,7 +154,8 @@ class PostsGenerator:
 			try:
 				cur = self.connection.cursor()
 				cur.execute(
-					sql.SQL("SELECT uuid, title, publish_date FROM sloth_posts WHERE post_type = %s AND %s = ANY (categories) AND post_status = %s"), [self.post["post_type"], category, 'published']
+					sql.SQL("""SELECT uuid, title, publish_date 
+						FROM sloth_posts WHERE post_type = %s AND %s = ANY (categories) AND post_status = %s"""), [self.post["post_type"], category, 'published']
 				)
 				raw_items = cur.fetchall()
 				for item in raw_items:
@@ -166,9 +169,9 @@ class PostsGenerator:
 				print(traceback.format_exc())
 
 		category_template_path = Path(self.theme_path, "category.html")
-		if (Path(self.theme_path, "category-" + self.post["post_type_slug"] + ".html").is_file()):
+		if Path(self.theme_path, "category-" + self.post["post_type_slug"] + ".html").is_file():
 			category_template_path = Path(self.theme_path, "category-" + self.post["post_type_slug"] + ".html")
-		elif (not category_template_path.is_file()):
+		elif not category_template_path.is_file():
 			category_template_path = Path(self.theme_path, "archive.html")
 
 		template = ""
@@ -201,12 +204,12 @@ class PostsGenerator:
 			cur = self.connection.cursor()
 			cur.execute(
 				sql.SQL("""SELECT A.uuid, 
-							  A.title,
-							  A.slug, 							   
-							  A.content, 							   
-							  A.publish_date, 							  
-							  A.categories,						   
-							  B.slug AS post_type_slug
+							A.title,
+							A.slug,
+							A.content,
+							A.publish_date,
+							A.categories,
+							B.slug AS post_type_slug
 						FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type
 						WHERE A.post_type = %s AND A.post_status = %s"""), [self.post["post_type"], 'published']
 			)
@@ -226,9 +229,9 @@ class PostsGenerator:
 			print(traceback.format_exc())
 
 		archive_template_path = Path(self.theme_path, "archive.html")
-		if (Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html").is_file()):
+		if Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html").is_file():
 			archive_template_path = Path(self.theme_path, "archive-" + self.post["post_type_slug"] + ".html")
-		elif (not archive_template_path.is_file()):
+		elif not archive_template_path.is_file():
 			archive_template_path = Path(self.theme_path, "archive.html")
 
 		template = ""
@@ -307,12 +310,12 @@ class PostsGenerator:
 		update_period_text = doc.createTextNode('hourly')
 		update_period.appendChild(update_period_text)
 		channel.appendChild(update_period)
-		#<sy:updateFrequency>1</sy:updateFrequency>
+		# <sy:updateFrequency>1</sy:updateFrequency>
 		update_frequency = doc.createElement('sy:updateFrequency')
 		update_frequency_text = doc.createTextNode('1')
 		update_frequency.appendChild(update_frequency_text)
 		channel.appendChild(update_frequency)
-		#<generator>https://wordpress.org/?v=5.2.2</generator>
+		# <generator>https://wordpress.org/?v=5.2.2</generator>
 		generator = doc.createElement('generator')
 		generator_text = doc.createTextNode('SlothCMS')
 		generator.appendChild(generator_text)
@@ -323,35 +326,35 @@ class PostsGenerator:
 			if (i >= 10):
 				break
 			i+=1
-			#<item>
+			# <item>
 			post_item = doc.createElement('item')
 			post_item.setAttribute("guid", post['uuid'])
-			#	<title>Irregular Batch of Interesting Links #10</title>
+			# <title>Irregular Batch of Interesting Links #10</title>
 			post_title = doc.createElement('title')
 			post_title_text = doc.createTextNode(post['title'])
 			post_title.appendChild(post_title_text)
 			post_item.appendChild(post_title)
-			#	<link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>			
+			# <link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>
 			post_link = doc.createElement('link')
 			
 			post_link_text = doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}")
 			post_link.appendChild(post_link_text)
 			post_item.appendChild(post_link)
-			#	<pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
+			# <pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
 			pub_date = doc.createElement('pubDate')
 			d = datetime.fromtimestamp(post['publish_date'] / 1000).astimezone()
 			pub_date_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S %z'))
 			pub_date.appendChild(pub_date_text)
 			post_item.appendChild(pub_date)
 
-			#	<dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
-			#	<category><![CDATA[Interesting links]]></category>
+			# <dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
+			# <category><![CDATA[Interesting links]]></category>
 			for category in post['categories']:
 				category_node = doc.createElement('category')
 				category_text = doc.createCDATASection(category)
 				category_node.appendChild(category_text)
 				post_item.appendChild(category_node)
-			#	<content:encoded><![CDATA[
+			# <content:encoded><![CDATA[
 			description = doc.createElement('description')
 			post_item.appendChild(description)
 			
@@ -362,10 +365,12 @@ class PostsGenerator:
 			channel.appendChild(post_item)
 		root_node.appendChild(channel)
 
-		doc.writexml( open(str(path) + "/feed.xml", 'w'),
-               indent="  ",
-               addindent="  ",
-               newl='\n')
+		doc.writexml(
+			open(str(path) + "/feed.xml", 'w'),
+			indent="  ",
+			addindent="  ",
+			newl='\n'
+		)
 
 	def generate_home(self):
 		# get all post types
@@ -392,7 +397,9 @@ class PostsGenerator:
 			cur = self.connection.cursor()
 			for post_type in post_type_list:
 				cur.execute(
-					sql.SQL("SELECT uuid, title, slug, publish_date FROM sloth_posts WHERE post_type = %s AND post_status = %s ORDER BY publish_date DESC LIMIT 10"), [post_type['uuid'], 'published']
+					sql.SQL("""SELECT uuid, title, slug, publish_date 
+					FROM sloth_posts
+					WHERE post_type = %s AND post_status = %s ORDER BY publish_date DESC LIMIT 10"""), [post_type['uuid'], 'published']
 				)
 				
 				raw_items = cur.fetchall()
@@ -444,13 +451,20 @@ class PostsGenerator:
 		# generate all posts
 		home_posts = {}
 		for post_type in post_types:
-			if (os.path.exists(Path(self.config["OUTPUT_PATH"], post_type["slug"]))):
+			if os.path.exists(Path(self.config["OUTPUT_PATH"], post_type["slug"])):
 				shutil.rmtree(Path(self.config["OUTPUT_PATH"], post_type["slug"]))
 			posts = []
 			
 			try:
 				cur.execute(
-					sql.SQL("SELECT A.uuid, A.slug, A.post_type, C.slug, A.title, A.content, A.css, A.js, A.publish_date, A.update_date, A.tags, A.categories, B.display_name FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid INNER JOIN sloth_post_types as C on A.post_type = C.uuid WHERE A.post_type = %s AND A.post_status = 'published' ORDER BY A.publish_date DESC"),
+					sql.SQL("""SELECT 
+						A.uuid, A.slug, A.post_type,
+						C.slug, A.title, A.content, 
+						A.css, A.js, A.publish_date, 
+						A.update_date, A.tags, A.categories, 
+						B.display_name 
+						FROM sloth_posts as A INNER JOIN sloth_users as B ON A.author = B.uuid INNER JOIN sloth_post_types as C on A.post_type = C.uuid 
+						WHERE A.post_type = %s AND A.post_status = 'published' ORDER BY A.publish_date DESC"""),
 					[post_type["uuid"]]
 				)
 				raw_items = cur.fetchall()
@@ -493,9 +507,9 @@ class PostsGenerator:
 
 			# generate archive
 			archive_template_path = Path(self.theme_path, "archive.html")
-			if (Path(self.theme_path, "archive-" + post_type["slug"] + ".html").is_file()):
+			if Path(self.theme_path, "archive-" + post_type["slug"] + ".html").is_file():
 				archive_template_path = Path(self.theme_path, "archive-" + post_type["slug"] + ".html")
-			elif (not archive_template_path.is_file()):
+			elif not archive_template_path.is_file():
 				archive_template_path = Path(self.theme_path, "archive.html")
 
 			template = ""
