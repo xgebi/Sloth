@@ -23,6 +23,7 @@ class PostsGenerator:
 	is_runnable = True
 	theme_path = ""
 	connection = {}
+	sloth_footer = ""
 
 	@db_connection
 	def __init__(self, config, post=None, connection=None):
@@ -48,6 +49,9 @@ class PostsGenerator:
 		except Exception as e:
 			print(traceback.format_exc())
 		self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
+
+		with open('../templates/analytics.html', 'r') as f:
+			self.sloth_footer = f.read()
 
 	def run(self):
 		if not self.is_runnable:
@@ -141,7 +145,10 @@ class PostsGenerator:
 					lower = 10 * i
 					upper = (10*i) + 10 if (10*i) + 10 < len(tags_posts_list[tag]) else len(tags_posts_list[tag])
 					
-					f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag, api_url=self.settings["api_url"]["settings_value"]))
+					f.write(template.render(
+						posts=tags_posts_list[tag][lower: upper], tag=tag, sitename=self.settings["sitename"]["settings_value"],
+						page_name="Tag: "+tag, api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+					))
 
 	def generate_categories(self):
 		if len(self.post["categories"]) == 0:
@@ -195,7 +202,10 @@ class PostsGenerator:
 					lower = 10 * i
 					upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
 					
-					f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category, api_url=self.settings["api_url"]["settings_value"]))
+					f.write(template.render(
+						posts=categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"],
+						page_name="Category: "+category, api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+					))
 	
 	def generate_archive(self):
 		post_list = []
@@ -254,9 +264,15 @@ class PostsGenerator:
 				os.makedirs(os.path.join(post_path_dir, str(i)))
 			
 			with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-				f.write(template.render(posts = post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
+				f.write(template.render(
+					posts=post_list[lower: upper], sitename=self.settings["sitename"]["settings_value"],
+					page_name="Archive: Post type name", api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+				))
 		if len(post_list) == 0:
-			f.write(template.render(posts = [], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
+			f.write(template.render(
+				posts=[], sitename=self.settings["sitename"]["settings_value"], page_name="Archive: Post type name",
+				api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+			))
 
 	def generate_rss(self, posts, path):
 		doc = minidom.Document()
@@ -427,7 +443,10 @@ class PostsGenerator:
 		home_path_dir = Path(self.config["OUTPUT_PATH"], "index.html")
 
 		with open(home_path_dir, 'w') as f:
-			f.write(template.render(posts = posts, sitename=self.settings["sitename"]["settings_value"], page_name = "Home", api_url=self.settings["api_url"]["settings_value"]))
+			f.write(template.render(
+				posts=posts, sitename=self.settings["sitename"]["settings_value"],
+				page_name="Home", api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+			))
 
 	def regenerate_all(self):
 		# get all post types
@@ -486,13 +505,13 @@ class PostsGenerator:
 					})
 			except Exception as e:
 				print(traceback.format_exc())
-			#generate post
+			# generate post
 			for post in posts:
 				post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
 				self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
 				post_template_path = Path(self.theme_path, "post.html")
-				if (Path(self.theme_path, "post-" + post_type["slug"] + ".html").is_file()):
+				if Path(self.theme_path, "post-" + post_type["slug"] + ".html").is_file():
 					post_template_path = Path(self.theme_path, "post-" + post_type["slug"] + ".html")
 
 				template = ""
@@ -503,7 +522,10 @@ class PostsGenerator:
 					os.makedirs(post_path_dir)
 
 				with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
-					f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"], api_url=self.settings["api_url"]["settings_value"]))
+					f.write(template.render(
+						post=post, sitename=self.settings["sitename"]["settings_value"],
+						api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+					))
 
 			# generate archive
 			archive_template_path = Path(self.theme_path, "archive.html")
@@ -533,7 +555,11 @@ class PostsGenerator:
 					os.makedirs(os.path.join(post_path_dir, str(i)))
 				
 				with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-					f.write(template.render(posts = posts[lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Archive: Post type name", api_url=self.settings["api_url"]["settings_value"]))
+					f.write(template.render(
+						posts=posts[lower: upper], sitename=self.settings["sitename"]["settings_value"],
+						page_name="Archive: Post type name", api_url=self.settings["api_url"]["settings_value"],
+						sloth_footer=self.sloth_footer
+					))
 
 			# generate all categories
 			categories_list = {}
@@ -568,20 +594,23 @@ class PostsGenerator:
 				if not os.path.exists(os.path.join(post_path_dir, tag)):
 					os.makedirs(os.path.join(post_path_dir, tag))
 				
-				for i in range(math.ceil(len(tags_posts_list[tag])/10)):
+				for i in range(math.ceil(len(tags_list[tag])/10)):
 					if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag, str(i))):
 						os.makedirs(os.path.join(post_path_dir, tag, str(i)))
 					
 					with open(os.path.join(post_path_dir, tag, str(i) if i != 0 else '', 'index.html'), 'w') as f:
 						lower = 10 * i
-						upper = (10*i) + 10 if (10*i) + 10 < len(tags_posts_list[tag]) else len(tags_posts_list[tag])
+						upper = (10*i) + 10 if (10*i) + 10 < len(tags_list[tag]) else len(tags_list[tag])
 						
-						f.write(template.render(posts = tags_posts_list[tag][lower: upper], tag = tag, sitename=self.settings["sitename"]["settings_value"], page_name = "Tag: "+tag, api_url=self.settings["api_url"]["settings_value"]))
+						f.write(template.render(
+							posts=tags_list[tag][lower: upper], tag=tag, sitename=self.settings["sitename"]["settings_value"],
+							page_name="Tag: "+tag, api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+						))
 			
 			category_template_path = Path(self.theme_path, "category.html")
-			if (Path(self.theme_path, "category-" + post_type["slug"] + ".html").is_file()):
+			if Path(self.theme_path, "category-" + post_type["slug"] + ".html").is_file():
 				category_template_path = Path(self.theme_path, "category-" + post_type["slug"] + ".html")
-			elif (not category_template_path.is_file()):
+			elif not category_template_path.is_file():
 				category_template_path = Path(self.theme_path, "archive.html")
 
 			template = ""
@@ -597,15 +626,19 @@ class PostsGenerator:
 				if not os.path.exists(os.path.join(post_path_dir, category)):
 					os.makedirs(os.path.join(post_path_dir, category))
 				
-				for i in range(math.ceil(len(categories_posts_list[category])/10)):
+				for i in range(math.ceil(len(categories_list[category])/10)):
 					if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
 						os.makedirs(os.path.join(post_path_dir, category, str(i)))
 					
 					with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
 						lower = 10 * i
-						upper = (10*i) + 10 if (10*i) + 10 < len(categories_posts_list[category]) else len(categories_posts_list[category])
+						upper = (10*i) + 10 if (10*i) + 10 < len(categories_list[category]) else len(categories_list[category])
 						
-						f.write(template.render(posts = categories_posts_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"], page_name = "Category: "+category, api_url=self.settings["api_url"]["settings_value"]))
+						f.write(template.render(
+							posts=categories_list[category][lower: upper], sitename=self.settings["sitename"]["settings_value"],
+							page_name="Category: "+category, api_url=self.settings["api_url"]["settings_value"],
+							sloth_footer=self.sloth_footer
+						))
 
 		# generate home
 		home_template_path = Path(self.theme_path, "home.html")
@@ -618,8 +651,8 @@ class PostsGenerator:
 		with open(home_path_dir, 'w') as f:
 			f.write(template.render(
 				posts=posts, sitename=self.settings["sitename"]["settings_value"], page_name="Home",
-				api_url=self.settings["api_url"]["settings_value"])
-			)
+				api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer
+			))
 
 	def delete_post(self, post_type_slug, post_slug):		
 		post_types = []
