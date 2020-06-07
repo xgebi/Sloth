@@ -2,23 +2,20 @@
 import os
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS
-#from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 
-#login_manager = LoginManager()
-#login_manager.login_view = 'authentication.do_the_login'
-#login_manager.session_protection = 'strong'
 bcrypt = Bcrypt()
 
 
-def create_app(config_type):  # dev, test, or prod
+def create_app():  # dev, test, or prod
 
 	app = Flask(__name__)
 	cors = CORS(app)
 	configuration = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
-	
+
+	print(configuration)
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
 	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
@@ -30,7 +27,7 @@ def create_app(config_type):  # dev, test, or prod
 	@app.before_request
 	def before_first_request():
 		registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
-		if not (request.path.startswith('/api') or request.path.startswith('/registration') or request.path.startswith('/design')  or request.path.startswith('/static')) and not registration_lock_file.is_file():
+		if not (request.path.startswith('/api') or request.path.startswith('/registration') or request.path.startswith('/design') or request.path.startswith('/static')) and not registration_lock_file.is_file():
 			return redirect('/registration')
 
 	from app.errors import errors

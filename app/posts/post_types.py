@@ -12,7 +12,7 @@ class PostTypes:
 		raw_items = []
 		try:
 			cur.execute(
-				"SELECT uuid, display_name FROM sloth_post_types"
+				"SELECT uuid, display_name, slug FROM sloth_post_types"
 			)
 			raw_items = cur.fetchall()
 		except Exception as e:
@@ -22,7 +22,8 @@ class PostTypes:
 		for item in raw_items:
 			items.append({
 				"uuid": item[0],
-				"displayName": item[1]
+				"displayName": item[1],
+				"slug": item[2]
 			})
 		return items
 

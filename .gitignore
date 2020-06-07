@@ -3,6 +3,7 @@ node_modules
 skeletonsloth
 venv
 dist
+logs
 __pycache__/
 
 /tests/e2e/videos/

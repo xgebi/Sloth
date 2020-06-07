@@ -6,13 +6,15 @@ from app.utilities.db_connection import db_connection
 import psycopg2
 from psycopg2 import sql
 import datetime
+import traceback
 
 from app.web.dashboard import dashboard
+
 
 @dashboard.route('/dashboard')
 @authorize_web(0)
 @db_connection
-def show_dashboard(*args, permission_level, connection,**kwargs):
+def show_dashboard(*args, permission_level, connection, **kwargs):
     postTypes = PostTypes()
     postTypesResult = postTypes.get_post_type_list(connection)
 
@@ -24,22 +26,27 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
 
     try:
         cur.execute(
-            sql.SQL("SELECT A.uuid, A.title, A.publish_date, B.display_name FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type WHERE post_status = %s LIMIT 10"), ['published']
+            sql.SQL(
+                "SELECT A.uuid, A.title, A.publish_date, B.display_name FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type WHERE post_status = %s LIMIT 10"),
+            ['published']
         )
         raw_recent_posts = cur.fetchall()
 
         cur.execute(
-            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"), ['scheduled']
+            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"),
+            ['scheduled']
         )
         raw_upcoming_posts = cur.fetchall()
 
         cur.execute(
-            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"), ['draft']
+            sql.SQL("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10"),
+            ['draft']
         )
         raw_drafts = cur.fetchall()
 
         cur.execute(
-            sql.SQL("SELECT uuid, name, sent_date, status FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10")
+            sql.SQL(
+                "SELECT uuid, name, sent_date, status FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10")
         )
         raw_messages = cur.fetchall()
 
@@ -61,7 +68,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         recent_posts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
 
@@ -69,7 +76,7 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         upcoming_posts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
 
@@ -77,17 +84,24 @@ def show_dashboard(*args, permission_level, connection,**kwargs):
         drafts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
-    
+
     for msg in raw_messages:
         messages.append({
             "uuid": msg[0],
             "name": msg[1],
-            "sent_date": datetime.datetime.fromtimestamp(float(msg[2])/1000.0).strftime("%Y-%m-%d %H:%M"),
+            "sent_date": datetime.datetime.fromtimestamp(float(msg[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "status": msg[3]
         })
-    
-    
-    return render_template("dashboard.html", post_types=postTypesResult, permission_level=permission_level, messages=messages, recent_posts=recent_posts, drafts=drafts, upcoming_posts=upcoming_posts)
+
+    return render_template(
+        "dashboard.html",
+        post_types=postTypesResult,
+        permission_level=permission_level,
+        messages=messages,
+        recent_posts=recent_posts,
+        drafts=drafts,
+        upcoming_posts=upcoming_posts
+    )
