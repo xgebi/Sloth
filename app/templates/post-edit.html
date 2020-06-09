@@ -4,14 +4,14 @@
 
 {% block body %}
 <h1>{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}</h1>
+<form method="post" action="/post/{{ data["uuid"] }}/save">
 
-<table>
-	<thead>
 
-	</thead>
-	<tbody>
+</form>
 
-	</tbody>
-</table>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/post-edit.js"></script>
 {% endblock %}

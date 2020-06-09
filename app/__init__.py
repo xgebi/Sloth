@@ -15,7 +15,6 @@ def create_app():  # dev, test, or prod
 	cors = CORS(app)
 	configuration = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
 
-	print(configuration)
 	app.config.from_pyfile(configuration)
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
 	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')

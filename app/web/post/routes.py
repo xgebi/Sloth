@@ -37,7 +37,7 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 		)
 		raw_items = cur.fetchall()
 	except Exception as e:
-		print("db error")
+		print("db error A")
 		abort(500)
 
 	cur.close()
@@ -63,6 +63,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 	postTypes = PostTypes()
 	postTypesResult = postTypes.get_post_type_list(connection)
 
+	print("hello")
+
 	cur = connection.cursor()
 	media = []
 	post_type_name = ""
@@ -74,26 +76,24 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 		media = cur.fetchall()		
 
 		cur.execute(
-			sql.SQL("SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"),
-			[post_type]
+			sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, 
+			A.post_status, A.tags, A.categories, B.display_name, A.post_type
+			FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
+			[post_id]
 		)
 		post = cur.fetchone()
-
-		cur.execute(
-			sql.SQL("SELECT lang, slug, post_type, FROM sloth_post_types WHERE uuid = %s"),
-			[post[12]]
-		)
-		post_type_name = cur.fetchone()[0]
 	except Exception as e:
-		print("db error")
+		print("db error B")
+		print(e)
 		abort(500)
 
 	cur.close()
 	connection.close()
 
-	token = uuid.uuid4()
+	token = request.cookies.get('sloth_session')
 
 	data = {
+		"uuid": post_id,
 		"title": post[0],
 		"excerpt": post[1],
 		"description": post[2],
@@ -131,7 +131,7 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
 		)
 		post_type_name = cur.fetchone()[0]
 	except Exception as e:
-		print("db error")
+		print("db error A")
 		abort(500)
 
 	cur.close()
@@ -170,7 +170,7 @@ def save_post(*args, permission_level, connection, post_id, **kwargs):
 		)
 		post_type_name = cur.fetchone()[0]
 	except Exception as e:
-		print("db error")
+		print("db error B")
 		abort(500)
 
 	cur.close()
@@ -211,7 +211,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
 		taxonomy = cur.fetchall()
 	except Exception as e:
 		import pdb; pdb.set_trace()
-		print("db error")
+		print("db error C")
 		abort(500)
 
 	cur.close()
