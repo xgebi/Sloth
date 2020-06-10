@@ -21,22 +21,30 @@ reserved_folder_names = ('tag', 'category')
 @post.route("/api/post/media", methods=["GET"])
 @authorize_rest(0)
 @db_connection
-def show_post_new(*args, connection, **kwargs):	
+def get_media_data(*args, connection, **kwargs):
 	cur = connection.cursor()
-	media = []
+	raw_media = []
 	try:
 
 		cur.execute(
 			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
 		)	
-		media = cur.fetchall()
+		raw_media = cur.fetchall()
 	except Exception as e:
 		print("db error")
 		abort(500)
 
 	cur.close()
 	connection.close()
-	
+
+	media = []
+	for medium in raw_media:
+		media.append({
+			"uuid": medium[0],
+			"filePath": medium[1],
+			"alt": medium[2]
+		})
+
 	return json.dumps({"media": media})
 
 
