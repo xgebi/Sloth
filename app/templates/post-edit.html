@@ -4,11 +4,36 @@
 
 {% block body %}
     <h1>{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}</h1>
+    <div>
+        <label for="title">Title</label>
+        <input id="title" value="{{ data["title"] }}" />
+    </div>
     <button id="gallery-opener">Open gallery</button>
+    <div>
+        <label for="excerpt">Excerpt:</label>
+        <br />
+        <textarea id="excerpt">{{ data["excerpt"] }}</textarea>
+    </div>
+    <div>
+        <label for="content">Post:</label>
+        <br />
+        <textarea id="content">{{ data["content"] }}</textarea>
+    </div>
+    <div>
+        <label for="css">Custom CSS:</label>
+        <br />
+        <textarea id="css">{{ data["css"] }}</textarea>
+    </div>
+    <div>
+        <label for="js">Custom JavaScript:</label>
+        <br />
+        <textarea id="js">{{ data["js"] }}</textarea>
+    </div>
 
 
 
-<dialog id="media-gallery"></dialog>
+
+<dialog id="modal"></dialog>
 {% endblock %}
 
 {% block scripts %}

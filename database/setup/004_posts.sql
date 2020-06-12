@@ -1,6 +1,7 @@
+CREATE TYPE sloth_post_status AS ENUM ('published', 'draft', 'deleted', 'scheduled');
+
 CREATE TABLE sloth_posts (
 	uuid character varying(200) NOT NULL,
-	secondary_uuid character varying(200),
 	original_lang_entry_uuid character varying(200),
 	lang character varying(5) NOT NULL,
 	slug character varying(200) UNIQUE,
@@ -11,13 +12,12 @@ CREATE TABLE sloth_posts (
 	excerpt text,
 	css text,
 	js text,
-	thumbnail integer NULL, -- TODO change this to something?
+	thumbnail character varying(200) NULL,
 	publish_date double precision,
 	update_date double precision,
-	post_status character varying(10),
+	post_status sloth_post_status,
 	tags text[],
 	categories text[],
-	deleted boolean,
 
 	PRIMARY KEY(uuid),
 	CONSTRAINT post_type_fkey FOREIGN KEY(post_type)
@@ -29,7 +29,7 @@ CREATE TABLE sloth_posts (
 		ON UPDATE NO ACTION
 		ON DELETE NO ACTION,
 	CONSTRAINT thumbnail_fkey FOREIGN KEY(thumbnail)
-		REFERENCES sloth_media (wp_id) MATCH SIMPLE
+		REFERENCES sloth_media (uuid) MATCH SIMPLE
 		ON UPDATE NO ACTION
 		ON DELETE NO ACTION
 );

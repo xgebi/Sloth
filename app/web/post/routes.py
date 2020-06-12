@@ -95,8 +95,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 	data = {
 		"uuid": post_id,
 		"title": post[0],
-		"excerpt": post[1],
-		"description": post[2],
+		"content": post[1],
+		"excerpt": post[2],
 		"css": post[3],
 		"js": post[4],
 		"thumbnail": post[5],

@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 function openGalleryDialog(data) {
 	debugger;
-	const dialog = document.querySelector("#media-gallery");
+	const dialog = document.querySelector("#modal");
 	dialog.setAttribute('open', '');
 	const copyResult = document.createElement('p');
 	dialog.appendChild(copyResult);
@@ -79,7 +79,11 @@ function openGalleryDialog(data) {
 	const closeButton = document.createElement('button');
 	closeButton.textContent = 'Close'
 	closeButton.addEventListener('click', () => {
-		dialog.removeAttribute('open')
+		debugger;
+		while (dialog.firstChild) {
+    		dialog.removeChild(dialog.lastChild);
+  		}
+		dialog.removeAttribute('open');
 	});
 	dialog.appendChild(closeButton);
 }

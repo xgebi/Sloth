@@ -28,7 +28,7 @@ class PostsGenerator:
 
     # Constructor
     @db_connection
-    def __init__(self, connection=None):
+    def __init__(self, *args, connection=None, **kwargs):
         # Connection to database is necessary to proceed
         if connection is None:
             self.is_runnable = False
@@ -64,7 +64,7 @@ class PostsGenerator:
         )
 
         # Footer for posts
-        with open('../templates/analytics.html', 'r') as f:
+        with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
             self.sloth_footer = f.read()
 
     def run(self, post=False, posts=False):
@@ -81,8 +81,82 @@ class PostsGenerator:
     def get_post_type(self, uuid):
         post_type
 
+    def get_post_types(self):
+        cur = self.connection.cursor()
+        raw_items = []
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
+                        FROM sloth_post_types""")
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(traceback.format_exc())
+
+        cur.close()
+
+        post_types = []
+        for item in raw_items:
+            post_types.append({
+                "uuid": item[0],
+                "slug": item[1],
+                "display_name": item[2],
+                "tags_enabled": item[3],
+                "categories_enabled": item[4],
+                "archive_enabled": item[5]
+            })
+
+        return post_types
+
+    def get_posts_for_post_types(self, post_types):
+        cur = self.connection.cursor()
+        raw_items = {}
+        try:
+            for post_type in post_types:
+                cur.execute(
+                    sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
+                                FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                WHERE post_type = %s AND post_status = 'published';"""),
+                    [post_type["uuid"]]
+                )
+                raw_items[post_type["uuid"]] = cur.fetchall()
+        except Exception as e:
+            print(traceback.format_exc())
+
+        cur.close()
+
+        posts = {}
+        for post_type in post_types:
+            posts[post_type["uuid"]] = []
+
+            for post in raw_items[post_type["uuid"]]:
+                posts[post_type["uuid"]].append({
+                    "uuid": post[0],
+                    "slug": post[1],
+                    "author_name": post[2],
+                    "author_uuid": post[3],
+                    "title": post[4],
+                    "content": post[5],
+                    "excerpt": post[6],
+                    "css": post[7],
+                    "js": post[8],
+                    "thumbnail": post[9],
+                    "publish_date": post[10],
+                    "update_date": post[11],
+                    "post_status": post[12],
+                    "tags": post[13],
+                    "categories": post[14],
+                    "post_type_slug": post_type["slug"]
+                })
+
+        return posts
+
     # Generate posts
     def generate_all(self):
+        post_types = self.get_post_types()
+        posts = self.get_posts_for_post_types(post_types)
+
         for post in posts:
             self.generate_post(post, multiple_posts=True)
 
