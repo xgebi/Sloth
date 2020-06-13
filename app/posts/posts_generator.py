@@ -157,28 +157,36 @@ class PostsGenerator:
         post_types = self.get_post_types()
         posts = self.get_posts_for_post_types(post_types)
 
-        for post in posts:
-            self.generate_post(post, multiple_posts=True)
+        tags = ()
+        categories = ()
 
-        if self.post["tags_enabled"]:
-            self.generate_tags()
+        for post_type in post_types:
+            for post in posts[post_type["uuid"]]:
+                # TODO rework this, so additional queries are unnecessary
 
-        if self.post["categories_enabled"]:
-            self.generate_categories()
+                self.generate_post(post, multiple_posts=True)
+                tags |= set(post["tags"])
+                categories |= set(post["categories"])
 
-        if self.post["archive_enabled"]:
-            self.generate_archive()
+            if self.post_type["tags_enabled"]:
+                self.generate_tags(post_type_slug=post_type["slug"], tags=tags)
+
+            if self.post_type["categories_enabled"]:
+                self.generate_categories(post_type_slug=post_type["slug"], categories=categories)
+
+            if self.post_type["archive_enabled"]:
+                self.generate_archive(posts=posts[post_type["uuid"]])
 
         self.generate_home()
 
     # Generate post
-    def generate_post(self, post, multiple_posts=False):
-        post_path_dir = Path(self.config["OUTPUT_PATH"], post["post_type_slug"], post["slug"])
+    def generate_post(self, post, post_type, multiple_posts=False):
+        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
         self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
         post_template_path = Path(self.theme_path, "post.html")
-        if Path(self.theme_path, "post-" + post["post_type_slug"] + ".html").is_file():
-            post_template_path = Path(self.theme_path, "post-" + post["post_type_slug"] + ".html")
+        if Path(self.theme_path, f"post-{post_type['slug']}.html").is_file():
+            post_template_path = Path(self.theme_path, f"post-{post_type['slug']}.html")
 
         template = ""
         with open(post_template_path, 'r') as f:
@@ -192,16 +200,57 @@ class PostsGenerator:
                                     api_url=self.settings["api_url"]["settings_value"]))
 
         if not multiple_posts:
-            if self.post["tags_enabled"]:
-                self.generate_tags()
+            self.regenerate_for_post(post_type)
 
-            if self.post["categories_enabled"]:
-                self.generate_categories()
+    def regenerate_for_post(self, post_type):
+        cur = self.connection.cursor()
+        raw_items = []
+        try:
+            cur.execute(
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                        A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
+                                    FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                    WHERE post_type = %s AND post_status = 'published';"""),
+                [post_type["uuid"]]
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(traceback.format_exc())
 
-            if self.post["archive_enabled"]:
-                self.generate_archive()
+        cur.close()
 
-            self.generate_home()
+        posts = []
+
+        for post in raw_items[post_type["uuid"]]:
+            posts.append({
+                "uuid": post[0],
+                "slug": post[1],
+                "author_name": post[2],
+                "author_uuid": post[3],
+                "title": post[4],
+                "content": post[5],
+                "excerpt": post[6],
+                "css": post[7],
+                "js": post[8],
+                "thumbnail": post[9],
+                "publish_date": post[10],
+                "update_date": post[11],
+                "post_status": post[12],
+                "tags": post[13],
+                "categories": post[14],
+                "post_type_slug": post_type["slug"]
+            })
+
+        if self.post_type["tags_enabled"]:
+            self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'])
+
+        if self.post_type["categories_enabled"]:
+            self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'])
+
+        if self.post_type["archive_enabled"]:
+            self.generate_archive(posts=posts[post_type["uuid"]])
+
+        self.generate_home()
 
     # Generate tags
     def generate_tags(self, post_type_slug, tags):
@@ -216,10 +265,10 @@ class PostsGenerator:
             try:
                 cur.execute(
                     sql.SQL(
-                        """SELECT uuid, title, publish_date FROM sloth_posts
-                         WHERE post_type = %s AND %s = ANY (tags) AND post_status = %s"""
+                        """SELECT uuid, title, excerpt publish_date FROM sloth_posts
+                         WHERE post_type = %s AND %s = ANY (tags) AND post_status = 'published';"""
                     ),
-                    [self.post["post_type"], tag, 'published']
+                    [self.post["post_type"], tag]
                 )
                 raw_items = cur.fetchall()
             except Exception as e:
