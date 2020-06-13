@@ -10,55 +10,78 @@ import json
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
+from app.posts.posts_generator import PostsGenerator
 
 from app.posts.post_types import PostTypes
 
 from app.web.settings.themes import settings_themes
 
+
 @settings_themes.route("/settings/themes")
 @authorize_web(1)
 @db_connection
 def show_theme_settings(*args, permission_level, connection, **kwargs):
-	if connection is None:
-		return redirect("/database-error")	
-	settings = {}
+    if connection is None:
+        return redirect("/database-error")
+    settings = {}
 
-	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(connection)
-	
-	config = current_app.config
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
 
-	cur = connection.cursor()
+    config = current_app.config
 
-	active_theme = ""
-	try:		
-		cur.execute(
-			"SELECT settings_value FROM sloth_settings WHERE settings_name = 'active_theme'"
-		)
-		raw_items = cur.fetchone()
-		active_theme = raw_items[0]
-	except Exception as e:
-		print("db error")
-		abort(500)
+    cur = connection.cursor()
 
-	cur.close()
-	connection.close()
+    active_theme = ""
+    try:
+        cur.execute(
+            "SELECT settings_value FROM sloth_settings WHERE settings_name = 'active_theme'"
+        )
+        raw_items = cur.fetchone()
+        active_theme = raw_items[0]
+    except Exception as e:
+        print("db error")
+        abort(500)
 
-	listOfDirs = os.listdir(config["THEMES_PATH"])
-	themes = []	
+    cur.close()
+    connection.close()
 
-	for folder in listOfDirs:
-		theme_file = Path(config["THEMES_PATH"], folder, 'theme.json')
-		if (theme_file.is_file()):
-			with open(theme_file, 'r') as f:
-				theme = json.loads(f.read())
-				if (theme["choosable"] and theme["name"].find(" ") == -1):
-					themes.append(theme)
-	import pdb; pdb.set_trace()	
-	return render_template("themes-list.html", post_types=postTypesResult, permission_level=permission_level, themes=themes)
+    list_of_dirs = os.listdir(config["THEMES_PATH"])
+    themes = []
+
+    for folder in list_of_dirs:
+        theme_file = Path(config["THEMES_PATH"], folder, 'theme.json')
+        if theme_file.is_file():
+            with open(theme_file, 'r') as f:
+                theme = json.loads(f.read())
+                if theme["choosable"] and theme["name"].find(" ") == -1:
+                    themes.append(theme)
+
+    return render_template(
+        "theme-list.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        themes=themes
+    )
+
 
 @settings_themes.route("/settings/themes/activate/<theme_name>")
 @authorize_web(1)
 @db_connection
 def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
-	pass
+    pass
+    # save theme theme to database
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 'active_theme';"),
+            [theme_name]
+        )
+    except Exception as e:
+        print("db error")
+        abort(500)
+    # regenerate all posts
+    posts_gen = PostsGenerator()
+    posts_gen.run(posts=True)
+
+    return redirect("/settings/themes")

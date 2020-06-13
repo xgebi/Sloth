@@ -5,9 +5,11 @@ from app.authorization.user import User
 
 from app.web.login import login
 
+
 @login.route("/login")
 def show_login():
 	return render_template("login.html", status={"empty": True})
+
 
 @login.route("/login/error")
 def show_login_error():
@@ -19,7 +21,7 @@ def process_login(*args, connection=None, **kwargs):
 	# get credentials
 	username = request.form.get("username")
 	password = request.form.get("password")
-	if (len(username) == 0 or len(password) == 0):
+	if len(username) == 0 or len(password) == 0:
 		return redirect("/login/error")
 	# compare credentials with database
 	user = User()
@@ -31,6 +33,7 @@ def process_login(*args, connection=None, **kwargs):
 		response.set_cookie('sloth_session', info["displayName"]+":"+info["uuid"]+":"+info["token"])
 		return response
 	return redirect("/login/error")
+
 
 @login.route("/logout")
 def logout():
