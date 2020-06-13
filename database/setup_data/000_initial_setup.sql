@@ -7,5 +7,5 @@ INSERT INTO sloth_posts VALUES ('76c05278-749d-47fe-b782-a4ecd5d27cb6', '', 'en'
 UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1);
 
 -- Initial Settings
-INSERT INTO sloth_settings VALUES('active_theme', '', 'text', 'themes', 'white');
+INSERT INTO sloth_settings VALUES('active_theme', '', 'text', 'themes', 'light');
 commit;
