@@ -22,56 +22,56 @@ reserved_folder_names = ('tag', 'category')
 @authorize_rest(0)
 @db_connection
 def get_media_data(*args, connection, **kwargs):
-	cur = connection.cursor()
-	raw_media = []
-	try:
+    cur = connection.cursor()
+    raw_media = []
+    try:
 
-		cur.execute(
-			sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
-		)	
-		raw_media = cur.fetchall()
-	except Exception as e:
-		print("db error")
-		abort(500)
+        cur.execute(
+            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
+        )
+        raw_media = cur.fetchall()
+    except Exception as e:
+        print("db error")
+        abort(500)
 
-	cur.close()
-	connection.close()
+    cur.close()
+    connection.close()
 
-	media = []
-	for medium in raw_media:
-		media.append({
-			"uuid": medium[0],
-			"filePath": medium[1],
-			"alt": medium[2]
-		})
+    media = []
+    for medium in raw_media:
+        media.append({
+            "uuid": medium[0],
+            "filePath": medium[1],
+            "alt": medium[2]
+        })
 
-	return json.dumps({"media": media})
+    return json.dumps({"media": media})
 
 
 @post.route("/api/post/upload-file", methods=['POST'])
 @authorize_rest(0)
 @db_connection
 def upload_image(*args, file_name, connection=None, **kwargs):
-	ext = file_name[file_name.rfind("."):]
-	if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"):
-		abort(500)
-	with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
-		f.write(request.data)
+    ext = file_name[file_name.rfind("."):]
+    if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"):
+        abort(500)
+    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
+        f.write(request.data)
 
-	file = {}
+    file = {}
 
-	try:
-		cur = connection.cursor()
-	
-		# sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
-		cur.execute(
-			sql.SQL("INSERT INTO settings_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"), [str(uuid.uuid4()), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), "", ""]
-		)
-		file = cur.fetchone()
-		cur.close()
-	except Exception as e:
-		print(traceback.format_exc())
-		connection.close()
-		abort(500)
+    try:
+        cur = connection.cursor()
 
-	return json.dumps({ "media": file }), 201
+        cur.execute(
+            sql.SQL("INSERT INTO settings_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
+            [str(uuid.uuid4()), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), "", ""]
+        )
+        file = cur.fetchone()
+        cur.close()
+    except Exception as e:
+        print(traceback.format_exc())
+        connection.close()
+        abort(500)
+
+    return json.dumps({ "media": file }), 201

@@ -19,7 +19,7 @@ class Registration:
 
     def initial_settings(self, *args, filled={}, **kwargs):
         registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
-        if (registration_lock_file.is_file()):
+        if registration_lock_file.is_file():
             return {"error": "Registration locked", "status": 403}
 
         cur = self.connection.cursor()
@@ -31,7 +31,7 @@ class Registration:
             self.connection.rollback()
             result = self.set_tables()
 
-            if (result.get("error") is not None):
+            if result.get("error") is not None:
                 return result
             items = [0]
         except Exception as e:
@@ -43,7 +43,7 @@ class Registration:
             return {"error": "Registration can be done only once", "status": 403}
 
         for key, value in filled.items():
-            if filled[key] == None:
+            if filled[key] is None:
                 return {"error": "Missing values", "status": 400}
 
         items = {}
@@ -58,12 +58,10 @@ class Registration:
             print(traceback.format_exc())
             return {"error": "Database error", "status": 500}
 
-        if (len(items) == 0):
-            user = {}
-            user["uuid"] = str(uuid.uuid4())
-            user["username"] = filled["username"]
-            user["password"] = bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode(
-                "utf-8")
+        if len(items) == 0:
+            user = {"uuid": str(uuid.uuid4()), "username": filled["username"],
+                    "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode(
+                        "utf-8")}
 
             try:
                 cur.execute(
@@ -123,9 +121,9 @@ class Registration:
         cur = self.connection.cursor()
         for filename in sqls:
             with open(os.path.join(os.getcwd(), "database", "setup", filename)) as f:
-                scrpt = str(f.read())
+                script = str(f.read())
                 try:
-                    cur.execute(scrpt)
+                    cur.execute(script)
                     self.connection.commit()
                 except Exception as e:
                     print("hihi")

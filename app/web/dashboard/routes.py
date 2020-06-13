@@ -15,8 +15,8 @@ from app.web.dashboard import dashboard
 @authorize_web(0)
 @db_connection
 def show_dashboard(*args, permission_level, connection, **kwargs):
-    postTypes = PostTypes()
-    postTypesResult = postTypes.get_post_type_list(connection)
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
 
     cur = connection.cursor()
     raw_recent_posts = []
@@ -27,7 +27,9 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
     try:
         cur.execute(
             sql.SQL(
-                "SELECT A.uuid, A.title, A.publish_date, B.display_name FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type WHERE post_status = %s LIMIT 10"),
+                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
+                WHERE post_status = %s LIMIT 10;"""),
             ['published']
         )
         raw_recent_posts = cur.fetchall()
@@ -46,7 +48,8 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
         cur.execute(
             sql.SQL(
-                "SELECT uuid, name, sent_date, status FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10")
+                """SELECT uuid, name, sent_date, status 
+                FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
         )
         raw_messages = cur.fetchall()
 
@@ -98,7 +101,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
     return render_template(
         "dashboard.html",
-        post_types=postTypesResult,
+        post_types=post_types_result,
         permission_level=permission_level,
         messages=messages,
         recent_posts=recent_posts,
