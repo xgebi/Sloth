@@ -68,18 +68,41 @@ class PostsGenerator:
             self.sloth_footer = f.read()
 
     def run(self, post=False, posts=False):
-        # thread4hz = threading.Thread(target=countTo,kwargs=dict(x=3,delay=0.25))
         if not self.is_runnable and ((post and not posts) or (posts and not post)):
             return
         t = {}
         if posts:
             t = threading.Thread(target=self.generate_all)
         elif post:
-            t = threading.Thread(target=self.generate_post, kwargs=dict(post=post))
+            post_type = self.get_post_type(post["uuid"])
+            t = threading.Thread(target=self.generate_post, kwargs=dict(post=post, post_type=post_type))
+        else:
+            return
         t.start()
 
     def get_post_type(self, uuid):
-        post_type
+        cur = self.connection.cursor()
+        raw_item = []
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
+                                FROM sloth_post_types WHERE uuid = %s"""),
+                [uuid]
+            )
+            raw_item = cur.fetchone()
+        except Exception as e:
+            print(traceback.format_exc())
+
+        cur.close()
+
+        return {
+            "uuid": raw_item[0],
+            "slug": raw_item[1],
+            "display_name": raw_item[2],
+            "tags_enabled": raw_item[3],
+            "categories_enabled": raw_item[4],
+            "archive_enabled": raw_item[5]
+        }
 
     def get_post_types(self):
         cur = self.connection.cursor()
@@ -157,23 +180,23 @@ class PostsGenerator:
         post_types = self.get_post_types()
         posts = self.get_posts_for_post_types(post_types)
 
-        tags = ()
-        categories = ()
+        tags = set()
+        categories = set()
 
         for post_type in post_types:
             for post in posts[post_type["uuid"]]:
-                self.generate_post(post, multiple_posts=True)
-                tags |= set(post["tags"])
-                categories |= set(post["categories"])
+                self.generate_post(post, post_type, multiple_posts=True)
+                tags.update(post["tags"])
+                categories.update(post["categories"])
 
-            if self.post_type["tags_enabled"]:
+            if post_type["tags_enabled"]:
                 self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts)
 
-            if self.post_type["categories_enabled"]:
+            if post_type["categories_enabled"]:
                 self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
 
             # TODO rework generate archive
-            if self.post_type["archive_enabled"]:
+            if post_type["archive_enabled"]:
                 self.generate_archive(posts=posts[post_type["uuid"]])
 
         self.generate_home()
@@ -196,7 +219,15 @@ class PostsGenerator:
 
         with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
             f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
-                                    api_url=self.settings["api_url"]["settings_value"]))
+                                    api_url=self.settings["api_url"]["settings_value"]), sloth_footer=self.sloth_footer)
+
+        if post["js"] and len(post["js"]) > 0:
+            with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
+                f.write(post["js"])
+
+        if post["css"] and len(post["css"]) > 0:
+            with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
+                f.write(post["css"])
 
         if not multiple_posts:
             self.regenerate_for_post(post_type)
@@ -240,13 +271,13 @@ class PostsGenerator:
                 "post_type_slug": post_type["slug"]
             })
 
-        if self.post_type["tags_enabled"]:
+        if post_type["tags_enabled"]:
             self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'])
 
-        if self.post_type["categories_enabled"]:
+        if post_type["categories_enabled"]:
             self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'])
 
-        if self.post_type["archive_enabled"]:
+        if post_type["archive_enabled"]:
             self.generate_archive(posts=posts[post_type["uuid"]])
 
         self.generate_home()
@@ -313,14 +344,14 @@ class PostsGenerator:
                 if category in post["categories"]:
                     categories_posts_list[category].append(post)
 
-            tag_template_path = Path(self.theme_path, "category.html")
+            category_template_path = Path(self.theme_path, "category.html")
             if Path(self.theme_path, f"category-{post_type_slug}.html").is_file():
-                tag_template_path = Path(self.theme_path, f"category-{post_type_slug}.html")
-            elif not tag_template_path.is_file():
-                tag_template_path = Path(self.theme_path, "archive.html")
+                category_template_path = Path(self.theme_path, f"category-{post_type_slug}.html")
+            elif not category_template_path.is_file():
+                category_template_path = Path(self.theme_path, "archive.html")
 
             template = ""
-            with open(tag_template_path, 'r') as f:
+            with open(category_template_path, 'r') as f:
                 template = Template(f.read())
 
             post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], 'category')
@@ -350,6 +381,8 @@ class PostsGenerator:
                     ))
 
     # Generate archive
+    def generate_archive(self, posts):
+        pass
 
     # Generate rss
     def generate_rss(self, posts, path):
@@ -496,8 +529,8 @@ class PostsGenerator:
             for post_type in post_type_list:
                 cur.execute(
                     sql.SQL("""SELECT uuid, title, slug, publish_date FROM sloth_posts 
-                    WHERE post_type = %s AND post_status = %s ORDER BY publish_date DESC LIMIT 10"""),
-                    [post_type['uuid'], 'published']
+                    WHERE post_type = %s AND post_status = 'published' ORDER BY publish_date DESC LIMIT 10"""),
+                    [post_type['uuid']]
                 )
 
                 raw_items = cur.fetchall()
@@ -531,4 +564,6 @@ class PostsGenerator:
                 sloth_footer=self.sloth_footer
             ))
 
-    # delete post
+    # delete post files
+    def delete_post_files(self, post_type, post):
+        pass
