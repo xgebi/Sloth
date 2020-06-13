@@ -196,9 +196,8 @@ class PostsGenerator:
             if post_type["categories_enabled"]:
                 self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
 
-            # TODO rework generate archive
             if post_type["archive_enabled"]:
-                self.generate_archive(posts=posts[post_type["uuid"]])
+                self.generate_archive(posts=posts[post_type["uuid"]], post_type=post_type)
 
         self.generate_home()
 
@@ -220,7 +219,7 @@ class PostsGenerator:
 
         with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
             f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
-                                    api_url=self.settings["api_url"]["settings_value"]), sloth_footer=self.sloth_footer)
+                                    api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer))
 
         if post["js"] and len(post["js"]) > 0:
             with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
@@ -382,8 +381,39 @@ class PostsGenerator:
                     ))
 
     # Generate archive
-    def generate_archive(self, posts):
-        pass
+    def generate_archive(self, posts, post_type):
+        archive_template_path = Path(self.theme_path, "archive.html")
+        if Path(self.theme_path, f"category-{post_type['slug']}.html").is_file():
+            archive_template_path = Path(self.theme_path, f"archive-{post_type['slug']}.html")
+
+        template = ""
+        with open(archive_template_path, 'r') as f:
+            template = Template(f.read())
+
+        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type['slug'])
+
+        if not os.path.exists(post_path_dir):
+            os.makedirs(post_path_dir)
+
+        if not os.path.exists(os.path.join(post_path_dir, post_type['slug'])):
+            os.makedirs(os.path.join(post_path_dir, post_type['slug']))
+
+        for i in range(math.ceil(len(posts) / 10)):
+            if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
+                os.makedirs(os.path.join(post_path_dir, str(i)))
+
+            with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                lower = 10 * i
+                upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
+                    posts)
+
+                f.write(template.render(
+                    posts=posts[lower: upper],
+                    sitename=self.settings["sitename"]["settings_value"],
+                    page_name=f"Archive for {post_type['display_name']}",
+                    api_url=self.settings["api_url"]["settings_value"],
+                    sloth_footer=self.sloth_footer
+                ))
 
     # Generate rss
     def generate_rss(self, posts, path):
@@ -572,3 +602,4 @@ class PostsGenerator:
 
         if os.path.exists(post_path_dir):
             shutil.rmtree(post_path_dir)
+
