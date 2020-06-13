@@ -61,7 +61,8 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
         "theme-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        themes=themes
+        themes=themes,
+        active_theme=active_theme
     )
 
 
@@ -69,7 +70,6 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
 @authorize_web(1)
 @db_connection
 def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
-    pass
     # save theme theme to database
     cur = connection.cursor()
     try:
@@ -77,6 +77,7 @@ def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
             sql.SQL("UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 'active_theme';"),
             [theme_name]
         )
+        connection.commit()
     except Exception as e:
         print("db error")
         abort(500)

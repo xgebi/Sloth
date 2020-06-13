@@ -60,7 +60,7 @@ class Registration:
 
         if len(items) == 0:
             user = {"uuid": str(uuid.uuid4()), "username": filled["username"],
-                    "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=15)).decode(
+                    "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=14)).decode(
                         "utf-8")}
 
             try:

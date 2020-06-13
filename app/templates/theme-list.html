@@ -7,11 +7,27 @@
 
 <table>
 	<thead>
-
+        <tr>
+            <th>Theme name</th>
+            <th>Action</th>
+        </tr>
 	</thead>
 	<tbody>
-		
+        {% for theme in themes  %}
+        <tr>
+            <td>{{ theme["displayName"] }}</td>
+            {% if theme["choosable"] and theme["name"] != active_theme %}
+            <td><a href="/settings/themes/activate/{{ theme["name"] }}">Choose theme</a></td>
+            {% else %}
+                <td></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
 	</tbody>
 </table>
 
 {% endblock %}
+
+<!--
+[{'displayName': 'Sabine Wren', 'name': 'sabine-wren', 'choosable': True}, {'name': 'White', 'choosable': True}]
+-->

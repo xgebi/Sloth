@@ -240,7 +240,7 @@ class PostsGenerator:
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                         A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                    WHERE post_type = %s AND post_status = 'published';"""),
+                                    WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC ;"""),
                 [post_type["uuid"]]
             )
             raw_items = cur.fetchall()
@@ -279,6 +279,10 @@ class PostsGenerator:
 
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts[post_type["uuid"]])
+            self.generate_rss(
+                posts=posts[post_type["uuid"]][:10],
+                path=Path(self.config["OUTPUT_PATH"], post_type["slug"], 'rss.xml')
+            )
 
         self.generate_home()
 
@@ -394,9 +398,6 @@ class PostsGenerator:
 
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
-
-        if not os.path.exists(os.path.join(post_path_dir, post_type['slug'])):
-            os.makedirs(os.path.join(post_path_dir, post_type['slug']))
 
         for i in range(math.ceil(len(posts) / 10)):
             if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
@@ -525,7 +526,7 @@ class PostsGenerator:
         root_node.appendChild(channel)
 
         doc.writexml(
-            open(str(path) + "/feed.xml", 'w'),
+            open(str(path) + "/feed.xml", 'w'), # TODO path joining
             indent="  ",
             addindent="  ",
             newl='\n'
@@ -537,29 +538,56 @@ class PostsGenerator:
         post_types = PostTypes()
         post_type_list = post_types.get_post_type_list(self.connection)
 
+        raw_posts = []
         try:
             cur = self.connection.cursor()
             cur.execute(
-                sql.SQL("SELECT uuid, slug FROM sloth_post_types")
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, C.slug
+                                FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
+                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid ORDER BY A.publish_date DESC""")
             )
-            raw_items = cur.fetchall()
-            for item in raw_items:
-                post_type_list.append({
-                    "uuid": item[0],
-                    "slug": item[1]
-                })
+            raw_posts = cur.fetchall()
             cur.close()
         except Exception as e:
             print(371)
             print(traceback.format_exc())
 
+        rss_posts = []
+        for post in raw_posts:
+            rss_posts.append({
+                "uuid": post[0],
+                "slug": post[1],
+                "author_name": post[2],
+                "author_uuid": post[3],
+                "title": post[4],
+                "content": post[5],
+                "excerpt": post[6],
+                "css": post[7],
+                "js": post[8],
+                "thumbnail": post[9],
+                "publish_date": post[10],
+                "update_date": post[11],
+                "post_status": post[12],
+                "tags": post[13],
+                "categories": post[14],
+                "post_type_slug": post[15]
+            })
+
+        self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"], 'rss.xml'))
+
         # get 10 latest posts for each post type
         posts = {}
         try:
             cur = self.connection.cursor()
+            cur.execute(
+                sql.SQL("""SELECT uuid, title, slug, excerpt, publish_date FROM sloth_posts 
+                                WHERE post_status = 'published' ORDER BY publish_date DESC LIMIT 20""")
+            )
+
             for post_type in post_type_list:
                 cur.execute(
-                    sql.SQL("""SELECT uuid, title, slug, publish_date FROM sloth_posts 
+                    sql.SQL("""SELECT uuid, title, slug, excerpt, publish_date FROM sloth_posts 
                     WHERE post_type = %s AND post_status = 'published' ORDER BY publish_date DESC LIMIT 10"""),
                     [post_type['uuid']]
                 )
@@ -571,7 +599,8 @@ class PostsGenerator:
                         "uuid": item[0],
                         "title": item[1],
                         "slug": item[2],
-                        "publish_date": item[3]
+                        "excerpt": item[3],
+                        "publish_date": item[4]
                     })
                 posts[post_type['slug']] = temp_list
             cur.close()
