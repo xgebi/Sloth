@@ -603,3 +603,8 @@ class PostsGenerator:
         if os.path.exists(post_path_dir):
             shutil.rmtree(post_path_dir)
 
+    def delete_post_type_post_files(self, post_type):
+        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+
+        if os.path.exists(posts_path_dir):
+            shutil.rmtree(posts_path_dir)
