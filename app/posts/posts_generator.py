@@ -198,6 +198,10 @@ class PostsGenerator:
 
             if post_type["archive_enabled"]:
                 self.generate_archive(posts=posts[post_type["uuid"]], post_type=post_type)
+                self.generate_rss(
+                    posts=posts[post_type["uuid"]][:10],
+                    path=Path(self.config["OUTPUT_PATH"], post_type["slug"])
+                )
 
         self.generate_home()
 
@@ -281,7 +285,7 @@ class PostsGenerator:
             self.generate_archive(posts=posts[post_type["uuid"]])
             self.generate_rss(
                 posts=posts[post_type["uuid"]][:10],
-                path=Path(self.config["OUTPUT_PATH"], post_type["slug"], 'rss.xml')
+                path=Path(self.config["OUTPUT_PATH"], post_type["slug"])
             )
 
         self.generate_home()
@@ -526,7 +530,7 @@ class PostsGenerator:
         root_node.appendChild(channel)
 
         doc.writexml(
-            open(str(path) + "/feed.xml", 'w'), # TODO path joining
+            open(str(os.path.join(path, "feed.xml")), 'w'),
             indent="  ",
             addindent="  ",
             newl='\n'
@@ -574,7 +578,7 @@ class PostsGenerator:
                 "post_type_slug": post[15]
             })
 
-        self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"], 'rss.xml'))
+        self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"]))
 
         # get 10 latest posts for each post type
         posts = {}
