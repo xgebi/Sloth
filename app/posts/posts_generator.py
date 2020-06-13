@@ -162,18 +162,17 @@ class PostsGenerator:
 
         for post_type in post_types:
             for post in posts[post_type["uuid"]]:
-                # TODO rework this, so additional queries are unnecessary
-
                 self.generate_post(post, multiple_posts=True)
                 tags |= set(post["tags"])
                 categories |= set(post["categories"])
 
             if self.post_type["tags_enabled"]:
-                self.generate_tags(post_type_slug=post_type["slug"], tags=tags)
+                self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts)
 
             if self.post_type["categories_enabled"]:
-                self.generate_categories(post_type_slug=post_type["slug"], categories=categories)
+                self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
 
+            # TODO rework generate archive
             if self.post_type["archive_enabled"]:
                 self.generate_archive(posts=posts[post_type["uuid"]])
 
@@ -253,37 +252,20 @@ class PostsGenerator:
         self.generate_home()
 
     # Generate tags
-    def generate_tags(self, post_type_slug, tags):
+    def generate_tags(self, post_type_slug, tags, posts):
         if len(tags) == 0:
             return
 
         tags_posts_list = {}
         for tag in tags:
             tags_posts_list[tag] = []
-            cur = self.connection.cursor()
-            raw_items = []
-            try:
-                cur.execute(
-                    sql.SQL(
-                        """SELECT uuid, title, excerpt publish_date FROM sloth_posts
-                         WHERE post_type = %s AND %s = ANY (tags) AND post_status = 'published';"""
-                    ),
-                    [self.post["post_type"], tag]
-                )
-                raw_items = cur.fetchall()
-            except Exception as e:
-                print(traceback.format_exc())
-            cur.close()
 
-            for item in raw_items:
-                tags_posts_list[tag].append({
-                    "uuid": item[0],
-                    "title": item[1],
-                    "publish_date": item[2]
-                })
+            for post in posts:
+                if tag in post["tags"]:
+                    tags_posts_list[tag].append(post)
 
             tag_template_path = Path(self.theme_path, "tag.html")
-            if Path(self.theme_path, "tag-" + post_type_slug + ".html").is_file():
+            if Path(self.theme_path, f"tag-{post_type_slug}.html").is_file():
                 tag_template_path = Path(self.theme_path, f"tag-{post_type_slug}.html")
             elif not tag_template_path.is_file():
                 tag_template_path = Path(self.theme_path, "archive.html")
@@ -292,66 +274,48 @@ class PostsGenerator:
             with open(tag_template_path, 'r') as f:
                 template = Template(f.read())
 
-            for tag in tags:
-                post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, 'tag')
+            post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, 'tag')
 
-                if not os.path.exists(post_path_dir):
-                    os.makedirs(post_path_dir)
+            if not os.path.exists(post_path_dir):
+                os.makedirs(post_path_dir)
 
-                if not os.path.exists(os.path.join(post_path_dir, tag)):
-                    os.makedirs(os.path.join(post_path_dir, tag))
+            if not os.path.exists(os.path.join(post_path_dir, tag)):
+                os.makedirs(os.path.join(post_path_dir, tag))
 
-                for i in range(math.ceil(len(tags_posts_list[tag]) / 10)):
-                    if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag, str(i))):
-                        os.makedirs(os.path.join(post_path_dir, tag, str(i)))
+            for i in range(math.ceil(len(tags_posts_list[tag]) / 10)):
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag, str(i))):
+                    os.makedirs(os.path.join(post_path_dir, tag, str(i)))
 
-                    with open(os.path.join(post_path_dir, tag, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-                        lower = 10 * i
-                        upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag]) else len(
-                            tags_posts_list[tag])
+                with open(os.path.join(post_path_dir, tag, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                    lower = 10 * i
+                    upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag]) else len(
+                        tags_posts_list[tag])
 
-                        f.write(template.render(
-                            posts=tags_posts_list[tag][lower: upper],
-                            tag=tag,
-                            sitename=self.settings["sitename"]["settings_value"],
-                            page_name="Tag: " + tag,
-                            api_url=self.settings["api_url"]["settings_value"],
-                            sloth_footer=self.sloth_footer
-                        ))
+                    f.write(template.render(
+                        posts=tags_posts_list[tag][lower: upper],
+                        tag=tag,
+                        sitename=self.settings["sitename"]["settings_value"],
+                        page_name="Tag: " + tag,
+                        api_url=self.settings["api_url"]["settings_value"],
+                        sloth_footer=self.sloth_footer
+                    ))
 
     # Generate categories
-    def generate_categories(self, post_type_slug, categories):
+    def generate_categories(self, post_type_slug, categories, posts):
         if len(categories) == 0:
             return
 
         categories_posts_list = {}
         for category in categories:
             categories_posts_list[category] = []
-            cur = self.connection.cursor()
-            raw_items = []
-            try:
-                cur.execute(
-                    sql.SQL(
-                        """SELECT uuid, title, publish_date FROM sloth_posts
-                         WHERE post_type = %s AND %s = ANY (categories) AND post_status = %s"""
-                    ),
-                    [self.post["post_type"], category, 'published']
-                )
-                raw_items = cur.fetchall()
-            except Exception as e:
-                print(traceback.format_exc())
-            cur.close()
 
-            for item in raw_items:
-                categories_posts_list[category].append({
-                    "uuid": item[0],
-                    "title": item[1],
-                    "publish_date": item[2]
-                })
+            for post in posts:
+                if category in post["categories"]:
+                    categories_posts_list[category].append(post)
 
-            tag_template_path = Path(self.theme_path, "tag.html")
-            if Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html").is_file():
-                tag_template_path = Path(self.theme_path, "tag-" + self.post["post_type_slug"] + ".html")
+            tag_template_path = Path(self.theme_path, "category.html")
+            if Path(self.theme_path, f"category-{post_type_slug}.html").is_file():
+                tag_template_path = Path(self.theme_path, f"category-{post_type_slug}.html")
             elif not tag_template_path.is_file():
                 tag_template_path = Path(self.theme_path, "archive.html")
 
@@ -359,32 +323,31 @@ class PostsGenerator:
             with open(tag_template_path, 'r') as f:
                 template = Template(f.read())
 
-            for category in categories:
-                post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], 'tag')
+            post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], 'category')
 
-                if not os.path.exists(post_path_dir):
-                    os.makedirs(post_path_dir)
+            if not os.path.exists(post_path_dir):
+                os.makedirs(post_path_dir)
 
-                if not os.path.exists(os.path.join(post_path_dir, category)):
-                    os.makedirs(os.path.join(post_path_dir, category))
+            if not os.path.exists(os.path.join(post_path_dir, category)):
+                os.makedirs(os.path.join(post_path_dir, category))
 
-                for i in range(math.ceil(len(categories_posts_list[category]) / 10)):
-                    if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
-                        os.makedirs(os.path.join(post_path_dir, category, str(i)))
+            for i in range(math.ceil(len(categories_posts_list[category]) / 10)):
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
+                    os.makedirs(os.path.join(post_path_dir, category, str(i)))
 
-                    with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
-                        lower = 10 * i
-                        upper = (10 * i) + 10 if (10 * i) + 10 < len(categories_posts_list[category]) else len(
-                            categories_posts_list[category])
+                with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                    lower = 10 * i
+                    upper = (10 * i) + 10 if (10 * i) + 10 < len(categories_posts_list[category]) else len(
+                        categories_posts_list[category])
 
-                        f.write(template.render(
-                            posts=categories_posts_list[category][lower: upper],
-                            tag=category,
-                            sitename=self.settings["sitename"]["settings_value"],
-                            page_name="Tag: " + category,
-                            api_url=self.settings["api_url"]["settings_value"],
-                            sloth_footer=self.sloth_footer
-                        ))
+                    f.write(template.render(
+                        posts=categories_posts_list[category][lower: upper],
+                        tag=category,
+                        sitename=self.settings["sitename"]["settings_value"],
+                        page_name="Category: " + category,
+                        api_url=self.settings["api_url"]["settings_value"],
+                        sloth_footer=self.sloth_footer
+                    ))
 
     # Generate archive
 
