@@ -12,6 +12,7 @@ import shutil
 import math
 from pathlib import Path
 import traceback
+import shutil
 from app.posts.post_types import PostTypes
 
 from app.utilities.db_connection import db_connection
@@ -354,7 +355,7 @@ class PostsGenerator:
             with open(category_template_path, 'r') as f:
                 template = Template(f.read())
 
-            post_path_dir = Path(self.config["OUTPUT_PATH"], self.post["post_type_slug"], 'category')
+            post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, 'category')
 
             if not os.path.exists(post_path_dir):
                 os.makedirs(post_path_dir)
@@ -565,5 +566,9 @@ class PostsGenerator:
             ))
 
     # delete post files
+    # TODO to be tested
     def delete_post_files(self, post_type, post):
-        pass
+        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
+
+        if os.path.exists(post_path_dir):
+            shutil.rmtree(post_path_dir)
