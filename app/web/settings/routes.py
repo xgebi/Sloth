@@ -8,6 +8,7 @@ from app.posts.post_types import PostTypes
 
 from app.web.settings import settings
 
+
 @settings.route("/settings")
 @authorize_web(1)
 @db_connection
@@ -16,8 +17,8 @@ def show_settings(*args, permission_level, connection, **kwargs):
 		return redirect("/database-error")	
 	settings = {}
 
-	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(connection)
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
 
 	cur = connection.cursor()
 
@@ -43,14 +44,15 @@ def show_settings(*args, permission_level, connection, **kwargs):
 			"settings_value_type": item[3]
 		})
 	
-	return render_template("settings.html", post_types=postTypesResult, permission_level=permission_level, settings=items)
+	return render_template("settings.html", post_types=post_types_result, permission_level=permission_level, settings=items)
+
 
 @settings.route("/settings/save", methods=["POST"])
 @authorize_web(1)
 @db_connection
 def save_settings(*args, permission_level, connection, **kwargs):
 	if connection is None:
-		return render_template("settings.html", post_types=postTypesResult, permission_level=permission_level, settings={}, error="db")
+		return redirect("/settings?error=db")
 	filled = request.form
 
 	cur = connection.cursor()
