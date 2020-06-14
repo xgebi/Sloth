@@ -102,24 +102,36 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     cur.close()
 
     gen = PostsGenerator(connection)
+    run_gen = False
     # 2. if slug or display name changed
-    if updated_post_type['slug'] != existing_post_type['slug'] or updated_post_type['display-name'] != existing_post_type['display_name']:
+    if updated_post_type['slug'] != existing_post_type['slug'] \
+            or updated_post_type['display-name'] != existing_post_type['display_name']:
         # a. delete post type
         gen.delete_post_type_post_files(existing_post_type)
-        # b. regenerate post type
-        gen.run(post_type=updated_post_type)
-    # 3. Categories changed to True
-        # a. generate categories
-    # 4. Tags changed to True
-        # a. generate tags
-    # 5. Archive changed to True
-        # a. generate archive
+        run_gen = True
+    # 3. Categories/Tags/Archive changed to True
+    if (updated_post_type['categories_enabled'] and not existing_post_type['categories_enabled']) \
+            or (updated_post_type['tags_enabled'] and not existing_post_type['tags_enabled']) \
+            or (updated_post_type['archive_enabled'] and not existing_post_type['archive_enabled']):
+        run_gen = True
     # 6. Categories changed to False
+    if updated_post_type['categories_enabled'] and not existing_post_type['categories_enabled']:
         # a. delete categories
+        gen.delete_taxonomy_files(existing_post_type, 'category')
+        run_gen = True
     # 7. Tags changed to False
-        # a. delete tags
+        if updated_post_type['tags_enabled'] and not existing_post_type['tags_enabled']:
+            # a. delete tags
+            gen.delete_taxonomy_files(existing_post_type, 'tags')
+            run_gen = True
     # 8. Archive changed to False
-        # a. delete archive
+        if updated_post_type['archive_enabled'] and not existing_post_type['archive_enabled']:
+            # a. delete archive
+            gen.delete_archive_for_post_type(existing_post_type)
+            run_gen = True
+
+    if run_gen:
+        gen.run(post_type=updated_post_type)
 
     return redirect(f"/post-type/{post_type_id}")
 

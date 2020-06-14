@@ -13,6 +13,7 @@ import math
 from pathlib import Path
 import traceback
 import shutil
+import re
 from app.posts.post_types import PostTypes
 
 from app.utilities.db_connection import db_connection
@@ -646,3 +647,18 @@ class PostsGenerator:
 
         if os.path.exists(posts_path_dir):
             shutil.rmtree(posts_path_dir)
+
+    def delete_taxonomy_files(self, post_type, taxonomy):
+        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy)
+
+        if os.path.exists(posts_path_dir, taxonomy):
+            shutil.rmtree(Path(os.path.join(posts_path_dir, taxonomy)))
+
+    def delete_archive_for_post_type(self, post_type):
+        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+
+        if Path(os.path.join(posts_path_dir, 'index.html')).is_file():
+            os.remove(Path(os.path.join(posts_path_dir, 'index.html')))
+
+        for folder in [d for d in os.listdir(posts_path_dir) if re.search('\d+', d)]:
+            shutil.rmtree(Path(os.path.join(posts_path_dir, folder)))
