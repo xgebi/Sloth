@@ -60,7 +60,7 @@ class User:
 			connection.close()
 			return { 
 				"uuid" : trimmed_items["uuid"],
-				"displayName": trimmed_items["display_name"],
+				"display_name": trimmed_items["display_name"],
 				"token": token,
 				"expiryTime": expiry_time * 1000,
 				"permissionsLevel": trimmed_items["permissions_level"]

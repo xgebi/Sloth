@@ -30,7 +30,7 @@ def process_login(*args, connection=None, **kwargs):
     # if good redirect to dashboard
     if info is not None:
         response = make_response(redirect('/dashboard'))
-        response.set_cookie('sloth_session', info["displayName"] + ":" + info["uuid"] + ":" + info["token"])
+        response.set_cookie('sloth_session', info["display_name"] + ":" + info["uuid"] + ":" + info["token"])
         return response
     return redirect("/login/error")
 

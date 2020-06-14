@@ -14,9 +14,9 @@
 			<li><a href="/dashboard">Dashboard</a></li>
 			<li><a href="/messages">Messages</a></li>
 			{% for post_type in post_types %}
-			<li><a href="/post/{{post_type['uuid']}}">{{post_type['displayName']}}</a>
+			<li><a href="/post/{{post_type['uuid']}}">{{post_type['display_name']}}</a>
 				<ul>
-					<li><a href="/post/{{post_type['uuid']}}/new">Add New {{post_type['displayName']}}</a></li>
+					<li><a href="/post/{{post_type['uuid']}}/new">Add New {{post_type['display_name']}}</a></li>
 					<li><a href="/post/{{post_type['uuid']}}/taxonomy">Taxonomy</a></li>
 				</ul>
 			</li>
