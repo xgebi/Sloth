@@ -52,13 +52,14 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         items.append({
             "uuid": item[0],
             "title": item[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(item[2])/1000.0).strftime("%Y-%m-%d"),
-            "update_date": datetime.datetime.fromtimestamp(float(item[3])/1000.0).strftime("%Y-%m-%d"),
+            "publish_date": datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d"),
+            "update_date": datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d"),
             "status": item[4],
             "author": item[5]
         })
 
-    return render_template("post-list.html", post_types=post_types_result, permission_level=permission_level, post_list=items, post_type=post_type_info)
+    return render_template("post-list.html", post_types=post_types_result, permission_level=permission_level,
+                           post_list=items, post_type=post_type_info)
 
 
 @post.route("/post/<post_id>/edit")
@@ -84,7 +85,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, 
                     A.post_status, A.tags, A.categories, B.display_name, A.post_type
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
-                    [post_id]
+            [post_id]
         )
         raw_post = cur.fetchone()
     except Exception as e:
@@ -152,13 +153,15 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
 
     token = uuid.uuid4()
 
-    return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level, token=token, post_type_name=post_type_name, data={"new": True})
+    return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
+                           token=token, post_type_name=post_type_name, data={"new": True})
 
 
 @post.route("/post/<post_id>/save", methods=["POST", "PUT"])
 @authorize_web(0)
 @db_connection
 def save_post(*args, permission_level, connection, post_id, **kwargs):
+    # TODO this function is completely wrong!!!
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -184,7 +187,7 @@ def save_post(*args, permission_level, connection, post_id, **kwargs):
             sql.SQL("SELECT slug, display_name FROM sloth_post_types WHERE uuid = %s"),
             [post[12]]
         )
-        post_type_name = cur.fetchone()[0] # TODO check this if this checks out
+        post_type_name = cur.fetchone()[0]
     except Exception as e:
         print("db error B")
         abort(500)
@@ -209,7 +212,6 @@ def save_post(*args, permission_level, connection, post_id, **kwargs):
         "display_name": post[11]
     }
 
-    # TODO wouldn't be here better redirect?
     return render_template(
         "post-edit.html",
         post_types=post_types_result,
@@ -218,6 +220,13 @@ def save_post(*args, permission_level, connection, post_id, **kwargs):
         post_type_name=post_type_name,
         data=data
     )
+
+
+@post.route("/post/<post_id>/edit")
+@authorize_web(0)
+@db_connection
+def delete_post(self, permission_level, connection, post_id):
+    pass
 
 
 @post.route("/post/<type_id>/taxonomy")
@@ -236,18 +245,50 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
         )
         taxonomy = cur.fetchall()
     except Exception as e:
-        import pdb; pdb.set_trace()
+        import pdb;
+        pdb.set_trace()
         print("db error C")
         abort(500)
 
     cur.close()
     connection.close()
 
-    token = "" # TODO deal with this
-
     return render_template(
         "taxonomy-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        token=token
+        taxonomy_list=taxonomy
+    )
+
+
+@post.route("/post/<type_id>/taxonomy/<taxonomy_id>")
+@authorize_web(0)
+@db_connection
+def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    cur = connection.cursor()
+    taxonomy = []
+    try:
+        cur.execute(
+            sql.SQL("""SELECT uuid, slug, display_name, taxonomy_type 
+            FROM sloth_taxonomy WHERE post_type = %s AND uuid = %s"""),
+            [type_id, taxonomy_id]
+        )
+        taxonomy = cur.fetchone()
+    except Exception as e:
+        import pdb;
+        pdb.set_trace()
+        print("db error C")
+        abort(500)
+
+    cur.close()
+    connection.close()
+
+    return render_template(
+        "taxonomy.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        taxonomy=taxonomy
     )

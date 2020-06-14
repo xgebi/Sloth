@@ -75,13 +75,9 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
         return redirect("/database-error")
 
     post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
 
     updated_post_type = request.form
     existing_post_type = post_types.get_post_type(connection, post_type_id)
-
-    # ImmutableMultiDict([('display-name', 'Post'), ('slug', 'post'), ('categories-enabled', 'on'), ('tags-enabled', 'on'), ('archive-enabled', 'on')])
-    # {'uuid': '1adbec5d-f4a1-401d-9274-3552f1219f36', 'display_name': 'Post', 'slug': 'post', 'tags_enabled': True, 'categories_enabled': True, 'archive_enabled': True}
 
     # 1. save to database
     cur = connection.cursor()
@@ -120,15 +116,14 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
         gen.delete_taxonomy_files(existing_post_type, 'category')
         run_gen = True
     # 7. Tags changed to False
-        if updated_post_type['tags_enabled'] and not existing_post_type['tags_enabled']:
-            # a. delete tags
-            gen.delete_taxonomy_files(existing_post_type, 'tags')
-            run_gen = True
+    if updated_post_type['tags_enabled'] and not existing_post_type['tags_enabled']:
+        # a. delete tags
+        gen.delete_taxonomy_files(existing_post_type, 'tags')
+        run_gen = True
     # 8. Archive changed to False
-        if updated_post_type['archive_enabled'] and not existing_post_type['archive_enabled']:
-            # a. delete archive
-            gen.delete_archive_for_post_type(existing_post_type)
-            run_gen = True
+    if updated_post_type['archive_enabled'] and not existing_post_type['archive_enabled']:
+        # a. delete archive
+        gen.delete_archive_for_post_type(existing_post_type)
 
     if run_gen:
         gen.run(post_type=updated_post_type)
