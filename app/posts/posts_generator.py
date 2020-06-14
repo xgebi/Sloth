@@ -68,7 +68,7 @@ class PostsGenerator:
         with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
             self.sloth_footer = f.read()
 
-    def run(self, post=False, posts=False):
+    def run(self, post=False, posts=False, post_type=False):
         if not self.is_runnable and ((post and not posts) or (posts and not post)):
             return
         t = {}
@@ -77,6 +77,8 @@ class PostsGenerator:
         elif post:
             post_type = self.get_post_type(post["uuid"])
             t = threading.Thread(target=self.generate_post, kwargs=dict(post=post, post_type=post_type))
+        elif post_type:
+            t = threading.Thread(target=self.generate_post_type, kwargs=dict(post_type=post_type))
         else:
             return
         t.start()
@@ -627,6 +629,9 @@ class PostsGenerator:
                 page_name="Home", api_url=self.settings["api_url"]["settings_value"],
                 sloth_footer=self.sloth_footer
             ))
+
+    def generate_post_type(self, post_type):
+        pass
 
     # delete post files
     # TODO to be tested

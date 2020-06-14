@@ -2,9 +2,11 @@ from flask import abort
 import psycopg2
 from psycopg2 import sql, errors
 
+
 class PostTypes:
     def __init__(self):
         pass
+
     # Placeholder for the future
 
     def get_post_type_list(self, connection):
@@ -27,7 +29,6 @@ class PostTypes:
             })
         return items
 
-
     def get_post_type(self, connection, post_type_id):
         cur = connection.cursor()
         raw_items = []
@@ -38,18 +39,16 @@ class PostTypes:
                     FROM sloth_post_types WHERE uuid = %s"""
                 ), [post_type_id]
             )
-            raw_items = cur.fetchall()
+            raw_item = cur.fetchone()
         except Exception as e:
             abort(500)
         cur.close()
-        items = []
-        for item in raw_items:
-            items.append({
-                "uuid": item[0],
-                "display_name": item[1],
-                "slug": item[2],
-                "tags_enabled": item[3],
-                "categories_enabled": item[4],
-                "archive_enabled": item[5]
-            })
-        return items
+
+        return {
+            "uuid": raw_item[0],
+            "display_name": raw_item[1],
+            "slug": raw_item[2],
+            "tags_enabled": raw_item[3],
+            "categories_enabled": raw_item[4],
+            "archive_enabled": raw_item[5]
+        }

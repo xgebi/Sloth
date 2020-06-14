@@ -1,24 +1,36 @@
 {% extends 'layout.html' %}
 
-{% block title %}Post type: {{ post_type["display_name"] }}{% endblock %}
+{% block title %}Post type: {{ pt["display_name"] }}{% endblock %}
 
 {% block body %}
-<h1>Post type: {{ post_type["display_name"] }}</h1>
+<h1>Post type: {{ pt["display_name"] }}</h1>
 
 {% if new %}
-<form class="settings-table" action="/post-type/{{ post_type["uuid"] }}/create" method="POST">
+<form class="settings-table" action="/post-type/{{ pt["uuid"] }}/create" method="POST">
 {% else %}
-<form class="settings-table" action="/post-type/{{ post_type["uuid"] }}" method="POST">
+<form class="settings-table" action="/post-type/{{ pt["uuid"] }}" method="POST">
 {% endif %}
     <label for="display-name">Display name:</label>
-    <input type="text" id="display-name" name="display-name" value="{{ post_type["display_name"] }}" />
+    <input type="text" id="display-name" name="display-name" value="{{ pt["display_name"] }}" />
     <label for="slug">Slug:</label>
-    <input type="text" id="slug" name="slug" value="{{ post_type["slug"] }}" />
-    <input type="checkbox" id="categories-enabled" value="{{ post_type["categories_enabled"] }}" />
+    <input type="text" id="slug" name="slug" value="{{ pt["slug"] }}" />
+    {% if pt["categories_enabled"] %}
+    <input type="checkbox" id="categories-enabled" name="categories-enabled" checked />
+    {% else %}
+    <input type="checkbox" id="categories-enabled" name="categories-enabled"/>
+    {% endif %}
     <label for="categories-enabled">Categories enabled</label>
-    <input type="checkbox" id="tags-enabled" value="{{ post_type["tags_enabled"] }}" />
+    {% if pt["tags_enabled"] %}
+    <input type="checkbox" id="tags-enabled" name="tags-enabled" checked />
+    {% else %}
+    <input type="checkbox" id="tags-enabled" name="tags-enabled"/>
+    {% endif %}
     <label for="tags-enabled">Tags enabled</label>
-    <input type="checkbox" id="archive-enabled" value="{{ post_type["archive_enabled"] }}" />
+    {% if pt["archive_enabled"] %}
+    <input type="checkbox" id="archive-enabled" name="archive-enabled" checked />
+    {% else %}
+    <input type="checkbox" id="archive-enabled" name="archive-enabled"/>
+    {% endif %}
     <label for="archive-enabled">Archive enabled</label>
     <input type="submit" value="Save">
 </form>
