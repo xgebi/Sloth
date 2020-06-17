@@ -59,13 +59,13 @@ def show_users_list(*args, permission_level, connection, **kwargs):
 @authorize_web(0)
 @db_connection
 def show_user(*args, permission_level, connection=None, user, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
     token = request.cookies.get('sloth_session').split(":")
 
     if permission_level == 0 and token[1] != user:
         return redirect("/unauthorized")
-
-    if connection is None:
-        return redirect("/database-error")
 
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -99,32 +99,65 @@ def show_user(*args, permission_level, connection=None, user, **kwargs):
     return render_template("user.html", post_types=post_types_result, permission_level=permission_level, user=user)
 
 
-@settings_users.route("/settings/users/<user>/save")
+@settings_users.route("/settings/my-account")
+@authorize_web(0)
+@db_connection
+def show_my_account(*args, permission_level, connection=None, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
+    token = request.cookies.get('sloth_session').split(":")
+
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    cur = connection.cursor()
+    raw_user = []
+    try:
+        cur.execute(
+            sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
+            [token[1]]
+        )
+        raw_user = cur.fetchone()
+    except Exception as e:
+        print("db error")
+        abort(500)
+
+    cur.close()
+    connection.close()
+
+    user = {
+        "uuid": raw_user[0],
+        "username": raw_user[1],
+        "display_name": raw_user[2],
+        "email": raw_user[3],
+        "permissions_level": raw_user[4]
+    }
+
+    return render_template("user.html", post_types=post_types_result, permission_level=permission_level, user=user)
+
+
+@settings_users.route("/settings/users/<user>/save", methods=["POST"])
 @authorize_web(0)
 @db_connection
 def save_user(*args, permission_level, connection=None, user, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
     token = request.cookies.get('sloth_session').split(":")
+    filled = request.form
 
     if permission_level == 0 and token[1] != user:
         return redirect("/unauthorized")
 
-    if connection is None:
-        return redirect("/database-error")
-
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-
-    config = current_app.config
-
     cur = connection.cursor()
 
-    raw_user = []
     try:
         cur.execute(
-            sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
-            [token[1]]
+            sql.SQL("UPDATE sloth_users SET display_name = %s, email = %s, permissions_level = %s WHERE uuid = %s"),
+            [filled.get("display_name"), filled.get("email"), int(filled.get("permissions")), user]
         )
-        raw_user = cur.fetchone()
+        connection.commit()
     except Exception as e:
         print("db error")
         abort(500)
@@ -132,12 +165,8 @@ def save_user(*args, permission_level, connection=None, user, **kwargs):
     cur.close()
     connection.close()
 
-    user = {
-        "uuid": raw_user[0],
-        "username": raw_user[1],
-        "display_name": raw_user[2],
-        "email": raw_user[3],
-        "permissions_level": raw_user[4]
-    }
+    if token[1] == user:
+        return redirect("/settings/my-account")
+    return redirect(f"/settings/users/{user}")
 
-    return render_template("user.html", post_types=post_types_result, permission_level=permission_level, user=user)
+# TODO change password

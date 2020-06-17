@@ -10,28 +10,28 @@
 {% else %}
 <form class="settings-table" action="/post-type/{{ pt["uuid"] }}" method="POST">
 {% endif %}
-    <label for="display-name">Display name:</label>
-    <input type="text" id="display-name" name="display-name" value="{{ pt["display_name"] }}" />
+    <label for="display_name">Display name:</label>
+    <input type="text" id="display_name" name="display_name" value="{{ pt["display_name"] }}" />
     <label for="slug">Slug:</label>
     <input type="text" id="slug" name="slug" value="{{ pt["slug"] }}" />
     {% if pt["categories_enabled"] %}
-    <input type="checkbox" id="categories-enabled" name="categories-enabled" checked />
+    <input type="checkbox" id="categories_enabled" name="categories_enabled" checked />
     {% else %}
-    <input type="checkbox" id="categories-enabled" name="categories-enabled"/>
+    <input type="checkbox" id="categories_enabled" name="categories_enabled"/>
     {% endif %}
-    <label for="categories-enabled">Categories enabled</label>
+    <label for="categories_enabled">Categories enabled</label>
     {% if pt["tags_enabled"] %}
-    <input type="checkbox" id="tags-enabled" name="tags-enabled" checked />
+    <input type="checkbox" id="tags_enabled" name="tags_enabled" checked />
     {% else %}
-    <input type="checkbox" id="tags-enabled" name="tags-enabled"/>
+    <input type="checkbox" id="tags_enabled" name="tags_enabled"/>
     {% endif %}
-    <label for="tags-enabled">Tags enabled</label>
+    <label for="tags_enabled">Tags enabled</label>
     {% if pt["archive_enabled"] %}
-    <input type="checkbox" id="archive-enabled" name="archive-enabled" checked />
+    <input type="checkbox" id="archive_enabled" name="archive_enabled" checked />
     {% else %}
-    <input type="checkbox" id="archive-enabled" name="archive-enabled"/>
+    <input type="checkbox" id="archive_enabled" name="archive_enabled"/>
     {% endif %}
-    <label for="archive-enabled">Archive enabled</label>
+    <label for="archive_enabled">Archive enabled</label>
     <input type="submit" value="Save">
 </form>
 

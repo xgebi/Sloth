@@ -4,12 +4,12 @@
 
 {% block body %}
 <h1>{{ user["username"] }}'s settings</h1>
-<form action="/settings/user/{{ user['uuid'] }}/save" method="POST">	
+<form action="/settings/users/{{ user['uuid'] }}/save" method="POST">
 	<label for="username">Username:</label>
-	<input type="text" name="username" id="username" value="{{ user["username"] }}" />
+	<input type="text" name="username" id="username" value="{{ user["username"] }}" disabled/>
 
-	<label for="display-name">Display name:</label>
-	<input type="text" name="display-name" id="display-name" value="{{ user["display_name"] }}" />
+	<label for="display_name">Display name:</label>
+	<input type="text" name="display_name" id="display_name" value="{{ user["display_name"] }}" />
 
 	<label for="email">E-mail:</label>
 	<input type="email" name="email" id="email"

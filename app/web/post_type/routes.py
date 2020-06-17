@@ -87,9 +87,9 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
                 SET slug = %s, display_name = %s, tags_enabled = %s, 
                 categories_enabled = %s, archive_enabled = %s
                 WHERE uuid = %s;"""),
-            [updated_post_type["slug"], updated_post_type["display-name"],
-             updated_post_type["tags-enabled"], updated_post_type["categories-enabled"],
-             updated_post_type["archive-enabled"], post_type_id]
+            [updated_post_type["slug"], updated_post_type["display_name"],
+             updated_post_type["tags_enabled"], updated_post_type["categories_enabled"],
+             updated_post_type["archive_enabled"], post_type_id]
         )
         connection.commit()
     except Exception as e:
@@ -101,7 +101,7 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     run_gen = False
     # 2. if slug or display name changed
     if updated_post_type['slug'] != existing_post_type['slug'] \
-            or updated_post_type['display-name'] != existing_post_type['display_name']:
+            or updated_post_type['display_name'] != existing_post_type['display_name']:
         # a. delete post type
         gen.delete_post_type_post_files(existing_post_type)
         run_gen = True
