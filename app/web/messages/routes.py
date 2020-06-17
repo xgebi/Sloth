@@ -70,6 +70,9 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
             sql.SQL("SELECT name, sent_date, status, body, email FROM sloth_messages WHERE uuid = %s"), [msg]
         )
         raw_message = cur.fetchone()
+        if len(raw_message) > 0:
+            cur.execute(sql.SQL("UPDATE sloth_messages SET status = 'read' WHERE uuid = %s"), [msg])
+            connection.commit()
     except Exception as e:
         print("db error e")
         abort(500)

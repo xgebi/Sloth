@@ -80,5 +80,7 @@ def create_app():  # dev, test, or prod
 	from app.web.post_type import post_type
 	app.register_blueprint(post_type)
 
+	from app.api.messages import messages as messages_api
+	app.register_blueprint(messages_api)
 
 	return app

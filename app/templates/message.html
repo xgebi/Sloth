@@ -11,6 +11,12 @@
 <article>
 {{ message['body'] }}
 </article>
+    <div>
+    <a href="/messages">Go back to list</a>
+    <button id="delete-message">Delete message</button>
+    </div>
+{% endblock %}
 
-
+{% block scripts %}
+<script src="/static/js/messages.js"></script>
 {% endblock %}

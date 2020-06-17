@@ -71,8 +71,15 @@ class PostsGenerator:
 
     def run(self, post=False, posts=False, post_type=False):
         if not self.is_runnable and ((post and not posts) or (posts and not post)):
-            return
+            return False
         t = {}
+
+        if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
+            return False
+
+        with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
+            f.write("registration locked")
+
         if posts:
             t = threading.Thread(target=self.generate_all)
         elif post:
@@ -81,8 +88,10 @@ class PostsGenerator:
         elif post_type:
             t = threading.Thread(target=self.generate_post_type, kwargs=dict(post_type=post_type))
         else:
-            return
+            os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+            return False
         t.start()
+        return True
 
     def get_post_type(self, uuid):
         cur = self.connection.cursor()
@@ -207,6 +216,7 @@ class PostsGenerator:
                 )
 
         self.generate_home()
+        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # Generate post
     def generate_post(self, post, post_type, multiple_posts=False):
@@ -238,6 +248,7 @@ class PostsGenerator:
 
         if not multiple_posts:
             self.regenerate_for_post(post_type)
+            os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def regenerate_for_post(self, post_type):
         cur = self.connection.cursor()
@@ -632,7 +643,7 @@ class PostsGenerator:
             ))
 
     def generate_post_type(self, post_type):
-        pass
+        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # delete post files
     # TODO to be tested

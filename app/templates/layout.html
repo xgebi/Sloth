@@ -31,6 +31,9 @@
 		</ul>
 	</nav>
 	<main>
+        {% if regenerating %}
+            Generating posts, some functionality may be limited
+        {% endif %}
 		{% block body %}{% endblock %}
 	</main>
     {% block scripts %}{% endblock %}

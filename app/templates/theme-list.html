@@ -15,7 +15,7 @@
 	<tbody>
         {% for theme in themes  %}
         <tr>
-            <td>{{ theme["display_name"] }}</td>
+            <td>{{ theme["displayName"] }}</td>
             {% if theme["choosable"] and theme["name"] != active_theme %}
             <td><a href="/settings/themes/activate/{{ theme["name"] }}">Choose theme</a></td>
             {% else %}

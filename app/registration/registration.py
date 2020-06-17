@@ -106,8 +106,9 @@ class Registration:
                 f.write("registration locked")
 
             generator = PostsGenerator(connection=self.connection)
-            generator.run(posts=True)
-            return {"state": "ok", "status": 201}
+            if generator.run(posts=True):
+                return {"state": "ok", "status": 201}
+            return {"status": 500, "error": "Generating posts"}
 
         cur.close()
         self.connection.close()

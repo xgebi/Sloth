@@ -5,6 +5,7 @@ from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
 from app.posts.post_types import PostTypes
+from app.posts.posts_generator import PostsGenerator
 
 from app.web.settings import settings
 
@@ -71,4 +72,8 @@ def save_settings(*args, permission_level, connection, **kwargs):
 	cur.close()
 	connection.close()
 
-	return redirect("/settings")
+	generator = PostsGenerator(connection=connection)
+	if generator.run(posts=True):
+		return redirect("/settings")
+	return redirect("/settings?error=generating")
+

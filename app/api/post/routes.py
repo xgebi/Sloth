@@ -22,6 +22,9 @@ reserved_folder_names = ('tag', 'category')
 @authorize_rest(0)
 @db_connection
 def get_media_data(*args, connection, **kwargs):
+    if connection is None:
+        abort(500)
+
     cur = connection.cursor()
     raw_media = []
     try:

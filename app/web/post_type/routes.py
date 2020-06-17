@@ -126,7 +126,9 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
         gen.delete_archive_for_post_type(existing_post_type)
 
     if run_gen:
-        gen.run(post_type=updated_post_type)
+        if gen.run(post_type=updated_post_type):
+            return redirect(f"/post-type/{post_type_id}")
+        return redirect(f"/post-type/{post_type_id}?error=regenerating")
 
     return redirect(f"/post-type/{post_type_id}")
 

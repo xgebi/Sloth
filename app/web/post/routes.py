@@ -36,12 +36,12 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
             FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-            WHERE A.deleted = %s AND A.post_type = %s"""),
-            [False, post_type]
+            WHERE A.post_status = %s AND A.post_type = %s"""),
+            ['published', post_type]
         )
         raw_items = cur.fetchall()
     except Exception as e:
-        print("db error A")
+        print("db error Q")
         abort(500)
 
     cur.close()
@@ -261,7 +261,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
     )
 
 
-@post.route("/post/<type_id>/taxonomy/<taxonomy_id>")
+@post.route("/post/<type_id>/taxonomy/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
 @db_connection
 def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
@@ -292,3 +292,24 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         permission_level=permission_level,
         taxonomy=taxonomy
     )
+
+
+@post.route("/post/<type_id>/taxonomy/<taxonomy_id>", methods=["POST", "PUT"])
+@authorize_web(0)
+@db_connection
+def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
+    pass
+
+
+@post.route("/post/<type_id>/taxonomy/<taxonomy_id>/delete", methods=["GET"])
+@authorize_web(0)
+@db_connection
+def delete_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
+    pass
+
+
+@post.route("/post/<type_id>/taxonomy/new")
+@authorize_web(0)
+@db_connection
+def create_taxonomy_item(*args, permission_level, connection, type_id, **kwargs):
+    pass
