@@ -23,15 +23,51 @@
         <label for="css">Custom CSS:</label>
         <br />
         <textarea id="css">{{ data["css"] }}</textarea>
+        {% if data["use_theme_css"] %}
+        <input type="checkbox" id="use_theme_css" name="use_theme_css" checked />
+        {% else %}
+        <input type="checkbox" id="use_theme_css" name="use_theme_css"/>
+        {% endif %}
+        <label for="use_theme_css">Use theme's CSS</label>
     </div>
     <div>
         <label for="js">Custom JavaScript:</label>
         <br />
         <textarea id="js">{{ data["js"] }}</textarea>
+        {% if data["use_theme_js"] %}
+        <input type="checkbox" id="use_theme_js" name="use_theme_js" checked />
+        {% else %}
+        <input type="checkbox" id="use_theme_js" name="use_theme_js"/>
+        {% endif %}
+        <label for="use_theme_js">Use theme's JS</label>
     </div>
-
-
-
+    <!-- TODO figure out something better than input -->
+    <div>
+        <label for="thumbnail">Thumbnail</label>
+        <input id="thumbnail" value="{{ data["thumbnail"] }}" />
+    </div>
+    <div>
+        <label for="tags">Tags</label>
+        <input id="tags" value="{{ data["tags"] }}" />
+    </div>
+    <div>
+        <label for="categories">Categories</label>
+        <input id="categories" value="{{ data["categories"] }}" />
+    </div>
+    <div class="metadata">
+        <label for="publish_date">Publish date</label>
+        <input id="publish_date" value="{{ data["publish_date"] }}" />
+        <label for="post_status">Status</label>
+        <select name="post_status" id="post_status">
+            {% for status in post_statuses %}
+                {% if status == data["status"] %}
+                    <option value="status" selected>{{ status }}</option>
+                {% else %}
+                    <option value="status">{{ status }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
 
 <dialog id="modal"></dialog>
 {% endblock %}

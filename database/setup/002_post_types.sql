@@ -4,7 +4,5 @@ CREATE TABLE sloth_post_types (
 	display_name character varying(220),
 	tags_enabled boolean,
 	categories_enabled boolean,
-    archive_enabled boolean,
-    custom_js_enabled boolean,
-    custom_css_enabled boolean
+    archive_enabled boolean
 );

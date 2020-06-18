@@ -86,8 +86,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         media = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, A.update_date, 
-                    A.post_status, A.tags, A.categories, B.display_name, A.post_type
+            sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
+            A.publish_date, A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
@@ -108,14 +108,16 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "content": raw_post[1],
         "excerpt": raw_post[2],
         "css": raw_post[3],
-        "js": raw_post[4],
-        "thumbnail": raw_post[5],
-        "publish_date": raw_post[6],
-        "update_date": raw_post[7],
-        "post_status": raw_post[8],
-        "tags": raw_post[9],
-        "categories": raw_post[10],
-        "display_name": raw_post[11]
+        "use_theme_css": raw_post[4],
+        "js": raw_post[5],
+        "use_theme_js": raw_post[6],
+        "thumbnail": raw_post[7],
+        "publish_date": raw_post[8],
+        "update_date": raw_post[9],
+        "post_status": raw_post[10],
+        "tags": raw_post[11],
+        "categories": raw_post[12],
+        "display_name": raw_post[13]
     }
 
     return render_template(
@@ -124,7 +126,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         permission_level=permission_level,
         token=token,
         post_type_name=post_type_name,
-        data=data
+        data=data,
+        media=media
     )
 
 
@@ -137,6 +140,7 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
 
     cur = connection.cursor()
     media = []
+    post_statuses = []
     try:
 
         cur.execute(
@@ -148,6 +152,10 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
             [post_type]
         )
         post_type_name = cur.fetchone()[0]
+        cur.execute(
+            sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
+        )
+        temp_post_statuses = cur.fetchall()
     except Exception as e:
         print("db error A")
         abort(500)
@@ -157,80 +165,11 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
 
     token = uuid.uuid4()
 
+    post_statuses = [item for sublist in temp_post_statuses for item in sublist]
+
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
-                           token=token, post_type_name=post_type_name, data={"new": True})
-
-
-@post.route("/post/<post_id>/save", methods=["POST", "PUT"])
-@authorize_web(0)
-@db_connection
-def save_post(*args, permission_level, connection, post_id, **kwargs):
-    # TODO this function is completely wrong!!!
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-
-    cur = connection.cursor()
-    media = []
-    post_type_name = ""
-    raw_post = {}
-    try:
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
-        )
-        media = cur.fetchall()
-
-        cur.execute(
-            sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.js, A.thumbnail, A.publish_date, 
-            A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type 
-            FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
-            [post_id]
-        )
-        raw_post = cur.fetchone()
-
-        cur.execute(
-            sql.SQL("SELECT slug, display_name FROM sloth_post_types WHERE uuid = %s"),
-            [post[12]]
-        )
-        post_type_name = cur.fetchone()[0]
-    except Exception as e:
-        print("db error B")
-        abort(500)
-
-    cur.close()
-    connection.close()
-
-    token = uuid.uuid4()
-
-    data = {
-        "title": post[0],
-        "excerpt": post[1],
-        "description": post[2],
-        "css": post[3],
-        "js": post[4],
-        "thumbnail": post[5],
-        "publish_date": post[6],
-        "update_date": post[7],
-        "post_status": post[8],
-        "tags": post[9],
-        "categories": post[10],
-        "display_name": post[11]
-    }
-
-    return render_template(
-        "post-edit.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        token=token,
-        post_type_name=post_type_name,
-        data=data
-    )
-
-
-@post.route("/post/<post_id>/edit")
-@authorize_web(0)
-@db_connection
-def delete_post(self, permission_level, connection, post_id):
-    pass
+                           media=media, token=token, post_type_name=post_type_name, post_statuses=post_statuses,
+                           data={"new": True, "use_theme_js": True, "use_theme_css": True, "status": "draft"})
 
 
 @post.route("/post/<type_id>/taxonomy")

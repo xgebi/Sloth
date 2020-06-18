@@ -78,3 +78,17 @@ def upload_image(*args, file_name, connection=None, **kwargs):
         abort(500)
 
     return json.dumps({ "media": file }), 201
+
+
+@post.route("/api/post/save", methods=['POST'])
+@authorize_rest(0)
+@db_connection
+def save_post(*args, file_name, connection=None, **kwargs):
+    pass
+
+
+@post.route("api/post/delete", methods=['POST', 'DELETE'])
+@authorize_rest(0)
+@db_connection
+def delete_post(self, permission_level, connection, post_id):
+    pass
