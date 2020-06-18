@@ -58,8 +58,12 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
             "author": item[5]
         })
 
-    return render_template("post-list.html", post_types=post_types_result, permission_level=permission_level,
-                           post_list=items, post_type=post_type_info)
+    return render_template("post-list.html",
+                           post_types=post_types_result,
+                           permission_level=permission_level,
+                           post_list=items,
+                           post_type=post_type_info,
+                           )
 
 
 @post.route("/post/<post_id>/edit")

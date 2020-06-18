@@ -5,13 +5,29 @@
 {% block body %}
 <h1>List of {{ post_type["name"] }}</h1>
 
+<p><a href="/post/{{  post_type['uuid'] }}/new">Add new {{ post_type['name'] }}</a></p>
+
 <table>
 	<thead>
-
-	</thead>
-	<tbody>
-		
-	</tbody>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Update date</th>
+            <th>Published date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for post in post_list %}
+        <tr>
+            <td>{{ post["title"] }}</td>
+            <td>{{ post["status"] }}</td>
+            <td>{{ post["update_date"] }}</td>
+            <td>{{ post["publish_date"] }}</td>
+            <td><a href="/post/{{post['uuid']}}/edit">Edit</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

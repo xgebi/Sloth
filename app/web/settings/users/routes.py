@@ -153,6 +153,7 @@ def save_user(*args, permission_level, connection=None, user, **kwargs):
     cur = connection.cursor()
 
     try:
+        # TODO detect display_name change
         cur.execute(
             sql.SQL("UPDATE sloth_users SET display_name = %s, email = %s, permissions_level = %s WHERE uuid = %s"),
             [filled.get("display_name"), filled.get("email"), int(filled.get("permissions")), user]
