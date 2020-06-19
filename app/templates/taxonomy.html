@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ taxonomy["display_name"] }}'s settings{% endblock %}
+
+{% block body %}
+<h1>{{ taxonomy["display_name"] }}'s settings</h1>
+<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy['uuid'] }}" method="POST">
+    <label for="slug">Slug:</label>
+	<input type="text" name="slug" id="slug" value="{{ taxonomy["slug"] }}" />
+
+    <label for="display_name">Display name:</label>
+	<input type="text" name="display_name" id="display_name" value="{{ taxonomy["display_name"] }}" />
+
+	<input type="submit" value="save" />
+</form>
+
+{% endblock %}

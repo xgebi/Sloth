@@ -48,7 +48,7 @@
     </div>
     <div>
         <label for="tags">Tags</label>
-        <input id="tags" value="{{ data["tags"] }}" />
+        <input id="tags" value="{{ data["tags"] | splitpart(0, ',') }}" />
     </div>
     <div>
         <label for="categories">Categories</label>

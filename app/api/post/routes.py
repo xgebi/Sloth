@@ -87,7 +87,7 @@ def save_post(*args, file_name, connection=None, **kwargs):
     pass
 
 
-@post.route("api/post/delete", methods=['POST', 'DELETE'])
+@post.route("/api/post/delete", methods=['POST', 'DELETE'])
 @authorize_rest(0)
 @db_connection
 def delete_post(self, permission_level, connection, post_id):

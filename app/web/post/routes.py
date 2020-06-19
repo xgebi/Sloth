@@ -180,13 +180,19 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
     post_types_result = post_types.get_post_type_list(connection)
 
     cur = connection.cursor()
-    taxonomy = []
+    taxonomy = {}
     try:
         cur.execute(
-            sql.SQL("SELECT uuid, slug, display_name, taxonomy_type FROM sloth_taxonomy WHERE post_type = %s"),
-            [type_id]
+            sql.SQL("SELECT unnest(enum_range(NULL::sloth_taxonomy_type))")
         )
-        taxonomy = cur.fetchall()
+        taxonomy_types = [item for sublist in cur.fetchall() for item in sublist]
+        for taxonomy_type in taxonomy_types:
+            cur.execute(
+                sql.SQL("""SELECT uuid, display_name 
+                FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s"""),
+                [type_id, taxonomy_type]
+            )
+            taxonomy[taxonomy_type] = cur.fetchall()
     except Exception as e:
         import pdb;
         pdb.set_trace()
@@ -200,7 +206,8 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
         "taxonomy-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        taxonomy_list=taxonomy
+        taxonomy_list=taxonomy,
+        post_uuid=type_id
     )
 
 
@@ -212,14 +219,14 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
     post_types_result = post_types.get_post_type_list(connection)
 
     cur = connection.cursor()
-    taxonomy = []
+    temp_taxonomy = []
     try:
         cur.execute(
-            sql.SQL("""SELECT uuid, slug, display_name, taxonomy_type 
+            sql.SQL("""SELECT slug, display_name 
             FROM sloth_taxonomy WHERE post_type = %s AND uuid = %s"""),
             [type_id, taxonomy_id]
         )
-        taxonomy = cur.fetchone()
+        temp_taxonomy = cur.fetchone()
     except Exception as e:
         import pdb;
         pdb.set_trace()
@@ -228,6 +235,13 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 
     cur.close()
     connection.close()
+
+    taxonomy = {
+        "uuid": taxonomy_id,
+        "post_uuid": type_id,
+        "slug": temp_taxonomy[0],
+        "display_name": temp_taxonomy[1]
+    }
 
     return render_template(
         "taxonomy.html",

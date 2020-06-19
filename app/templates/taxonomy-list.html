@@ -5,17 +5,26 @@
 {% block body %}
 <h1>List of taxonomies</h1>
 
+{% for key, list in taxonomy_list.items() %}
+{% if list|length > 0 %}
+<h2>{{ key }}</h2>
 <table>
 	<thead>
 		<tr>
-			<th>From</th>
-			<th>Message sent</th>
-			<th>Status</th>
+			<th>Name</th>
+			<th>Action</th>
 		</tr>
 	</thead>
 	<tbody>
-		
+		{% for taxonomy in list %}
+        <tr>
+            <td>{{ taxonomy[1] }}</td>
+            <td><a href="/post/{{ post_uuid }}/taxonomy/{{ taxonomy[0] }}">Edit</a></td>
+        </tr>
+        {% endfor %}
 	</tbody>
 </table>
+{% endif %}
+{% endfor %}
 
 {% endblock %}
