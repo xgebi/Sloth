@@ -13,6 +13,9 @@ def create_app():  # dev, test, or prod
 
 	app = Flask(__name__)
 	cors = CORS(app)
+	app.config.from_mapping(
+		SECRET_KEY='dev'
+	)
 	configuration = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
 
 	app.config.from_pyfile(configuration)

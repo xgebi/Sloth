@@ -10,10 +10,10 @@ flask = "*"
 flask-cors = "*"
 bcrypt = "*"
 flask-bcrypt = "*"
-psycopg2 = "*"
 python-dateutil = "*"
 pytz = "*"
 authlib = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.8"
