@@ -13,7 +13,7 @@ flask-bcrypt = "*"
 python-dateutil = "*"
 pytz = "*"
 authlib = "*"
-psycopg2-binary = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.8"
