@@ -120,7 +120,7 @@ class Registration:
                 os.path.isfile(os.path.join(os.getcwd(), "database", "setup", sql_file))]
 
         cur = self.connection.cursor()
-        for filename in sqls:
+        for filename in sorted(sqls):
             with open(os.path.join(os.getcwd(), "database", "setup", filename)) as f:
                 script = str(f.read())
                 try:
@@ -137,7 +137,7 @@ class Registration:
                 os.path.isfile(os.path.join(os.getcwd(), "database", "setup_data", sql_file))]
 
         cur = self.connection.cursor()
-        for filename in sqls:
+        for filename in sorted(sqls):
             with open(os.path.join(os.getcwd(), "database", "setup_data", filename)) as f:
                 script = str(f.read())
             try:

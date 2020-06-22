@@ -48,11 +48,11 @@
     </div>
     <div>
         <label for="tags">Tags</label>
-        <input id="tags" value="{{ data["tags"] | splitpart(0, ',') }}" />
+        <input id="tags" value="{{ data["tags"] | join(', ') }}" />
     </div>
     <div>
         <label for="categories">Categories</label>
-        <input id="categories" value="{{ data["categories"] }}" />
+        <input id="categories" value="{{ data["categories"] | join(', ') }}" />
     </div>
     <div class="metadata">
         <label for="publish_date">Publish date</label>

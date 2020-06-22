@@ -2,7 +2,7 @@ CREATE TYPE sloth_taxonomy_type AS ENUM ('category', 'tag', 'custom');
 
 CREATE TABLE sloth_taxonomy (
 	uuid character varying(200) NOT NULL,
-	slug character varying(200) UNIQUE,
+	slug character varying(200),
 	display_name character varying(220),
 	post_type character varying(200),
 	taxonomy_type sloth_taxonomy_type NOT NULL,
