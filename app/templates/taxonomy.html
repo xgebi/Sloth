@@ -1,6 +1,10 @@
 {% extends 'layout.html' %}
 
-{% block title %}{{ taxonomy["display_name"] }}'s settings{% endblock %}
+{% block title %}{% if new %}
+New {{ taxonomy_type }}
+{% else %}
+Change {{ taxonomy_type }}
+{% endif %}{% endblock %}
 
 {% block body %}
 {% if new %}

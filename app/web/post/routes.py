@@ -298,7 +298,8 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 @authorize_web(0)
 @db_connection
 def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
-    pass
+    print("Hi!")
+    redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}")
 
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_id>/delete", methods=["GET"])
