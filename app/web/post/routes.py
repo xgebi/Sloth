@@ -80,7 +80,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     post_type_name = ""
     raw_post = {}
     raw_tags = []
-    raw_categories = []
+    raw_post_categories = []
+    raw_all_categories = []
     try:
         cur.execute(
             sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
@@ -95,18 +96,26 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         )
         raw_post = cur.fetchone()
         cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy 
-                        WHERE post_type = %s AND uuid IN (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+            sql.SQL("""SELECT display_name FROM sloth_taxonomy 
+                        WHERE post_type = %s AND uuid IN 
+                        (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
 
-            [raw_post[14], post_id]
+            [raw_post[12], post_id]
         )
         raw_tags = cur.fetchall()
         cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy 
-                        WHERE post_type = %s AND uuid IN (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
-            [raw_post[14], post_id]
+            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+                        WHERE post_type = %s AND uuid IN 
+                        (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+            [raw_post[12], post_id]
         )
-        raw_categories = cur.fetchall()
+        raw_post_categories = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+                                WHERE post_type = %s"""),
+            [raw_post[12], post_id]
+        )
+        raw_all_categories = cur.fetchall()
     except Exception as e:
         print("db error B")
         print(e)
@@ -116,6 +125,24 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     connection.close()
 
     token = request.cookies.get('sloth_session')
+
+    post_categories = []
+    for category in raw_post_categories:
+        post_categories.append({
+            "uuid": category[0],
+            "display_name": category[1]
+        })
+
+    all_categories = []
+    for category in raw_all_categories:
+        all_categories.append({
+            "uuid": category[0],
+            "display_name": category[1]
+        })
+
+    tags = []
+    for tag in raw_tags:
+        tags.append(tag[0])
 
     data = {
         "uuid": post_id,
@@ -130,7 +157,10 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "publish_date": raw_post[8],
         "update_date": raw_post[9],
         "post_status": raw_post[10],
-        "display_name": raw_post[11]
+        "display_name": raw_post[11],
+        "post_categories": post_categories,
+        "all_categories": all_categories,
+        "tags": tags
     }
 
     return render_template(

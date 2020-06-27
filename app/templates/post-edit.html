@@ -57,7 +57,9 @@
                 <option value="{{category['uuid']}}">{{ category['display_name'] }}</option>
             {% endfor %}
         </select>
-
+        <div>
+            <input type="text" id="new-category"><button id="create-category">Create new category</button>
+        </div>
     </div>
     <div class="metadata">
         <label for="publish_date">Publish date</label>
