@@ -3,7 +3,11 @@
 {% block title %}{{ taxonomy["display_name"] }}'s settings{% endblock %}
 
 {% block body %}
-<h1>{{ taxonomy["display_name"] }}'s settings</h1>
+{% if new %}
+<h1>New {{ taxonomy_type }}</h1>
+{% else %}
+<h1>Change {{ taxonomy_type }}</h1>
+{% endif %}
 <form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy['uuid'] }}" method="POST">
     <label for="slug">Slug:</label>
 	<input type="text" name="slug" id="slug" value="{{ taxonomy["slug"] }}" />

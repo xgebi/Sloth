@@ -8,7 +8,7 @@
 {% for key in taxonomy_types %}
 <h2>{{ key }}</h2>
 {% if  key != 'tag'%}
-<a href="/post/{{ post_uuid}}/taxonomy/new">Add new {{ key }}</a>
+<a href="/post/{{ post_uuid}}/taxonomy/new?type={{ key }}">Add new {{ key }}</a>
 {% endif %}
 
 {% if taxonomy_list[key]|length > 0 %}

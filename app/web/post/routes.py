@@ -312,4 +312,23 @@ def delete_post_taxonomy_item(*args, permission_level, connection, type_id, taxo
 @authorize_web(0)
 @db_connection
 def create_taxonomy_item(*args, permission_level, connection, type_id, **kwargs):
-    pass
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    taxonomy_type = request.args["type"]
+
+    connection.close()
+
+    taxonomy = {
+        "uuid": uuid.uuid4(),
+        "post_uuid": type_id
+    }
+
+    return render_template(
+        "taxonomy.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        taxonomy=taxonomy,
+        taxonomy_type=taxonomy_type,
+        new=True
+    )
