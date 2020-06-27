@@ -52,7 +52,12 @@
     </div>
     <div>
         <label for="categories">Categories</label>
-        <input id="categories" value="{{ data["categories"] | join(', ') }}" />
+        <select id="categories" multiple="multiple">
+            {% for category in data['categories'] %}
+                <option value="{{category['uuid']}}">{{ category['display_name'] }}</option>
+            {% endfor %}
+        </select>
+
     </div>
     <div class="metadata">
         <label for="publish_date">Publish date</label>

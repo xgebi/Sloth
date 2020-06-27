@@ -79,6 +79,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     media = []
     post_type_name = ""
     raw_post = {}
+    raw_tags = []
+    raw_categories = []
     try:
         cur.execute(
             sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
@@ -87,11 +89,24 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
         cur.execute(
             sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
-            A.publish_date, A.update_date, A.post_status, A.tags, A.categories, B.display_name, A.post_type
+            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
         raw_post = cur.fetchone()
+        cur.execute(
+            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy 
+                        WHERE post_type = %s AND uuid IN (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+
+            [raw_post[14], post_id]
+        )
+        raw_tags = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy 
+                        WHERE post_type = %s AND uuid IN (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+            [raw_post[14], post_id]
+        )
+        raw_categories = cur.fetchall()
     except Exception as e:
         print("db error B")
         print(e)
@@ -115,9 +130,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "publish_date": raw_post[8],
         "update_date": raw_post[9],
         "post_status": raw_post[10],
-        "tags": raw_post[11],
-        "categories": raw_post[12],
-        "display_name": raw_post[13]
+        "display_name": raw_post[11]
     }
 
     return render_template(
