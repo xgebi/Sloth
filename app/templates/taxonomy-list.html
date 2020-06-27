@@ -4,7 +4,7 @@
 
 {% block body %}
 <h1>List of taxonomies</h1>
-
+Note: Custom taxonomies are on To Do list
 {% for key in taxonomy_types %}
 <h2>{{ key }}</h2>
 {% if  key != 'tag'%}
@@ -16,14 +16,18 @@
 	<thead>
 		<tr>
 			<th>Name</th>
+            {% if  key != 'tag'%}
 			<th>Action</th>
+            {% endif %}
 		</tr>
 	</thead>
 	<tbody>
 		{% for taxonomy in taxonomy_list[key] %}
         <tr>
             <td>{{ taxonomy[1] }}</td>
+            {% if  key != 'tag'%}
             <td><a href="/post/{{ post_uuid }}/taxonomy/{{ taxonomy[0] }}">Edit</a></td>
+            {% endif %}
         </tr>
         {% endfor %}
 	</tbody>
