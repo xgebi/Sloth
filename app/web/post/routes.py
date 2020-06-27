@@ -104,7 +104,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         )
         raw_tags = cur.fetchall()
         cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+            sql.SQL("""SELECT uuid FROM sloth_taxonomy
                         WHERE post_type = %s AND uuid IN 
                         (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
             [raw_post[12], post_id]
@@ -113,7 +113,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
                                 WHERE post_type = %s"""),
-            [raw_post[12], post_id]
+            [raw_post[12]]
         )
         raw_all_categories = cur.fetchall()
     except Exception as e:
@@ -126,18 +126,17 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
     token = request.cookies.get('sloth_session')
 
-    post_categories = []
-    for category in raw_post_categories:
-        post_categories.append({
-            "uuid": category[0],
-            "display_name": category[1]
-        })
+    post_categories = [cat_uuid for cat in raw_post_categories for cat_uuid in cat]
 
     all_categories = []
     for category in raw_all_categories:
+        selected = False
+        if category[0] in post_categories:
+            selected: True
         all_categories.append({
             "uuid": category[0],
-            "display_name": category[1]
+            "display_name": category[1],
+            "selected": selected
         })
 
     tags = []
@@ -249,6 +248,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
         "taxonomy-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
+        taxonomy_types=taxonomy_types,
         taxonomy_list=taxonomy,
         post_uuid=type_id
     )

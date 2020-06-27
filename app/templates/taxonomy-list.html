@@ -5,9 +5,13 @@
 {% block body %}
 <h1>List of taxonomies</h1>
 
-{% for key, list in taxonomy_list.items() %}
-{% if list|length > 0 %}
+{% for key in taxonomy_types %}
 <h2>{{ key }}</h2>
+{% if  key != 'tag'%}
+<a href="/post/{{ post_uuid}}/taxonomy/new">Add new {{ key }}</a>
+{% endif %}
+
+{% if taxonomy_list[key]|length > 0 %}
 <table>
 	<thead>
 		<tr>
@@ -16,7 +20,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{% for taxonomy in list %}
+		{% for taxonomy in taxonomy_list[key] %}
         <tr>
             <td>{{ taxonomy[1] }}</td>
             <td><a href="/post/{{ post_uuid }}/taxonomy/{{ taxonomy[0] }}">Edit</a></td>
@@ -24,6 +28,8 @@
         {% endfor %}
 	</tbody>
 </table>
+{% else %}
+<p>No items</p>
 {% endif %}
 {% endfor %}
 

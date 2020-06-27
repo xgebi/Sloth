@@ -53,8 +53,12 @@
     <div>
         <label for="categories">Categories</label>
         <select id="categories" multiple="multiple">
-            {% for category in data['categories'] %}
+            {% for category in data['all_categories'] %}
+                {% if category["selected"] %}
+                <option value="{{category['uuid']}}" selected>{{ category['display_name'] }}</option>
+                {% else %}
                 <option value="{{category['uuid']}}">{{ category['display_name'] }}</option>
+                {% endif %}
             {% endfor %}
         </select>
         <div>
