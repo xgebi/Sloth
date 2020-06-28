@@ -92,3 +92,22 @@ def save_post(*args, file_name, connection=None, **kwargs):
 @db_connection
 def delete_post(self, permission_level, connection, post_id):
     pass
+
+
+@post.route("/api/post/taxonomy/<taxonomy_id>", methods=["DELETE"])
+@authorize_rest(0)
+@db_connection
+def delete_taxonomy(*args, permission_level, connection, taxonomy_id, **kwargs):
+    cur = connection.cursor()
+
+    try:
+        cur.execute(
+            sql.SQL("DELETE FROM sloth_taxonomy WHERE uuid = %s;"),
+            [taxonomy_id]
+        )
+        connection.commit()
+    except Exception as e:
+        return json.dumps({"error": "db"})
+    cur.close()
+    connection.close()
+    return json.dumps({"deleted": True})

@@ -8,7 +8,7 @@ Note: Custom taxonomies are on To Do list
 {% for key in taxonomy_types %}
 <h2>{{ key }}</h2>
 {% if  key != 'tag'%}
-<a href="/post/{{ post_uuid}}/taxonomy/new?type={{ key }}">Add new {{ key }}</a>
+<a href="/post/{{ post_uuid}}/taxonomy/{{ key }}/new?type={{ key }}">Add new {{ key }}</a>
 {% endif %}
 
 {% if taxonomy_list[key]|length > 0 %}
@@ -26,7 +26,7 @@ Note: Custom taxonomies are on To Do list
         <tr>
             <td>{{ taxonomy[1] }}</td>
             {% if  key != 'tag'%}
-            <td><a href="/post/{{ post_uuid }}/taxonomy/{{ taxonomy[0] }}">Edit</a></td>
+            <td><a href="/post/{{ post_uuid }}/taxonomy/{{ key }}/{{ taxonomy[0] }}">Edit</a></td>
             {% endif %}
         </tr>
         {% endfor %}

@@ -12,8 +12,11 @@ Change {{ taxonomy_type }}
 {% else %}
 <h1>Change {{ taxonomy_type }}</h1>
 {% endif %}
-<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy" method="POST">
-    <input type="text" value="{{ taxonomy['uuid'] }}" class="hidden" name="uuid" id="uuid" disabled="disabled" />
+{% if not new %}
+<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy_type }}/{{ taxonomy['uuid'] }}" method="POST">
+{% else %}
+<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy_type }}/{{ taxonomy['uuid'] }}?new" method="POST">
+{% endif %}
     <label for="slug">Slug:</label>
 	<input type="text" name="slug" id="slug" value="{{ taxonomy["slug"] }}" />
 
@@ -23,9 +26,8 @@ Change {{ taxonomy_type }}
 	<input type="submit" value="save" />
 </form>
     {% if not new %}
-    <button id="delete-taxonomy">Delete {{ taxonomy["display_name"] }}</button>
+    <button id="delete-taxonomy" data-uuid="{{ taxonomy["uuid"] }}">Delete {{ taxonomy["display_name"] }}</button>
     {% endif %}
-
 {% endblock %}
 
 {% block scripts %}

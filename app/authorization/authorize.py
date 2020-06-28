@@ -11,8 +11,11 @@ def authorize_rest(permission_level):
         def wrapper(*args, **kwargs):
             auth = request.headers.get('authorization').split(":")
             user = User(auth[1], auth[2])
-            if user.authorize_user(permission_level):
-                return fn(*args, **kwargs)
+
+            pass_token = user.authorize_user(permission_level)
+
+            if pass_token:
+                return fn(*args, permission_level=pass_token[1], **kwargs)
             return json.dumps({"Unauthorized": True}), 403
 
         return wrapper
@@ -33,10 +36,10 @@ def authorize_web(permission_level):
             user = User(auth[1], auth[2])
             pass_token = user.authorize_user(permission_level)
 
-            if (not pass_token):
+            if not pass_token:
                 return redirect("/login")
 
-            if (pass_token[0]):
+            if pass_token[0]:
                 user.refresh_login()
                 return fn(*args, permission_level=pass_token[1], **kwargs)
             return redirect("/login")

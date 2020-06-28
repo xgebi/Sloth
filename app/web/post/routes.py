@@ -254,10 +254,10 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
     )
 
 
-@post.route("/post/<type_id>/taxonomy/<taxonomy_id>", methods=["GET"])
+@post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
 @db_connection
-def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
+def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -290,41 +290,47 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         "taxonomy.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        taxonomy=taxonomy
+        taxonomy=taxonomy,
+        taxonomy_type=taxonomy_type
     )
 
 
-@post.route("/post/<type_id>/taxonomy/<taxonomy_id>", methods=["POST", "PUT"])
+@post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["POST", "PUT"])
 @authorize_web(0)
 @db_connection
-def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
+def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
     cur = connection.cursor()
+    filled = request.form
+
+    if filled["slug"] or filled["display_name"]:
+        redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}?error=missing_data")
     try:
         cur.execute(
             sql.SQL("SELECT display_name FROM sloth_taxonomy WHERE uuid = %s;"),
             [taxonomy_id]
         )
         res = cur.fetchall()
+        if len(res) == 0:
+            cur.execute(sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
+            VALUES (%s, %s, %s, %s, %s);"""),
+            [taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type])
+        else:
+            cur.execute(sql.SQL("""UPDATE sloth_taxonomy SET slug = %s, display_name = %s WHERE uuid = %s;"""),
+                        [filled["slug"], filled["display_name"], taxonomy_id])
+        connection.commit()
     except Exception as e:
-        redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}?error=db")
-    redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}")
+        return redirect(f"/post/{type_id}/taxonomy/{taxonomy_type}/{taxonomy_id}?error=db")
+    cur.close()
+    connection.close()
+    return redirect(f"/post/{type_id}/taxonomy/{taxonomy_type}/{taxonomy_id}")
 
 
-@post.route("/post/<type_id>/taxonomy/<taxonomy_id>/delete", methods=["GET"])
+@post.route("/post/<type_id>/taxonomy/<taxonomy_type>/new")
 @authorize_web(0)
 @db_connection
-def delete_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
-    pass
-
-
-@post.route("/post/<type_id>/taxonomy/new")
-@authorize_web(0)
-@db_connection
-def create_taxonomy_item(*args, permission_level, connection, type_id, **kwargs):
+def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_type, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
-
-    taxonomy_type = request.args["type"]
 
     connection.close()
 
