@@ -22,7 +22,9 @@ Change {{ taxonomy_type }}
 
 	<input type="submit" value="save" />
 </form>
+    {% if not new %}
     <button id="delete-taxonomy">Delete {{ taxonomy["display_name"] }}</button>
+    {% endif %}
 
 {% endblock %}
 

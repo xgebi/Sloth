@@ -298,7 +298,15 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 @authorize_web(0)
 @db_connection
 def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, **kwargs):
-    print("Hi!")
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("SELECT display_name FROM sloth_taxonomy WHERE uuid = %s;"),
+            [taxonomy_id]
+        )
+        res = cur.fetchall()
+    except Exception as e:
+        redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}?error=db")
     redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}")
 
 
