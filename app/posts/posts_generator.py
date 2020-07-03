@@ -643,7 +643,35 @@ class PostsGenerator:
             ))
 
     def generate_post_type(self, post_type):
+        full_post_type = self.get_post_type(post_type)
+
+        post_types = self.get_post_types()
+        posts = self.get_posts_for_post_types(post_types)
+
+        tags = set()
+        categories = set()
+
+        for post in posts:
+            self.generate_post(post, post_type, multiple_posts=True)
+            tags.update(post["tags"])
+            categories.update(post["categories"])
+
+        if full_post_type["tags_enabled"]:
+            self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts)
+
+        if full_post_type["categories_enabled"]:
+            self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
+
+        if full_post_type["archive_enabled"]:
+            self.generate_archive(posts=posts[post_type["uuid"]], post_type=post_type)
+            self.generate_rss(
+                posts=posts[post_type["uuid"]][:10],
+                path=Path(self.config["OUTPUT_PATH"], post_type["slug"])
+            )
+
+        self.generate_home()
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
 
     # delete post files
     def delete_post_files(self, post_type, post):

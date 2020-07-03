@@ -89,10 +89,21 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 def save_post(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)
-    cur = connection.cursor()
-    cur.close()
-    connection.close()
     filled = json.loads(request.data)
+    cur = connection.cursor()
+    try:
+        # save post
+
+        # get post
+
+        # get post_type
+    except Exception as e:
+        abort(500)
+    cur.close()
+
+    gen = PostsGenerator(connection=connection)
+    gen.run(post={})
+
     print(filled)
 
 
@@ -107,6 +118,7 @@ def delete_post(*args, permission_level, connection, **kwargs):
 
     cur = connection.cursor()
     res = {}
+    count = []
     try:
         cur.execute(
             sql.SQL("""SELECT A.post_type, A.slug, spt.slug 
@@ -119,14 +131,19 @@ def delete_post(*args, permission_level, connection, **kwargs):
             [filled["post"]]
         )
         connection.commit()
+        cur.execute(
+            sql.SQL("SELECT COUNT(uuid) FROM sloth_posts")
+        )
+        count = cur.fetchone()
     except Exception as e:
         abort(500)
-
-    gen = PostsGenerator(connection=connection)
-    gen.delete_post_files({"slug": res[2]}, {"slug": res[1]})
-
     cur.close()
-    connection.close()
+    gen = PostsGenerator(connection=connection)
+    if count[0] == 0:
+        gen.delete_post_type_post_files({"slug": res[2]})
+    else:
+        gen.delete_post_files({"slug": res[2]}, {"slug": res[1]})
+        gen.run(post_type=res[2])
 
     return json.dumps(res[0])
 

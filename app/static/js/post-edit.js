@@ -108,23 +108,35 @@ function openGalleryDialog(data) {
 
 function publishPost() {
 	const values = collectValues();
+	if (!values) {
+		return;
+	}
 	values["action"] = "publish";
 	savePost(values);
 }
 
 function schedulePost() {
 	const values = collectValues();
+	if (!values) {
+		return;
+	}
 	values["action"] = "schedule";
 	savePost(values);
 }
 
 function saveDraft() {
 	const values = collectValues();
+	if (!values) {
+		return;
+	}
 	values["action"] = "save_draft";
 	savePost(values);
 }
 function updatePost() {
 	const values = collectValues();
+	if (!values) {
+		return;
+	}
 	values["action"] = "update";
 	savePost(values);
 }
@@ -133,6 +145,9 @@ function collectValues() {
 	post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
 	post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
 	post["title"] = document.querySelector("#title").value;
+	if (post["title"].length === 0) {
+		return false;
+	}
 	post["slug"] = document.querySelector("#slug").value;
 	post["excerpt"] = document.querySelector("#excerpt").value;
 	post["content"] = document.querySelector("#content").value;
