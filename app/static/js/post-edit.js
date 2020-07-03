@@ -41,13 +41,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	})
 
     // 2. publish post button
-	document.querySelector("#publish-button").addEventListener('click', publishPost);
+	document.querySelector("#publish-button")?.addEventListener('click', publishPost);
 
 	// 3. save draft button
-	document.querySelector("#save-draft").addEventListener('click', saveDraft);
+	document.querySelector("#save-draft")?.addEventListener('click', saveDraft);
 
 	// 4. update button
-	document.querySelector("#update-button").addEventListener('click', updatePost);
+	document.querySelector("#update-button")?.addEventListener('click', updatePost);
+
+	// 5. schedule button
+	document.querySelector("#schedule-button")?.addEventListener('click', schedulePost);
+
+	document.querySelector("#title").addEventListener('blur', (event)=> {
+        document.querySelector("#slug").value = event.target?.value.trim().replace(/\s+/g, '-');
+    });
+
+	document.querySelector("#create-category")?.addEventListener('click', createCategory);
 });
 
 function openGalleryDialog(data) {
@@ -97,40 +106,56 @@ function openGalleryDialog(data) {
 
 function publishPost() {
 	const values = collectValues();
-	savePost("", values);
+	values["action"] = "publish";
+	savePost(values);
 }
+
+function schedulePost() {
+	const values = collectValues();
+	values["action"] = "schedule";
+	savePost(values);
+}
+
 function saveDraft() {
 	const values = collectValues();
-	savePost("", values);
+	values["action"] = "save_draft";
+	savePost(values);
 }
 function updatePost() {
 	const values = collectValues();
-	savePost("", values);
+	values["action"] = "update";
+	savePost(values);
 }
-function collectValues() {}
+function collectValues() {
+	const post = {};
+	post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
+	post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
+	post["title"] = document.querySelector("#title").value;
+	post["slug"] = document.querySelector("#slug").value;
+	post["excerpt"] = document.querySelector("#excerpt").value;
+	post["content"] = document.querySelector("#content").value;
+	post["css"] = document.querySelector("#css").value;
+	post["js"] = document.querySelector("#js").value;
+	post["use_theme_css"] = document.querySelector("#use_theme_css").value;
+	post["use_theme_js"] = document.querySelector("#use_theme_js").value;
+	post["thumbnail"] = document.querySelector("#thumbnail").value;
+	post["categories"] = document.querySelector("#categories").value;
+	post["tags"] = document.querySelector("#tags").value;
+	post["post_status"] = document.querySelector("#post_status").value;
+	return post;
+}
 
-function savePost(status, values) {
-	let uri;
-	if (status === 'new') {
-		uri = '/api/post/new';
-	} else if (status === 'scheduled') {
-		uri = '/api/post/schedule';
-	} else if (status === 'update') {
-		uri = '/api/post/updated';
-	} else if (status === 'publish') {
-		uri = '/api/post/publish';
-	} else {
-		return;
-	}
-	fetch('/api/post/media', {
-		method: 'GET',
+function savePost(values) {
+	fetch('/api/post', {
+		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
 			'authorization': document.cookie
 			.split(';')
 		  	.find(row => row.trim().startsWith('sloth_session'))
 		  	.split('=')[1]
-		}
+		},
+		body: JSON.stringify(values)
 	})
 		.then(response => {
 			console.log(response);
@@ -139,6 +164,40 @@ function savePost(status, values) {
 		.then(data => {
 			console.log('Success:', data);
 			gallery.images = data.media;
+		})
+		.catch((error) => {
+			console.error('Error:', error);
+		});
+}
+
+function createCategory() {
+	fetch('/api/taxonomy/category/new', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'authorization': document.cookie
+			.split(';')
+		  	.find(row => row.trim().startsWith('sloth_session'))
+		  	.split('=')[1]
+		},
+		body: JSON.stringify({
+			categoryName: document.querySelector("#new-category").value,
+			slug: document.querySelector("#new-category").value.trim().replace(/\s+/g, '-'),
+			postType: document.querySelector("#uuid").dataset["posttypeUuid"],
+			post: document.querySelector("#uuid").dataset["uuid"]
+		})
+	})
+		.then(response => {
+			console.log(response);
+			return response.json()
+		})
+		.then(data => {
+			console.log('Success:', data);
+			const categories = document.querySelector("#categories");
+			while (categories.lastElementChild) {
+				categories.removeChild(categories.lastElementChild);
+		  	}
+		  	console.log(data);
 		})
 		.catch((error) => {
 			console.error('Error:', error);

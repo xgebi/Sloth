@@ -162,7 +162,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "display_name": raw_post[11],
         "post_categories": post_categories,
         "all_categories": all_categories,
-        "tags": tags
+        "tags": tags,
+        "post_type": raw_post[12]
     }
 
     return render_template(
@@ -172,7 +173,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         token=token,
         post_type_name=post_type_name,
         data=data,
-        media=media
+        media=media,
+        all_categories=all_categories
     )
 
 
@@ -185,7 +187,9 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
 
     cur = connection.cursor()
     media = []
-    post_statuses = []
+    temp_post_statuses = []
+    post_type_name = ""
+    raw_all_categories = []
     try:
 
         cur.execute(
@@ -205,6 +209,12 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
             sql.SQL("SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
             [post_type]
         )
+        cur.execute(
+            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+                                        WHERE post_type = %s"""),
+            [post_type]
+        )
+        raw_all_categories = cur.fetchall()
     except Exception as e:
         print("db error A")
         abort(500)
@@ -212,13 +222,29 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
     cur.close()
     connection.close()
 
-    token = uuid.uuid4()
-
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
 
+    all_categories = []
+    for category in raw_all_categories:
+        selected = False
+        all_categories.append({
+            "uuid": category[0],
+            "display_name": category[1],
+            "selected": selected
+        })
+
+    data = {
+        "new": True,
+        "use_theme_js": True,
+        "use_theme_css": True,
+        "status": "draft",
+        "uuid": uuid.uuid4(),
+        "post_type": post_type
+    }
+
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
-                           media=media, token=token, post_type_name=post_type_name, post_statuses=post_statuses,
-                           data={"new": True, "use_theme_js": True, "use_theme_css": True, "status": "draft"})
+                           media=media, post_type_name=post_type_name, post_statuses=post_statuses,
+                           data=data, all_categories=all_categories)
 
 
 @post.route("/post/<type_id>/taxonomy")

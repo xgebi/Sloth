@@ -26,5 +26,5 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // display-name
     document.querySelector("#display-name").addEventListener('blur', (event)=> {
         document.querySelector("#slug").value = event.target?.value.trim().replace(/\s+/g, '-');
-    })
+    });
 });

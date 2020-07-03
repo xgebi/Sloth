@@ -4,9 +4,14 @@
 
 {% block body %}
     <h1>{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}</h1>
+    <span id="uuid" class="hidden" data-uuid="{{ data["uuid"] }}" data-posttype-uuid="{{ data["post_type"] }}"></span>
     <div>
         <label for="title">Title</label>
         <input id="title" value="{{ data["title"] }}" />
+    </div>
+    <div>
+        <label for="slug">Slug</label>
+        <input id="slug" value="{{ data["slug"] }}" />
     </div>
     <button id="gallery-opener">Open gallery</button>
     <div>
@@ -53,7 +58,7 @@
     <div>
         <label for="categories">Categories</label>
         <select id="categories" multiple="multiple">
-            {% for category in data['all_categories'] %}
+            {% for category in all_categories %}
                 {% if category["selected"] %}
                 <option value="{{category['uuid']}}" selected>{{ category['display_name'] }}</option>
                 {% else %}
@@ -62,6 +67,7 @@
             {% endfor %}
         </select>
         <div>
+        <label for="new-category">New category name:</label>
             <input type="text" id="new-category"><button id="create-category">Create new category</button>
         </div>
     </div>
@@ -86,6 +92,8 @@
         {% if data["status"] == 'published' or data["status"] == 'scheduled' %}
         <button id="update-button">Update post</button>
         {% endif %}
+        <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
+        <button id="delete-button">Delete post</button>
     </div>
 
 <dialog id="modal"></dialog>

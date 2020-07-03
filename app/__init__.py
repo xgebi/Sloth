@@ -86,4 +86,7 @@ def create_app():  # dev, test, or prod
 	from app.api.messages import messages as messages_api
 	app.register_blueprint(messages_api)
 
+	from app.api.taxonomy import taxonomy as taxonomy_api
+	app.register_blueprint(taxonomy_api)
+
 	return app

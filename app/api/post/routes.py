@@ -80,11 +80,12 @@ def upload_image(*args, file_name, connection=None, **kwargs):
     return json.dumps({ "media": file }), 201
 
 
-@post.route("/api/post/save", methods=['POST'])
+@post.route("/api/post", methods=['POST'])
 @authorize_rest(0)
 @db_connection
-def save_post(*args, file_name, connection=None, **kwargs):
-    pass
+def save_post(*args, connection=None, **kwargs):
+    filled = json.loads(request.data)
+    print(filled)
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
