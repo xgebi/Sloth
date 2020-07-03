@@ -72,12 +72,20 @@
         <select name="post_status" id="post_status">
             {% for status in post_statuses %}
                 {% if status == data["status"] %}
-                    <option value="status" selected>{{ status }}</option>
+                    <option value="{{ status }}" selected>{{ status }}</option>
                 {% else %}
-                    <option value="status">{{ status }}</option>
+                    <option value="{{ status }}">{{ status }}</option>
                 {% endif %}
             {% endfor %}
         </select>
+
+        {% if data["status"] == 'draft' %}
+        <button id="save-draft">Save draft</button>
+        <button id="publish-button">Publish post</button>
+        {% endif %}
+        {% if data["status"] == 'published' or data["status"] == 'scheduled' %}
+        <button id="update-button">Update post</button>
+        {% endif %}
     </div>
 
 <dialog id="modal"></dialog>

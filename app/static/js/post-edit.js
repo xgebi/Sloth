@@ -40,8 +40,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
 		openGalleryDialog(gallery.images);
 	})
 
-    // 2. deal with submit button
-	document.querySelector("#submit-button").addEventListener('click', savePost);
+    // 2. publish post button
+	document.querySelector("#publish-button").addEventListener('click', publishPost);
+
+	// 3. save draft button
+	document.querySelector("#save-draft").addEventListener('click', saveDraft);
+
+	// 4. update button
+	document.querySelector("#update-button").addEventListener('click', updatePost);
 });
 
 function openGalleryDialog(data) {
@@ -89,8 +95,33 @@ function openGalleryDialog(data) {
 	dialog.appendChild(closeButton);
 }
 
-function savePost() {
+function publishPost() {
+	const values = collectValues();
+	savePost("", values);
+}
+function saveDraft() {
+	const values = collectValues();
+	savePost("", values);
+}
+function updatePost() {
+	const values = collectValues();
+	savePost("", values);
+}
+function collectValues() {}
 
+function savePost(status, values) {
+	let uri;
+	if (status === 'new') {
+		uri = '/api/post/new';
+	} else if (status === 'scheduled') {
+		uri = '/api/post/schedule';
+	} else if (status === 'update') {
+		uri = '/api/post/updated';
+	} else if (status === 'publish') {
+		uri = '/api/post/publish';
+	} else {
+		return;
+	}
 	fetch('/api/post/media', {
 		method: 'GET',
 		headers: {

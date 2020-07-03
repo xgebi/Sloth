@@ -73,8 +73,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    print("hello")
-
     cur = connection.cursor()
     media = []
     post_type_name = ""
@@ -95,6 +93,11 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             [post_id]
         )
         raw_post = cur.fetchone()
+        cur.execute(
+            sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
+            [raw_post[12]]
+        )
+        post_type_name = cur.fetchone()[0]
         cur.execute(
             sql.SQL("""SELECT display_name FROM sloth_taxonomy 
                         WHERE post_type = %s AND uuid IN 
@@ -155,7 +158,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "thumbnail": raw_post[7],
         "publish_date": raw_post[8],
         "update_date": raw_post[9],
-        "post_status": raw_post[10],
+        "status": raw_post[10],
         "display_name": raw_post[11],
         "post_categories": post_categories,
         "all_categories": all_categories,
@@ -198,6 +201,10 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
             sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
         )
         temp_post_statuses = cur.fetchall()
+        cur.execute(
+            sql.SQL("SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
+            [post_type]
+        )
     except Exception as e:
         print("db error A")
         abort(500)
