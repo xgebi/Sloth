@@ -646,13 +646,13 @@ class PostsGenerator:
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # delete post files
-    # TODO to be tested
     def delete_post_files(self, post_type, post):
         post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
 
         if os.path.exists(post_path_dir):
             shutil.rmtree(post_path_dir)
 
+    # TODO to be tested
     def delete_post_type_post_files(self, post_type):
         posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
 
@@ -662,7 +662,7 @@ class PostsGenerator:
     def delete_taxonomy_files(self, post_type, taxonomy):
         posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy)
 
-        if os.path.exists(posts_path_dir, taxonomy):
+        if os.path.exists(posts_path_dir):
             shutil.rmtree(Path(os.path.join(posts_path_dir, taxonomy)))
 
     def delete_archive_for_post_type(self, post_type):

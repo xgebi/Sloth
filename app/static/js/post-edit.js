@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 
 	document.querySelector("#create-category")?.addEventListener('click', createCategory);
+
+	document.querySelector("#delete-button")?.addEventListener('click', deletePost);
 });
 
 function openGalleryDialog(data) {
@@ -197,7 +199,42 @@ function createCategory() {
 			while (categories.lastElementChild) {
 				categories.removeChild(categories.lastElementChild);
 		  	}
-		  	console.log(data);
+			for (const category of data) {
+				const option = document.createElement("option");
+				option.setAttribute("value", category["uuid"]);
+				option.textContent = category["display_name"];
+				if (category["selected"]) {
+					option.setAttribute("selected", "selected");
+				}
+				categories.appendChild(option);
+			}
+		})
+		.catch((error) => {
+			console.error('Error:', error);
+		});
+}
+
+function deletePost() {
+	fetch('/api/post/delete', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'authorization': document.cookie
+			.split(';')
+		  	.find(row => row.trim().startsWith('sloth_session'))
+		  	.split('=')[1]
+		},
+		body: JSON.stringify({
+			post: document.querySelector("#uuid").dataset["uuid"]
+		})
+	})
+		.then(response => {
+			console.log(response);
+			return response.json()
+		})
+		.then(data => {
+			console.log('Success:', data);
+			window.location.replace(`${window.location.origin}/post/${data["post_type"]}`);
 		})
 		.catch((error) => {
 			console.error('Error:', error);

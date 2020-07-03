@@ -62,12 +62,12 @@ def upload_image(*args, file_name, connection=None, **kwargs):
         f.write(request.data)
 
     file = {}
+    cur = connection.cursor()
 
     try:
-        cur = connection.cursor()
 
         cur.execute(
-            sql.SQL("INSERT INTO settings_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
+            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
             [str(uuid.uuid4()), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), "", ""]
         )
         file = cur.fetchone()
@@ -77,6 +77,9 @@ def upload_image(*args, file_name, connection=None, **kwargs):
         connection.close()
         abort(500)
 
+    cur.close()
+    connection.close()
+
     return json.dumps({ "media": file }), 201
 
 
@@ -84,6 +87,11 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 @authorize_rest(0)
 @db_connection
 def save_post(*args, connection=None, **kwargs):
+    if connection is None:
+        abort(500)
+    cur = connection.cursor()
+    cur.close()
+    connection.close()
     filled = json.loads(request.data)
     print(filled)
 
@@ -91,14 +99,45 @@ def save_post(*args, connection=None, **kwargs):
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
 @authorize_rest(0)
 @db_connection
-def delete_post(self, permission_level, connection, post_id):
-    pass
+def delete_post(*args, permission_level, connection, **kwargs):
+    if connection is None:
+        abort(500)
+
+    filled = json.loads(request.data)
+
+    cur = connection.cursor()
+    res = {}
+    try:
+        cur.execute(
+            sql.SQL("""SELECT A.post_type, A.slug, spt.slug 
+            FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s"""),
+            [filled["post"]]
+        )
+        res = cur.fetchone()
+        cur.execute(
+            sql.SQL("DELETE FROM sloth_posts WHERE uuid = %s"),
+            [filled["post"]]
+        )
+        connection.commit()
+    except Exception as e:
+        abort(500)
+
+    gen = PostsGenerator(connection=connection)
+    gen.delete_post_files({"slug": res[2]}, {"slug": res[1]})
+
+    cur.close()
+    connection.close()
+
+    return json.dumps(res[0])
 
 
 @post.route("/api/post/taxonomy/<taxonomy_id>", methods=["DELETE"])
 @authorize_rest(0)
 @db_connection
 def delete_taxonomy(*args, permission_level, connection, taxonomy_id, **kwargs):
+    if connection is None:
+        abort(500)
+
     cur = connection.cursor()
 
     try:
