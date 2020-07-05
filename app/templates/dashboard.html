@@ -12,10 +12,10 @@
 		<div>Post type: {{post['post_type']}}</div>
 		<div>Published: {{ post['publish_date'] }}</div>
 	</article>
+    {% endfor %}
 </section>
 <section>
 	<h2>Upcoming posts</h2>
-	{% endfor %}
 	{% for post in upcoming_posts %}
 	<article>
 		<h3><a href="/post/{{post['uuid']}}/edit">{{post["title"]}}</a></h3>

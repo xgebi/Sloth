@@ -4,7 +4,7 @@
 
 {% block body %}
     <h1>{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}</h1>
-    <span id="uuid" class="hidden" data-uuid="{{ data["uuid"] }}" data-posttype-uuid="{{ data["post_type"] }}"></span>
+    <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}" data-posttype-uuid="{{ data["post_type"] }}"></span>
     <div>
         <label for="title">Title (may not be empty)</label>
         <input id="title" value="{{ data["title"] }}" required />

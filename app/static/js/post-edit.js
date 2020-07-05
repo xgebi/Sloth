@@ -107,11 +107,12 @@ function openGalleryDialog(data) {
 }
 
 function publishPost() {
+	debugger;
 	const values = collectValues();
 	if (!values) {
 		return;
 	}
-	values["action"] = "publish";
+	values["post_status"] = "published";
 	savePost(values);
 }
 
@@ -120,7 +121,7 @@ function schedulePost() {
 	if (!values) {
 		return;
 	}
-	values["action"] = "schedule";
+	values["post_status"] = "scheduled";
 	savePost(values);
 }
 
@@ -129,7 +130,7 @@ function saveDraft() {
 	if (!values) {
 		return;
 	}
-	values["action"] = "save_draft";
+	values["post_status"] = "draft";
 	savePost(values);
 }
 function updatePost() {
@@ -137,13 +138,13 @@ function updatePost() {
 	if (!values) {
 		return;
 	}
-	values["action"] = "update";
 	savePost(values);
 }
 function collectValues() {
 	const post = {};
 	post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
 	post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
+	post["new"] = document.querySelector("#uuid").dataset["new"];
 	post["title"] = document.querySelector("#title").value;
 	if (post["title"].length === 0) {
 		return false;
@@ -156,7 +157,11 @@ function collectValues() {
 	post["use_theme_css"] = document.querySelector("#use_theme_css").value;
 	post["use_theme_js"] = document.querySelector("#use_theme_js").value;
 	post["thumbnail"] = document.querySelector("#thumbnail").value;
-	post["categories"] = document.querySelector("#categories").value;
+	debugger;
+	post["categories"] = [];
+	for (const option of document.querySelector("#categories").selectedOptions) {
+		post["categories"].push(option.value);
+	}
 	post["tags"] = document.querySelector("#tags").value;
 	post["post_status"] = document.querySelector("#post_status").value;
 	return post;

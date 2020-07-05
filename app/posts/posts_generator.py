@@ -78,12 +78,12 @@ class PostsGenerator:
             return False
 
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
-            f.write("registration locked")
+            f.write("generation locked")
 
         if posts:
             t = threading.Thread(target=self.generate_all)
         elif post:
-            post_type = self.get_post_type(post["uuid"])
+            post_type = self.get_post_type(post["post_type"])
             t = threading.Thread(target=self.generate_post, kwargs=dict(post=post, post_type=post_type))
         elif post_type:
             t = threading.Thread(target=self.generate_post_type, kwargs=dict(post_type=post_type))
@@ -269,7 +269,7 @@ class PostsGenerator:
 
         posts = []
 
-        for post in raw_items[post_type["uuid"]]:
+        for post in raw_items:
             posts.append({
                 "uuid": post[0],
                 "slug": post[1],
@@ -303,6 +303,7 @@ class PostsGenerator:
             )
 
         self.generate_home()
+        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # Generate tags
     def generate_tags(self, post_type_slug, tags, posts):
