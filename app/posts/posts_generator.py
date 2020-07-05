@@ -203,7 +203,7 @@ class PostsGenerator:
                 categories.update(post["categories"])
 
             if post_type["tags_enabled"]:
-                self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts)
+                self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts[post_type["uuid"]])
 
             if post_type["categories_enabled"]:
                 self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
@@ -312,6 +312,16 @@ class PostsGenerator:
 
         tags_posts_list = {}
         for tag in tags:
+            tag_meta = ""
+            try:
+                cur = self.connection.cursor()
+                cur.execute(
+                    sql.SQL("""SELECT slug, display_name FROM sloth_taxonomy WHERE uuid = %s;"""),
+                    [tag]
+                )
+                tag_meta = cur.fetchone()
+            except Exception as e:
+                print(e)
             tags_posts_list[tag] = []
 
             for post in posts:
@@ -333,14 +343,14 @@ class PostsGenerator:
             if not os.path.exists(post_path_dir):
                 os.makedirs(post_path_dir)
 
-            if not os.path.exists(os.path.join(post_path_dir, tag)):
-                os.makedirs(os.path.join(post_path_dir, tag))
+            if not os.path.exists(os.path.join(post_path_dir, tag_meta[0])):
+                os.makedirs(os.path.join(post_path_dir, tag_meta[0]))
 
             for i in range(math.ceil(len(tags_posts_list[tag]) / 10)):
-                if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag, str(i))):
-                    os.makedirs(os.path.join(post_path_dir, tag, str(i)))
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag_meta[0], str(i))):
+                    os.makedirs(os.path.join(post_path_dir, tag_meta[0], str(i)))
 
-                with open(os.path.join(post_path_dir, tag, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                with open(os.path.join(post_path_dir, tag_meta[0], str(i) if i != 0 else '', 'index.html'), 'w') as f:
                     lower = 10 * i
                     upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag]) else len(
                         tags_posts_list[tag])
@@ -349,7 +359,7 @@ class PostsGenerator:
                         posts=tags_posts_list[tag][lower: upper],
                         tag=tag,
                         sitename=self.settings["sitename"]["settings_value"],
-                        page_name="Tag: " + tag,
+                        page_name="Tag: " + tag_meta[1],
                         api_url=self.settings["api_url"]["settings_value"],
                         sloth_footer=self.sloth_footer
                     ))
@@ -361,6 +371,16 @@ class PostsGenerator:
 
         categories_posts_list = {}
         for category in categories:
+            category_meta = ""
+            try:
+                cur = self.connection.cursor()
+                cur.execute(
+                    sql.SQL("""SELECT slug, display_name FROM sloth_taxonomy WHERE uuid = %s;"""),
+                    [category]
+                )
+                category_meta = cur.fetchone()
+            except Exception as e:
+                print(e)
             categories_posts_list[category] = []
 
             for post in posts:
@@ -382,14 +402,14 @@ class PostsGenerator:
             if not os.path.exists(post_path_dir):
                 os.makedirs(post_path_dir)
 
-            if not os.path.exists(os.path.join(post_path_dir, category)):
-                os.makedirs(os.path.join(post_path_dir, category))
+            if not os.path.exists(os.path.join(post_path_dir, category_meta[0])):
+                os.makedirs(os.path.join(post_path_dir, category_meta[0]))
 
             for i in range(math.ceil(len(categories_posts_list[category]) / 10)):
-                if i > 0 and not os.path.exists(os.path.join(post_path_dir, category, str(i))):
-                    os.makedirs(os.path.join(post_path_dir, category, str(i)))
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, category_meta[0], str(i))):
+                    os.makedirs(os.path.join(post_path_dir, category_meta[0], str(i)))
 
-                with open(os.path.join(post_path_dir, category, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                with open(os.path.join(post_path_dir, category_meta[0], str(i) if i != 0 else '', 'index.html'), 'w') as f:
                     lower = 10 * i
                     upper = (10 * i) + 10 if (10 * i) + 10 < len(categories_posts_list[category]) else len(
                         categories_posts_list[category])
@@ -398,7 +418,7 @@ class PostsGenerator:
                         posts=categories_posts_list[category][lower: upper],
                         tag=category,
                         sitename=self.settings["sitename"]["settings_value"],
-                        page_name="Category: " + category,
+                        page_name="Category: " + category_meta[1],
                         api_url=self.settings["api_url"]["settings_value"],
                         sloth_footer=self.sloth_footer
                     ))
