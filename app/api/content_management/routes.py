@@ -17,6 +17,7 @@ from app.posts.posts_generator import PostsGenerator
 
 from app.api.content_management import content_management
 
+
 @content_management.route("/api/content/information", methods=["GET"])
 @authorize_rest(1)
 @db_connection
@@ -24,8 +25,8 @@ def show_content(*args, connection=None, **kwargs):
 	if connection is None:
 		abort(500)
 
-	postTypes = PostTypes()
-	postTypesResult = postTypes.get_post_type_list(connection)
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
 
 	cur = connection.cursor()
 
@@ -51,7 +52,8 @@ def show_content(*args, connection=None, **kwargs):
 			"settingsValueType": item[3]
 		})
 
-	return json.dumps({ "postTypes": postTypesResult, "settings": items })
+	return json.dumps({"post_types": post_types_result, "settings": items})
+
 
 @content_management.route("/api/content/import/wordpress", methods=["PUT", "POST"])
 @authorize_rest(1)
@@ -74,9 +76,10 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 	
 	process_attachments(attachments, connection)
 	process_posts(posts, connection, base_import_link)
-	generator = PostsGenerator(current_app.config)
-	generator.regenerate_all()
-	return json.dumps({ "ok": True })
+	generator = PostsGenerator()
+	generator.run(posts=True)
+	return json.dumps({"ok": True})
+
 
 def process_attachments(items, connection):
 	conn = {}
