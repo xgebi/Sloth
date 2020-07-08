@@ -153,7 +153,7 @@ class PostsGenerator:
                     sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                     A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                WHERE post_type = %s AND post_status = 'published';"""),
+                                WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                     [post_type["uuid"]]
                 )
                 raw_items[post_type["uuid"]] = cur.fetchall()
@@ -206,7 +206,7 @@ class PostsGenerator:
                 self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts[post_type["uuid"]])
 
             if post_type["categories_enabled"]:
-                self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts)
+                self.generate_categories(post_type_slug=post_type["slug"], categories=categories, posts=posts[post_type["uuid"]])
 
             if post_type["archive_enabled"]:
                 self.generate_archive(posts=posts[post_type["uuid"]], post_type=post_type)
