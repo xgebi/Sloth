@@ -130,8 +130,16 @@ def save_post(*args, connection=None, **kwargs):
                     filled["uuid"] = str(uuid.uuid4())
                 else:
                     unique_post = True
-                # TODO slug check
-            publish_date = -1;
+
+            cur.execute(
+                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s"),
+                [f"{filled['slug']}-%", f"{filled['slug']}%"]
+            )
+            similar = cur.fetchone()[0]
+            if int(similar) > 0:
+                filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+
+            publish_date = -1
             if filled["post_status"] == 'published':
                 publish_date = str(time() * 1000)
             elif filled["post_status"] == 'scheduled':

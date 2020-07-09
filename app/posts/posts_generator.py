@@ -14,6 +14,7 @@ from pathlib import Path
 import traceback
 import shutil
 import re
+import collections
 from app.posts.post_types import PostTypes
 
 from app.utilities.db_connection import db_connection
@@ -247,10 +248,10 @@ class PostsGenerator:
                 f.write(post["css"])
 
         if not multiple_posts:
-            self.regenerate_for_post(post_type)
+            self.regenerate_for_post(post_type, post)
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
-    def regenerate_for_post(self, post_type):
+    def regenerate_for_post(self, post_type, post):
         cur = self.connection.cursor()
         raw_items = []
         try:
@@ -258,7 +259,7 @@ class PostsGenerator:
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                         A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                    WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC ;"""),
+                                    WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                 [post_type["uuid"]]
             )
             raw_items = cur.fetchall()
@@ -269,36 +270,36 @@ class PostsGenerator:
 
         posts = []
 
-        for post in raw_items:
+        for temp_post in raw_items:
             posts.append({
-                "uuid": post[0],
-                "slug": post[1],
-                "author_name": post[2],
-                "author_uuid": post[3],
-                "title": post[4],
-                "content": post[5],
-                "excerpt": post[6],
-                "css": post[7],
-                "js": post[8],
-                "thumbnail": post[9],
-                "publish_date": post[10],
-                "update_date": post[11],
-                "post_status": post[12],
-                "tags": post[13],
-                "categories": post[14],
+                "uuid": temp_post[0],
+                "slug": temp_post[1],
+                "author_name": temp_post[2],
+                "author_uuid": temp_post[3],
+                "title": temp_post[4],
+                "content": temp_post[5],
+                "excerpt": temp_post[6],
+                "css": temp_post[7],
+                "js": temp_post[8],
+                "thumbnail": temp_post[9],
+                "publish_date": temp_post[10],
+                "update_date": temp_post[11],
+                "post_status": temp_post[12],
+                "tags": temp_post[13],
+                "categories": temp_post[14],
                 "post_type_slug": post_type["slug"]
             })
 
         if post_type["tags_enabled"]:
-            self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'])
+            self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'], posts=posts)
 
         if post_type["categories_enabled"]:
-            self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'])
+            self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'], posts=posts)
 
         if post_type["archive_enabled"]:
-            self.generate_archive(posts=posts[post_type["uuid"]])
+            self.generate_archive(posts=posts, post_type=post_type)
             self.generate_rss(
-                posts=posts[post_type["uuid"]][:10],
+                posts=posts[:10],
                 path=Path(self.config["OUTPUT_PATH"], post_type["slug"])
             )
 
@@ -548,11 +549,12 @@ class PostsGenerator:
 
             # <dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
             # <category><![CDATA[Interesting links]]></category>
-            for category in post['categories']:
-                category_node = doc.createElement('category')
-                category_text = doc.createCDATASection(category)
-                category_node.appendChild(category_text)
-                post_item.appendChild(category_node)
+            if isinstance(post['categories'], collections.Iterable):
+                for category in post['categories']:
+                    category_node = doc.createElement('category')
+                    category_text = doc.createCDATASection(category)
+                    category_node.appendChild(category_text)
+                    post_item.appendChild(category_node)
             # <content:encoded><![CDATA[
             description = doc.createElement('description')
             post_item.appendChild(description)

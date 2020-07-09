@@ -132,13 +132,13 @@ def process_posts(items, connection, base_import_link):
 			title = item.getElementsByTagName('title')[0].firstChild.wholeText
 			slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
 			cur.execute(
-				sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s"),
-				[slug + "%"]
+				sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s"),
+				[f"{'slug'}-%", f"{'slug'}%"]
 			)
 			similar = cur.fetchone()[0]
 			print(slug, similar)
 			if int(similar) > 0:
-				slug = f"${slug}-${str(int(similar) + 1)}"
+				slug = f"{slug}-{str(int(similar) + 1)}"
 				
 			#	link
 			link = item.getElementsByTagName('link')[0].firstChild.wholeText
