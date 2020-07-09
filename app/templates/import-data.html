@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+<h1>Import posts</h1>
+<section>
+<label for="wordpress-import">Import from Wordpress:</label>
+<input type="file" id="wordpress-import">
+<button id="wordpress-import-button">Upload WP file</button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/import.js"></script>
+{% endblock %}

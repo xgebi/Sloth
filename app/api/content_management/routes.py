@@ -62,7 +62,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 	if connection is None:
 		return
 	
-	xml_data = minidom.parseString(request.data)
+	xml_data = minidom.parseString(json.loads(request.data)["data"])
 	base_import_link = xml_data.getElementsByTagName('wp:base_blog_url')[0].firstChild.wholeText
 	items = xml_data.getElementsByTagName('item')
 	posts = []
@@ -106,12 +106,13 @@ def process_attachments(items, connection):
 				[uuid.uuid4(), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", item.getElementsByTagName('guid')[0].firstChild.wholeText[item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]), alt, int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)]
 			)
 			raw_post_types = cur.fetchall()
+			connection.commit()
 		except Exception as e:
 			print("100")
 			print(traceback.format_exc())
 			abort(500)
-	connection.commit()
-	cur.close()
+
+		cur.close()
 	if conn:
 		conn.close()
 

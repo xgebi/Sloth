@@ -27,14 +27,14 @@ def show_post_types(*args, permission_level, connection, **kwargs):
 @post_type.route("/post-type/new", methods=["GET"])
 @authorize_web(1)
 @db_connection
-def new_post_type(*args, permission_level, connection, **kwargs):
+def new_post_type_page(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
 
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    type = {
+    pt = {
         "uuid": uuid.uuid4()
     }
 
@@ -43,7 +43,8 @@ def new_post_type(*args, permission_level, connection, **kwargs):
         post_types=post_types_result,
         permission_level=permission_level,
         post_type=type,
-        new=True
+        new=True,
+        pt=pt
     )
 
 
@@ -129,6 +130,34 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
         if gen.run(post_type=updated_post_type):
             return redirect(f"/post-type/{post_type_id}")
         return redirect(f"/post-type/{post_type_id}?error=regenerating")
+
+    return redirect(f"/post-type/{post_type_id}")
+
+
+@post_type.route("/post-type/<post_type_id>/create", methods=["POST", "PUT"])
+@authorize_web(1)
+@db_connection
+def create_post_type(*args, permission_level, connection, post_type_id, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
+    new_post_type = request.form
+
+    # 1. save to database
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""INSERT INTO sloth_post_types VALUES (%s, %s, %s, %s, %s, %s);"""),
+            [post_type_id, new_post_type["slug"], new_post_type["display_name"],
+             True if "tags_enabled" in new_post_type else False,
+             True if "categories_enabled" in new_post_type else False,
+             True if "archive_enabled" in new_post_type else False]
+        )
+        connection.commit()
+    except Exception as e:
+        print(e)
+        abort(500)
+    cur.close()
 
     return redirect(f"/post-type/{post_type_id}")
 

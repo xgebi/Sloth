@@ -2,41 +2,42 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{% block title%}{% endblock %}</title>
-	<link href="/static/css/styles.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link href="/static/css/styles.css" rel="stylesheet">
 </head>
 
 <body class="inner-city">
-	<nav>
-		<ul>
-			<li><a href="/dashboard">Dashboard</a></li>
-			<li><a href="/messages">Messages</a></li>
-			{% for post_type in post_types %}
-			<li><a href="/post/{{post_type['uuid']}}">{{post_type['display_name']}}</a>
-				<ul>
-					<li><a href="/post/{{post_type['uuid']}}/new">Add New {{post_type['display_name']}}</a></li>
-					<li><a href="/post/{{post_type['uuid']}}/taxonomy">Taxonomy</a></li>
-				</ul>
-			</li>
-			{% endfor %}
-			<li><a href="/post-types">Post Types</a></li>			
-			<li><a href="/settings/my-account">My account</a></li>
-			{% if  permission_level >= 1 %}
-			<li><a href="/settings/users">Users</a></li>
-			<li><a href="/settings/themes">Themes</a></li>	
-			<li><a href="/settings">Settings</a></li>
-			{% endif %}
-		</ul>
-	</nav>
-	<main>
-        {% if regenerating %}
-            Generating posts, some functionality may be limited
+<nav>
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/messages">Messages</a></li>
+        {% for post_type in post_types %}
+            <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
+                <ul>
+                    <li><a href="/post/{{ post_type['uuid'] }}/new">Add New {{ post_type['display_name'] }}</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
+                </ul>
+            </li>
+        {% endfor %}
+        <li><a href="/post-types">Post Types</a></li>
+        <li><a href="/settings/my-account">My account</a></li>
+        {% if  permission_level >= 1 %}
+            <li><a href="/settings/users">Users</a></li>
+            <li><a href="/settings/themes">Themes</a></li>
+            <li><a href="/settings/import">Import data</a></li>
+            <li><a href="/settings">Settings</a></li>
         {% endif %}
-		{% block body %}{% endblock %}
-	</main>
-    {% block scripts %}{% endblock %}
+    </ul>
+</nav>
+<main>
+    {% if regenerating %}
+        Generating posts, some functionality may be limited
+    {% endif %}
+    {% block body %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
 </body>
 
 </html>
