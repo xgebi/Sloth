@@ -164,7 +164,7 @@ def process_posts(items, connection, base_import_link):
 					tags.append(thing.getAttribute('nicename'))
 				if (domain == 'category'):
 					categories.append(thing.getAttribute('nicename'))
-			
+			# TODO match tags and categories ?
 			meta_infos = item.getElementsByTagName('wp:postmeta')
 			thumbnail_id = ""
 			for info in meta_infos:
@@ -181,7 +181,7 @@ def process_posts(items, connection, base_import_link):
 			# uuid, title, slug, content, post_type, post_status, update_date, tags, categories
 			cur.execute(
 				sql.SQL("INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, tags, categories, thumbnail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s))"),
-				[str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000, tags if not tags is [] else null, categories if not categories is [] else null, thumbnail_id]
+				[str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000, tags if not tags is [] else None, categories if not categories is [] else None, thumbnail_id]
 			)
 		connection.commit()
 		cur.close()
