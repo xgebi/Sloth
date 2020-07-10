@@ -35,15 +35,19 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
         raw_recent_posts = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT uuid, title, publish_date, post_type FROM sloth_posts 
-                        WHERE post_status = %s ORDER BY publish_date ASC LIMIT 10"""),
+            sql.SQL(
+                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
+                WHERE post_status = %s ORDER BY A.publish_date ASC LIMIT 10;"""),
             ['scheduled']
         )
         raw_upcoming_posts = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT uuid, title, publish_date, post_type FROM sloth_posts 
-                        WHERE post_status = %s ORDER BY update_date DESC  LIMIT 10"""),
+            sql.SQL(
+                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
+                WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;"""),
             ['draft']
         )
         raw_drafts = cur.fetchall()
