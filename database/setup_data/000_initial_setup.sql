@@ -8,4 +8,5 @@ UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1);
 
 -- Initial Settings
 INSERT INTO sloth_settings VALUES('active_theme', '', 'text', 'themes', 'light');
+INSERT INTO sloth_settings VALUES('wordpress_import_count', '', 'text', 'import', '0');
 commit;

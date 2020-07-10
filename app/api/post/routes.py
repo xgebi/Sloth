@@ -109,12 +109,15 @@ def save_post(*args, connection=None, **kwargs):
             for new_tag in new_tags:
                 slug = re.sub("\s+", "-", new_tag.strip())
                 new_uuid = str(uuid.uuid4())
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
-                                VALUES (%s, %s, %s, %s, 'tag');"""),
-                    [new_uuid, slug, new_tag, filled["post_type_uuid"]]
-                )
-                matched_tags.append(new_uuid)
+                try:
+                    cur.execute(
+                        sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
+                                    VALUES (%s, %s, %s, %s, 'tag');"""),
+                        [new_uuid, slug, new_tag, filled["post_type_uuid"]]
+                    )
+                    matched_tags.append(new_uuid)
+                except Exception as e:
+                    print(e)
             connection.commit()
         # get user
         author = request.headers.get('authorization').split(":")[1]

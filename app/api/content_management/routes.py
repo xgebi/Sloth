@@ -62,6 +62,22 @@ def import_wordpress_content(*args, connection=None, **kwargs):
     if connection is None:
         return
 
+    cur = connection.cursor()
+    import_count = -1;
+    try:
+        cur.execute(
+            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'wordpress_import_count';""")
+        )
+        import_count = int(cur.fetchone()[0]) + 1
+        cur.execute(
+            sql.SQL("""UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 'wordpress_import_count';"""),
+            [import_count]
+        )
+        connection.commit()
+    except Exception as e:
+        print(e)
+        abort(500)
+
     xml_data = minidom.parseString(json.loads(request.data)["data"])
     base_import_link = xml_data.getElementsByTagName('wp:base_blog_url')[0].firstChild.wholeText
     items = xml_data.getElementsByTagName('item')
@@ -74,14 +90,14 @@ def import_wordpress_content(*args, connection=None, **kwargs):
         if post_type == 'post' or post_type == 'page':
             posts.append(item)
 
-    process_attachments(attachments, connection)
-    process_posts(posts, connection, base_import_link)
+    process_attachments(attachments, connection, import_count)
+    process_posts(posts, connection, base_import_link, import_count)
     generator = PostsGenerator()
     generator.run(posts=True)
     return json.dumps({"ok": True})
 
 
-def process_attachments(items, connection):
+def process_attachments(items, connection, import_count):
     conn = {}
     for item in items:
         if conn == {}:
@@ -102,13 +118,14 @@ def process_attachments(items, connection):
                    item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]
 
         index = 1
-        while os.path.exists(filename):
-            filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
+        while os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename)):
+            if filename[:filename.rfind('.')].endswith(f"-{index-1}"):
+                filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
+            else:
+                filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
             index += 1
 
-        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content",
-                               item.getElementsByTagName('guid')[0].firstChild.wholeText[
-                               item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]), 'wb') as f:
+        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename), 'wb') as f:
             f.write(data)
         meta_infos = item.getElementsByTagName('wp:postmeta')
         alt = ""
@@ -118,13 +135,11 @@ def process_attachments(items, connection):
         try:
             cur = connection.cursor()
             cur.execute(
-                sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s)"),
-                [uuid.uuid4(), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content",
-                                            item.getElementsByTagName('guid')[0].firstChild.wholeText[
-                                            item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]),
-                 alt, int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)]
+                sql.SQL("INSERT INTO sloth_media (uuid, file_path, alt, wp_id) VALUES (%s, %s, %s, %s)"),
+                [str(uuid.uuid4()),
+                 os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename),
+                 alt, f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}"]
             )
-            raw_post_types = cur.fetchall()
             connection.commit()
         except Exception as e:
             print("100")
@@ -136,7 +151,7 @@ def process_attachments(items, connection):
         conn.close()
 
 
-def process_posts(items, connection, base_import_link):
+def process_posts(items, connection, base_import_link, import_count):
     try:
         cur = connection.cursor()
         cur.execute(
@@ -144,8 +159,15 @@ def process_posts(items, connection, base_import_link):
         )
         raw_post_types = cur.fetchall()
         post_types = {}
+        existing_categories = {}
+        existing_tags = {}
         for post_type in raw_post_types:
             post_types[post_type[0]] = post_type[1]
+
+            taxonomies = fetch_taxonomies(cursor=cur, post_type=post_type)
+            existing_categories[post_type[1]] = taxonomies["categories"]
+            existing_tags[post_type[1]] = taxonomies["tags"]
+
         raw_post_types = None
         for item in items:
             # title
@@ -168,7 +190,7 @@ def process_posts(items, connection, base_import_link):
             creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
             # content:encoded (CDATA)
             content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if \
-            item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
+                item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
 
             # wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
             status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
@@ -185,6 +207,42 @@ def process_posts(items, connection, base_import_link):
                     tags.append(thing.getAttribute('nicename'))
                 if domain == 'category':
                     categories.append(thing.getAttribute('nicename'))
+
+            matched_tags = [tag for tag in existing_tags[post_types[post_type]] if tag in tags]
+            new_tags = [tag for tag in tags if tag not in
+                        [existing_tag["display_name"] for existing_tag in existing_tags[post_types[post_type]]]]
+            matched_categories = [category for category in existing_categories[post_types[post_type]] if category in categories]
+            new_categories = [category for category in categories if category not in
+                        [existing_category["display_name"] for existing_category in existing_categories[post_types[post_type]]]]
+            if len(new_tags) > 0:
+                for new_tag in new_tags:
+                    slug = re.sub("\s+", "-", new_tag.strip())
+                    new_uuid = str(uuid.uuid4())
+                    try:
+                        cur.execute(
+                            sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
+                                                VALUES (%s, %s, %s, %s, 'tag');"""),
+                            [new_uuid, slug, new_tag, post_types[post_type]]
+                        )
+                        matched_tags.append(new_uuid)
+                    except Exception as e:
+                        print(e)
+                connection.commit()
+
+            if len(new_categories) > 0:
+                for new_category in new_categories:
+                    slug = re.sub("\s+", "-", new_category.strip())
+                    new_uuid = str(uuid.uuid4())
+                    try:
+                        cur.execute(
+                            sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
+                                                VALUES (%s, %s, %s, %s, 'category');"""),
+                            [new_uuid, slug, new_category, post_types[post_type]]
+                        )
+                        matched_categories.append(new_uuid)
+                    except Exception as e:
+                        print(e)
+                connection.commit()
 
             meta_infos = item.getElementsByTagName('wp:postmeta')
             thumbnail_id = ""
@@ -203,14 +261,15 @@ def process_posts(items, connection, base_import_link):
                 )
                 returned = cur.fetchone()
                 post_types[returned[0]] = returned[1]
-            # TODO match tags and categories ?
 
             # uuid, title, slug, content, post_type, post_status, update_date, tags, categories
             cur.execute(
-                sql.SQL(
-                    "INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, tags, categories, thumbnail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s))"),
-                [str(uuid.uuid4()), title, slug, content, post_types[post_type], status, pub_date.timestamp() * 1000,
-                 tags if not tags is [] else None, categories if not categories is [] else None, thumbnail_id]
+                sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
+                            title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
+                            categories, lang) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en')"""),
+                [str(uuid.uuid4()), slug, post_types[post_type], "author", title, content, "", "", "", f"{import_count}-{thumbnail_id}",
+                 "publish_date", None, status, None if tags is [] else tags, None if categories is [] else categories]
             )
         connection.commit()
         cur.close()
@@ -218,3 +277,37 @@ def process_posts(items, connection, base_import_link):
         print("117")
         print(traceback.format_exc())
         abort(500)
+
+
+def fetch_taxonomies(*args, cursor, post_type, **kwargs):
+    temp_tags = []
+    temp_categories = []
+    try:
+        cursor.execute(
+            sql.SQL("""SELECT uuid, slug, display_name FROM sloth_taxonomy
+                         WHERE taxonomy_type = 'tag' AND post_type = %s"""),
+            [post_type[1]]
+        )
+        temp_tags = cursor.fetchall()
+        cursor.execute(
+            sql.SQL(
+                """SELECT uuid, slug, display_name FROM sloth_taxonomy 
+                WHERE taxonomy_type = 'category' AND post_type = %s"""),
+            [post_type[1]]
+        )
+        temp_categories = cursor.fetchall()
+    except Exception as e:
+        print(e)
+    return {"tags": process_taxonomy(taxonomy_list=temp_tags), "categories": process_taxonomy(taxonomy_list=temp_categories)}
+
+
+def process_taxonomy(*args, taxonomy_list, **kwargs):
+    res_list = []
+    for item in taxonomy_list:
+        res_list.append({
+            "uuid": item[0],
+            "slug": item[1],
+            "display_name": item[2]
+        })
+    return res_list
+
