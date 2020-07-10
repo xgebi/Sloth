@@ -107,7 +107,6 @@ def process_attachments(items, connection, import_count):
         conn.request("GET", item.getElementsByTagName('guid')[0].firstChild.wholeText[
                             item.getElementsByTagName('guid')[0].firstChild.wholeText.find('/', 8):])
         res = conn.getresponse()
-        print(res.status, res.reason)
 
         data = res.read()
 
@@ -190,7 +189,6 @@ def process_posts(items, connection, base_import_link, import_count):
                 [f"{slug}-%", f"{slug}%", post_types[post_type]]
             )
             similar = cur.fetchone()[0]
-            print(slug, similar)
             if int(similar) > 0:
                 slug = f"{slug}-{str(int(similar) + 1)}"
 
@@ -218,10 +216,10 @@ def process_posts(items, connection, base_import_link, import_count):
                 if domain == 'category':
                     categories.append(thing.getAttribute('nicename'))
 
-            matched_tags = [tag for tag in existing_tags[post_types[post_type]] if tag in tags]
+            matched_tags = [tag for tag in existing_tags[post_types[post_type]] if tag["display_name"] in tags]
             new_tags = [tag for tag in tags if tag not in
                         [existing_tag["display_name"] for existing_tag in existing_tags[post_types[post_type]]]]
-            matched_categories = [category for category in existing_categories[post_types[post_type]] if category in categories]
+            matched_categories = [category for category in existing_categories[post_types[post_type]] if category["display_name"] in categories]
             new_categories = [category for category in categories if category not in
                         [existing_category["display_name"] for existing_category in existing_categories[post_types[post_type]]]]
             if len(new_tags) > 0:
@@ -267,7 +265,7 @@ def process_posts(items, connection, base_import_link, import_count):
                             categories, lang) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en')"""),
                 [str(uuid.uuid4()), slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title, content, "", "", "", f"{import_count}-{thumbnail_id}",
-                 pub_date, pub_date, status, matched_tags, matched_categories]
+                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags], [category["uuid"] for category in matched_categories]]
             )
         connection.commit()
         cur.close()

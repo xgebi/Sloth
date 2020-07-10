@@ -194,10 +194,9 @@ class PostsGenerator:
         post_types = self.get_post_types()
         posts = self.get_posts_for_post_types(post_types)
 
-        tags = set()
-        categories = set()
-
         for post_type in post_types:
+            tags = set()
+            categories = set()
             for post in posts[post_type["uuid"]]:
                 self.generate_post(post, post_type, multiple_posts=True)
                 tags.update(post["tags"])
