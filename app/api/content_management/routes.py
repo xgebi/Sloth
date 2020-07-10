@@ -168,14 +168,26 @@ def process_posts(items, connection, base_import_link, import_count):
             existing_categories[post_type[1]] = taxonomies["categories"]
             existing_tags[post_type[1]] = taxonomies["tags"]
 
-        raw_post_types = None
         for item in items:
             # title
             title = item.getElementsByTagName('title')[0].firstChild.wholeText
+            # wp:post_type (attachment, nav_menu_item, illustration, page, post)
+            post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
+            if not post_types[post_type]:
+                cur.execute(
+                    sql.SQL(
+                        """INSERT INTO sloth_post_types 
+                            (uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled) 
+                            VALUES (%s, %s, %s, true, true, true) RETURNING slug, uuid"""
+                    ),
+                    [str(uuid.uuid4()), re.sub(r'\s+', '-', post_type), post_type]
+                )
+                returned = cur.fetchone()
+                post_types[returned[0]] = returned[1]
             slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
             cur.execute(
-                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s"),
-                [f"{'slug'}-%", f"{'slug'}%"]
+                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE (slug LIKE %s OR slug LIKE %s) AND post_type = %s;"),
+                [f"{slug}-%", f"{slug}%", post_types[post_type]]
             )
             similar = cur.fetchone()[0]
             print(slug, similar)
@@ -185,7 +197,7 @@ def process_posts(items, connection, base_import_link, import_count):
             # link
             link = item.getElementsByTagName('link')[0].firstChild.wholeText
             # pubDate or wp:post_date
-            pub_date = dateutil.parser.parse(item.getElementsByTagName('pubDate')[0].firstChild.wholeText)
+            pub_date = dateutil.parser.parse(item.getElementsByTagName('pubDate')[0].firstChild.wholeText).timestamp()*1000
             # dc:creator (CDATA)
             creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
             # content:encoded (CDATA)
@@ -196,8 +208,6 @@ def process_posts(items, connection, base_import_link, import_count):
             status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
             if status == "publish" or status == "private":
                 status = "published"
-            # wp:post_type (attachment, nav_menu_item, illustration, page, post)
-            post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
             # category domain (post_tag, category) nicename
             categories = []
             tags = []
@@ -250,26 +260,14 @@ def process_posts(items, connection, base_import_link, import_count):
                 if info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_thumbnail_id':
                     thumbnail_id = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText
 
-            if not post_types[post_type]:
-                cur.execute(
-                    sql.SQL(
-                        """INSERT INTO sloth_post_types 
-                            (uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled) 
-                            VALUES (%s, %s, %s, true, true, true) RETURNING slug, uuid"""
-                    ),
-                    [str(uuid.uuid4()), re.sub(r'\s+', '-', post_type), post_type]
-                )
-                returned = cur.fetchone()
-                post_types[returned[0]] = returned[1]
-
             # uuid, title, slug, content, post_type, post_status, update_date, tags, categories
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                             title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
                             categories, lang) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en')"""),
-                [str(uuid.uuid4()), slug, post_types[post_type], "author", title, content, "", "", "", f"{import_count}-{thumbnail_id}",
-                 "publish_date", None, status, None if tags is [] else tags, None if categories is [] else categories]
+                [str(uuid.uuid4()), slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title, content, "", "", "", f"{import_count}-{thumbnail_id}",
+                 pub_date, pub_date, status, matched_tags, matched_categories]
             )
         connection.commit()
         cur.close()
