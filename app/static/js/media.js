@@ -36,6 +36,7 @@ function openModal() {
     dialog.appendChild(altInput);
 
     const uploadButton = document.createElement('button');
+    uploadButton.textContent = "Upload file";
     uploadButton.addEventListener('click', () => {
         uploadFile();
         closeModal(dialog);

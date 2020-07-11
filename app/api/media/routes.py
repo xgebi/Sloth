@@ -3,7 +3,7 @@ import json
 import psycopg2
 from psycopg2 import sql, errors
 import uuid
-from time import time
+from datetime import datetime
 import os
 import traceback
 
@@ -27,14 +27,36 @@ def get_media_data(*args, connection, **kwargs):
 @authorize_rest(0)
 @db_connection
 def upload_item(*args, connection=None, **kwargs):
-    file_data = json.loads(request.data)
-    request.files["iwage"] # filename stream mimetype
-    request.form["alt"]
-    ext = file_name[file_name.rfind("."):]
-    if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"): # TODO do this in config
+    image = request.files["image"] # filename stream mimetype
+    alt = request.form["alt"]
+
+    try:
+        cur = connection.cursor()
+        cur.execute(
+            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'allowed_extensions';")
+        )
+        allowed_exts = cur.fetchone()[0]
+        cur.close()
+        ext = image.filename[image.filename.rfind(".")+1:].lower()
+        mime_ext = image.mimetype[image.mimetype.rfind("/")+1:].lower()
+        if not (ext in allowed_exts or mime_ext in allowed_exts):
+            abort(500)
+    except Exception as e:
+        print(e)
         abort(500)
-    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
-        f.write(request.data)
+    now = datetime.now()
+    filename = image.filename
+    index = 1
+    while os.path.exists(
+            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)):
+        if filename[:filename.rfind('.')].endswith(f"-{index - 1}"):
+            filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
+        else:
+            filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
+        index += 1
+
+    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename), 'wb') as f:
+        image.save(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))
 
     file = {}
 
@@ -42,8 +64,8 @@ def upload_item(*args, connection=None, **kwargs):
         cur = connection.cursor()
 
         cur.execute(
-            sql.SQL("INSERT INTO settings_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
-            [str(uuid.uuid4()), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), "", ""]
+            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
+            [str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename), alt, None]
         )
         file = cur.fetchone()
         cur.close()
@@ -51,7 +73,7 @@ def upload_item(*args, connection=None, **kwargs):
         print(traceback.format_exc())
         connection.close()
         abort(500)
-
+    connection.close()
     return json.dumps({"media": file}), 201
 
 

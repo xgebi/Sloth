@@ -144,7 +144,7 @@ def process_attachments(items, connection, import_count):
             cur.execute(
                 sql.SQL("INSERT INTO sloth_media (uuid, file_path, alt, wp_id) VALUES (%s, %s, %s, %s)"),
                 [str(uuid.uuid4()),
-                 os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename),
+                 os.path.join("sloth-content", str(now.year), str(now.month), filename),
                  alt, f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}"]
             )
             connection.commit()
