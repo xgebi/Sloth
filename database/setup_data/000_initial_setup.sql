@@ -9,4 +9,5 @@ UPDATE sloth_posts SET author = (SELECT uuid FROM sloth_users LIMIT 1);
 -- Initial Settings
 INSERT INTO sloth_settings VALUES('active_theme', '', 'text', 'themes', 'light');
 INSERT INTO sloth_settings VALUES('wordpress_import_count', '', 'text', 'import', '0');
+INSERT INTO sloth_settings VALUES('allowed_extensions', 'Allowed extensions', 'text', 'sloth', '.png, .jpg, .jpeg, .svg, .bmp, .tiff, .js, .css, .zip, .tar');
 commit;

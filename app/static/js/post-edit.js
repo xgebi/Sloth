@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 });
 
 function openGalleryDialog(data) {
-	debugger;
 	const dialog = document.querySelector("#modal");
 	dialog.setAttribute('open', '');
 	const copyResult = document.createElement('p');

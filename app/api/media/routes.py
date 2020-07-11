@@ -28,6 +28,8 @@ def get_media_data(*args, connection, **kwargs):
 @db_connection
 def upload_item(*args, connection=None, **kwargs):
     file_data = json.loads(request.data)
+    request.files["iwage"] # filename stream mimetype
+    request.form["alt"]
     ext = file_name[file_name.rfind("."):]
     if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"): # TODO do this in config
         abort(500)
