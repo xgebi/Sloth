@@ -10,6 +10,7 @@ from xml.dom import minidom
 import dateutil.parser
 import uuid
 import traceback
+from datetime import datetime
 from app.posts.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
@@ -99,6 +100,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 
 def process_attachments(items, connection, import_count):
     conn = {}
+    now = datetime.now()
     for item in items:
         if conn == {}:
             conn = http.client.HTTPSConnection(item.getElementsByTagName('guid')[0].firstChild.wholeText[
@@ -113,18 +115,24 @@ def process_attachments(items, connection, import_count):
         if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")):
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content"))
 
+        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year))):
+            os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year)))
+
+        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month))):
+            os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month)))
+
         filename = item.getElementsByTagName('guid')[0].firstChild.wholeText[
                    item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]
 
         index = 1
-        while os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename)):
+        while os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)):
             if filename[:filename.rfind('.')].endswith(f"-{index-1}"):
                 filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
             else:
                 filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
             index += 1
 
-        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename), 'wb') as f:
+        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename), 'wb') as f:
             f.write(data)
         meta_infos = item.getElementsByTagName('wp:postmeta')
         alt = ""
@@ -136,7 +144,7 @@ def process_attachments(items, connection, import_count):
             cur.execute(
                 sql.SQL("INSERT INTO sloth_media (uuid, file_path, alt, wp_id) VALUES (%s, %s, %s, %s)"),
                 [str(uuid.uuid4()),
-                 os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", filename),
+                 os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename),
                  alt, f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}"]
             )
             connection.commit()
@@ -157,6 +165,11 @@ def process_posts(items, connection, base_import_link, import_count):
             sql.SQL("SELECT slug, uuid FROM sloth_post_types")
         )
         raw_post_types = cur.fetchall()
+        cur.execute(
+            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
+        )
+        site_url = cur.fetchone()[0]
+        now = datetime.now()
         post_types = {}
         existing_categories = {}
         existing_tags = {}
@@ -201,6 +214,9 @@ def process_posts(items, connection, base_import_link, import_count):
             # content:encoded (CDATA)
             content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if \
                 item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
+
+            # images
+            content = re.sub(f"{base_import_link}/wp-content/uploads/\d\d\d\d/\d\d/", f"{site_url}/{now.year}/{now.month}/", content)
 
             # wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
             status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
