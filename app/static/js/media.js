@@ -58,8 +58,29 @@ function closeModal(dialog) {
     dialog.removeAttribute('open');
 }
 
-function renderImages() {
+function renderImages(media) {
+    const gallery = document.querySelector("#media-gallery");
+    while (gallery.firstChild) {
+        gallery.removeChild(gallery.lastChild);
+    }
 
+    for (const medium of media) {
+        const article = document.createElement('article');
+        const image = document.createElement("img");
+        image.setAttribute("src", medium["file_url"]);
+        image.setAttribute("alt", medium["alt"]);
+        article.appendChild(image)
+        const p = document.createElement("p");
+        p.textContent = `Alt: ${medium["alt"]}`;
+        article.appendChild(p)
+        const deleteButton = document.createElement('button');
+        deleteButton.setAttribute("class", "delete-button");
+        deleteButton.setAttribute("data-uuid", medium["uuid"]);
+        deleteButton.setAttribute("data-file-path", medium["file_url"]);
+        deleteButton.textContent = "Delete"
+        article.appendChild(deleteButton);
+        gallery.appendChild(article);
+    }
 }
 
 function uploadFile() {
@@ -80,16 +101,13 @@ function uploadFile() {
         },
         body: formData
     }).then(response => response.json()).then(result => {
-        console.log('Success:', result);
+        renderImages(result["media"]);
     }).catch(error => {
         console.error('Error:', error);
     });
 }
 
 function deleteButton(event) {
-    console.log(event);
-    debugger;
-    event.target.dataset.filePath
     const dialog = document.querySelector("#modal");
     dialog.showModal();
 
@@ -112,7 +130,7 @@ function deleteButton(event) {
             },
             body: JSON.stringify({uuid: event.target.dataset["uuid"]})
         }).then(response => response.json()).then(result => {
-            console.log('Success:', result);
+            renderImages(result["media"]);
         }).catch(error => {
             console.error('Error:', error);
         });

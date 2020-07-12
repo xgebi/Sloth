@@ -96,12 +96,15 @@ def delete_item(*args, connection=None, **kwargs):
         else:
             abort(500)
         cur.execute(
+            sql.SQL("UPDATE sloth_posts SET thumbnail = %s WHERE thumbnail = %s;"),
+            [None, file_data["uuid"]]
+        )
+        cur.execute(
             sql.SQL("DELETE FROM sloth_media WHERE uuid = %s"),
             [file_data["uuid"]]
         )
-
-        cur.close()
         connection.commit()
+        cur.close()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()

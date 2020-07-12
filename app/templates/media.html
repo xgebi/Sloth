@@ -5,7 +5,7 @@
 {% block body %}
     <h1>List of media</h1>
     <button id="open-modal">Upload file</button>
-    <section class="media-gallery">
+    <section class="media-gallery" id="media-gallery">
         {% for medium in media %}
             <article>
                 <img src="{{ medium["file_url"] }}" alt="{{ medium["alt"] }}"/>
