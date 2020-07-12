@@ -3,13 +3,26 @@
 {% block title %}List of media{% endblock %}
 
 {% block body %}
-<h1>List of media</h1>
+    <h1>List of media</h1>
 
-<button id="open-modal">Upload file</button>
-<dialog id="modal"></dialog>
+    <section>
+        {% for medium in media %}
+            <article>
+                <img src="{{ medium["file_path"] }}" alt="{{ medium["alt"] }}"/>
+                <p>
+                    Alt: {{ medium["alt"] }}
+                </p>
+                <button data-uuid="{{ medium["uuid"] }}" data-file-path="{{ medium["file_path"] }}"  class="delete-button">Delete</button>
+            </article>
+        {% endfor %}
+
+    </section>
+
+    <button id="open-modal">Upload file</button>
+    <dialog id="modal"></dialog>
 {% endblock %}
 
 
 {% block scripts %}
-<script src="/static/js/media.js"></script>
+    <script src="/static/js/media.js"></script>
 {% endblock %}

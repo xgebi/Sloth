@@ -1,14 +1,12 @@
 let images = [];
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    // 1. open upload modal
-
     document.querySelector("#open-modal").addEventListener('click', openModal);
 
-    // 2. upload file
-
-
-    // 3. delete file query
+    const deleteButtons = document.querySelectorAll(".delete-button");
+    for (const button of deleteButtons) {
+        button.addEventListener('click', deleteButton())
+    }
 });
 
 function openModal() {
@@ -83,4 +81,23 @@ function uploadFile() {
     }).catch(error => {
         console.error('Error:', error);
     });
+}
+
+function deleteButton(event) {
+    const dialog = document.querySelector("#modal");
+    dialog.setAttribute('open', '');
+
+    const image = document.createElement("img");
+    image.setAttribute("src", "")
+
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Keep file'
+    deleteButton.addEventListener('click', () => closeModal(dialog));
+    dialog.appendChild(deleteButton);
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Keep file'
+    closeButton.addEventListener('click', () => closeModal(dialog));
+    dialog.appendChild(closeButton);
 }

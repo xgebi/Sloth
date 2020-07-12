@@ -85,12 +85,21 @@ def delete_item(*args, connection=None, **kwargs):
 
     try:
         cur = connection.cursor()
-
         cur.execute(
-            sql.SQL("INSERT INTO settings_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
-            [str(uuid.uuid4()), os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), "", ""]
+            sql.SQL("SELECT file_path FROM sloth_media WHERE uuid = %s"),
+            [file_data["uuid"]]
         )
-        file = cur.fetchone()
+        temp_file_path = cur.fetchone()
+        if len(temp_file_path) > 0:
+            if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", temp_file_path)):
+                os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", temp_file_path))
+        else:
+            abort(500)
+        cur.execute(
+            sql.SQL("DELETE FROM sloth_media WHERE uuid = %s"),
+            [file_data["uuid"]]
+        )
+
         cur.close()
     except Exception as e:
         print(traceback.format_exc())
