@@ -95,3 +95,12 @@ select {
 .hidden {
 	display: none;
 }
+
+.media-gallery {
+	display: grid;
+	grid-template-columns: 10rem 10rem 10rem;
+}
+
+.media-gallery img {
+	width: 100%;
+}

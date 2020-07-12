@@ -5,13 +5,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     const deleteButtons = document.querySelectorAll(".delete-button");
     for (const button of deleteButtons) {
-        button.addEventListener('click', deleteButton())
+        button.addEventListener('click', deleteButton)
     }
 });
 
 function openModal() {
     const dialog = document.querySelector("#modal");
-    dialog.setAttribute('open', '');
+    if (dialog.getAttribute("open")) {
+        return;
+    }
+    dialog.showModal();
 
     const fileLabel = document.createElement('label');
     fileLabel.setAttribute('for', 'file-upload');
@@ -70,11 +73,11 @@ function uploadFile() {
     fetch('/api/media/upload-file', {
         method: 'POST',
         headers: {
-			'authorization': document.cookie
-			.split(';')
-		  	.find(row => row.trim().startsWith('sloth_session'))
-		  	.split('=')[1]
-		},
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1]
+        },
         body: formData
     }).then(response => response.json()).then(result => {
         console.log('Success:', result);
@@ -84,16 +87,36 @@ function uploadFile() {
 }
 
 function deleteButton(event) {
+    console.log(event);
+    debugger;
+    event.target.dataset.filePath
     const dialog = document.querySelector("#modal");
-    dialog.setAttribute('open', '');
+    dialog.showModal();
 
     const image = document.createElement("img");
-    image.setAttribute("src", "")
+    image.setAttribute("src", event.target.dataset["filePath"]);
+    dialog.appendChild(image);
 
 
     const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Keep file'
-    deleteButton.addEventListener('click', () => closeModal(dialog));
+    deleteButton.textContent = 'Delete file'
+    deleteButton.addEventListener('click', () => {
+        closeModal(dialog);
+        fetch('/api/media/delete-file', {
+            method: 'DELETE',
+            headers: {
+                'authorization': document.cookie
+                    .split(';')
+                    .find(row => row.trim().startsWith('sloth_session'))
+                    .split('=')[1]
+            },
+            body: JSON.stringify({uuid: event.target.dataset["uuid"]})
+        }).then(response => response.json()).then(result => {
+            console.log('Success:', result);
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    });
     dialog.appendChild(deleteButton);
 
     const closeButton = document.createElement('button');

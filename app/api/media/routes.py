@@ -27,7 +27,7 @@ def get_media_data(*args, connection, **kwargs):
 @authorize_rest(0)
 @db_connection
 def upload_item(*args, connection=None, **kwargs):
-    image = request.files["image"] # filename stream mimetype
+    image = request.files["image"]
     alt = request.form["alt"]
 
     try:
@@ -68,6 +68,7 @@ def upload_item(*args, connection=None, **kwargs):
             [str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename), alt, None]
         )
         file = cur.fetchone()
+        connection.commit()
         cur.close()
     except Exception as e:
         print(traceback.format_exc())
@@ -90,9 +91,9 @@ def delete_item(*args, connection=None, **kwargs):
             [file_data["uuid"]]
         )
         temp_file_path = cur.fetchone()
-        if len(temp_file_path) > 0:
-            if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", temp_file_path)):
-                os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", temp_file_path))
+        if len(temp_file_path) == 1:
+            if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0])):
+                os.remove(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0]))
         else:
             abort(500)
         cur.execute(
@@ -101,19 +102,27 @@ def delete_item(*args, connection=None, **kwargs):
         )
 
         cur.close()
+        connection.commit()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
         abort(500)
-
-    return json.dumps({ "media": file }), 201
+    connection.close()
+    return json.dumps({"media": "deleted"}), 201
 
 
 def get_media(*args, connection, **kwargs):
     cur = connection.cursor()
     raw_media = []
+    site_url = -1
     try:
-
+        cur.execute(
+            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'""")
+        )
+        temp_site_url = cur.fetchone()
+        if len(temp_site_url) != 1:
+            abort(500)
+        site_url = temp_site_url[0]
         cur.execute(
             sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
         )
@@ -129,7 +138,8 @@ def get_media(*args, connection, **kwargs):
     for medium in raw_media:
         media_data.append({
             "uuid": medium[0],
-            "filePath": medium[1],
+            "file_url": f"{site_url}/{medium[1]}",
+            "file_path": f"{current_app.config['OUTPUT_PATH']}/{medium[1]}",
             "alt": medium[2]
         })
     return media_data

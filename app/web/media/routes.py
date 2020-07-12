@@ -23,6 +23,7 @@ def show_posts_list(*args, permission_level, connection, **kwargs):
     post_types_result = post_types.get_post_type_list(connection)
 
     media_data = get_media(connection=connection)
+
     connection.close()
 
     return render_template("media.html", post_types=post_types_result, permission_level=permission_level, media=media_data)
