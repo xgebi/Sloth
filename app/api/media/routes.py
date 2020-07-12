@@ -74,8 +74,7 @@ def upload_item(*args, connection=None, **kwargs):
         print(traceback.format_exc())
         connection.close()
         abort(500)
-    connection.close()
-    return json.dumps({"media": file}), 201
+    return json.dumps({"media": get_media(connection=connection)}), 201
 
 
 @media.route("/api/media/delete-file", methods=['POST', 'DELETE'])
@@ -107,8 +106,7 @@ def delete_item(*args, connection=None, **kwargs):
         print(traceback.format_exc())
         connection.close()
         abort(500)
-    connection.close()
-    return json.dumps({"media": "deleted"}), 201
+    return json.dumps({"media": get_media(connection=connection)}), 201
 
 
 def get_media(*args, connection, **kwargs):
@@ -136,10 +134,11 @@ def get_media(*args, connection, **kwargs):
 
     media_data = []
     for medium in raw_media:
+        path_fragment = '/'.join(medium[1].split('\\'))
         media_data.append({
             "uuid": medium[0],
-            "file_url": f"{site_url}/{medium[1]}",
-            "file_path": f"{current_app.config['OUTPUT_PATH']}/{medium[1]}",
+            "file_url": f"{site_url}/{path_fragment}",
+            "file_path": f"{current_app.config['OUTPUT_PATH']}/{path_fragment}",
             "alt": medium[2]
         })
     return media_data
