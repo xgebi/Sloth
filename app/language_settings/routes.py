@@ -19,13 +19,6 @@ def show_language_settings(*args, connection=None, **kwargs):
     pass
 
 
-@themes.route("/settings/language", methods=["POST"])
-@authorize_web(1)
-@db_connection
-def add_language_settings(*args, connection=None, **kwargs):
-    pass
-
-
 @themes.route("/settings/language/<lang_id>", methods=["GET"])
 @authorize_web(1)
 @db_connection
@@ -33,8 +26,9 @@ def show_language_info(*args, connection=None, lang_id, **kwargs):
     pass
 
 
-@themes.route("/settings/language/<lang_id>", methods=["POST", "PUT"])
+@themes.route("/settings/language", methods=["POST", "PUT"])
 @authorize_web(1)
 @db_connection
-def save_language_info(*args, connection=None, lang_id, **kwargs):
+def save_language_info(*args, connection=None, **kwargs):
     pass
+

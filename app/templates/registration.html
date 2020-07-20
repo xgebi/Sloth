@@ -57,9 +57,11 @@
     </section>
 </main>
 
+<script src="/static/js/utilities.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelector("#admin-url").value = window.location.origin;
+        getCurrentTimezone(document.querySelector("#timezone").options);
     });
 </script>
 
