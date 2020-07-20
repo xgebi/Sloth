@@ -66,7 +66,8 @@ class Registration:
             try:
                 cur.execute(
                     sql.SQL(
-                        "INSERT INTO sloth_users(uuid, username, display_name, password, permissions_level) VALUES (%s, %s, %s, %s, 1)"),
+                        """INSERT INTO sloth_users(uuid, username, display_name, password, permissions_level) 
+                        VALUES (%s, %s, %s, %s, 1)"""),
                     (user["uuid"], user["username"], user["username"], user["password"])
                 )
                 cur.execute(
@@ -89,6 +90,18 @@ class Registration:
                     sql.SQL("INSERT INTO sloth_settings VALUES ('api_url', 'URL', 'text', 'sloth', %s)"),
                     [filled.get("admin-url")]
                 )
+
+                cur.execute(
+                    sql.SQL("INSERT INTO sloth_settings VALUES ('main_language', 'Main language', 'text', 'sloth', %s)"),
+                    [filled.get("main-language-short")]
+                )
+
+                cur.execute(
+                    sql.SQL(
+                        """INSERT INTO sloth_language_settings VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), filled.get("main-language-short"), filled.get("main-language-long")]
+                )
+
                 self.connection.commit()
             except Exception as e:
                 print(traceback.format_exc())
