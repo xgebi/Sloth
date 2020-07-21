@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
+from app.scheduler import ScheduledJobs
 
 bcrypt = Bcrypt()
 
@@ -24,6 +25,8 @@ def create_app():  # dev, test, or prod
     app.config['CORS_HEADERS'] = 'Content-Type'
 
     bcrypt.init_app(app)
+
+    scheduled_jobs = ScheduledJobs()
 
     @app.before_request
     def before_first_request():

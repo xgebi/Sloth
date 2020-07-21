@@ -59,6 +59,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	document.querySelector("#create-category")?.addEventListener('click', createCategory);
 
 	document.querySelector("#delete-button")?.addEventListener('click', deletePost);
+
+	document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
 });
 
 function openGalleryDialog(data) {
@@ -258,4 +260,39 @@ function deletePost() {
 		.catch((error) => {
 			console.error('Error:', error);
 		});
+}
+
+function getSelectionHtml() {
+	debugger;
+    var html = "";
+    if (typeof window.getSelection != "undefined") {
+        var sel = window.getSelection();
+        if (sel.rangeCount) {
+            var container = document.createElement("div");
+            for (var i = 0, len = sel.rangeCount; i < len; ++i) {
+                container.appendChild(sel.getRangeAt(i).cloneContents());
+            }
+            html = container.innerHTML;
+        }
+    } else if (typeof document.selection != "undefined") {
+        if (document.selection.type == "Text") {
+            html = document.selection.createRange().htmlText;
+        }
+    }
+    alert(html);
+}
+
+function replaceSelectionWithHtml(html) {
+    var range;
+    if (window.getSelection && window.getSelection().getRangeAt) {
+    	debugger;
+        range = window.getSelection().getRangeAt(0);
+        const insideRange = range.extractContents();
+        const div = document.createElement("div");
+        div.appendChild(insideRange)
+        range.insertNode(div);
+    } else if (document.selection && document.selection.createRange) {
+        range = document.selection.createRange();
+        range.pasteHTML(html);
+    }
 }

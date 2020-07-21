@@ -104,3 +104,10 @@ select {
 .media-gallery img {
 	width: 100%;
 }
+
+/* Sloth Editor */
+.sloth-editor {
+	width: 80ch;
+	min-height: 20rem;
+	background: beige;
+}
