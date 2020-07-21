@@ -15,10 +15,13 @@ const editor = {
         // content
         const content = document.createElement("div");
         content.setAttribute("contenteditable", "true");
-
+        content.addEventListener('keyup', function(event) {
+            event.preventDefault();
+            //event.key Enter Tab
+        })
         wrapper.appendChild(wrapper);
     },
-    replace: function() {
+    replace: function(action) {
         let range;
         if (window.getSelection && window.getSelection().getRangeAt) {
             debugger;
@@ -30,9 +33,6 @@ const editor = {
             const div = document.createElement("div");
             div.appendChild(insideRange)
             range.insertNode(div);
-        } else if (document.selection && document.selection.createRange) {
-            range = document.selection.createRange();
-            range.pasteHTML(html);
         }
     }
 }
