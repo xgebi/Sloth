@@ -53,7 +53,7 @@ def create_app():  # dev, test, or prod
     from app.web.root import root
     app.register_blueprint(root)
 
-    from app.web.registration import registration
+    from app.registration import registration
     app.register_blueprint(registration)
 
     from app.web.login import login
