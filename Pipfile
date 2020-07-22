@@ -14,6 +14,7 @@ python-dateutil = "*"
 pytz = "*"
 authlib = "*"
 psycopg2 = "*"
+requests = "*"
 
 [requires]
 python_version = "3.8"
