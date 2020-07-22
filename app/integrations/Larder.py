@@ -1,0 +1,2 @@
+class Larder:
+    pass

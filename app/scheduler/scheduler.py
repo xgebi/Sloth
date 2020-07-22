@@ -19,7 +19,7 @@ class Scheduler:
         self.is_running = False
         self.start()
         for job in self.jobs:
-            pass
+            job.run()
 
     def start(self):
         if not self.is_running:
