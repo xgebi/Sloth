@@ -7,6 +7,10 @@
 {% if error %}
 <h1>Database error</h1>
 {% endif %}
-
+    <form method="post" action="/settings/integrations/larder/connect">
+        <label for="client-id">Client ID:</label>
+        <input type="text" name="client-id" id="client-id" />
+        <input type="submit" value="Connect to Larder">
+    </form>
 
 {% endblock %}

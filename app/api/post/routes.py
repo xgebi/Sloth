@@ -170,9 +170,10 @@ def save_post(*args, connection=None, **kwargs):
         # get post
         if filled["post_status"] == 'published':
             cur.execute(
-                sql.SQL("""SELECT uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, 
+                sql.SQL("""SELECT A.uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, 
                         excerpt, css, use_theme_css, js, use_theme_js, thumbnail, publish_date, update_date, 
-                        post_status, tags, categories FROM sloth_posts WHERE uuid = %s;"""),
+                        post_status, tags, categories FROM sloth_posts as A INNER JOIN sloth_post_formats as B ON
+                        A.post_format = B.uuid WHERE uuid = %s;"""),
                 [filled["uuid"]]
             )
             generatable_post = cur.fetchone()

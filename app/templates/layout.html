@@ -18,6 +18,7 @@
                 <ul>
                     <li><a href="/post/{{ post_type['uuid'] }}/new">Add New {{ post_type['display_name'] }}</a></li>
                     <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/formats">Post Formats</a></li>
                 </ul>
             </li>
         {% endfor %}
@@ -25,10 +26,15 @@
         <li><a href="/post-types">Post Types</a></li>
         <li><a href="/settings/my-account">My account</a></li>
         {% if  permission_level >= 1 %}
-            <li><a href="/settings/users">Users</a></li>
-            <li><a href="/settings/themes">Themes</a></li>
-            <li><a href="/settings/import">Import data</a></li>
-            <li><a href="/settings">Settings</a></li>
+            <li><a href="/settings">Settings</a>
+                <ul>
+                    <li><a href="/settings/users">Users</a></li>
+                    <li><a href="/settings/themes">Themes</a></li>
+                    <li><a href="/settings/import">Import data</a></li>
+                    <li><a href="/settings/language">Language settings</a></li>
+                    <li><a href="/settings/integrations">Integrations</a></li>
+                </ul>
+            </li>
         {% endif %}
     </ul>
 </nav>
