@@ -71,8 +71,8 @@ def create_app():  # dev, test, or prod
     from app.web.settings.users import settings_users
     app.register_blueprint(settings_users)
 
-    from app.web.post import post
-    app.register_blueprint(post)
+    from app.web.post import post as post_web
+    app.register_blueprint(post_web)
 
     from app.web.design import design
     app.register_blueprint(design)

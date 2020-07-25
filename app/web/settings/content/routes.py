@@ -10,9 +10,9 @@ import json
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
-from app.posts.posts_generator import PostsGenerator
+from app.post.posts_generator import PostsGenerator
 
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 
 from app.web.settings.content import content
 

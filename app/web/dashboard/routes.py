@@ -1,7 +1,7 @@
 from flask import request, flash, url_for, current_app, abort, redirect, render_template
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 from app.utilities.db_connection import db_connection
 import psycopg2
 from psycopg2 import sql

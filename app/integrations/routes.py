@@ -8,7 +8,7 @@ from psycopg2 import sql
 import bcrypt
 import json
 import requests
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
 

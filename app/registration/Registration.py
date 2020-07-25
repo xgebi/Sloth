@@ -8,7 +8,7 @@ import uuid
 import bcrypt
 import traceback
 
-from app.posts.posts_generator import PostsGenerator
+from app.post.posts_generator import PostsGenerator
 
 
 class Registration:
@@ -121,7 +121,7 @@ class Registration:
             generator = PostsGenerator(connection=self.connection)
             if generator.run(posts=True):
                 return {"state": "ok", "status": 201}
-            return {"status": 500, "error": "Generating posts"}
+            return {"status": 500, "error": "Generating post"}
 
         cur.close()
         self.connection.close()

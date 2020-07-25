@@ -8,10 +8,10 @@ from time import time
 import os
 import traceback
 
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
-from app.posts.posts_generator import PostsGenerator
+from app.post.posts_generator import PostsGenerator
 
 from app.api.site import site
 

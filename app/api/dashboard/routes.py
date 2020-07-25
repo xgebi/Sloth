@@ -9,12 +9,12 @@ import uuid
 from time import time
 import traceback
 
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 from app.api.dashboard import dashboard
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 
 @dashboard.route("/api/dashboard-information")
 @authorize_rest(0)

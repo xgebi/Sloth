@@ -10,9 +10,9 @@ import json
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
-from app.posts.posts_generator import PostsGenerator
+from app.post.posts_generator import PostsGenerator
 
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 
 from app.web.settings.themes import settings_themes
 
@@ -62,7 +62,8 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
         post_types=post_types_result,
         permission_level=permission_level,
         themes=themes,
-        active_theme=active_theme
+        active_theme=active_theme,
+        regenarating=Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
     )
 
 
@@ -81,7 +82,7 @@ def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
     except Exception as e:
         print("db error")
         abort(500)
-    # regenerate all posts
+    # regenerate all post
     posts_gen = PostsGenerator()
     posts_gen.run(posts=True)
 

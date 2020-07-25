@@ -15,7 +15,7 @@ import traceback
 import shutil
 import re
 import collections
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 
 from app.utilities.db_connection import db_connection
 
@@ -66,7 +66,7 @@ class PostsGenerator:
             self.settings['active_theme']['settings_value']
         )
 
-        # Footer for posts
+        # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
             self.sloth_footer = f.read()
 
@@ -197,7 +197,7 @@ class PostsGenerator:
 
         return posts
 
-    # Generate posts
+    # Generate post
     def generate_all(self):
         post_types = self.get_post_types()
         posts = self.get_posts_for_post_types(post_types)
@@ -624,7 +624,7 @@ class PostsGenerator:
 
         self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"]))
 
-        # get 10 latest posts for each post type
+        # get 10 latest post for each post type
         posts = {}
         try:
             cur = self.connection.cursor()

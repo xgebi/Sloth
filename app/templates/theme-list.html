@@ -3,31 +3,36 @@
 {% block title %}List of themes{% endblock %}
 
 {% block body %}
-<h1>List of themes</h1>
+    <h1>List of themes</h1>
+    {% if regenarating %}
+        <button id="regenerate-all-button" disabled>Regenerate all content</button>
+    {% else %}
+        <button id="regenerate-all-button">Regenerate all content</button>
+    {% endif %}
 
-<table>
-	<thead>
+    <table>
+        <thead>
         <tr>
             <th>Theme name</th>
             <th>Action</th>
         </tr>
-	</thead>
-	<tbody>
-        {% for theme in themes  %}
-        <tr>
-            <td>{{ theme["displayName"] }}</td>
-            {% if theme["choosable"] and theme["name"] != active_theme %}
-            <td><a href="/settings/themes/activate/{{ theme["name"] }}">Choose theme</a></td>
-            {% else %}
-                <td></td>
-            {% endif %}
-        </tr>
+        </thead>
+        <tbody>
+        {% for theme in themes %}
+            <tr>
+                <td>{{ theme["displayName"] }}</td>
+                {% if theme["choosable"] and theme["name"] != active_theme %}
+                    <td><a href="/settings/themes/activate/{{ theme["name"] }}">Choose theme</a></td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+            </tr>
         {% endfor %}
-	</tbody>
-</table>
+        </tbody>
+    </table>
 
 {% endblock %}
 
-<!--
-[{'displayName': 'Sabine Wren', 'name': 'sabine-wren', 'choosable': True}, {'name': 'White', 'choosable': True}]
--->
+{% block scripts %}
+    <script src="/static/js/themes.js"></script>
+{% endblock %}

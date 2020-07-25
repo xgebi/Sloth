@@ -14,7 +14,7 @@ from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 from app.post.posts_generator import PostsGenerator
 
-from app.api.post import post
+from app.post import post
 
 reserved_folder_names = ('tag', 'category')
 

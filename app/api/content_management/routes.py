@@ -11,10 +11,10 @@ import dateutil.parser
 import uuid
 import traceback
 from datetime import datetime
-from app.posts.post_types import PostTypes
+from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
-from app.posts.posts_generator import PostsGenerator
+from app.post.posts_generator import PostsGenerator
 
 from app.api.content_management import content_management
 
