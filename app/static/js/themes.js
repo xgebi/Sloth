@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const regenerateAllButton = document.querySelector("#regenerate-all-button");
     regenerateAllButton.addEventListener('click', function() {
-        fetch('/api/media/upload-file', {
+        fetch('/api/post/regenerate-all', {
         method: 'POST',
         headers: {
             'authorization': document.cookie
