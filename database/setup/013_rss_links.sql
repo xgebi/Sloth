@@ -1,4 +1,4 @@
-CREATE TABLE sloth_post_formats (
+CREATE TABLE sloth_rss_link (
 	uuid character varying(200) NOT NULL,
 	feed character varying(200),
 	link text,

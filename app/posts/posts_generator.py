@@ -76,7 +76,7 @@ class PostsGenerator:
         t = {}
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
-            return False
+            return self.add_to_queue(post=post, posts=posts, post_type=post_type)
 
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
             f.write("generation locked")
@@ -93,6 +93,14 @@ class PostsGenerator:
             return False
         t.start()
         return True
+
+
+    def add_to_queue(self, *args, post=False, posts=False, post_type=False, **kwargs):
+        if post is not None:
+            posts = [post]
+
+
+
 
     def get_post_type(self, uuid):
         cur = self.connection.cursor()

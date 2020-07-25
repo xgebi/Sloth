@@ -1,10 +1,10 @@
 from app.scheduler.scheduler import Scheduler
+from app.scheduler.GenerationQueueJob import GenerationQueueJob
 
 
 class ScheduledJobs:
+    scheduler = {}
 
     def __init__(self):
-        post_scheduler = Scheduler(interval=60, function=self.check_posts)
-
-    def check_posts(self, *args, **kwargs):
-        pass
+        self.scheduler = Scheduler()
+        self.scheduler.register_job(job=GenerationQueueJob(interval=1))

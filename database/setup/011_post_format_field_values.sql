@@ -1,4 +1,4 @@
-CREATE TABLE sloth_post_format_fields (
+CREATE TABLE sloth_post_format_fields_values (
 	uuid character varying(200) NOT NULL,
 	post_format_field character varying(200),
 	field_value text,

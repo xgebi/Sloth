@@ -2,7 +2,7 @@ from flask import request, flash, url_for, current_app, abort, redirect, render_
 import pytz
 
 from app.utilities.db_connection import db_connection
-from app.registration.registration import Registration
+from app.registration.Registration import Registration
 
 from app.registration import registration
 

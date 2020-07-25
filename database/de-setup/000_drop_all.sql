@@ -1,5 +1,7 @@
 DROP TABLE IF EXISTS sloth_taxonomy;
 DROP TABLE IF EXISTS sloth_posts;
+DROP TABLE IF EXISTS sloth_post_format_fields;
+DROP TABLE IF EXISTS sloth_post_formats;
 DROP TABLE IF EXISTS sloth_post_types;
 DROP TABLE IF EXISTS sloth_settings;
 DROP TABLE IF EXISTS sloth_users;
@@ -7,6 +9,10 @@ DROP TABLE IF EXISTS sloth_media;
 DROP TABLE IF EXISTS sloth_messages;
 DROP TABLE IF EXISTS sloth_analytics;
 DROP TABLE IF EXISTS sloth_language_settings;
+DROP TABLE IF EXISTS sloth_rss_feeds;
+DROP TABLE IF EXISTS sloth_redirects;
+DROP TABLE IF EXISTS sloth_scheduled_tweets;
+DROP TABLE IF EXISTS sloth_generation_queue;
 DROP TYPE IF EXISTS sloth_settings_type;
 DROP TYPE IF EXISTS sloth_message_type;
 DROP TYPE IF EXISTS sloth_taxonomy_type;
