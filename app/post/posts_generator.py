@@ -15,6 +15,7 @@ import traceback
 import shutil
 import re
 import collections
+from jinja2 import Template
 from app.post.post_types import PostTypes
 
 from app.utilities.db_connection import db_connection
@@ -68,7 +69,23 @@ class PostsGenerator:
 
         # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
-            self.sloth_footer = f.read()
+            footer_template = Template(f.read())
+            cur = connection.cursor()
+            raw_item = []
+            try:
+                cur.execute(
+                    sql.SQL("""SELECT settings_value FROM sloth_settings 
+                    WHERE settings_name = %s"""),
+                    ['api_url']
+                )
+                raw_item = cur.fetchone()
+            except Exception as e:
+                print(traceback.format_exc())
+            cur.close()
+            if len(raw_item) == 1:
+                self.sloth_footer = footer_template.render(api_url=raw_item[0])
+            else:
+                self.sloth_footer = ""
 
     def run(self, post=False, posts=False, post_type=False):
         if not self.is_runnable and ((post and not posts) or (posts and not post)):
