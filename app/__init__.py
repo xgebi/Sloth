@@ -38,9 +38,6 @@ def create_app():  # dev, test, or prod
     from app.api.dashboard import dashboard
     app.register_blueprint(dashboard)
 
-    from app.api.post import post as post_api
-    app.register_blueprint(post_api)
-
     from app.api.themes import themes
     app.register_blueprint(themes)
 
@@ -71,8 +68,8 @@ def create_app():  # dev, test, or prod
     from app.web.settings.users import settings_users
     app.register_blueprint(settings_users)
 
-    from app.web.post import post as post_web
-    app.register_blueprint(post_web)
+    from app.post import post
+    app.register_blueprint(post)
 
     from app.web.design import design
     app.register_blueprint(design)
