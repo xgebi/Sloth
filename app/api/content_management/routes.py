@@ -92,10 +92,10 @@ def import_wordpress_content(*args, connection=None, **kwargs):
             posts.append(item)
 
     process_attachments(attachments, connection, import_count)
-    process_posts(posts, connection, base_import_link, import_count)
+    rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
     generator = PostsGenerator()
     generator.run(posts=True)
-    return json.dumps({"ok": True})
+    return json.dumps({"ok": True, "rules": rewrite_rules})
 
 
 def process_attachments(items, connection, import_count):
@@ -138,7 +138,8 @@ def process_attachments(items, connection, import_count):
         alt = ""
         for info in meta_infos:
             if info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_wp_attachment_image_alt':
-                alt = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText
+                alt = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText \
+                    if info.getElementsByTagName('wp:meta_value')[0].firstChild is not None else ""
         try:
             cur = connection.cursor()
             cur.execute(
@@ -173,6 +174,7 @@ def process_posts(items, connection, base_import_link, import_count):
         post_types = {}
         existing_categories = {}
         existing_tags = {}
+        rewrite_rules = []
         for post_type in raw_post_types:
             post_types[post_type[0]] = post_type[1]
 
@@ -181,6 +183,7 @@ def process_posts(items, connection, base_import_link, import_count):
             existing_tags[post_type[1]] = taxonomies["tags"]
 
         for item in items:
+            rule = "rewrite "
             # title
             title = item.getElementsByTagName('title')[0].firstChild.wholeText
             # wp:post_type (attachment, nav_menu_item, illustration, page, post)
@@ -196,19 +199,21 @@ def process_posts(items, connection, base_import_link, import_count):
                 )
                 returned = cur.fetchone()
                 post_types[returned[0]] = returned[1]
-            slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
+            post_slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
             cur.execute(
                 sql.SQL("SELECT count(slug) FROM sloth_posts WHERE (slug LIKE %s OR slug LIKE %s) AND post_type = %s;"),
-                [f"{slug}-%", f"{slug}%", post_types[post_type]]
+                [f"{post_slug}-%", f"{post_slug}%", post_types[post_type]]
             )
             similar = cur.fetchone()[0]
             if int(similar) > 0:
-                slug = f"{slug}-{str(int(similar) + 1)}"
+                post_slug = f"{post_slug}-{str(int(similar) + 1)}"
 
             # link
             link = item.getElementsByTagName('link')[0].firstChild.wholeText
             # pubDate or wp:post_date
-            pub_date = dateutil.parser.parse(item.getElementsByTagName('pubDate')[0].firstChild.wholeText).timestamp()*1000
+            pub_date = dateutil.parser.parse(
+                item.getElementsByTagName('pubDate')[0].firstChild.wholeText
+            ).timestamp()*1000 if item.getElementsByTagName('pubDate')[0].firstChild is not None else None
             # dc:creator (CDATA)
             creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
             # content:encoded (CDATA)
@@ -216,7 +221,8 @@ def process_posts(items, connection, base_import_link, import_count):
                 item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
 
             # images
-            content = re.sub(f"{base_import_link}/wp-content/uploads/\d\d\d\d/\d\d/", f"{site_url}/{now.year}/{now.month}/", content)
+            content = re.sub(f"{base_import_link}/wp-content/uploads/\d\d\d\d/\d\d/", f"{site_url}/sloth-content/{now.year}/{now.month}/", content)
+            content = re.sub(f"-(\d+)x(\d+)\.",".", content)
 
             # wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
             status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
@@ -248,7 +254,7 @@ def process_posts(items, connection, base_import_link, import_count):
                                                 VALUES (%s, %s, %s, %s, 'tag');"""),
                             [new_uuid, slug, new_tag, post_types[post_type]]
                         )
-                        matched_tags.append(new_uuid)
+                        matched_tags.append({"uuid": new_uuid})
                     except Exception as e:
                         print(e)
                 connection.commit()
@@ -263,7 +269,7 @@ def process_posts(items, connection, base_import_link, import_count):
                                                 VALUES (%s, %s, %s, %s, 'category');"""),
                             [new_uuid, slug, new_category, post_types[post_type]]
                         )
-                        matched_categories.append(new_uuid)
+                        matched_categories.append({"uuid": new_uuid})
                     except Exception as e:
                         print(e)
                 connection.commit()
@@ -275,20 +281,30 @@ def process_posts(items, connection, base_import_link, import_count):
                     thumbnail_id = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText
 
             # uuid, title, slug, content, post_type, post_status, update_date, tags, categories
+            post_uuid = str(uuid.uuid4())
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                             title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
-                            categories, lang) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en')"""),
-                [str(uuid.uuid4()), slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title, content, "", "", "", f"{import_count}-{thumbnail_id}",
-                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags], [category["uuid"] for category in matched_categories]]
+                            categories, lang, imported) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en', %s)"""),
+                [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title, content, "", "", "", f"{import_count}-{thumbnail_id}",
+                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags], [category["uuid"] for category in matched_categories], True]
             )
+            cur.execute(
+                sql.SQL("""SELECT sp.slug, spt.slug 
+                        FROM sloth_posts as sp INNER JOIN sloth_post_types spt on sp.post_type = spt.uuid
+                        WHERE sp.uuid = %s"""),
+                [post_uuid]
+            )
+            slugs = cur.fetchone()
+            rewrite_rules.append(f"rewrite ^{link[len(base_import_link):]}$ /{slugs[1]}/{slugs[0]} permanent")
         connection.commit()
         cur.close()
     except Exception as e:
         print("117")
         print(traceback.format_exc())
         abort(500)
+    return rewrite_rules
 
 
 def fetch_taxonomies(*args, cursor, post_type, **kwargs):

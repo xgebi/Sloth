@@ -45,7 +45,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
         cur.execute(
             sql.SQL(
-                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                """SELECT A.uuid, A.title, A.update_date, B.display_name 
                 FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
                 WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;"""),
             ['draft']
@@ -93,7 +93,8 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
         drafts.append({
             "uuid": post[0],
             "title": post[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+            "publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M")
+            if post[2] is not None else "",
             "post_type": post[3]
         })
 

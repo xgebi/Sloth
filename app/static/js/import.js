@@ -9,11 +9,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 function uploadFile() {
     const files = document.querySelector("#wordpress-import");
-    console.log(files);
-    debugger;
     const reader = new FileReader();
     reader.onload = function (evt) {
         console.log(evt.target.result);
+        document.querySelector("#wordpress-import-button").setAttribute("disabled", "disabled");
         fetch('/api/content/import/wordpress', {
             method: 'POST',
             headers: {
@@ -29,7 +28,7 @@ function uploadFile() {
             return response.json()
         }).then(data => {
             console.log('Success:', data);
-            gallery.images = data.media;
+            document.querySelector("#rewrite-rules").innerHTML = data.rules.join("<br />");
         }).catch((error) => {
             console.error('Error:', error);
         });

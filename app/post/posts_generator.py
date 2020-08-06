@@ -21,6 +21,27 @@ from app.post.post_types import PostTypes
 from app.utilities.db_connection import db_connection
 
 
+def get_menus(*args, connection, **kwargs):
+    menus = {}
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""SELECT name, uuid FROM sloth_menus""")
+        )
+        menus = {menu[1]: {"items": [], "uuid": menu[1], "name": [0]} for menu in cur.fetchall()}
+        for menu in menus.keys():
+            cur.execute(
+                sql.SQL("""SELECT title, url FROM sloth_menu_items WHERE menu = %s"""),
+                [menu]
+            )
+            menus[menu]["items"] = cur.fetchall()
+    except Exception as e:
+        print(traceback.format_exc())
+
+    cur.close()
+    return menus
+
+
 class PostsGenerator:
     post = {}
     config = {}
@@ -29,6 +50,7 @@ class PostsGenerator:
     theme_path = ""
     connection = {}
     sloth_footer = ""
+    menus = {}
 
     # Constructor
     @db_connection
@@ -86,6 +108,9 @@ class PostsGenerator:
                 self.sloth_footer = footer_template.render(api_url=raw_item[0])
             else:
                 self.sloth_footer = ""
+
+        # menus
+        self.menus = get_menus(connection=connection)
 
     def run(self, post=False, posts=False, post_type=False):
         if not self.is_runnable and ((post and not posts) or (posts and not post)):
@@ -177,7 +202,7 @@ class PostsGenerator:
             for post_type in post_types:
                 cur.execute(
                     sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
+                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
                                 WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                     [post_type["uuid"]]
@@ -193,6 +218,28 @@ class PostsGenerator:
             posts[post_type["uuid"]] = []
 
             for post in raw_items[post_type["uuid"]]:
+                cur = self.connection.cursor()
+                raw_tags = []
+                raw_post_categories = []
+                try:
+                    cur.execute(
+                        sql.SQL("""SELECT display_name, slug, uuid FROM sloth_taxonomy 
+                                                        WHERE post_type = %s AND uuid IN 
+                                                        (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+
+                        [post_type["uuid"], post[0]]
+                    )
+                    raw_tags = cur.fetchall()
+                    cur.execute(
+                        sql.SQL("""SELECT display_name, slug, uuid FROM sloth_taxonomy
+                                                        WHERE post_type = %s AND uuid IN 
+                                                        (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+                        [post_type["uuid"], post[0]]
+                    )
+                    raw_post_categories = cur.fetchall()
+                except Exception as e:
+                    print(e)
+                cur.close()
                 posts[post_type["uuid"]].append({
                     "uuid": post[0],
                     "slug": post[1],
@@ -207,15 +254,22 @@ class PostsGenerator:
                     "publish_date": post[10],
                     "update_date": post[11],
                     "post_status": post[12],
-                    "tags": post[13],
-                    "categories": post[14],
-                    "post_type_slug": post_type["slug"]
+                    "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
+                    "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
+                    "post_type_slug": post_type["slug"],
+                    "approved": post[15]
                 })
 
         return posts
 
-    # Generate post
+    # Generate posts
     def generate_all(self):
+        if Path(self.config["OUTPUT_PATH"], "assets").is_dir():
+            shutil.rmtree(Path(self.config["OUTPUT_PATH"], "assets"))
+        if Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets").is_dir():
+            shutil.copytree(Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets"),
+                            Path(self.config["OUTPUT_PATH"], "assets"))
+
         post_types = self.get_post_types()
         posts = self.get_posts_for_post_types(post_types)
 
@@ -223,9 +277,9 @@ class PostsGenerator:
             tags = set()
             categories = set()
             for post in posts[post_type["uuid"]]:
-                self.generate_post(post, post_type, multiple_posts=True)
-                tags.update(post["tags"])
-                categories.update(post["categories"])
+                self.generate_post(post=post, post_type=post_type, multiple_posts=True)
+                tags.update([tag["uuid"] for tag in post["tags"]])
+                categories.update([category["uuid"] for category in post["categories"]])
 
             if post_type["tags_enabled"]:
                 self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts[post_type["uuid"]])
@@ -244,7 +298,7 @@ class PostsGenerator:
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # Generate post
-    def generate_post(self, post, post_type, multiple_posts=False):
+    def generate_post(self, *args, post, post_type, multiple_posts=False, **kwargs):
         post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
         self.theme_path = Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'])
 
@@ -281,7 +335,7 @@ class PostsGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                        A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories
+                        A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
                                     WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                 [post_type["uuid"]]
@@ -311,7 +365,8 @@ class PostsGenerator:
                 "post_status": temp_post[12],
                 "tags": temp_post[13],
                 "categories": temp_post[14],
-                "post_type_slug": post_type["slug"]
+                "post_type_slug": post_type["slug"],
+                "approved": temp_post[15]
             })
 
         if post_type["tags_enabled"]:
@@ -576,7 +631,7 @@ class PostsGenerator:
             if isinstance(post['categories'], collections.Iterable):
                 for category in post['categories']:
                     category_node = doc.createElement('category')
-                    category_text = doc.createCDATASection(category)
+                    category_text = doc.createCDATASection(category["display_name"])
                     category_node.appendChild(category_text)
                     post_item.appendChild(category_node)
             # <content:encoded><![CDATA[
@@ -610,7 +665,9 @@ class PostsGenerator:
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                     A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, C.slug
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid ORDER BY A.publish_date DESC""")
+                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid WHERE C.archive_enabled = %s 
+                                ORDER BY A.publish_date DESC"""),
+                [True]
             )
             raw_posts = cur.fetchall()
             cur.close()

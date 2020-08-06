@@ -155,8 +155,8 @@ function collectValues() {
 	post["content"] = document.querySelector("#content").value;
 	post["css"] = document.querySelector("#css").value;
 	post["js"] = document.querySelector("#js").value;
-	post["use_theme_css"] = document.querySelector("#use_theme_css").value;
-	post["use_theme_js"] = document.querySelector("#use_theme_js").value;
+	post["use_theme_css"] = document.querySelector("#use_theme_css").checked;
+	post["use_theme_js"] = document.querySelector("#use_theme_js").checked;
 	post["thumbnail"] = document.querySelector("#thumbnail").value;
 	debugger;
 	post["categories"] = [];
@@ -165,6 +165,7 @@ function collectValues() {
 	}
 	post["tags"] = document.querySelector("#tags").value;
 	post["post_status"] = document.querySelector("#post_status").value;
+	post["approved"] = document.querySelector("#import_approved") ? document.querySelector("#import_approved").checked : false;
 	return post;
 }
 

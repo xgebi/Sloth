@@ -62,6 +62,9 @@ def create_app():  # dev, test, or prod
     from app.web.settings.themes import settings_themes
     app.register_blueprint(settings_themes)
 
+    from app.settings.themes.menu import menu
+    app.register_blueprint(menu)
+
     from app.web.settings.content import content
     app.register_blueprint(content)
 

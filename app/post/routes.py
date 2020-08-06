@@ -98,15 +98,15 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         media = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT A.title, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
-            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type
+            sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
+            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, A.import_approved
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
         raw_post = cur.fetchone()
         cur.execute(
             sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
-            [raw_post[12]]
+            [raw_post[13]]
         )
         post_type_name = cur.fetchone()[0]
         cur.execute(
@@ -114,22 +114,26 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                         WHERE post_type = %s AND uuid IN 
                         (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
 
-            [raw_post[12], post_id]
+            [raw_post[13], post_id]
         )
         raw_tags = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT uuid FROM sloth_taxonomy
                         WHERE post_type = %s AND uuid IN 
                         (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
-            [raw_post[12], post_id]
+            [raw_post[13], post_id]
         )
         raw_post_categories = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
                                 WHERE post_type = %s"""),
-            [raw_post[12]]
+            [raw_post[13]]
         )
         raw_all_categories = cur.fetchall()
+        cur.execute(
+            sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
+        )
+        temp_post_statuses = cur.fetchall()
     except Exception as e:
         print("db error B")
         print(e)
@@ -160,21 +164,24 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     data = {
         "uuid": post_id,
         "title": raw_post[0],
-        "content": raw_post[1],
-        "excerpt": raw_post[2],
-        "css": raw_post[3],
-        "use_theme_css": raw_post[4],
-        "js": raw_post[5],
-        "use_theme_js": raw_post[6],
-        "thumbnail": raw_post[7],
-        "publish_date": raw_post[8],
-        "update_date": raw_post[9],
-        "status": raw_post[10],
-        "display_name": raw_post[11],
+        "slug": raw_post[1],
+        "content": raw_post[2],
+        "excerpt": raw_post[3],
+        "css": raw_post[4],
+        "use_theme_css": raw_post[5],
+        "js": raw_post[6],
+        "use_theme_js": raw_post[7],
+        "thumbnail": raw_post[8],
+        "publish_date": raw_post[9],
+        "update_date": raw_post[10],
+        "status": raw_post[11],
+        "display_name": raw_post[12],
         "post_categories": post_categories,
         "all_categories": all_categories,
         "tags": tags,
-        "post_type": raw_post[12]
+        "post_type": raw_post[13],
+        "imported": raw_post[14],
+        "approved": raw_post[15]
     }
 
     return render_template(
@@ -185,7 +192,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         post_type_name=post_type_name,
         data=data,
         media=media,
-        all_categories=all_categories
+        all_categories=all_categories,
+        post_statuses=[item for sublist in temp_post_statuses for item in sublist]
     )
 
 
@@ -218,11 +226,6 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
         temp_post_statuses = cur.fetchall()
         cur.execute(
             sql.SQL("SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
-            [post_type]
-        )
-        cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
-                                        WHERE post_type = %s"""),
             [post_type]
         )
         raw_all_categories = cur.fetchall()
@@ -535,23 +538,37 @@ def save_post(*args, connection=None, **kwargs):
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
-                 thumbnail = %s, update_date = %s, post_status = %s, tags = %s, categories = %s WHERE uuid = %s;"""),
+                 thumbnail = %s, update_date = %s, post_status = %s, tags = %s, categories = %s, import_approved = %s WHERE uuid = %s;"""),
                 [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
-                 filled["thumbnail"], str(time() * 1000), filled["post_status"], matched_tags,
-                 filled["categories"], filled["uuid"]]
+                 filled["thumbnail"] if filled["thumbnail"] != "None" else None, str(time() * 1000), filled["post_status"], matched_tags,
+                 filled["categories"], filled["approved"], filled["uuid"]]
             )
         connection.commit()
 
         # get post
         if filled["post_status"] == 'published':
             cur.execute(
-                sql.SQL("""SELECT A.uuid, original_lang_entry_uuid, lang, slug, post_type, author, title, content, 
-                        excerpt, css, use_theme_css, js, use_theme_js, thumbnail, publish_date, update_date, 
-                        post_status, tags, categories FROM sloth_posts as A INNER JOIN sloth_post_formats as B ON
-                        A.post_format = B.uuid WHERE uuid = %s;"""),
+                sql.SQL("""SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, A.content, 
+                        A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, A.update_date, 
+                        A.post_status, A.imported, A.import_approved FROM sloth_posts as A WHERE A.uuid = %s;"""),
                 [filled["uuid"]]
             )
             generatable_post = cur.fetchone()
+            cur.execute(
+                sql.SQL("""SELECT display_name, slug FROM sloth_taxonomy 
+                                    WHERE post_type = %s AND uuid IN 
+                                    (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+
+                [generatable_post[4], generatable_post[0]]
+            )
+            raw_tags = cur.fetchall()
+            cur.execute(
+                sql.SQL("""SELECT display_name, slug FROM sloth_taxonomy
+                                    WHERE post_type = %s AND uuid IN 
+                                    (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+                [generatable_post[4], generatable_post[0]]
+            )
+            raw_post_categories = cur.fetchall()
             gen = PostsGenerator(connection=connection)
             gen.run(post={
                 "uuid": generatable_post[0],
@@ -571,8 +588,10 @@ def save_post(*args, connection=None, **kwargs):
                 "publish_date": generatable_post[14],
                 "update_date": generatable_post[15],
                 "post_status": generatable_post[16],
-                "tags": generatable_post[17],
-                "categories": generatable_post[18],
+                "tags": [{"display_name": tag[0], "slug": tag[1]} for tag in raw_tags],
+                "categories": [{"display_name": cat[0], "slug": cat[1]} for cat in raw_post_categories],
+                "imported": generatable_post[19],
+                "approved": generatable_post[20]
             })
     except Exception as e:
         return json.dumps({"error": str(e)}), 500

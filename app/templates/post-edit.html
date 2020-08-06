@@ -1,82 +1,83 @@
 {% extends 'layout.html' %}
 
-{% block title %}{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}{% endblock %}
+{% block title %}{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit {{ post_type_name }}
+{% endif %}{% endblock %}
 
 {% block body %}
-    <div contenteditable="true" id="editable" style="height: 100px; background: hotpink;"></div>
-    <button id="weird-button">Click</button>
 
-    <h1>{% if data["new"] %}Add new {{post_type_name}}{% else %}Edit {{post_type_name}}{% endif %}</h1>
-    <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}" data-posttype-uuid="{{ data["post_type"] }}"></span>
+    <h1>{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit {{ post_type_name }}{% endif %}</h1>
+    <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
+          data-posttype-uuid="{{ data["post_type"] }}"></span>
     <div>
         <label for="title">Title (may not be empty)</label>
-        <input id="title" value="{{ data["title"] }}" required />
+        <input id="title" value="{{ data["title"] }}" required/>
     </div>
     <div>
         <label for="slug">Slug</label>
-        <input id="slug" value="{{ data["slug"] }}" />
+        <input id="slug" value="{{ data["slug"] }}"/>
     </div>
     <button id="gallery-opener">Open gallery</button>
     <div>
         <label for="excerpt">Excerpt:</label>
-        <br />
+        <br/>
         <textarea id="excerpt">{{ data["excerpt"] }}</textarea>
     </div>
     <div>
         <label for="content">Post:</label>
-        <br />
+        <br/>
         <textarea id="content">{{ data["content"] }}</textarea>
     </div>
     <div>
         <label for="css">Custom CSS:</label>
-        <br />
+        <br/>
         <textarea id="css">{{ data["css"] }}</textarea>
         {% if data["use_theme_css"] %}
-        <input type="checkbox" id="use_theme_css" name="use_theme_css" checked />
+            <input type="checkbox" id="use_theme_css" name="use_theme_css" checked/>
         {% else %}
-        <input type="checkbox" id="use_theme_css" name="use_theme_css"/>
+            <input type="checkbox" id="use_theme_css" name="use_theme_css"/>
         {% endif %}
         <label for="use_theme_css">Use theme's CSS</label>
     </div>
     <div>
         <label for="js">Custom JavaScript:</label>
-        <br />
+        <br/>
         <textarea id="js">{{ data["js"] }}</textarea>
         {% if data["use_theme_js"] %}
-        <input type="checkbox" id="use_theme_js" name="use_theme_js" checked />
+            <input type="checkbox" id="use_theme_js" name="use_theme_js" checked/>
         {% else %}
-        <input type="checkbox" id="use_theme_js" name="use_theme_js"/>
+            <input type="checkbox" id="use_theme_js" name="use_theme_js"/>
         {% endif %}
         <label for="use_theme_js">Use theme's JS</label>
     </div>
     <!-- TODO figure out something better than input -->
     <div>
         <label for="thumbnail">Thumbnail</label>
-        <input id="thumbnail" value="{{ data["thumbnail"] }}" />
+        <input id="thumbnail" value="{{ data["thumbnail"] }}"/>
     </div>
     <div>
         <label for="tags">Tags</label>
-        <input id="tags" value="{{ data["tags"] | join(', ') }}" />
+        <input id="tags" value="{{ data["tags"] | join(', ') }}"/>
     </div>
     <div>
         <label for="categories">Categories</label>
         <select id="categories" multiple="multiple">
             {% for category in all_categories %}
                 {% if category["selected"] %}
-                <option value="{{category['uuid']}}" selected>{{ category['display_name'] }}</option>
+                    <option value="{{ category['uuid'] }}" selected>{{ category['display_name'] }}</option>
                 {% else %}
-                <option value="{{category['uuid']}}">{{ category['display_name'] }}</option>
+                    <option value="{{ category['uuid'] }}">{{ category['display_name'] }}</option>
                 {% endif %}
             {% endfor %}
         </select>
         <div>
-        <label for="new-category">New category name:</label>
-            <input type="text" id="new-category"><button id="create-category">Create new category</button>
+            <label for="new-category">New category name:</label>
+            <input type="text" id="new-category">
+            <button id="create-category">Create new category</button>
         </div>
     </div>
     <div class="metadata">
         <label for="publish_date">Publish date</label>
-        <input id="publish_date" value="{{ data["publish_date"] }}" />
+        <input id="publish_date" value="{{ data["publish_date"] }}"/>
         <label for="post_status">Status</label>
         <select name="post_status" id="post_status">
             {% for status in post_statuses %}
@@ -87,24 +88,31 @@
                 {% endif %}
             {% endfor %}
         </select>
-
+        {% if data["imported"] %}
+            <label for="import_approved">Imported post approved:</label>
+            {% if data["approved"] %}
+                <input type="checkbox" id="import_approved" checked/>
+            {% else %}
+                <input type="checkbox" id="import_approved"/>
+            {% endif %}
+        {% endif %}
         {% if data["status"] == 'draft' %}
-        <button id="save-draft">Save draft</button>
-        <button id="publish-button">Publish post</button>
+            <button id="save-draft">Save draft</button>
+            <button id="publish-button">Publish post</button>
         {% endif %}
         {% if data["status"] == 'published' or data["status"] == 'scheduled' %}
-        <button id="update-button">Update post</button>
+            <button id="update-button">Update post</button>
         {% endif %}
         <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
         <button id="delete-button">Delete post</button>
     </div>
 
-    <div class="sloth-editor"></div>
+    <!--div class="sloth-editor"></div-->
 
-<dialog id="modal"></dialog>
+    <dialog id="modal"></dialog>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/post-edit.js"></script>
-<script src="/static/js/editor.js"></script>
+    <script src="/static/js/post-edit.js"></script>
+    <!--script src="/static/js/editor.js"></script-->
 {% endblock %}
