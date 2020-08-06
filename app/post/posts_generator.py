@@ -315,7 +315,8 @@ class PostsGenerator:
 
         with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
             f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
-                                    api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer))
+                                    api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer,
+                                    menus=self.menus))
 
         if post["js"] and len(post["js"]) > 0:
             with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
@@ -441,7 +442,8 @@ class PostsGenerator:
                         sitename=self.settings["sitename"]["settings_value"],
                         page_name="Tag: " + tag_meta[1],
                         api_url=self.settings["api_url"]["settings_value"],
-                        sloth_footer=self.sloth_footer
+                        sloth_footer=self.sloth_footer,
+                        menus=self.menus
                     ))
 
     # Generate categories
@@ -500,7 +502,8 @@ class PostsGenerator:
                         sitename=self.settings["sitename"]["settings_value"],
                         page_name="Category: " + category_meta[1],
                         api_url=self.settings["api_url"]["settings_value"],
-                        sloth_footer=self.sloth_footer
+                        sloth_footer=self.sloth_footer,
+                        menus=self.menus
                     ))
 
     # Generate archive
@@ -532,7 +535,8 @@ class PostsGenerator:
                     sitename=self.settings["sitename"]["settings_value"],
                     page_name=f"Archive for {post_type['display_name']}",
                     api_url=self.settings["api_url"]["settings_value"],
-                    sloth_footer=self.sloth_footer
+                    sloth_footer=self.sloth_footer,
+                    menus=self.menus
                 ))
 
     # Generate rss
@@ -663,7 +667,7 @@ class PostsGenerator:
             cur = self.connection.cursor()
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, C.slug
+                    A.thumbnail, A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                                 INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid WHERE C.archive_enabled = %s 
                                 ORDER BY A.publish_date DESC"""),
@@ -677,6 +681,28 @@ class PostsGenerator:
 
         rss_posts = []
         for post in raw_posts:
+            cur = self.connection.cursor()
+            raw_tags = []
+            raw_post_categories = []
+            try:
+                cur.execute(
+                    sql.SQL("""SELECT display_name, slug, uuid FROM sloth_taxonomy 
+                                                    WHERE post_type = %s AND uuid IN 
+                                                    (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+
+                    [post[14], post[0]]
+                )
+                raw_tags = cur.fetchall()
+                cur.execute(
+                    sql.SQL("""SELECT display_name, slug, uuid FROM sloth_taxonomy
+                                                    WHERE post_type = %s AND uuid IN 
+                                                    (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+                    [post[14], post[0]]
+                )
+                raw_post_categories = cur.fetchall()
+            except Exception as e:
+                print(e)
+            cur.close()
             rss_posts.append({
                 "uuid": post[0],
                 "slug": post[1],
@@ -691,9 +717,9 @@ class PostsGenerator:
                 "publish_date": post[10],
                 "update_date": post[11],
                 "post_status": post[12],
-                "tags": post[13],
-                "categories": post[14],
-                "post_type_slug": post[15]
+                "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
+                "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
+                "post_type_slug": post[13]
             })
 
         self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"]))
@@ -743,7 +769,8 @@ class PostsGenerator:
             f.write(template.render(
                 posts=posts, sitename=self.settings["sitename"]["settings_value"],
                 page_name="Home", api_url=self.settings["api_url"]["settings_value"],
-                sloth_footer=self.sloth_footer
+                sloth_footer=self.sloth_footer,
+                menus=self.menus
             ))
 
     def generate_post_type(self, post_type):

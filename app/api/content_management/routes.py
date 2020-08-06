@@ -178,7 +178,7 @@ def process_posts(items, connection, base_import_link, import_count):
         for post_type in raw_post_types:
             post_types[post_type[0]] = post_type[1]
 
-            taxonomies = fetch_taxonomies(cursor=cur, post_type=post_type)
+            taxonomies = fetch_taxonomies(cursor=cur, post_type=post_types[post_type])
             existing_categories[post_type[1]] = taxonomies["categories"]
             existing_tags[post_type[1]] = taxonomies["tags"]
 
@@ -188,17 +188,21 @@ def process_posts(items, connection, base_import_link, import_count):
             title = item.getElementsByTagName('title')[0].firstChild.wholeText
             # wp:post_type (attachment, nav_menu_item, illustration, page, post)
             post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
-            if not post_types[post_type]:
+            if post_type not in post_types.keys():
                 cur.execute(
                     sql.SQL(
                         """INSERT INTO sloth_post_types 
                             (uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled) 
-                            VALUES (%s, %s, %s, true, true, true) RETURNING slug, uuid"""
+                            VALUES (%s, %s, %s, True, True, True) RETURNING slug, uuid"""
                     ),
                     [str(uuid.uuid4()), re.sub(r'\s+', '-', post_type), post_type]
                 )
                 returned = cur.fetchone()
+                connection.commit()
                 post_types[returned[0]] = returned[1]
+                existing_tags[returned[1]] = []
+                existing_categories[returned[1]] = []
+
             post_slug = re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'\s+', '-', title)).lower()
             cur.execute(
                 sql.SQL("SELECT count(slug) FROM sloth_posts WHERE (slug LIKE %s OR slug LIKE %s) AND post_type = %s;"),
@@ -234,9 +238,9 @@ def process_posts(items, connection, base_import_link, import_count):
             for thing in item.getElementsByTagName('category'):
                 domain = thing.getAttribute('domain')
                 if domain == 'post_tag':
-                    tags.append(thing.getAttribute('nicename'))
+                    tags.append(thing.firstChild.wholeText)
                 if domain == 'category':
-                    categories.append(thing.getAttribute('nicename'))
+                    categories.append(thing.firstChild.wholeText)
 
             matched_tags = [tag for tag in existing_tags[post_types[post_type]] if tag["display_name"] in tags]
             new_tags = [tag for tag in tags if tag not in
@@ -246,7 +250,7 @@ def process_posts(items, connection, base_import_link, import_count):
                         [existing_category["display_name"] for existing_category in existing_categories[post_types[post_type]]]]
             if len(new_tags) > 0:
                 for new_tag in new_tags:
-                    slug = re.sub("\s+", "-", new_tag.strip())
+                    slug = re.sub("\s+", "-", new_tag.lower().strip())
                     new_uuid = str(uuid.uuid4())
                     try:
                         cur.execute(
@@ -255,6 +259,11 @@ def process_posts(items, connection, base_import_link, import_count):
                             [new_uuid, slug, new_tag, post_types[post_type]]
                         )
                         matched_tags.append({"uuid": new_uuid})
+                        existing_tags[post_types[post_type]].append({
+                            "uuid": new_uuid,
+                            "slug": slug,
+                            "display_name": new_tag
+                        })
                     except Exception as e:
                         print(e)
                 connection.commit()
@@ -270,6 +279,11 @@ def process_posts(items, connection, base_import_link, import_count):
                             [new_uuid, slug, new_category, post_types[post_type]]
                         )
                         matched_categories.append({"uuid": new_uuid})
+                        existing_categories[post_types[post_type]].append({
+                            "uuid": new_uuid,
+                            "slug": slug,
+                            "display_name": new_category
+                        })
                     except Exception as e:
                         print(e)
                 connection.commit()
@@ -297,7 +311,8 @@ def process_posts(items, connection, base_import_link, import_count):
                 [post_uuid]
             )
             slugs = cur.fetchone()
-            rewrite_rules.append(f"rewrite ^{link[len(base_import_link):]}$ /{slugs[1]}/{slugs[0]} permanent")
+            if status == "published":
+                rewrite_rules.append(f"rewrite ^{link[len(base_import_link):]}$ /{slugs[1]}/{slugs[0]} permanent")
         connection.commit()
         cur.close()
     except Exception as e:
@@ -326,7 +341,10 @@ def fetch_taxonomies(*args, cursor, post_type, **kwargs):
         temp_categories = cursor.fetchall()
     except Exception as e:
         print(e)
-    return {"tags": process_taxonomy(taxonomy_list=temp_tags), "categories": process_taxonomy(taxonomy_list=temp_categories)}
+    return {
+        "tags": process_taxonomy(taxonomy_list=temp_tags),
+        "categories": process_taxonomy(taxonomy_list=temp_categories)
+    }
 
 
 def process_taxonomy(*args, taxonomy_list, **kwargs):
