@@ -29,20 +29,20 @@ def authorize_web(permission_level):
         def wrapper(*args, **kwargs):
             auth = request.cookies.get('sloth_session')
             if auth is None:
-                return redirect("/login")
+                return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
             auth = auth.split(":")
             if len(auth) != 3:
-                return redirect("/login")
+                return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
             user = User(auth[1], auth[2])
             pass_token = user.authorize_user(permission_level)
 
             if not pass_token:
-                return redirect("/login")
+                return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
 
             if pass_token[0]:
                 user.refresh_login()
                 return fn(*args, permission_level=pass_token[1], **kwargs)
-            return redirect("/login")
+            return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
 
         return wrapper
 

@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import bcrypt
 import json
+import zipfile
+import shutil
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
@@ -14,7 +16,7 @@ from app.post.posts_generator import PostsGenerator
 
 from app.post.post_types import PostTypes
 
-from app.web.settings.themes import settings_themes
+from app.settings.themes import settings_themes
 
 
 @settings_themes.route("/settings/themes")
@@ -87,3 +89,22 @@ def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
     posts_gen.run(posts=True)
 
     return redirect("/settings/themes")
+
+
+@settings_themes.route("/api/upload-theme", methods=["POST"])
+@authorize_web(1)
+def upload_theme(*args, **kwargs):
+    theme = request.files["image"]
+    if theme.mimetype == 'application/x-zip-compressed' and theme.filename.endswith(".zip"):
+        path = os.path.join(current_app.config["THEMES_PATH"], theme.filename[:theme.filename.rfind(".zip")])
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        with open(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'wb') as f:
+            theme.save(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
+        os.makedirs(path)
+        with zipfile.ZipFile(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'r') as zip_ref:
+            zip_ref.extractall(path)
+        os.remove(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
+        return json.dumps({"theme_uploaded": theme.filename[:theme.filename.rfind(".zip")]}), 201
+    else:
+        abort(500)

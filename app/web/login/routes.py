@@ -8,7 +8,7 @@ from app.web.login import login
 
 @login.route("/login")
 def show_login():
-    return render_template("login.html", status={"empty": True})
+    return render_template("login.html", status={"empty": True}, redirect=request.args.get("redirect"))
 
 
 @login.route("/login/error")
@@ -29,7 +29,7 @@ def process_login(*args, connection=None, **kwargs):
 
     # if good redirect to dashboard
     if info is not None:
-        response = make_response(redirect('/dashboard'))
+        response = make_response(redirect('/dashboard' if request.args.get("redirect") is None else request.args.get("redirect")))
         response.set_cookie('sloth_session', info["display_name"] + ":" + info["uuid"] + ":" + info["token"])
         return response
     return redirect("/login/error")

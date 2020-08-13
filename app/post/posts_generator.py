@@ -536,7 +536,9 @@ class PostsGenerator:
                     page_name=f"Archive for {post_type['display_name']}",
                     api_url=self.settings["api_url"]["settings_value"],
                     sloth_footer=self.sloth_footer,
-                    menus=self.menus
+                    menus=self.menus,
+                    current_page_number=i,
+                    not_last_page=True if math.ceil(len(posts) / 10) != i else False
                 ))
 
     # Generate rss

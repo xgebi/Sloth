@@ -17,7 +17,11 @@
 		</section>
 		{% endif %}
 		<section class="registration-items">
+            {% if redirect %}
+            <form action="/login/process?redirect={{ redirect }}" method="POST">
+            {% else %}
 			<form action="/login/process" method="POST">
+            {% endif %}
 				<label for="name">Username:</label> <input type="text" name="username" id="name" />
 				<label for="password">Password:</label> <input type="password" name="password" id="password" />
 				<span class="button success">
