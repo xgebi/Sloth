@@ -6,10 +6,11 @@ import datetime
 
 from app.utilities.db_connection import db_connection
 
-from settings.themes.menu import menu
+from app.settings.themes.menu import menu
+
 
 @menu.route("/settings/themes/menu")
 @authorize_web(0)
 @db_connection
-def show_menus(*args, connection, **kwargs):
-    return render_template("menu.html")
+def show_menus(*args, permission_level, connection, **kwargs):
+    return render_template("menu.html", permission_level=permission_level)
