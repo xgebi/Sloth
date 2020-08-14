@@ -99,6 +99,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 
 
 def process_attachments(items, connection, import_count):
+    # TODO this functions needs to be redone
     conn = {}
     now = datetime.now()
     for item in items:
@@ -225,7 +226,7 @@ def process_posts(items, connection, base_import_link, import_count):
                 item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
 
             # images
-            content = re.sub(f"{base_import_link}/wp-content/uploads/\d\d\d\d/\d\d/", f"{site_url}/sloth-content/{now.year}/{now.month}/", content)
+            content = re.sub(f"{base_import_link}/wp-content/uploads/", f"{site_url}/sloth-content/", content)
             content = re.sub(f"-(\d+)x(\d+)\.",".", content)
 
             # wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
