@@ -103,7 +103,7 @@ def upload_theme(*args, **kwargs):
             theme.save(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
         os.makedirs(path)
         with zipfile.ZipFile(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'r') as zip_ref:
-            zip_ref.extractall(path)
+            zip_ref.extractall(current_app.config["THEMES_PATH"])
         os.remove(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
         return json.dumps({"theme_uploaded": theme.filename[:theme.filename.rfind(".zip")]}), 201
     else:

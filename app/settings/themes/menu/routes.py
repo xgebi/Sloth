@@ -20,5 +20,5 @@ def show_menus(*args, permission_level, connection, **kwargs):
     return render_template(
         "menu.html",
         permission_level=permission_level,
-        post_types = post_types_result,
+        post_types=post_types_result,
     )

@@ -252,7 +252,9 @@ class PostsGenerator:
                     "js": post[8],
                     "thumbnail": post[9],
                     "publish_date": post[10],
-                    "update_date": post[11],
+                    "publish_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "updated_date": post[11],
+                    "update_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
                     "post_status": post[12],
                     "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
                     "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
@@ -360,9 +362,11 @@ class PostsGenerator:
                 "excerpt": temp_post[6],
                 "css": temp_post[7],
                 "js": temp_post[8],
-                "thumbnail": temp_post[9],
+                "thumbnail": temp_post[9], # datetime.fromtimestamp(float(item[4]) / 1000).strftime("%Y-%m-%d %H:%M")
                 "publish_date": temp_post[10],
                 "update_date": temp_post[11],
+                "publish_date_formatted": datetime.fromtimestamp(float(temp_post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date_formatted": datetime.fromtimestamp(float(temp_post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "post_status": temp_post[12],
                 "tags": temp_post[13],
                 "categories": temp_post[14],
@@ -612,7 +616,6 @@ class PostsGenerator:
             i += 1
             # <item>
             post_item = doc.createElement('item')
-            post_item.setAttribute("guid", post['uuid'])
             # <title>Irregular Batch of Interesting Links #10</title>
             post_title = doc.createElement('title')
             post_title_text = doc.createTextNode(post['title'])
@@ -625,6 +628,10 @@ class PostsGenerator:
                 f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}")
             post_link.appendChild(post_link_text)
             post_item.appendChild(post_link)
+            guid = doc.createElement("guid")
+            guid.appendChild(doc.createTextNode(
+                f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}"))
+            post_item.appendChild(guid)
             # <pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
             pub_date = doc.createElement('pubDate')
             d = datetime.fromtimestamp(post['publish_date'] / 1000).astimezone()
@@ -671,7 +678,8 @@ class PostsGenerator:
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                     A.thumbnail, A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid WHERE C.archive_enabled = %s 
+                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid 
+                                WHERE C.archive_enabled = %s AND A.post_status = 'published' 
                                 ORDER BY A.publish_date DESC"""),
                 [True]
             )
@@ -717,7 +725,9 @@ class PostsGenerator:
                 "js": post[8],
                 "thumbnail": post[9],
                 "publish_date": post[10],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "update_date": post[11],
+                "update_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "post_status": post[12],
                 "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
                 "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
@@ -730,10 +740,6 @@ class PostsGenerator:
         posts = {}
         try:
             cur = self.connection.cursor()
-            cur.execute(
-                sql.SQL("""SELECT uuid, title, slug, excerpt, publish_date FROM sloth_posts 
-                                WHERE post_status = 'published' ORDER BY publish_date DESC LIMIT 20""")
-            )
 
             for post_type in post_type_list:
                 cur.execute(
@@ -750,7 +756,9 @@ class PostsGenerator:
                         "title": item[1],
                         "slug": item[2],
                         "excerpt": item[3],
-                        "publish_date": item[4]
+                        "publish_date": item[4],
+                        "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                        "post_type_slug": post_type['slug']
                     })
                 posts[post_type['slug']] = temp_list
             cur.close()
