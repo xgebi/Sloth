@@ -26,5 +26,6 @@ if os.path.isfile("migration.json"):
                     con.commit()
                 except Exception as e:
                     print(e)
+    os.remove("migration.json")
 
 print("Migrations done")
