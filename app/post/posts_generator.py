@@ -202,8 +202,9 @@ class PostsGenerator:
             for post_type in post_types:
                 cur.execute(
                     sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
+                    sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                INNER JOIN sloth_media sm on A.thumbnail = sm.uuid
                                 WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                     [post_type["uuid"]]
                 )
@@ -251,15 +252,16 @@ class PostsGenerator:
                     "css": post[7],
                     "js": post[8],
                     "thumbnail": post[9],
-                    "publish_date": post[10],
-                    "publish_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "updated_date": post[11],
-                    "update_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "post_status": post[12],
+                    "thumbnail_alt": post[10],
+                    "publish_date": post[11],
+                    "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "updated_date": post[12],
+                    "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "post_status": post[13],
                     "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
                     "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
                     "post_type_slug": post_type["slug"],
-                    "approved": post[15]
+                    "approved": post[16]
                 })
 
         return posts
@@ -338,8 +340,9 @@ class PostsGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                        A.thumbnail, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
+                        sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.tags, A.categories, A.import_approved
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                    INNER JOIN sloth_media sm on sm.uuid = A.thumbnail
                                     WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                 [post_type["uuid"]]
             )
@@ -362,16 +365,17 @@ class PostsGenerator:
                 "excerpt": temp_post[6],
                 "css": temp_post[7],
                 "js": temp_post[8],
-                "thumbnail": temp_post[9], # datetime.fromtimestamp(float(item[4]) / 1000).strftime("%Y-%m-%d %H:%M")
-                "publish_date": temp_post[10],
-                "update_date": temp_post[11],
-                "publish_date_formatted": datetime.fromtimestamp(float(temp_post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date_formatted": datetime.fromtimestamp(float(temp_post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": temp_post[12],
-                "tags": temp_post[13],
-                "categories": temp_post[14],
+                "thumbnail": temp_post[9],
+                "thumbnail_alt": temp_post[10],
+                "publish_date": temp_post[11],
+                "update_date": temp_post[12],
+                "publish_date_formatted": datetime.fromtimestamp(float(temp_post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date_formatted": datetime.fromtimestamp(float(temp_post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": temp_post[13],
+                "tags": temp_post[14],
+                "categories": temp_post[15],
                 "post_type_slug": post_type["slug"],
-                "approved": temp_post[15]
+                "approved": temp_post[16]
             })
 
         if post_type["tags_enabled"]:
@@ -676,9 +680,10 @@ class PostsGenerator:
             cur = self.connection.cursor()
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    A.thumbnail, A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
+                    sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                                 INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid 
+                                INNER JOIN sloth_media sm on A.thumbnail = sm.uuid
                                 WHERE C.archive_enabled = %s AND A.post_status = 'published' 
                                 ORDER BY A.publish_date DESC"""),
                 [True]
@@ -700,14 +705,14 @@ class PostsGenerator:
                                                     WHERE post_type = %s AND uuid IN 
                                                     (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
 
-                    [post[14], post[0]]
+                    [post[15], post[0]]
                 )
                 raw_tags = cur.fetchall()
                 cur.execute(
                     sql.SQL("""SELECT display_name, slug, uuid FROM sloth_taxonomy
                                                     WHERE post_type = %s AND uuid IN 
                                                     (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
-                    [post[14], post[0]]
+                    [post[15], post[0]]
                 )
                 raw_post_categories = cur.fetchall()
             except Exception as e:
@@ -724,14 +729,15 @@ class PostsGenerator:
                 "css": post[7],
                 "js": post[8],
                 "thumbnail": post[9],
-                "publish_date": post[10],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date": post[11],
-                "update_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[12],
+                "thumbnail_alt": post[10],
+                "publish_date": post[11],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date": post[12],
+                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[13],
                 "tags": [{"display_name": tag[0], "slug": tag[1], "uuid": tag[2]} for tag in raw_tags],
                 "categories": [{"display_name": cat[0], "slug": cat[1], "uuid": cat[2]} for cat in raw_post_categories],
-                "post_type_slug": post[13]
+                "post_type_slug": post[14]
             })
 
         self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"]))

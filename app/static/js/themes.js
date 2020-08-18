@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             },
             body: formData
         }).then(response => response.json()).then(result => {
-            renderImages(result["media"]);
+            console.log(result);
         }).catch(error => {
             console.error('Error:', error);
         });

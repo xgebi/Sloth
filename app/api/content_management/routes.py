@@ -314,7 +314,7 @@ def process_posts(items, connection, base_import_link, import_count):
             )
             slugs = cur.fetchone()
             if status == "published":
-                rewrite_rules.append(f"rewrite ^{link[len(base_import_link):]}$ /{slugs[1]}/{slugs[0]} permanent")
+                rewrite_rules.append(f"rewrite ^{link[len(base_import_link):]}$ /{slugs[1]}/{slugs[0]} permanent;")
         connection.commit()
         cur.close()
     except Exception as e:
