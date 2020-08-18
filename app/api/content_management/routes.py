@@ -10,6 +10,8 @@ from xml.dom import minidom
 import dateutil.parser
 import uuid
 import traceback
+import zipfile
+import shutil
 from datetime import datetime
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
@@ -71,7 +73,8 @@ def import_wordpress_content(*args, connection=None, **kwargs):
         )
         import_count = int(cur.fetchone()[0]) + 1
         cur.execute(
-            sql.SQL("""UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 'wordpress_import_count';"""),
+            sql.SQL(
+                """UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 'wordpress_import_count';"""),
             [import_count]
         )
         connection.commit()
@@ -79,74 +82,70 @@ def import_wordpress_content(*args, connection=None, **kwargs):
         print(e)
         abort(500)
 
-    xml_data = minidom.parseString(json.loads(request.data)["data"])
-    base_import_link = xml_data.getElementsByTagName('wp:base_blog_url')[0].firstChild.wholeText
-    items = xml_data.getElementsByTagName('item')
-    posts = []
-    attachments = []
-    for item in items:
-        post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
-        if post_type == 'attachment':
-            attachments.append(item)
-        if post_type == 'post' or post_type == 'page':
-            posts.append(item)
+    uploads = { "filename": None }
 
-    process_attachments(attachments, connection, import_count)
-    rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
-    generator = PostsGenerator()
-    generator.run(posts=True)
-    return json.dumps({"ok": True, "rules": rewrite_rules})
+    if request.files.get("uploads"):
+        uploads = request.files["uploads"]
+        if uploads.mimetype == 'application/x-zip-compressed' and uploads.filename.endswith(".zip"):
+            if not os.path.isdir(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp")):
+                os.makedirs(os.path.join(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp")))
+
+            with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename),
+                      'wb') as f:
+                uploads.save(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename))
+
+            with zipfile.ZipFile(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename), 'r') as zip_ref:
+                zip_ref.extractall(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded"))
+
+            files = os.listdir(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded", "uploads"))
+            for file in files:
+                shutil.move(
+                    os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded", "uploads", file),
+                    os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")
+                )
+            shutil.rmtree(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded"))
+
+            os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename))
+
+    if request.files.get("data"):
+        xml_data = minidom.parse(request.files.get("data"))
+        base_import_link = xml_data.getElementsByTagName('wp:base_blog_url')[0].firstChild.wholeText
+        items = xml_data.getElementsByTagName('item')
+        posts = []
+        attachments = []
+        for item in items:
+            post_type = item.getElementsByTagName('wp:post_type')[0].firstChild.wholeText
+            if post_type == 'attachment':
+                attachments.append(item)
+            if post_type == 'post' or post_type == 'page':
+                posts.append(item)
+
+        process_attachments(attachments, connection, import_count)
+        rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
+        generator = PostsGenerator()
+        generator.run(posts=True)
+    return json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.filename})
 
 
 def process_attachments(items, connection, import_count):
-    # TODO this functions needs to be redone
-    conn = {}
-    now = datetime.now()
     for item in items:
-        if conn == {}:
-            conn = http.client.HTTPSConnection(item.getElementsByTagName('guid')[0].firstChild.wholeText[
-                                               item.getElementsByTagName('guid')[0].firstChild.wholeText.find('//') + 2:
-                                               item.getElementsByTagName('guid')[0].firstChild.wholeText.find('/', 8)])
-        conn.request("GET", item.getElementsByTagName('guid')[0].firstChild.wholeText[
-                            item.getElementsByTagName('guid')[0].firstChild.wholeText.find('/', 8):])
-        res = conn.getresponse()
 
-        data = res.read()
-
-        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content")):
-            os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content"))
-
-        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year))):
-            os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year)))
-
-        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month))):
-            os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month)))
-
-        filename = item.getElementsByTagName('guid')[0].firstChild.wholeText[
-                   item.getElementsByTagName('guid')[0].firstChild.wholeText.rfind('/') + 1:]
-
-        index = 1
-        while os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)):
-            if filename[:filename.rfind('.')].endswith(f"-{index-1}"):
-                filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
-            else:
-                filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
-            index += 1
-
-        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename), 'wb') as f:
-            f.write(data)
         meta_infos = item.getElementsByTagName('wp:postmeta')
         alt = ""
+        file_path = ""
         for info in meta_infos:
             if info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_wp_attachment_image_alt':
                 alt = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText \
+                    if info.getElementsByTagName('wp:meta_value')[0].firstChild is not None else ""
+            if info.getElementsByTagName('wp:meta_key')[0].firstChild.wholeText == '_wp_attached_file':
+                file_path = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText \
                     if info.getElementsByTagName('wp:meta_value')[0].firstChild is not None else ""
         try:
             cur = connection.cursor()
             cur.execute(
                 sql.SQL("INSERT INTO sloth_media (uuid, file_path, alt, wp_id) VALUES (%s, %s, %s, %s)"),
                 [str(uuid.uuid4()),
-                 os.path.join("sloth-content", str(now.year), str(now.month), filename),
+                 f"sloth-content/{file_path}",
                  alt, f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}"]
             )
             connection.commit()
@@ -156,8 +155,6 @@ def process_attachments(items, connection, import_count):
             abort(500)
 
         cur.close()
-    if conn:
-        conn.close()
 
 
 def process_posts(items, connection, base_import_link, import_count):
@@ -179,7 +176,7 @@ def process_posts(items, connection, base_import_link, import_count):
         for post_type in raw_post_types:
             post_types[post_type[0]] = post_type[1]
 
-            taxonomies = fetch_taxonomies(cursor=cur, post_type=post_types[post_type])
+            taxonomies = fetch_taxonomies(cursor=cur, post_type=post_types[post_type[0]])
             existing_categories[post_type[1]] = taxonomies["categories"]
             existing_tags[post_type[1]] = taxonomies["tags"]
 
@@ -218,7 +215,7 @@ def process_posts(items, connection, base_import_link, import_count):
             # pubDate or wp:post_date
             pub_date = dateutil.parser.parse(
                 item.getElementsByTagName('pubDate')[0].firstChild.wholeText
-            ).timestamp()*1000 if item.getElementsByTagName('pubDate')[0].firstChild is not None else None
+            ).timestamp() * 1000 if item.getElementsByTagName('pubDate')[0].firstChild is not None else None
             # dc:creator (CDATA)
             creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
             # content:encoded (CDATA)
@@ -227,7 +224,7 @@ def process_posts(items, connection, base_import_link, import_count):
 
             # images
             content = re.sub(f"{base_import_link}/wp-content/uploads/", f"{site_url}/sloth-content/", content)
-            content = re.sub(f"-(\d+)x(\d+)\.",".", content)
+            content = re.sub(f"-(\d+)x(\d+)\.", ".", content)
 
             # wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
             status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
@@ -246,9 +243,11 @@ def process_posts(items, connection, base_import_link, import_count):
             matched_tags = [tag for tag in existing_tags[post_types[post_type]] if tag["display_name"] in tags]
             new_tags = [tag for tag in tags if tag not in
                         [existing_tag["display_name"] for existing_tag in existing_tags[post_types[post_type]]]]
-            matched_categories = [category for category in existing_categories[post_types[post_type]] if category["display_name"] in categories]
+            matched_categories = [category for category in existing_categories[post_types[post_type]] if
+                                  category["display_name"] in categories]
             new_categories = [category for category in categories if category not in
-                        [existing_category["display_name"] for existing_category in existing_categories[post_types[post_type]]]]
+                              [existing_category["display_name"] for existing_category in
+                               existing_categories[post_types[post_type]]]]
             if len(new_tags) > 0:
                 for new_tag in new_tags:
                     slug = re.sub("\s+", "-", new_tag.lower().strip())
@@ -302,8 +301,10 @@ def process_posts(items, connection, base_import_link, import_count):
                             title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
                             categories, lang, imported) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en', %s)"""),
-                [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title, content, "", "", "", f"{import_count}-{thumbnail_id}",
-                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags], [category["uuid"] for category in matched_categories], True]
+                [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title,
+                 content, "", "", "", f"{import_count}-{thumbnail_id}",
+                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags],
+                 [category["uuid"] for category in matched_categories], True]
             )
             cur.execute(
                 sql.SQL("""SELECT sp.slug, spt.slug 
@@ -330,14 +331,14 @@ def fetch_taxonomies(*args, cursor, post_type, **kwargs):
         cursor.execute(
             sql.SQL("""SELECT uuid, slug, display_name FROM sloth_taxonomy
                          WHERE taxonomy_type = 'tag' AND post_type = %s"""),
-            [post_type[1]]
+            [post_type]
         )
         temp_tags = cursor.fetchall()
         cursor.execute(
             sql.SQL(
                 """SELECT uuid, slug, display_name FROM sloth_taxonomy 
                 WHERE taxonomy_type = 'category' AND post_type = %s"""),
-            [post_type[1]]
+            [post_type]
         )
         temp_categories = cursor.fetchall()
     except Exception as e:
@@ -357,4 +358,3 @@ def process_taxonomy(*args, taxonomy_list, **kwargs):
             "display_name": item[2]
         })
     return res_list
-

@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const fileField = document.querySelector('#file-upload');
 
         formData.append('image', fileField.files[0]);
-
+        debugger;
         fetch('/api/upload-theme', {
             method: 'POST',
             headers: {
