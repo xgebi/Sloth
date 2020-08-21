@@ -71,18 +71,20 @@ function openGalleryDialog(data) {
 	const mediaSection = document.createElement('section')
 	gallery.images.forEach((item) => {
 		const wrapper = document.createElement('article');
-		wrapper.setAttribute('style', "width: 50px; height: 80px");
+		wrapper.setAttribute('style', "width: 100px; height: 100px;");
 		// uuid, file_path, alt
 		const image = document.createElement('img');
 		image.setAttribute('src', item['filePath']);
-		image.setAttribute('alt', item["alt"])
+		image.setAttribute('alt', item["alt"]);
+		image.setAttribute("loading", "lazy");
+		image.setAttribute('style', "max-width: 100%; max-height: calc(100% - 2rem);");
 		wrapper.appendChild(image);
 
 		const copyUrlButton = document.createElement('button');
 		copyUrlButton.textContent = 'Copy URL'
 		copyUrlButton.addEventListener('click', () => {
 			copyResult.textContent = '';
-			navigator.clipboard.writeText(item['filePath']).then(function() {
+			navigator.clipboard.writeText(`<img src="${item['filePath']}" alt="${item['alt']}" />`).then(function() {
 			  	/* clipboard successfully set */
 				copyResult.textContent = 'URL copied to clipboard';
 			}, function() {
@@ -98,7 +100,6 @@ function openGalleryDialog(data) {
 	const closeButton = document.createElement('button');
 	closeButton.textContent = 'Close'
 	closeButton.addEventListener('click', () => {
-		debugger;
 		while (dialog.firstChild) {
     		dialog.removeChild(dialog.lastChild);
   		}
@@ -108,7 +109,6 @@ function openGalleryDialog(data) {
 }
 
 function publishPost() {
-	debugger;
 	const values = collectValues();
 	if (!values) {
 		return;

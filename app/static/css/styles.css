@@ -111,3 +111,13 @@ select {
 	min-height: 20rem;
 	background: beige;
 }
+
+#modal.gallery {
+	width: 80vw;
+}
+
+#modal.gallery section {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, 100px);
+	grid-template-rows: repeat(auto-fill, 100px);
+}

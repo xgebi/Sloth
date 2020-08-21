@@ -120,14 +120,14 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         cur.execute(
             sql.SQL("""SELECT uuid FROM sloth_taxonomy
                         WHERE post_type = %s AND uuid IN 
-                        (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+                        (SELECT unnest(categories) FROM sloth_posts WHERE uuid = %s)"""),
             [raw_post[13], post_id]
         )
         raw_post_categories = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
-                                WHERE post_type = %s"""),
-            [raw_post[13]]
+                                WHERE post_type = %s AND taxonomy_type=%s"""),
+            [raw_post[13], 'category']
         )
         raw_all_categories = cur.fetchall()
         cur.execute(
@@ -150,7 +150,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     for category in raw_all_categories:
         selected = False
         if category[0] in post_categories:
-            selected: True
+            selected = True
         all_categories.append({
             "uuid": category[0],
             "display_name": category[1],
@@ -406,12 +406,18 @@ def get_media_data(*args, connection, **kwargs):
 
     cur = connection.cursor()
     raw_media = []
+    site_url = ""
     try:
 
         cur.execute(
             sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
         )
         raw_media = cur.fetchall()
+        cur.execute(
+            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
+        )
+        site_url = cur.fetchone()
+        site_url = site_url[0] if len(site_url) > 0 else ""
     except Exception as e:
         print("db error")
         abort(500)
@@ -423,7 +429,7 @@ def get_media_data(*args, connection, **kwargs):
     for medium in raw_media:
         media.append({
             "uuid": medium[0],
-            "filePath": medium[1],
+            "filePath": f"{site_url}/{medium[1]}",
             "alt": medium[2]
         })
 
