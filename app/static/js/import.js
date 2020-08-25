@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 });
 
 function uploadFile() {
-    debugger;
     const formData = new FormData();
     const wpData = document.querySelector('#wordpress-import');
     const wpUploads = document.querySelector('#wordpress-uploads');

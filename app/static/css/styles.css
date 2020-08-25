@@ -1,17 +1,27 @@
 :root {
 	--white: hsl(36, 26%, 98%);
 	--black: hsl(36, 100%, 6%);
+	--dark-grey: hsl(36, 0%, 20%);
 	--red: hsl(360, 100%, 34%);
 	--orange: hsl(36, 100%, 48%);
 	--green: hsl(126, 69%, 50%);
 	font-family: Cabin, sans-serif;
 }
 
+@font-face {
+  font-family: 'Fira Code';
+  src: url('/static/fonts/FiraCode-VF.woff2') format('woff2'),
+    url("/static/fonts/FiraCode-VF.woff") format("woff");
+  font-weight: 300 700;
+  font-style: normal;
+}
+
 body {
 	padding: 0;
 	margin: 0;
 	font-size: 1.125rem;
-	font-family: "Noto Sans", sans-serif;
+	font-family: "Fira Code", "Noto Sans", sans-serif;
+	font-weight: 300;
 }
 
 
@@ -76,10 +86,16 @@ select {
 .inner-city {
 	display: grid;
 	grid-template-columns: 15rem auto;
+	column-gap: 1rem;
 }
 
 .inner-city nav {
+	background: var(--dark-grey);
+	padding: 1rem;
+}
 
+.inner-city nav a {
+	color: var(--white);
 }
 
 .inner-city nav ul {
@@ -103,6 +119,50 @@ select {
 
 .media-gallery img {
 	width: 100%;
+}
+
+.post-edit {
+	display: grid;
+	grid-template-columns: auto 16rem;
+	column-gap: 3rem;
+	padding: 2rem 4rem;
+	row-gap: 1rem;
+}
+
+.post-edit div {
+	display: flex;
+	flex-direction: column;
+}
+
+.post-edit .full-width {
+	grid-column: 1 / 3;
+}
+
+.post-edit .first-column {
+	grid-column: 1 / 2;
+}
+
+.post-edit .second-column {
+	grid-column: 2 / 3;
+}
+.post-edit .metadata {
+	grid-row: 2 / 6;
+}
+
+.post-edit .thumbnail {
+	grid-row: 6 / 7;
+}
+
+.post-edit .tags {
+	grid-row: 7 / 8;
+}
+
+.post-edit .categories {
+	grid-row: 8 / 10;
+}
+
+.post-edit #thumbnail-wrapper img {
+	width: 16rem;
 }
 
 /* Sloth Editor */

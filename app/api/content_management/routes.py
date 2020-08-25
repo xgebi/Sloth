@@ -82,7 +82,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
         print(e)
         abort(500)
 
-    uploads = { "filename": None }
+    uploads = {"filename": ""}
 
     if request.files.get("uploads"):
         uploads = request.files["uploads"]
@@ -124,7 +124,7 @@ def import_wordpress_content(*args, connection=None, **kwargs):
         rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
         generator = PostsGenerator()
         generator.run(posts=True)
-    return json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.filename})
+    return json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.get("filename")})
 
 
 def process_attachments(items, connection, import_count):
@@ -221,6 +221,11 @@ def process_posts(items, connection, base_import_link, import_count):
             # content:encoded (CDATA)
             content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if \
                 item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
+            excerpt = ""
+            if len(content.split("<!--more-->")) == 2:
+                temp_content = content.split("<!--more-->")
+                content = "<p>" + re.sub("\n\n", "</p>\n\n<p>", temp_content[1]) + "</p>"
+                excerpt = temp_content[0]
 
             # images
             content = re.sub(f"{base_import_link}/wp-content/uploads/", f"{site_url}/sloth-content/", content)
@@ -302,7 +307,7 @@ def process_posts(items, connection, base_import_link, import_count):
                             categories, lang, imported) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en', %s)"""),
                 [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title,
-                 content, "", "", "", f"{import_count}-{thumbnail_id}",
+                 content, excerpt, "", "", f"{import_count}-{thumbnail_id}",
                  pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags],
                  [category["uuid"] for category in matched_categories], True]
             )
@@ -358,3 +363,23 @@ def process_taxonomy(*args, taxonomy_list, **kwargs):
             "display_name": item[2]
         })
     return res_list
+
+
+@content_management.route("/api/content/clear", methods=["DELETE"])
+@authorize_rest(1)
+@db_connection
+def clear_content(*args, connection=None, **kwargs):
+    cur = connection.cursor()
+
+    try:
+        cur.execute("DELETE FROM sloth_posts;")
+        cur.execute("DELETE FROM sloth_media;")
+        cur.execute("DELETE FROM sloth_taxonomy;")
+        cur.execute("DELETE FROM sloth_analytics;")
+        connection.commit()
+    except Exception as e:
+        abort(500)
+
+    cur.close()
+    connection.close()
+    return json.dumps({"cleaned": True}), 204

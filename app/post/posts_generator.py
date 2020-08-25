@@ -332,11 +332,14 @@ class PostsGenerator:
 
         if not multiple_posts:
             self.regenerate_for_post(post_type, post)
-            os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+            if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
+                os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def regenerate_for_post(self, post_type, post):
         cur = self.connection.cursor()
         raw_items = []
+        raw_tags = []
+        raw_post_categories = []
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
@@ -392,7 +395,6 @@ class PostsGenerator:
             )
 
         self.generate_home()
-        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # Generate tags
     def generate_tags(self, post_type_slug, tags, posts):
@@ -645,12 +647,12 @@ class PostsGenerator:
 
             # <dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
             # <category><![CDATA[Interesting links]]></category>
-            if isinstance(post['categories'], collections.Iterable):
-                for category in post['categories']:
-                    category_node = doc.createElement('category')
-                    category_text = doc.createCDATASection(category["display_name"])
-                    category_node.appendChild(category_text)
-                    post_item.appendChild(category_node)
+            #if isinstance(post['categories'], collections.Iterable):
+            #    for category in post['categories']:
+            #        category_node = doc.createElement('category')
+            #        category_text = doc.createCDATASection(category["display_name"])
+            #        category_node.appendChild(category_text)
+            #        post_item.appendChild(category_node)
             # <content:encoded><![CDATA[
             description = doc.createElement('description')
             post_item.appendChild(description)

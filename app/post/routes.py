@@ -20,6 +20,7 @@ from app.post import post
 
 reserved_folder_names = ('tag', 'category')
 
+
 # WEB
 @post.route("/post/<post_type>")
 @authorize_web(0)
@@ -47,7 +48,7 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
             FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-            WHERE A.post_status = %s AND A.post_type = %s"""),
+            WHERE A.post_status = %s AND A.post_type = %s ORDER BY  A.update_date DESC"""),
             ['published', post_type]
         )
         raw_items = cur.fetchall()
@@ -91,6 +92,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     raw_tags = []
     raw_post_categories = []
     raw_all_categories = []
+    temp_thumbnail_info = []
     try:
         cur.execute(
             sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
@@ -134,6 +136,15 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
         )
         temp_post_statuses = cur.fetchall()
+        if raw_post[8] is not None:
+            cur.execute(
+                sql.SQL("""SELECT alt, 
+                        concat((SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'), '/',file_path)
+                        FROM sloth_media WHERE uuid=%s"""),
+                [raw_post[8]]
+            )
+            temp_thumbnail_info = cur.fetchone()
+
     except Exception as e:
         print("db error B")
         print(e)
@@ -161,6 +172,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     for tag in raw_tags:
         tags.append(tag[0])
 
+    publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000)
+
     data = {
         "uuid": post_id,
         "title": raw_post[0],
@@ -171,8 +184,11 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "use_theme_css": raw_post[5],
         "js": raw_post[6],
         "use_theme_js": raw_post[7],
-        "thumbnail": raw_post[8],
-        "publish_date": raw_post[9],
+        "thumbnail_path": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
+        "thumbnail_uuid": raw_post[8] if raw_post[8] is not None else "",
+        "thumbnail_alt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
+        "publish_date": publish_datetime.strftime("%Y-%m-%d"),
+        "publish_time": publish_datetime.strftime("%H:%M"),
         "update_date": raw_post[10],
         "status": raw_post[11],
         "display_name": raw_post[12],
@@ -225,7 +241,8 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
         )
         temp_post_statuses = cur.fetchall()
         cur.execute(
-            sql.SQL("SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
+            sql.SQL(
+                "SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
             [post_type]
         )
         raw_all_categories = cur.fetchall()
@@ -360,7 +377,7 @@ def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         if len(res) == 0:
             cur.execute(sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
             VALUES (%s, %s, %s, %s, %s);"""),
-            [taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type])
+                        [taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type])
         else:
             cur.execute(sql.SQL("""UPDATE sloth_taxonomy SET slug = %s, display_name = %s WHERE uuid = %s;"""),
                         [filled["slug"], filled["display_name"], taxonomy_id])
@@ -491,6 +508,8 @@ def save_post(*args, connection=None, **kwargs):
                     [existing_tag[2] for existing_tag in existing_tags]]
         if len(new_tags) > 0:
             for new_tag in new_tags:
+                if len(new_tag) == 0:
+                    continue
                 slug = re.sub("\s+", "-", new_tag.strip())
                 new_uuid = str(uuid.uuid4())
                 try:
@@ -530,7 +549,7 @@ def save_post(*args, connection=None, **kwargs):
             if filled["post_status"] == 'published':
                 publish_date = str(time() * 1000)
             elif filled["post_status"] == 'scheduled':
-                publish_date = filled["scheduled_date"]  # TODO scheduling
+                publish_date = filled["publish_date"]  # TODO scheduling
             else:
                 publish_date = None
             cur.execute(
@@ -544,9 +563,10 @@ def save_post(*args, connection=None, **kwargs):
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
-                 thumbnail = %s, update_date = %s, post_status = %s, tags = %s, categories = %s, import_approved = %s WHERE uuid = %s;"""),
+                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, tags = %s, categories = %s, import_approved = %s WHERE uuid = %s;"""),
                 [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
-                 filled["thumbnail"] if filled["thumbnail"] != "None" else None, str(time() * 1000), filled["post_status"], matched_tags,
+                 filled["thumbnail"] if filled["thumbnail"] != "None" else None, filled["publish_date"],
+                 str(time() * 1000), filled["post_status"], matched_tags,
                  filled["categories"], filled["approved"], filled["uuid"]]
             )
         connection.commit()
@@ -592,12 +612,15 @@ def save_post(*args, connection=None, **kwargs):
                 "use_theme_js": generatable_post[12],
                 "thumbnail": generatable_post[13],
                 "publish_date": generatable_post[14],
+                "publish_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post[14]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "update_date": generatable_post[15],
+                "update_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post[15]) / 1000).strftime(
+                    "%Y-%m-%d %H:%M"),
                 "post_status": generatable_post[16],
                 "tags": [{"display_name": tag[0], "slug": tag[1]} for tag in raw_tags],
                 "categories": [{"display_name": cat[0], "slug": cat[1]} for cat in raw_post_categories],
-                "imported": generatable_post[19],
-                "approved": generatable_post[20]
+                "imported": generatable_post[17],
+                "approved": generatable_post[18]
             })
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
@@ -681,4 +704,3 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
     gen.run(posts=True)
 
     return json.dumps({"generating": True})
-

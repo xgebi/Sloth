@@ -1,4 +1,7 @@
 {
   "setup": [],
-  "setup_data": []
+  "setup_data": [],
+  "scripts": [
+    "taxonomy_transform"
+  ]
  }

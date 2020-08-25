@@ -37,7 +37,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
 		});
 
 	document.querySelector("#gallery-opener").addEventListener('click', () => {
-		openGalleryDialog(gallery.images);
+		openGalleryDialog(gallery.images, "gallery");
+	});
+
+	document.querySelector("#pick-thumbnail").addEventListener('click', () => {
+		openGalleryDialog(gallery.images, "thumbnail");
 	})
 
     // 2. publish post button
@@ -63,7 +67,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
 });
 
-function openGalleryDialog(data) {
+function openGalleryDialog(data, type) {
 	const dialog = document.querySelector("#modal");
 	dialog.setAttribute('open', '');
 	const copyResult = document.createElement('p');
@@ -80,19 +84,39 @@ function openGalleryDialog(data) {
 		image.setAttribute('style', "max-width: 100%; max-height: calc(100% - 2rem);");
 		wrapper.appendChild(image);
 
-		const copyUrlButton = document.createElement('button');
-		copyUrlButton.textContent = 'Copy URL'
-		copyUrlButton.addEventListener('click', () => {
-			copyResult.textContent = '';
-			navigator.clipboard.writeText(`<img src="${item['filePath']}" alt="${item['alt']}" />`).then(function() {
-			  	/* clipboard successfully set */
-				copyResult.textContent = 'URL copied to clipboard';
-			}, function() {
-			  	/* clipboard write failed */
-				copyResult.textContent = 'Error copying URL to clipboard';
-			});
-		});
-		wrapper.appendChild(copyUrlButton);
+		const actionButton = document.createElement('button');
+		switch (type) {
+			case "gallery":
+				actionButton.textContent = 'Copy URL'
+				actionButton.addEventListener('click', () => {
+					copyResult.textContent = '';
+					navigator.clipboard.writeText(`<img src="${item['filePath']}" alt="${item['alt']}" />`).then(function() {
+						/* clipboard successfully set */
+						copyResult.textContent = 'URL copied to clipboard';
+					}, function() {
+						/* clipboard write failed */
+						copyResult.textContent = 'Error copying URL to clipboard';
+					});
+				});
+				break;
+			case "thumbnail":
+				actionButton.textContent = 'Choose'
+				actionButton.addEventListener('click', () => {
+					const thumbnailInput = document.querySelector("#thumbnail");
+					thumbnailInput.setAttribute('value', item["uuid"])
+					const thumbnailWrapper = document.querySelector("#thumbnail-wrapper");
+					while (thumbnailWrapper.lastChild) {
+						thumbnailWrapper.removeChild(thumbnailWrapper.lastChild)
+					}
+					const image = document.createElement('img');
+					image.setAttribute('src', item['filePath']);
+					image.setAttribute('alt', item['alt']);
+					thumbnailWrapper.appendChild(image);
+					dialog.close();
+				});
+				break;
+		}
+		wrapper.appendChild(actionButton);
 
 		mediaSection.appendChild(wrapper);
 	});
@@ -158,7 +182,7 @@ function collectValues() {
 	post["use_theme_css"] = document.querySelector("#use_theme_css").checked;
 	post["use_theme_js"] = document.querySelector("#use_theme_js").checked;
 	post["thumbnail"] = document.querySelector("#thumbnail").value;
-	debugger;
+	post["publish_date"] = (new Date(`${document.querySelector("#publish_date").value}T${document.querySelector("#publish_time").value}`)).getTime();
 	post["categories"] = [];
 	for (const option of document.querySelector("#categories").selectedOptions) {
 		post["categories"].push(option.value);
