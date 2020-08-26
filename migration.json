@@ -1,5 +1,5 @@
 {
-  "setup": [],
+  "setup": ["021_reworked_taxonomy.sql", "022_drop_taxonomy_from_posts.sql"],
   "setup_data": [],
   "scripts": [
     "taxonomy_transform"

@@ -8,7 +8,7 @@ CREATE TABLE sloth_post_taxonomies (
 		REFERENCES sloth_posts (uuid) MATCH SIMPLE
 		ON UPDATE NO ACTION
 		ON DELETE NO ACTION,
-	CONSTRAINT post_type_fkey FOREIGN KEY(taxonomy)
+	CONSTRAINT taxonomy_fkey FOREIGN KEY(taxonomy)
 		REFERENCES sloth_taxonomy (uuid) MATCH SIMPLE
 		ON UPDATE NO ACTION
 		ON DELETE NO ACTION
