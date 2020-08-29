@@ -311,6 +311,7 @@ def process_posts(items, connection, base_import_link, import_count):
                  pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags],
                  [category["uuid"] for category in matched_categories], True]
             )
+
             cur.execute(
                 sql.SQL("""SELECT sp.slug, spt.slug 
                         FROM sloth_posts as sp INNER JOIN sloth_post_types spt on sp.post_type = spt.uuid

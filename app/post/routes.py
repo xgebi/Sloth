@@ -111,21 +111,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             [raw_post[13]]
         )
         post_type_name = cur.fetchone()[0]
-        cur.execute(
-            sql.SQL("""SELECT display_name FROM sloth_taxonomy 
-                        WHERE post_type = %s AND uuid IN 
-                        (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
+        gen = PostsGenerator(connection=connection)
+        taxonomies = gen.get_taxonomy_for_post(post_id)
 
-            [raw_post[13], post_id]
-        )
-        raw_tags = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT uuid FROM sloth_taxonomy
-                        WHERE post_type = %s AND uuid IN 
-                        (SELECT unnest(categories) FROM sloth_posts WHERE uuid = %s)"""),
-            [raw_post[13], post_id]
-        )
-        raw_post_categories = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
                                 WHERE post_type = %s AND taxonomy_type=%s"""),
@@ -155,7 +143,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
     token = request.cookies.get('sloth_session')
 
-    post_categories = [cat_uuid for cat in raw_post_categories for cat_uuid in cat]
+    post_categories = [cat["uuid"] for cat in taxonomies["categories"]]
 
     all_categories = []
     for category in raw_all_categories:
@@ -167,10 +155,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "display_name": category[1],
             "selected": selected
         })
-
-    tags = []
-    for tag in raw_tags:
-        tags.append(tag[0])
 
     publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000)
 
@@ -192,9 +176,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "update_date": raw_post[10],
         "status": raw_post[11],
         "display_name": raw_post[12],
-        "post_categories": post_categories,
+        "post_categories": taxonomies["categories"],
         "all_categories": all_categories,
-        "tags": tags,
+        "tags": taxonomies["tags"],
         "post_type": raw_post[13],
         "imported": raw_post[14],
         "approved": raw_post[15]
@@ -554,21 +538,45 @@ def save_post(*args, connection=None, **kwargs):
                 publish_date = None
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
-                categories, lang) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en')"""),
+                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en')"""),
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
-                 filled["post_status"], matched_tags, filled["categories"]]
+                 filled["post_status"]]
             )
+            for category in filled["categories"]:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), filled["uuid"], category]
+                )
+            for tag in matched_tags:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), filled["uuid"], tag]
+                )
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
-                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, tags = %s, categories = %s, import_approved = %s WHERE uuid = %s;"""),
+                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s WHERE uuid = %s;"""),
                 [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
                  filled["thumbnail"] if filled["thumbnail"] != "None" else None, filled["publish_date"],
                  str(time() * 1000), filled["post_status"], matched_tags,
                  filled["categories"], filled["approved"], filled["uuid"]]
             )
+            cur.execute(
+                sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s;"""),
+                [filled["uuid"]]
+            )
+            for category in filled["categories"]:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), filled["uuid"], category]
+                )
+            for tag in matched_tags:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), filled["uuid"], tag]
+                )
         connection.commit()
 
         # get post
@@ -580,22 +588,9 @@ def save_post(*args, connection=None, **kwargs):
                 [filled["uuid"]]
             )
             generatable_post = cur.fetchone()
-            cur.execute(
-                sql.SQL("""SELECT display_name, slug FROM sloth_taxonomy 
-                                    WHERE post_type = %s AND uuid IN 
-                                    (SELECT array_to_string(tags, ',') FROM sloth_posts WHERE uuid = %s)"""),
 
-                [generatable_post[4], generatable_post[0]]
-            )
-            raw_tags = cur.fetchall()
-            cur.execute(
-                sql.SQL("""SELECT display_name, slug FROM sloth_taxonomy
-                                    WHERE post_type = %s AND uuid IN 
-                                    (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
-                [generatable_post[4], generatable_post[0]]
-            )
-            raw_post_categories = cur.fetchall()
             gen = PostsGenerator(connection=connection)
+            taxonomies = gen.get_taxonomy_for_post(generatable_post[0])
             gen.run(post={
                 "uuid": generatable_post[0],
                 "original_lang_entry_uuid": generatable_post[1],
@@ -617,8 +612,8 @@ def save_post(*args, connection=None, **kwargs):
                 "update_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post[15]) / 1000).strftime(
                     "%Y-%m-%d %H:%M"),
                 "post_status": generatable_post[16],
-                "tags": [{"display_name": tag[0], "slug": tag[1]} for tag in raw_tags],
-                "categories": [{"display_name": cat[0], "slug": cat[1]} for cat in raw_post_categories],
+                "tags": taxonomies["tags"],
+                "categories": taxonomies["categories"],
                 "imported": generatable_post[17],
                 "approved": generatable_post[18]
             })
