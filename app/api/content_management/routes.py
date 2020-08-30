@@ -303,15 +303,23 @@ def process_posts(items, connection, base_import_link, import_count):
             post_uuid = str(uuid.uuid4())
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                            title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, tags, 
-                            categories, lang, imported) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, %s, %s, 'en', %s)"""),
+                            title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, imported) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, 'en', %s)"""),
                 [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title,
                  content, excerpt, "", "", f"{import_count}-{thumbnail_id}",
-                 pub_date, pub_date, status, [tag["uuid"] for tag in matched_tags],
-                 [category["uuid"] for category in matched_categories], True]
+                 pub_date, pub_date, status, True]
             )
 
+            for tag in matched_tags:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), post_uuid, tag["uuid"]]
+                )
+            for category in matched_categories:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+                    [str(uuid.uuid4()), post_uuid, category["uuid"]]
+                )
             cur.execute(
                 sql.SQL("""SELECT sp.slug, spt.slug 
                         FROM sloth_posts as sp INNER JOIN sloth_post_types spt on sp.post_type = spt.uuid
@@ -373,6 +381,7 @@ def clear_content(*args, connection=None, **kwargs):
     cur = connection.cursor()
 
     try:
+        cur.execute("DELETE FROM sloth_post_taxonomies;")
         cur.execute("DELETE FROM sloth_posts;")
         cur.execute("DELETE FROM sloth_media;")
         cur.execute("DELETE FROM sloth_taxonomy;")

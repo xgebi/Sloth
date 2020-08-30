@@ -198,9 +198,8 @@ class PostsGenerator:
             for post_type in post_types:
                 cur.execute(
                     sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.import_approved
+                    A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                INNER JOIN sloth_media sm on A.thumbnail = sm.uuid
                                 WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                     [post_type["uuid"]]
                 )
@@ -216,6 +215,20 @@ class PostsGenerator:
 
             for post in raw_items[post_type["uuid"]]:
                 taxonomies = self.get_taxonomy_for_post(post[0])
+                thumbnail = None
+                thumbnail_alt = None
+                if post[13] is not None:
+                    cur = self.connection.cursor()
+                    try:
+                        cur.execute(
+                            sql.SQL("""SELECT file_path, alt FROM sloth_media WHERE uuid = %s;"""),
+                            [post[13]]
+                        )
+                        raw_thumbnail = cur.fetchone()
+                        thumbnail = raw_thumbnail[0]
+                        thumbnail_alt = raw_thumbnail[1]
+                    except Exception as e:
+                        print(e)
                 posts[post_type["uuid"]].append({
                     "uuid": post[0],
                     "slug": post[1],
@@ -226,17 +239,17 @@ class PostsGenerator:
                     "excerpt": post[6],
                     "css": post[7],
                     "js": post[8],
-                    "thumbnail": post[9],
-                    "thumbnail_alt": post[10],
-                    "publish_date": post[11],
-                    "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "updated_date": post[12],
-                    "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "post_status": post[13],
+                    "publish_date": post[9],
+                    "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "updated_date": post[10],
+                    "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "post_status": post[11],
                     "tags": taxonomies["tags"],
                     "categories": taxonomies["categories"],
                     "post_type_slug": post_type["slug"],
-                    "approved": post[16]
+                    "approved": post[12],
+                    "thumbnail": thumbnail,
+                    "thumbnail_alt": thumbnail_alt
                 })
 
         return posts
@@ -253,13 +266,14 @@ class PostsGenerator:
         posts = self.get_posts_for_post_types(post_types)
 
         for post_type in post_types:
-            tags = set()
-            categories = set()
+            tags = []
+            categories = []
             for post in posts[post_type["uuid"]]:
                 self.generate_post(post=post, post_type=post_type, multiple_posts=True)
-                tags.update([tag["uuid"] for tag in post["tags"]])
-                categories.update([category["uuid"] for category in post["categories"]])
-
+                tags.append(post["tags"])
+                categories.append(post["categories"])
+            tags = self.remove_taxonomy_duplicates(taxonomy_list=tags)
+            categories = self.remove_taxonomy_duplicates(taxonomy_list=categories)
             if post_type["tags_enabled"]:
                 self.generate_tags(post_type_slug=post_type["slug"], tags=tags, posts=posts[post_type["uuid"]])
 
@@ -276,6 +290,34 @@ class PostsGenerator:
 
         self.generate_home()
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
+    def remove_taxonomy_duplicates(self, *args, taxonomy_list, **kwargs):
+        taxonomies = {}
+        taxonomies_list = []
+        for taxo in taxonomy_list:
+            for tax in taxo:
+                taxonomies_list.append(tax)
+        for taxonomy in taxonomies_list:
+            if taxonomies.get(taxonomy["uuid"]) is None:
+                taxonomies[taxonomy["uuid"]] = 1
+            else:
+                taxonomies[taxonomy["uuid"]] += 1
+        to_delete = []
+        for taxonomy in taxonomies.keys():
+            while taxonomies[taxonomy] > 1:
+                i = 0
+                for t in taxonomies_list:
+                    if t["uuid"] == taxonomy:
+                        to_delete.append(i)
+                        taxonomies[taxonomy] -= 1
+                    i += 1
+        to_delete.sort()
+        for i in to_delete[::-1]:
+            if (len(taxonomies_list) < i):
+                print(i)
+            taxonomies_list.pop(i)
+        return taxonomies_list
+
 
     # Generate post
     def generate_post(self, *args, post, post_type, multiple_posts=False, **kwargs):
@@ -312,6 +354,11 @@ class PostsGenerator:
                 os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def regenerate_for_post(self, post_type, post):
+        # if tags_enabled, fetch list of posts for each tag
+        # if categories_enabled, fetch list of posts for each tag
+        # if archive_enabled, fetch all posts for post_type
+
+
         cur = self.connection.cursor()
         raw_items = []
         raw_tags = []
@@ -332,7 +379,7 @@ class PostsGenerator:
         posts = []
 
         for temp_post in raw_items:  # xgebi
-            taxonomies = self.get_taxonomy_for_post(post[0])
+            taxonomies = self.get_taxonomy_for_post(temp_post[0])
             posts.append({
                 "uuid": temp_post[0],
                 "slug": temp_post[1],
@@ -380,21 +427,11 @@ class PostsGenerator:
 
         tags_posts_list = {}
         for tag in tags:
-            tag_meta = ""
-            try:
-                cur = self.connection.cursor()
-                cur.execute(
-                    sql.SQL("""SELECT slug, display_name FROM sloth_taxonomy WHERE uuid = %s;"""),
-                    [tag]
-                )
-                tag_meta = cur.fetchone()
-            except Exception as e:
-                print(e)
-            tags_posts_list[tag] = []
+            tags_posts_list[tag["uuid"]] = []
 
             for post in posts:
-                if tag in post["tags"]:
-                    tags_posts_list[tag].append(post)
+                if tag["uuid"] in [temp_tag["uuid"] for temp_tag in post["tags"]]:
+                    tags_posts_list[tag["uuid"]].append(post)
 
             tag_template_path = Path(self.theme_path, "tag.html")
             if Path(self.theme_path, f"tag-{post_type_slug}.html").is_file():
@@ -411,26 +448,28 @@ class PostsGenerator:
             if not os.path.exists(post_path_dir):
                 os.makedirs(post_path_dir)
 
-            if not os.path.exists(os.path.join(post_path_dir, tag_meta[0])):
-                os.makedirs(os.path.join(post_path_dir, tag_meta[0]))
+            if not os.path.exists(os.path.join(post_path_dir, tag["slug"])):
+                os.makedirs(os.path.join(post_path_dir, tag["slug"]))
 
-            for i in range(math.ceil(len(tags_posts_list[tag]) / 10)):
-                if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag_meta[0], str(i))):
-                    os.makedirs(os.path.join(post_path_dir, tag_meta[0], str(i)))
+            for i in range(math.ceil(len(tags_posts_list[tag["uuid"]]) / 10)):
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag["slug"], str(i))):
+                    os.makedirs(os.path.join(post_path_dir, tag["slug"], str(i)))
 
-                with open(os.path.join(post_path_dir, tag_meta[0], str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                with open(os.path.join(post_path_dir, tag["slug"], str(i) if i != 0 else '', 'index.html'), 'w') as f:
                     lower = 10 * i
-                    upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag]) else len(
-                        tags_posts_list[tag])
+                    upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag["uuid"]]) else len(
+                        tags_posts_list[tag["uuid"]])
 
                     f.write(template.render(
-                        posts=tags_posts_list[tag][lower: upper],
-                        tag=tag,
+                        posts=tags_posts_list[tag["uuid"]][lower: upper],
+                        tag=tag["uuid"],
                         sitename=self.settings["sitename"]["settings_value"],
-                        page_name="Tag: " + tag_meta[1],
+                        page_name="Tag: " + tag["display_name"],
                         api_url=self.settings["api_url"]["settings_value"],
                         sloth_footer=self.sloth_footer,
-                        menus=self.menus
+                        menus=self.menus,
+                        current_page_number=i,
+                        not_last_page=True if math.ceil(len(tags_posts_list) / 10) != i else False
                     ))
 
     # Generate categories
@@ -440,21 +479,11 @@ class PostsGenerator:
 
         categories_posts_list = {}
         for category in categories:
-            category_meta = ""
-            try:
-                cur = self.connection.cursor()
-                cur.execute(
-                    sql.SQL("""SELECT slug, display_name FROM sloth_taxonomy WHERE uuid = %s;"""),
-                    [category]
-                )
-                category_meta = cur.fetchone()
-            except Exception as e:
-                print(e)
-            categories_posts_list[category] = []
+            categories_posts_list[category["uuid"]] = []
 
             for post in posts:
                 if category in post["categories"]:
-                    categories_posts_list[category].append(post)
+                    categories_posts_list[category["uuid"]].append(post)
 
             category_template_path = Path(self.theme_path, "category.html")
             if Path(self.theme_path, f"category-{post_type_slug}.html").is_file():
@@ -471,33 +500,35 @@ class PostsGenerator:
             if not os.path.exists(post_path_dir):
                 os.makedirs(post_path_dir)
 
-            if not os.path.exists(os.path.join(post_path_dir, category_meta[0])):
-                os.makedirs(os.path.join(post_path_dir, category_meta[0]))
+            if not os.path.exists(os.path.join(post_path_dir, category["slug"])):
+                os.makedirs(os.path.join(post_path_dir, category["slug"]))
 
-            for i in range(math.ceil(len(categories_posts_list[category]) / 10)):
-                if i > 0 and not os.path.exists(os.path.join(post_path_dir, category_meta[0], str(i))):
-                    os.makedirs(os.path.join(post_path_dir, category_meta[0], str(i)))
+            for i in range(math.ceil(len(categories_posts_list[category["uuid"]]) / 10)):
+                if i > 0 and not os.path.exists(os.path.join(post_path_dir, category["slug"], str(i))):
+                    os.makedirs(os.path.join(post_path_dir, category["slug"], str(i)))
 
-                with open(os.path.join(post_path_dir, category_meta[0], str(i) if i != 0 else '', 'index.html'),
+                with open(os.path.join(post_path_dir, category["slug"], str(i) if i != 0 else '', 'index.html'),
                           'w') as f:
                     lower = 10 * i
-                    upper = (10 * i) + 10 if (10 * i) + 10 < len(categories_posts_list[category]) else len(
-                        categories_posts_list[category])
+                    upper = (10 * i) + 10 if (10 * i) + 10 < len(categories_posts_list[category["uuid"]]) else len(
+                        categories_posts_list[category["uuid"]])
 
                     f.write(template.render(
-                        posts=categories_posts_list[category][lower: upper],
-                        tag=category,
+                        posts=categories_posts_list[category["uuid"]][lower: upper],
+                        tag=category["uuid"],
                         sitename=self.settings["sitename"]["settings_value"],
-                        page_name="Category: " + category_meta[1],
+                        page_name="Category: " + category["display_name"],
                         api_url=self.settings["api_url"]["settings_value"],
                         sloth_footer=self.sloth_footer,
-                        menus=self.menus
+                        menus=self.menus,
+                        current_page_number=i,
+                        not_last_page=True if math.ceil(len(categories_posts_list) / 10) != i else False
                     ))
 
     # Generate archive
     def generate_archive(self, posts, post_type):
         archive_template_path = Path(self.theme_path, "archive.html")
-        if Path(self.theme_path, f"category-{post_type['slug']}.html").is_file():
+        if Path(self.theme_path, f"archive-{post_type['slug']}.html").is_file():
             archive_template_path = Path(self.theme_path, f"archive-{post_type['slug']}.html")
 
         template = ""
@@ -824,7 +855,7 @@ class PostsGenerator:
 
                 [post_uuid]
             )
-            raw_tags = cur.fetchall()
+            raw_post_categories = cur.fetchall()
             cur.execute(
                 sql.SQL("""SELECT st.slug, st.display_name, st.uuid
                                             FROM sloth_post_taxonomies AS spt INNER JOIN sloth_taxonomy as st 
@@ -832,21 +863,21 @@ class PostsGenerator:
                                             WHERE spt.post = %s AND st.taxonomy_type = 'tag';"""),
                 [post_uuid]
             )
-            raw_post_categories = cur.fetchall()
+            raw_tags = cur.fetchall()
         except Exception as e:
             print(e)
         cur.close()
         return {
-            "categories": self.process_taxonomy(raw_post_categories),
-            "tags": self.process_taxonomy(raw_tags)
+            "categories": self.process_taxonomy(taxonomy_list=raw_post_categories),
+            "tags": self.process_taxonomy(taxonomy_list=raw_tags)
         }
 
     def process_taxonomy(self, *args, taxonomy_list, **kwargs):
         res_list = []
         for item in taxonomy_list:
             res_list.append({
-                "uuid": item[0],
-                "slug": item[2],
+                "uuid": item[2],
+                "slug": item[0],
                 "display_name": item[1]
             })
         return res_list

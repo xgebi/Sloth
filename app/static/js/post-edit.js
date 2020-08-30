@@ -57,7 +57,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	document.querySelector("#schedule-button")?.addEventListener('click', schedulePost);
 
 	document.querySelector("#title").addEventListener('blur', (event)=> {
-        document.querySelector("#slug").value = event.target?.value.trim().replace(/\s+/g, '-');
+        document.querySelector("#slug").value = event.target?.value
+			.trim()
+			.replace(/\s+/g, '-')
+			.replace(/[^a-zA-Z0-9\-]+/g,"");
     });
 
 	document.querySelector("#create-category")?.addEventListener('click', createCategory);

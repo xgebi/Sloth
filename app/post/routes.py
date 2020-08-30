@@ -178,7 +178,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "display_name": raw_post[12],
         "post_categories": taxonomies["categories"],
         "all_categories": all_categories,
-        "tags": taxonomies["tags"],
+        "tags": [tag["display_name"] for tag in taxonomies["tags"]],
         "post_type": raw_post[13],
         "imported": raw_post[14],
         "approved": raw_post[15]
@@ -530,7 +530,7 @@ def save_post(*args, connection=None, **kwargs):
                 filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
             publish_date = -1
-            if filled["post_status"] == 'published':
+            if filled["post_status"] == 'published' and filled["publish_date"] is None:
                 publish_date = str(time() * 1000)
             elif filled["post_status"] == 'scheduled':
                 publish_date = filled["publish_date"]  # TODO scheduling
@@ -539,7 +539,7 @@ def save_post(*args, connection=None, **kwargs):
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en')"""),
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en')"""),
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"]]
@@ -560,11 +560,10 @@ def save_post(*args, connection=None, **kwargs):
                  thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s WHERE uuid = %s;"""),
                 [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
                  filled["thumbnail"] if filled["thumbnail"] != "None" else None, filled["publish_date"],
-                 str(time() * 1000), filled["post_status"], matched_tags,
-                 filled["categories"], filled["approved"], filled["uuid"]]
+                 str(time() * 1000), filled["post_status"], filled["approved"], filled["uuid"]]
             )
             cur.execute(
-                sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s;"""),
+                sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
                 [filled["uuid"]]
             )
             for category in filled["categories"]:
