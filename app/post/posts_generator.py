@@ -366,7 +366,7 @@ class PostsGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                        sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.import_approved
+                        sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.import_approved, A.imported
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
                                     INNER JOIN sloth_media sm on sm.uuid = A.thumbnail
                                     WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
@@ -401,7 +401,8 @@ class PostsGenerator:
                 "tags": taxonomies["tags"],
                 "categories": taxonomies["categories"],
                 "post_type_slug": post_type["slug"],
-                "approved": temp_post[14]
+                "approved": temp_post[14],
+                "imported": temp_post[15]
             })
         cur.close()
 

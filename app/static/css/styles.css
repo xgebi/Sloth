@@ -2,6 +2,7 @@
 	--white: hsl(36, 26%, 98%);
 	--black: hsl(36, 100%, 6%);
 	--dark-grey: hsl(36, 0%, 20%);
+	--light-grey: hsl(36, 0%, 80%);
 	--red: hsl(360, 100%, 34%);
 	--orange: hsl(36, 100%, 48%);
 	--green: hsl(126, 69%, 50%);
@@ -163,6 +164,10 @@ select {
 
 .post-edit #thumbnail-wrapper img {
 	width: 16rem;
+}
+
+.post-list tbody tr:nth-child(even) {
+	background: var(--light-grey);
 }
 
 /* Sloth Editor */

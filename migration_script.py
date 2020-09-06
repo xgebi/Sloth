@@ -44,6 +44,6 @@ if os.path.isfile("migration.json"):
             execute_python_scripts(con, migration)
 
     con.close()
-    #os.remove("migration.json")
+    os.remove("migration.json")
 
 print("Migrations done")

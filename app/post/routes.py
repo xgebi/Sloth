@@ -48,8 +48,8 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
             FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-            WHERE A.post_status = %s AND A.post_type = %s ORDER BY  A.update_date DESC"""),
-            ['published', post_type]
+            WHERE A.post_type = %s ORDER BY  A.update_date DESC"""),
+            [post_type]
         )
         raw_items = cur.fetchall()
     except Exception as e:
@@ -64,8 +64,10 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         items.append({
             "uuid": item[0],
             "title": item[1],
-            "publish_date": datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d"),
-            "update_date": datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d"),
+            "publish_date":
+                datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d") if item[2] is not None else "",
+            "update_date":
+                datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d") if item[3] is not None else "",
             "status": item[4],
             "author": item[5]
         })
