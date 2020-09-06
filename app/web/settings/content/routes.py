@@ -1,20 +1,11 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
-import psycopg2
-from psycopg2 import sql
-
-import app
-import os
-from pathlib import Path
-import bcrypt
-import json
+from flask import render_template
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
-from app.post.posts_generator import PostsGenerator
 
 from app.post.post_types import PostTypes
 
-from app.web.settings.content import content
+from settings import content
 
 
 @content.route("/settings/import")

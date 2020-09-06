@@ -52,8 +52,8 @@ def create_app():  # dev, test, or prod
     from app.web.dashboard import dashboard as dash
     app.register_blueprint(dash)
 
-    from app.web.settings import settings as web_settings
-    app.register_blueprint(web_settings)
+    from app.settings import settings
+    app.register_blueprint(settings)
 
     from app.settings.themes import settings_themes
     app.register_blueprint(settings_themes)

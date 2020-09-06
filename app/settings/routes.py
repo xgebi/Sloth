@@ -1,5 +1,4 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
-import psycopg2
+from flask import request, abort, redirect, render_template
 from psycopg2 import sql
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
@@ -7,7 +6,7 @@ from app.authorization.authorize import authorize_web
 from app.post.post_types import PostTypes
 from app.post.posts_generator import PostsGenerator
 
-from app.web.settings import settings
+from app.settings import settings
 
 
 @settings.route("/settings")

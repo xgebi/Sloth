@@ -1,19 +1,12 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
-import psycopg2
+from flask import request, current_app, abort, redirect, render_template
 from psycopg2 import sql
-
-import app
-import os
-from pathlib import Path
-import bcrypt
-import json
 
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
 from app.post.post_types import PostTypes
 
-from app.web.settings.users import settings_users
+from settings import settings_users
 
 
 @settings_users.route("/settings/users")

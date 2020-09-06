@@ -158,7 +158,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "selected": selected
         })
 
-    publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000)
+    publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000) if raw_post[9] else None
 
     data = {
         "uuid": post_id,
@@ -173,8 +173,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "thumbnail_path": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
         "thumbnail_uuid": raw_post[8] if raw_post[8] is not None else "",
         "thumbnail_alt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
-        "publish_date": publish_datetime.strftime("%Y-%m-%d"),
-        "publish_time": publish_datetime.strftime("%H:%M"),
+        "publish_date": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
+        "publish_time": publish_datetime.strftime("%H:%M") if publish_datetime else None,
         "update_date": raw_post[10],
         "status": raw_post[11],
         "display_name": raw_post[12],
@@ -477,6 +477,7 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 def save_post(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)
+    result = {}
     filled = json.loads(request.data)
     filled["thumbnail"] = filled["thumbnail"] if len(filled["thumbnail"]) > 0 else None
     cur = connection.cursor()
@@ -556,6 +557,7 @@ def save_post(*args, connection=None, **kwargs):
                     sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
                     [str(uuid.uuid4()), filled["uuid"], tag]
                 )
+            result["uuid"] = filled["uuid"]
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
@@ -623,7 +625,8 @@ def save_post(*args, connection=None, **kwargs):
 
     cur.close()
 
-    return json.dumps({"saved": True})
+    result["saved"] = True
+    return json.dumps(result)
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])

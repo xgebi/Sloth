@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 	document.querySelector("#delete-button")?.addEventListener('click', deletePost);
 
-	document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
+	//document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
 });
 
 function openGalleryDialog(data, type) {
@@ -198,6 +198,10 @@ function collectValues() {
 }
 
 function savePost(values) {
+	const metadataButtons = document.querySelectorAll(".metadata button");
+	metadataButtons.forEach(button => {
+		button.setAttribute("disabled", "true");
+	});
 	fetch('/api/post', {
 		method: 'POST',
 		headers: {
@@ -214,8 +218,11 @@ function savePost(values) {
 			return response.json()
 		})
 		.then(data => {
-			console.log('Success:', data);
-			gallery.images = data.media;
+			if (window.location.pathname.endsWith("/new")) {
+				window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
+			} else {
+				metadataButtons.forEach(button => button.removeAttribute("disabled"));
+			}
 		})
 		.catch((error) => {
 			console.error('Error:', error);
