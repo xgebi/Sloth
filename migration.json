@@ -2,15 +2,6 @@
   {
     "type": "sql",
     "folder": "setup",
-    "file": "021_reworked_taxonomy.sql"
-  },
-  {
-    "type": "py",
-    "file": "taxonomy_transform"
-  },
-  {
-    "type": "sql",
-    "folder": "setup_data",
-    "file": "022_drop_taxonomy_from_posts.sql"
+    "file": "023_mock_endpoint_table.sql"
   }
 ]

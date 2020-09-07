@@ -94,4 +94,7 @@ def create_app():  # dev, test, or prod
     from app.web.media import media as media_web
     app.register_blueprint(media_web)
 
+    from app.mock_endpoints import mock_endpoints
+    app.register_blueprint(mock_endpoints)
+
     return app
