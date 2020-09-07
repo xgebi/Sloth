@@ -170,6 +170,16 @@ select {
 	background: var(--light-grey);
 }
 
+#settings-options {
+	display: grid;
+	grid-template-columns: minmax(16rem, 1fr) minmax(25rem, 1fr);
+	max-width: 50vw;
+}
+
+#settings-options section {
+	display: contents;
+}
+
 /* Sloth Editor */
 .sloth-editor {
 	width: 80ch;

@@ -73,7 +73,6 @@ def save_settings(*args, permission_level, connection, **kwargs):
             abort(500)
 
     cur.close()
-    connection.close()
 
     generator = PostsGenerator(connection=connection)
     if generator.run(posts=True):
