@@ -3,13 +3,29 @@
 {% block title %}Menus{% endblock %}
 
 {% block body %}
-<h1>Menus</h1>
-<section>
+    <h1>Menus</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>Menu</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for menu in menus %}
+            <tr>
+                <td>{{ menu["name"] }}</td>
+                <td><button class="edit-button" data-uuid="{{ menu['uuid'] }}">Edit</button></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <section>
 
-</section>
+    </section>
 
 {% endblock %}
 
 {% block scripts %}
-
+    <script src="/static/js/menu.js"></script>
 {% endblock %}
