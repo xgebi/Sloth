@@ -40,7 +40,7 @@ def create_app():  # dev, test, or prod
     from app.api.content_management import content_management
     app.register_blueprint(content_management)
 
-    from app.web.root import root
+    from app.root import root
     app.register_blueprint(root)
 
     from app.registration import registration
@@ -96,5 +96,8 @@ def create_app():  # dev, test, or prod
 
     from app.mock_endpoints import mock_endpoints
     app.register_blueprint(mock_endpoints)
+
+    from app.settings.language_settings import language_settings
+    app.register_blueprint(language_settings)
 
     return app

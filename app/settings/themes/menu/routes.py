@@ -19,11 +19,16 @@ def show_menus(*args, permission_level, connection, **kwargs):
 
     cur = connection.cursor()
     temp_result = []
+    temp_menu_types = []
     try:
         cur.execute(
             sql.SQL("""SELECT uuid, name FROM sloth_menus""")
         )
         temp_result = cur.fetchall()
+        cur.execute(
+            sql.SQL("SELECT unnest(enum_range(NULL::sloth_menu_item_types))")
+        )
+        temp_menu_types = cur.fetchall()
     except Exception as e:
         print(e)
         abort(500)
@@ -39,7 +44,8 @@ def show_menus(*args, permission_level, connection, **kwargs):
         "menu.html",
         permission_level=permission_level,
         post_types=post_types_result,
-        menus=result
+        menus=result,
+        item_types=[item for sublist in temp_menu_types for item in sublist]
     )
 
 

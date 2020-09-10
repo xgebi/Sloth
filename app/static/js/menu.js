@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 })
                 .then(data => {
                     console.log(data)
+                    setupMenuForEdit(data, editButtons.dataset["name"], editButtons.dataset["uuid"]);
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -28,3 +29,27 @@ document.addEventListener('DOMContentLoaded', (event) => {
         })
     })
 });
+
+function setupMenuForEdit(menuData, name, uuid) {
+    debugger;
+    if ('content' in document.createElement('template')) {
+        const menuWrapper = document.querySelector("#menu-wrapper");
+        const formTemplate = document.querySelector('#menu-form');
+        const itemTemplate = document.querySelector('#item-row');
+
+        const formClone = formTemplate.content.cloneNode(true);
+        const nameInput = formClone.querySelector("#name");
+        nameInput.setAttribute("data-uuid", uuid);
+        nameInput.setAttribute("data-old-name", name);
+        nameInput.value = name;
+
+        const tbody = formTemplate.querySelector("tbody");
+        for (const itemData of menuData) {
+            const item = itemTemplate.content.cloneNode(true);
+
+        }
+
+
+        menuWrapper.appendChild(formClone);
+    }
+}

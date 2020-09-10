@@ -15,14 +15,63 @@
         {% for menu in menus %}
             <tr>
                 <td>{{ menu["name"] }}</td>
-                <td><button class="edit-button" data-uuid="{{ menu['uuid'] }}">Edit</button></td>
+                <td>
+                    <button
+                            class="edit-button"
+                            data-uuid="{{ menu['uuid'] }}"
+                            data-name="{{ menu['name'] }}"
+                    >Edit</button>
+                </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
-    <section>
+    <article id="menu-wrapper">
 
-    </section>
+    </article>
+
+    <template id="menu-form">
+        <div id="name-wrapper">
+            <label for="name">Name:</label>
+            <input type="text" id="name"/>
+        </div>
+        <table>
+            <thead>
+            <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>URI</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+        <button>Save menu</button>
+    </template>
+
+    <template id="item-row">
+        <tr class="row">
+            <td class="item-name">
+                <input type="text" />
+            </td>
+            <td class="item-type">
+                <select>
+                    {% for type in types %}
+                    <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td class="item-uri">
+                <input type="text" />
+            </td>
+            <td class="item-actions">
+                <button class="up">⬆</button>
+                <button class="down">⬇</button>
+            </td>
+        </tr>
+    </template>
 
 {% endblock %}
 
