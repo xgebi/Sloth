@@ -10,7 +10,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     .split('=')[1]
             },
             body: JSON.stringify({regenerateAll: true})
-        }).then(response => response.json()).then(result => {
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+        }).then(result => {
             regenerateAllButton.setAttribute('disabled', 'disabled');
         }).catch(error => {
             console.error('Error:', error);
@@ -23,7 +28,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const fileField = document.querySelector('#file-upload');
 
         formData.append('image', fileField.files[0]);
-        debugger;
         fetch('/api/upload-theme', {
             method: 'POST',
             headers: {
@@ -33,7 +37,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     .split('=')[1]
             },
             body: formData
-        }).then(response => response.json()).then(result => {
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+        }).then(result => {
             console.log(result);
         }).catch(error => {
             console.error('Error:', error);

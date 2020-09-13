@@ -25,8 +25,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 		}
 	})
 		.then(response => {
-			console.log(response);
-			return response.json()
+			if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
 		})
 		.then(data => {
 			console.log('Success:', data);
@@ -214,8 +216,10 @@ function savePost(values) {
 		body: JSON.stringify(values)
 	})
 		.then(response => {
-			console.log(response);
-			return response.json()
+			if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
 		})
 		.then(data => {
 			if (window.location.pathname.endsWith("/new")) {
@@ -247,8 +251,10 @@ function createCategory() {
 		})
 	})
 		.then(response => {
-			console.log(response);
-			return response.json()
+			if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
 		})
 		.then(data => {
 			console.log('Success:', data);
@@ -286,8 +292,10 @@ function deletePost() {
 		})
 	})
 		.then(response => {
-			console.log(response);
-			return response.json()
+			if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
 		})
 		.then(data => {
 			console.log('Success:', data);

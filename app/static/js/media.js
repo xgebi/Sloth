@@ -100,7 +100,12 @@ function uploadFile() {
                 .split('=')[1]
         },
         body: formData
-    }).then(response => response.json()).then(result => {
+    }).then(response => {
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
+    }).then(result => {
         renderImages(result["media"]);
     }).catch(error => {
         console.error('Error:', error);
@@ -129,7 +134,12 @@ function deleteButton(event) {
                     .split('=')[1]
             },
             body: JSON.stringify({uuid: event.target.dataset["uuid"]})
-        }).then(response => response.json()).then(result => {
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+        }).then(result => {
             renderImages(result["media"]);
         }).catch(error => {
             console.error('Error:', error);

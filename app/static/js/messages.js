@@ -1,5 +1,4 @@
 document.querySelector("#delete-message").addEventListener('click', (event) => {
-    debugger;
 	fetch('/api/messages/delete', {
 		method: 'DELETE',
 		headers: {
@@ -12,7 +11,10 @@ document.querySelector("#delete-message").addEventListener('click', (event) => {
         body: JSON.stringify({message_uuid: window.location.pathname.substring(window.location.pathname.lastIndexOf("/") + 1)})
 	})
 		.then(response => {
-			window.location.replace(window.location.href.substring(0, window.location.href.lastIndexOf("/")));
+			if (response.ok) {
+                window.location.replace(window.location.href.substring(0, window.location.href.lastIndexOf("/")));
+            }
+            throw `${response.status}: ${response.statusText}`
 		})
 		.catch((error) => {
 			console.error('Error:', error);

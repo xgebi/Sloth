@@ -24,8 +24,10 @@ function uploadFile() {
         },
         body: formData
     }).then(response => {
-        console.log(response);
-        return response.json()
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
     }).then(data => {
         console.log('Success:', data);
         document.querySelector("#rewrite-rules").innerHTML = data.rules.join("<br />");
@@ -43,7 +45,6 @@ function uploadMedia() {
     const files = document.querySelector("#wordpress-uploads");
     const reader = new FileReader();
     reader.onload = function (evt) {
-        debugger;
         document.querySelector("#wordpress-uploads-button").setAttribute("disabled", "disabled");
         fetch('/api/content/import/wordpress-media', {
             method: 'POST',
@@ -56,8 +57,10 @@ function uploadMedia() {
             },
             body: evt.target.result
         }).then(response => {
-            console.log(response);
-            return response.json()
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
         }).then(data => {
             console.log('Success:', data);
         }).catch((error) => {

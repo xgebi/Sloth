@@ -30,4 +30,4 @@ def delete_message(*args, connection, **kwargs):
         print(e)
         abort(500)
 
-    return json.dumps({"message": "deleted"})
+    return json.dumps({"message": "deleted"}), 204

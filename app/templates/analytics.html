@@ -8,12 +8,6 @@
 			body: JSON.stringify({ page: window.location.pathname })
 		}).then(response => {
 			return response.json()
-		})
-			.then(data => {
-				console.log('Success:', data);
-			})
-			.catch((error) => {
-				console.error('Error:', error);
-			});
+		});
 	});
 </script>

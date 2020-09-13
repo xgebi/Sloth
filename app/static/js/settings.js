@@ -17,8 +17,10 @@ function deleteDbContent() {
                 .split('=')[1],
         }
     }).then(response => {
-        console.log(response);
-        return response.json()
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
     }).then(data => {
         console.log('Success:', data);
     }).catch((error) => {
@@ -36,8 +38,10 @@ function deleteGenerationLock() {
                 .split('=')[1],
         }
     }).then(response => {
-        console.log(response);
-        return response.json()
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
     }).then(data => {
         console.log('Success:', data);
     }).catch((error) => {
