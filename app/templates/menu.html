@@ -35,7 +35,7 @@
             <label for="name">Name:</label>
             <input type="text" id="name"/>
         </div>
-        <table>
+        <table id="menu-items">
             <thead>
             <tr>
                 <th>Title</th>
@@ -58,7 +58,7 @@
             </td>
             <td class="item-type">
                 <select>
-                    {% for type in types %}
+                    {% for type in item_types %}
                     <option value="{{ type }}">{{ type }}</option>
                     {% endfor %}
                 </select>
