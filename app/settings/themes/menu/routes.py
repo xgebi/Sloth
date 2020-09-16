@@ -1,4 +1,4 @@
-from flask import flash, render_template, abort, make_response
+from flask import flash, render_template, abort, make_response, request
 import json
 from psycopg2 import sql
 from app.authorization.authorize import authorize_web, authorize_rest
@@ -57,7 +57,7 @@ def get_menu(*args, connection, menu, **kwargs):
     temp_result = []
     try:
         cur.execute(
-            sql.SQL("""SELECT uuid, title, type, url FROM sloth_menu_items WHERE menu = %s;"""),
+            sql.SQL("""SELECT uuid, title, type, url, position FROM sloth_menu_items WHERE menu = %s;"""),
             [menu]
         )
         temp_result = cur.fetchall()
@@ -71,7 +71,8 @@ def get_menu(*args, connection, menu, **kwargs):
             "uuid": item[0],
             "title": item[1],
             "type": item[2],
-            "url": item[3]
+            "url": item[3],
+            "position": item[4]
         })
 
     response = make_response(json.dumps(result))
