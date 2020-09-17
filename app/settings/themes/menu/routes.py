@@ -1,6 +1,7 @@
 from flask import flash, render_template, abort, make_response, request
 import json
 from psycopg2 import sql
+import uuid
 from app.authorization.authorize import authorize_web, authorize_rest
 import datetime
 
@@ -82,13 +83,56 @@ def get_menu(*args, connection, menu, **kwargs):
 
 
 @menu.route("/settings/themes/menu/save", methods=["POST", "PUT"])
-@authorize_web(0)
+@authorize_rest(0)
 @db_connection
-def save_menu(*args, permission_level, connection, **kwargs):
+def save_menu(*args, connection, **kwargs):
     if connection is None:
         abort(500)
 
-    return json.dumps({})
+    filled = json.loads(request.data)
+
+    cur = connection.cursor()
+    result = []
+    try:
+        if filled["uuid"].startswith("new-"):
+            cur.execute(
+                sql.SQL("""INSERT INTO sloth_menus VALUES (%s, %s)
+                            RETURNING name, uuid;"""),
+                [str(uuid.uuid4()), filled["name"]]
+            )
+        else:
+            cur.execute(
+                sql.SQL("""UPDATE sloth_menus SET name = %s WHERE uuid = %s
+                RETURNING name, uuid;"""),
+                [filled["name"], filled["uuid"]]
+            )
+        connection.commit()
+        temp_result = cur.fetchone()
+        result = {
+            "name": temp_result[0],
+            "uuid": temp_result[1]
+        }
+        for item in filled["items"]:
+            if item["uuid"].startswith("new-"):
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_menu_items VALUES (%s, %s, %s, %s, %s, %s);"""),
+                    [str(uuid.uuid4()), result["uuid"], item["title"], item["type"], item["uri"], item["position"]]
+                )
+            else:
+                cur.execute(
+                    sql.SQL("""UPDATE sloth_menu_items SET title = %s, type = %s, url = %s, position = %s 
+                    WHERE uuid = %s;"""),
+                    [item["title"], item["type"], item["uri"], item["position"], item["uuid"]]
+                )
+        connection.commit()
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    cur.close()
+    connection.close()
+
+    return json.dumps(result)
 
 
 @menu.route("/settings/themes/menu/delete", methods=["DELETE"])

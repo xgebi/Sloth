@@ -1,8 +1,8 @@
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     const editButtons = document.querySelectorAll(".edit-button");
     editButtons.forEach(button => {
         button.addEventListener('click', (event) => {
-            fetch(`/settings/themes/menu/${event.target.dataset["uuid"]}`, {
+            fetch(`/settings/themes/menu/${event?.target?.dataset["uuid"]}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,11 +43,11 @@ function setupMenuForEdit(menuData, name, uuid) {
         const formClone = formTemplate.content.cloneNode(true);
         const nameInput = formClone.querySelector("#name");
         nameInput.setAttribute("data-uuid", uuid);
-        nameInput.setAttribute("data-old-name", name);
         nameInput.value = name;
 
-        const saveButton = formClone.querySelector("#save-menu");
-        saveButton.addEventListener('click', saveMenu);
+        formClone.querySelector("#save-menu").addEventListener('click', saveMenu);
+        formClone.querySelector("#add-item").addEventListener('click', addNewItem)
+        formClone.querySelector("#delete-menu").addEventListener('click', addNewItem)
 
         const tbody = formClone.querySelector("tbody");
         menuData.sort((a, b) => {
@@ -57,7 +57,7 @@ function setupMenuForEdit(menuData, name, uuid) {
             const item = itemTemplate.content.cloneNode(true);
             item.querySelector(".row").setAttribute("data-uuid", itemData.uuid);
             item.querySelector(".item-name input").value = itemData.title;
-            item.querySelector(".item-uri input").value = itemData.title;
+            item.querySelector(".item-uri input").value = itemData.url;
             item.querySelectorAll(".item-type > select option").forEach(option => {
                 option.removeAttribute("selected");
                 if (option.value === itemData.type) {
@@ -122,7 +122,8 @@ function saveMenu() {
             position: i
 
         });
-    };
+    }
+
     fetch("/settings/themes/menu/save",{
         method: 'POST',
         headers: {
@@ -139,8 +140,32 @@ function saveMenu() {
         }
         throw `${response.status} ${response.statusText}`;
     }).then(data => {
-
+        debugger;
+        document.querySelector(`#${data["uuid"]} .menu-name`).textContent = data["name"];
+        const menuWrapper = document.querySelector("#menu-wrapper")
+        while (menuWrapper.firstChild) {
+            menuWrapper.removeChild(menuWrapper.lastChild);
+        }
     }).catch(err => {
         console.log(err)
     });
+}
+
+function addNewItem() {
+    debugger;
+    const menuItemsTbody = document.querySelector("#menu-items tbody");
+    const itemTemplate = document.querySelector('#item-row');
+    const item = itemTemplate.content.cloneNode(true);
+    let newItemsCount = 0;
+    for (let i = 0; i < menuItemsTbody.children.length; i++) {
+        if (menuItemsTbody.children[i].dataset["uuid"].startsWith("new-")) {
+            newItemsCount++;
+        }
+    }
+    item.querySelector(".row").setAttribute("data-uuid", `new-${newItemsCount+1}`);
+    menuItemsTbody.appendChild(item);
+}
+
+function deleteMenu() {
+
 }

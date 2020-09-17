@@ -4,7 +4,7 @@
 
 {% block body %}
     <h1>Menus</h1>
-    <table>
+    <table id="menu-table">
         <thead>
         <tr>
             <th>Menu</th>
@@ -13,14 +13,15 @@
         </thead>
         <tbody>
         {% for menu in menus %}
-            <tr>
-                <td>{{ menu["name"] }}</td>
+            <tr id="{{ menu['uuid'] }}">
+                <td class="menu-name">{{ menu["name"] }}</td>
                 <td>
                     <button
                             class="edit-button"
                             data-uuid="{{ menu['uuid'] }}"
                             data-name="{{ menu['name'] }}"
-                    >Edit</button>
+                    >Edit
+                    </button>
                 </td>
             </tr>
         {% endfor %}
@@ -48,23 +49,27 @@
 
             </tbody>
         </table>
+        <button id="add-item">Add new item</button>
+        <br/>
         <button id="save-menu">Save menu</button>
+        <br/>
+        <button id="delete-menu">Delete menu</button>
     </template>
 
     <template id="item-row">
         <tr class="row">
             <td class="item-name">
-                <input type="text" />
+                <input type="text"/>
             </td>
             <td class="item-type">
                 <select>
                     {% for type in item_types %}
-                    <option value="{{ type }}">{{ type }}</option>
+                        <option value="{{ type }}">{{ type }}</option>
                     {% endfor %}
                 </select>
             </td>
             <td class="item-uri">
-                <input type="text" />
+                <input type="text"/>
             </td>
             <td class="item-actions">
                 <button class="up">⬆</button>
