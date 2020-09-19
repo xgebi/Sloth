@@ -136,8 +136,30 @@ def save_menu(*args, connection, **kwargs):
 
 
 @menu.route("/settings/themes/menu/delete", methods=["DELETE"])
-@authorize_web(0)
+@authorize_rest(0)
 @db_connection
-def delete_menu(*args, permission_level, connection, **kwargs):
+def delete_menu(*args, connection, **kwargs):
+    filled = json.loads(request.data)
+    if not filled["menu"] or len(filled["menu"]) == 0:
+        return json.dumps({"error": "Nothing to delete", }), 400
+    if connection is None:
+        return json.dumps({"error": "Connection to database doesn't exist"})
 
-    return json.dumps({})
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_menu_items WHERE menu = %s"""),
+            [filled["menu"]]
+        )
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_menus WHERE uuid = %s"""),
+            [filled["menu"]]
+        )
+        connection.commit()
+    except Exception as e:
+        print(e)
+        abort(500)
+    cur.close()
+    connection.close()
+
+    return json.dumps({"menuDeleted": filled["menu"]}), 204

@@ -4,23 +4,23 @@
 
 {% block body %}
     <h1>Menus</h1>
-    <button id="create-new-menu">Create new menu</button>
-    <table id="menu-table">
+    <button id="create-new-language">Create new language</button>
+    <table id="language-table">
         <thead>
         <tr>
-            <th>Menu</th>
+            <th>Language</th>
             <th>Action</th>
         </tr>
         </thead>
         <tbody>
-        {% for menu in menus %}
-            <tr id="menu-{{ menu['uuid'] }}">
-                <td class="menu-name">{{ menu["name"] }}</td>
+        {% for language in languages %}
+            <tr id="language-{{ language['uuid'] }}">
+                <td class="language-name">{{ language["name"] }}</td>
                 <td>
                     <button
                             class="edit-button"
-                            data-uuid="{{ menu['uuid'] }}"
-                            data-name="{{ menu['name'] }}"
+                            data-uuid="{{ language['uuid'] }}"
+                            data-name="{{ language['name'] }}"
                     >Edit
                     </button>
                 </td>
@@ -28,16 +28,16 @@
         {% endfor %}
         </tbody>
     </table>
-    <article id="menu-wrapper">
+    <article id="language-wrapper">
 
     </article>
 
-    <template id="menu-form">
+    <template id="language-form">
         <div id="name-wrapper">
             <label for="name">Name:</label>
             <input type="text" id="name"/>
         </div>
-        <table id="menu-items">
+        <table id="language-items">
             <thead>
             <tr>
                 <th>Title</th>
@@ -50,11 +50,9 @@
 
             </tbody>
         </table>
-        <button id="add-item">Add new item</button>
+        <button id="save-language">Save language</button>
         <br/>
-        <button id="save-menu">Save menu</button>
-        <br/>
-        <button id="delete-menu">Delete menu</button>
+        <button id="delete-language">Delete language</button>
     </template>
 
     <template id="item-row">
@@ -82,5 +80,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/js/menu.js"></script>
+    <script src="/static/js/language.js"></script>
 {% endblock %}

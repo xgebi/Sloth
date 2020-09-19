@@ -1,34 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
     const editButtons = document.querySelectorAll(".edit-button");
     editButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
-            fetch(`/settings/themes/menu/${event?.target?.dataset["uuid"]}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'authorization': document.cookie
-                        .split(';')
-                        .find(row => row.trim().startsWith('sloth_session'))
-                        .split('=')[1]
-                }
-            })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json()
-                    } else {
-                        throw "Server error" // may be?
-                    }
-                })
-                .then(data => {
-                    console.log(data)
-                    setupMenuForEdit(data, button.dataset["name"], button.dataset["uuid"]);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-        })
-    })
+        button.addEventListener('click', editMenu)
+    });
+    document.querySelector("#create-new-menu").addEventListener('click', setupNewMenu);
 });
+
+function editMenu(event) {
+    const button = event.target;
+    fetch(`/settings/themes/menu/${event?.target?.dataset["uuid"]}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1]
+        }
+    })
+        .then(response => {
+            if (response.ok) {
+                return response.json()
+            } else {
+                throw "Server error" // may be?
+            }
+        })
+        .then(data => {
+            console.log(data)
+            setupMenuForEdit(data, button.dataset["name"], button.dataset["uuid"]);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+}
 
 function setupMenuForEdit(menuData, name, uuid) {
     const menuWrapper = document.querySelector("#menu-wrapper");
@@ -47,7 +51,7 @@ function setupMenuForEdit(menuData, name, uuid) {
 
         formClone.querySelector("#save-menu").addEventListener('click', saveMenu);
         formClone.querySelector("#add-item").addEventListener('click', addNewItem)
-        formClone.querySelector("#delete-menu").addEventListener('click', addNewItem)
+        formClone.querySelector("#delete-menu").addEventListener('click', deleteMenu)
 
         const tbody = formClone.querySelector("tbody");
         menuData.sort((a, b) => {
@@ -74,6 +78,34 @@ function setupMenuForEdit(menuData, name, uuid) {
             tbody.appendChild(item);
         }
 
+
+        menuWrapper.appendChild(formClone);
+    }
+}
+
+function setupNewMenu(menuData, name, uuid) {
+    const menuWrapper = document.querySelector("#menu-wrapper");
+    while (menuWrapper.firstChild) {
+        menuWrapper.removeChild(menuWrapper.lastChild);
+    }
+
+    if ('content' in document.createElement('template')) {
+        const formTemplate = document.querySelector('#menu-form');
+
+        const formClone = formTemplate.content.cloneNode(true);
+        const nameInput = formClone.querySelector("#name");
+        let newMenuIndex = 0;
+        for (let i = 0; i < document.querySelector("#menu-table tbody").children.length; i++) {
+            if (document.querySelector("#menu-table tbody").children[i].getAttribute("id").startsWith("new-")) {
+                newMenuIndex++;
+            }
+        }
+        debugger;
+        nameInput.setAttribute("data-uuid", `new-${newMenuIndex + 1}`);
+
+        formClone.querySelector("#save-menu").addEventListener('click', saveMenu);
+        formClone.querySelector("#add-item").addEventListener('click', addNewItem)
+        formClone.querySelector("#delete-menu").addEventListener('click', deleteMenu)
 
         menuWrapper.appendChild(formClone);
     }
@@ -124,7 +156,7 @@ function saveMenu() {
         });
     }
 
-    fetch("/settings/themes/menu/save",{
+    fetch("/settings/themes/menu/save", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -141,8 +173,27 @@ function saveMenu() {
         throw `${response.status} ${response.statusText}`;
     }).then(data => {
         debugger;
-        document.querySelector(`#${data["uuid"]} .menu-name`).textContent = data["name"];
-        const menuWrapper = document.querySelector("#menu-wrapper")
+        if (document.querySelector(`#menu-${data["uuid"]}`)) {
+            document.querySelector(`#menu-${data["uuid"]} .menu-name`).textContent = data["name"];
+        } else {
+            const row = document.createElement('tr');
+            row.setAttribute("id", `#menu-${data["uuid"]}`);
+            const nameColumn = document.createElement('td');
+            nameColumn.setAttribute("class", "menu-name");
+            nameColumn.textContent = data["name"];
+            row.appendChild(nameColumn);
+            const actionColumn = document.createElement('td');
+            const editButton = document.createElement('button');
+            editButton.setAttribute('class', 'edit-button');
+            editButton.setAttribute('data-uuid', data["uuid"]);
+            editButton.setAttribute('data-name', data["name"]);
+            editButton.addEventListener('click', editMenu);
+            editButton.textContent = "Edit";
+            actionColumn.appendChild(editButton);
+            row.appendChild(actionColumn);
+            document.querySelector("#menu-table tbody").appendChild(row);
+        }
+        const menuWrapper = document.querySelector("#menu-wrapper");
         while (menuWrapper.firstChild) {
             menuWrapper.removeChild(menuWrapper.lastChild);
         }
@@ -162,10 +213,51 @@ function addNewItem() {
             newItemsCount++;
         }
     }
-    item.querySelector(".row").setAttribute("data-uuid", `new-${newItemsCount+1}`);
+    item.querySelector(".row").setAttribute("data-uuid", `new-${newItemsCount + 1}`);
     menuItemsTbody.appendChild(item);
 }
 
 function deleteMenu() {
-
+    const uuid = document.querySelector("#name").dataset["uuid"];
+    if (uuid.startsWith("new-")) {
+        const menuWrapper = document.querySelector("#menu-wrapper");
+        while (menuWrapper.firstChild) {
+            menuWrapper.removeChild(menuWrapper.lastChild);
+        }
+    } else {
+        fetch(`/settings/themes/menu/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1]
+        },
+        body: JSON.stringify({
+            menu: uuid
+        })
+    })
+        .then(response => {
+            debugger;
+            if (response.ok) {
+                const rows = document.querySelector("#menu-table tbody").children;
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].getAttribute("id") === `menu-${uuid}`) {
+                        document.querySelector("#menu-table tbody").removeChild(rows[i]);
+                        break;
+                    }
+                }
+                const menuWrapper = document.querySelector("#menu-wrapper");
+                while (menuWrapper.firstChild) {
+                    menuWrapper.removeChild(menuWrapper.lastChild);
+                }
+            } else {
+                throw "Server error" // may be?
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 }

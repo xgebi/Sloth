@@ -15,6 +15,7 @@ pytz = "*"
 authlib = "*"
 psycopg2 = "*"
 requests = "*"
+jasmine = "*"
 
 [requires]
 python_version = "3.8"
