@@ -51,6 +51,13 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(text.count("id='footnote-link-"), 2)
         self.assertEqual(text.count("href='#footnote-"), 4)
 
+    def test_paragraph_with_code(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_code.md"))
+        text = mdp.to_html_string()
+
+        self.assertIn("<pre><code class='language-javascript'>const i = 1</pre></code>", text)
+        self.assertIn("<pre><code class='language-javascript'>const i = 2</pre></code>", text)
+
 
 if __name__ == '__main__':
     unittest.main()

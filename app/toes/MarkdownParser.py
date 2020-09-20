@@ -7,11 +7,12 @@ class MarkdownParser:
             self.text = text_file.read()
 
     def to_html_string(self) -> str:
-        result = self.parse_paragraphs(self.text)
+        result = self.parse_code_block(self.text)
         result = self.parse_headlines(result)
         result = self.parse_image(result)
         result = self.parse_link(result)
         result = self.parse_footnotes(result)
+        result = self.parse_paragraphs(result)
 
         return result
 
@@ -46,7 +47,8 @@ class MarkdownParser:
     def parse_list(self, text: str) -> str:
         lines = text.split("\n")
         result = []
-        paragraph_start_pattern = re.compile('(\d+\. )|(* )')
+        numeric_list_pattern = re.compile('(\d+\. )')
+        points_list_pattern = re.compile('(- )')
         for line in lines:
             if len(line) > 0 and paragraph_start_pattern.match(line):
                 line = f"<p>{line}</p>"
@@ -55,10 +57,9 @@ class MarkdownParser:
         return "\n".join(result)
 
     def parse_code_block(self, text: str) -> str:
-        pass
+        return re.sub(r"```([a-zA-Z]+)\s(.*)\s```", "<pre><code class='language-\g<1>'>\g<2></pre></code>", text)
 
     def parse_footnotes(self, text: str) -> str:
-        # \[\d+\. .+?\]
         footnote_pattern = r"\[\d+\. .+?\]"
         re_fp = re.compile(footnote_pattern)
         footnotes = re_fp.findall(text)
@@ -68,7 +69,7 @@ class MarkdownParser:
             text = text.replace(note, f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>")
 
             list += f"<li id='footnote-{index}'>{note[note.find('. ') + 2:len(note)-1]}"
-            list += f"<a href='#footnote-link-{index}'>🔼</a></li>"
+            list += f"<a href='#footnote-link-{index}'>🔼{index}</a></li>"
 
         list += "</ul>"
         if len(footnotes) > 0:
@@ -80,4 +81,3 @@ class MarkdownParser:
 
     def parse_image(self, text: str) -> str:
         return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
-        # [!]\[(.*)]\((.*)\)
