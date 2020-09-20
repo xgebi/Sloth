@@ -9,6 +9,9 @@ class MarkdownParser:
     def to_html_string(self) -> str:
         result = self.parse_paragraphs(self.text)
         result = self.parse_headlines(result)
+        result = self.parse_image(result)
+        result = self.parse_link(result)
+        result = self.parse_footnotes(result)
 
         return result
 
@@ -16,9 +19,14 @@ class MarkdownParser:
         lines = text.split("\n")
         result = []
         paragraph_start_pattern = re.compile('(\d+)? ?[a-zA-z]+')
-        for line in lines:
+        for i, line in enumerate(lines):
             if len(line) > 0 and paragraph_start_pattern.match(line):
-                line = f"<p>{line}</p>"
+                if i != 0 and result[-1].endswith("</p>") and not \
+                        (result[-1].endswith("</pre>") or result[-1].endswith("</ol>") or result[-1].endswith("</ul>")):
+                    result[-1] = f"{result[-1][:result[-1].index('</p>')]} {line}</p>"
+                    continue
+                else:
+                    line = f"<p>{line}</p>"
             result.append(line)
 
         return "\n".join(result)
@@ -31,21 +39,45 @@ class MarkdownParser:
             match = headline_pattern.match(line)
             if len(line) > 0 and match:
                 level = line[:match.end()].count("#")
-                line = f"<h{level}>{line}</h{level}>"
+                line = f"<h{level}>{line[level + 1:]}</h{level}>"
             result.append(line)
         return "\n".join(result)
 
     def parse_list(self, text: str) -> str:
-        pass
+        lines = text.split("\n")
+        result = []
+        paragraph_start_pattern = re.compile('(\d+\. )|(* )')
+        for line in lines:
+            if len(line) > 0 and paragraph_start_pattern.match(line):
+                line = f"<p>{line}</p>"
+            result.append(line)
 
-    def parse_code(self, text: str) -> str:
+        return "\n".join(result)
+
+    def parse_code_block(self, text: str) -> str:
         pass
 
     def parse_footnotes(self, text: str) -> str:
-        pass
+        # \[\d+\. .+?\]
+        footnote_pattern = r"\[\d+\. .+?\]"
+        re_fp = re.compile(footnote_pattern)
+        footnotes = re_fp.findall(text)
+        list = "<ul>"
+        for note in footnotes:
+            index = note[1:note.find(".")]
+            text = text.replace(note, f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>")
+
+            list += f"<li id='footnote-{index}'>{note[note.find('. ') + 2:len(note)-1]}"
+            list += f"<a href='#footnote-link-{index}'>🔼</a></li>"
+
+        list += "</ul>"
+        if len(footnotes) > 0:
+            return " ".join([text, list])
+        return text
 
     def parse_link(self, text: str) -> str:
-        pass
+        return re.sub(r"([^!]|^)\[(.*)]\((.*)\)", "\g<1><a href='\g<3>'>\g<2></a>", text)
 
     def parse_image(self, text: str) -> str:
-        pass
+        return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
+        # [!]\[(.*)]\((.*)\)

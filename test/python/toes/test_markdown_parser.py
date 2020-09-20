@@ -37,6 +37,20 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(headlines.count("<h6>"), 1)
         self.assertEqual(headlines.count("</h6>"), 1)
 
+    def test_paragraph_with_image_link_headlines(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_image_link_headlines.md"))
+        text = mdp.to_html_string()
+
+        self.assertEqual(text.count("<img "), 1)
+        self.assertEqual(text.count("<a href"), 2)
+
+    def test_paragraph_with_footnote(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_footnotes.md"))
+        text = mdp.to_html_string()
+
+        self.assertEqual(text.count("id='footnote-link-"), 2)
+        self.assertEqual(text.count("href='#footnote-"), 4)
+
 
 if __name__ == '__main__':
     unittest.main()
