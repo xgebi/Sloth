@@ -28,7 +28,8 @@ def show_settings(*args, permission_level, connection, **kwargs):
     raw_items = []
     try:
         cur.execute(
-            "SELECT settings_name, display_name, settings_value, settings_value_type FROM sloth_settings WHERE settings_type = 'sloth'"
+            """SELECT settings_name, display_name, settings_value, settings_value_type FROM sloth_settings 
+            WHERE settings_type = 'sloth'"""
         )
         raw_items = cur.fetchall()
     except Exception as e:

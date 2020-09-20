@@ -1,27 +1,36 @@
 {% extends 'layout.html' %}
 
-{% block title %}Menus{% endblock %}
+{% block title %}Languages{% endblock %}
 
 {% block body %}
-    <h1>Menus</h1>
+    <h1>Languages</h1>
     <button id="create-new-language">Create new language</button>
     <table id="language-table">
         <thead>
         <tr>
-            <th>Language</th>
-            <th>Action</th>
+            <th>Long name</th>
+            <th>Short name</th>
+            <th>Edit</th>
+            <th>Delete</th>
         </tr>
         </thead>
         <tbody>
         {% for language in languages %}
             <tr id="language-{{ language['uuid'] }}">
-                <td class="language-name">{{ language["name"] }}</td>
+                <td class="language-long-name">{{ language["long_name"] }}</td>
+                <td class="language-short-name">{{ language["short_name"] }}</td>
                 <td>
                     <button
-                            class="edit-button"
+                            class="action-button"
+                            data-action="edit"
                             data-uuid="{{ language['uuid'] }}"
-                            data-name="{{ language['name'] }}"
                     >Edit
+                    </button>
+                </td>
+                <td>
+                    <button
+                            class="delete-button"
+                    >Delete
                     </button>
                 </td>
             </tr>
@@ -31,51 +40,6 @@
     <article id="language-wrapper">
 
     </article>
-
-    <template id="language-form">
-        <div id="name-wrapper">
-            <label for="name">Name:</label>
-            <input type="text" id="name"/>
-        </div>
-        <table id="language-items">
-            <thead>
-            <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>URI</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-
-            </tbody>
-        </table>
-        <button id="save-language">Save language</button>
-        <br/>
-        <button id="delete-language">Delete language</button>
-    </template>
-
-    <template id="item-row">
-        <tr class="row">
-            <td class="item-name">
-                <input type="text"/>
-            </td>
-            <td class="item-type">
-                <select>
-                    {% for type in item_types %}
-                        <option value="{{ type }}">{{ type }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td class="item-uri">
-                <input type="text"/>
-            </td>
-            <td class="item-actions">
-                <button class="up">⬆</button>
-                <button class="down">⬇</button>
-            </td>
-        </tr>
-    </template>
 
 {% endblock %}
 
