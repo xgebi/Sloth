@@ -1,2 +1,0 @@
-class Pocket:
-    pass

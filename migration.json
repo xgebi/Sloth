@@ -1,7 +1,0 @@
-[
-  {
-    "type": "sql",
-    "folder": "setup",
-    "file": "023_mock_endpoint_table.sql"
-  }
-]
