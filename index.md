@@ -1,0 +1,3 @@
+# SlothCMS
+
+Hey there human!
