@@ -14,6 +14,8 @@ class MarkdownParser:
         result = self.parse_link(result)
         result = self.parse_footnotes(result)
         result = self.parse_paragraphs(result)
+        result = self.parse_italic_bold(result)
+        result = self.parse_escaped_characters(result)
 
         return result
 
@@ -132,9 +134,8 @@ class MarkdownParser:
     def parse_image(self, text: str) -> str:
         return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
 
+    def parse_italic_bold(self, text: str) -> str:
+        return text
 
-if __name__ == '__main__':
-    import os
-    bl = MarkdownParser(path=os.path.join(os.getcwd(), "..", "..", "test", "python", "toes", "resources", "nested_mixed_list.md"))
-    text = bl.to_html_string()
-    print(text)
+    def parse_escaped_characters(self, text: str) -> str:
+        return text
