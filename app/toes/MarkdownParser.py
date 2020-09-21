@@ -8,6 +8,7 @@ class MarkdownParser:
 
     def to_html_string(self) -> str:
         result = self.parse_code_block(self.text)
+        result = self.parse_list(result)
         result = self.parse_headlines(result)
         result = self.parse_image(result)
         result = self.parse_link(result)
@@ -44,15 +45,64 @@ class MarkdownParser:
             result.append(line)
         return "\n".join(result)
 
+    # TODO refactor this when recoding to Rust
     def parse_list(self, text: str) -> str:
         lines = text.split("\n")
         result = []
-        numeric_list_pattern = re.compile('(\d+\. )')
-        points_list_pattern = re.compile('(- )')
-        for line in lines:
-            if len(line) > 0 and paragraph_start_pattern.match(line):
-                line = f"<p>{line}</p>"
+        numeric_list_pattern = re.compile('^(\d+\. )')
+        points_list_pattern = re.compile('^(\- )')
+        line_pattern = re.compile("(^( )+)?(\d\.|\-)")
+        current_level = -1
+        lists = []
+        for i, line in enumerate(lines):
+            if len(line) > 0 and numeric_list_pattern.match(line.strip()):
+                if current_level == -1:
+                    line = f"<ol>\n<li>{line[line.index('. ')+2:]}"
+                    current_level += 1
+                    lists.append("ol")
+                elif current_level > -1:
+                    if current_level == (len(line[:line.index(line[:line_pattern.match(line).end()-1].strip())]) // 4):
+                        line = f"</li>\n<li>{line[line.index('. ')+2:]}"
+                    elif current_level < (len(line[:line.index(line[:line_pattern.match(line).end()-1].strip())]) // 4):
+                        line = f"<ol><li>{line[line.index('. ')+2:]}"
+                        current_level += 1
+                        lists.append("ol")
+                    else:
+                        temp_line = ""
+                        while current_level > (len(line[:line.index(line[:line_pattern.match(line).end()-1].strip())]) // 4):
+                            temp_line += f"</li>\n</{lists[-1]}>"
+                            current_level -= 1
+                            lists.pop()
+                        line = f"{temp_line}</li>\n<li>{line[line.index('. ')+2:]}"
+            elif len(line) > 0 and points_list_pattern.match(line.strip()):
+                if current_level == -1:
+                    line = f"<ul>\n<li>{line[line.index('- ') + 2:]}"
+                    current_level += 1
+                    lists.append("ul")
+                elif current_level > -1:
+                    if current_level == (len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
+                        line = f"</li>\n<li>{line[line.index('- ')+2:]}"
+                    elif current_level < (len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
+                        line = f"<ul><li>{line[line.index('- ')+2:]}"
+                        current_level += 1
+                        lists.append("ul")
+                    else:
+                        temp_line = ""
+                        while current_level > (len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
+                            temp_line += f"</li>\n</{lists[-1]}>"
+                            current_level -= 1
+                            lists.pop()
+                        line = f"{temp_line}</li>\n<li>{line[line.index('- ')+2:]}"
+            elif (len(line) == 0 or (len(line) > 0 and not (numeric_list_pattern.match(line.strip()) and points_list_pattern.match(line.strip())))) and current_level > -1:
+                result.append(f"</li>\n</{lists[-1]}>")
+                current_level -= 1
+                lists.pop()
             result.append(line)
+
+            if i+1 == len(lines) and current_level > -1:
+                while current_level > -1:
+                    result.append(f"</li>\n</{lists[-1]}>")
+                    current_level -= 1
 
         return "\n".join(result)
 
@@ -81,3 +131,10 @@ class MarkdownParser:
 
     def parse_image(self, text: str) -> str:
         return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
+
+
+if __name__ == '__main__':
+    import os
+    bl = MarkdownParser(path=os.path.join(os.getcwd(), "..", "..", "test", "python", "toes", "resources", "nested_mixed_list.md"))
+    text = bl.to_html_string()
+    print(text)

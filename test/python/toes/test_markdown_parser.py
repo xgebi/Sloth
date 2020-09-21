@@ -58,6 +58,25 @@ class MyTestCase(unittest.TestCase):
         self.assertIn("<pre><code class='language-javascript'>const i = 1</pre></code>", text)
         self.assertIn("<pre><code class='language-javascript'>const i = 2</pre></code>", text)
 
+    def test_basic_lists(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "basic_list.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
+    # TODO figure out how to test better lists
+    def test_nested_numeric_lists(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_numeric_list.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
+    def test_nested_points_lists(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_points_list.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
 
 if __name__ == '__main__':
     unittest.main()
