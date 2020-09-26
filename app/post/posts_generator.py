@@ -28,11 +28,11 @@ def get_menus(*args, connection, **kwargs):
         cur.execute(
             sql.SQL("""SELECT name, uuid FROM sloth_menus""")
         )
-        menus = {menu[1]: {"items": [], "uuid": menu[1], "name": [0]} for menu in cur.fetchall()}
+        menus = {menu[0]: {"items": [], "uuid": menu[1], "name": [0]} for menu in cur.fetchall()}
         for menu in menus.keys():
             cur.execute(
                 sql.SQL("""SELECT title, url FROM sloth_menu_items WHERE menu = %s"""),
-                [menu]
+                [menus[menu]["uuid"]]
             )
             menus[menu]["items"] = cur.fetchall()
     except Exception as e:
@@ -626,7 +626,7 @@ class PostsGenerator:
         channel.appendChild(generator)
 
         i = 0
-        for post in posts[::-1]:
+        for post in posts:
             if i >= 10:
                 break
             i += 1
@@ -692,10 +692,9 @@ class PostsGenerator:
             cur = self.connection.cursor()
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                    sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
+                    A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid 
-                                INNER JOIN sloth_media sm on A.thumbnail = sm.uuid
+                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
                                 WHERE C.archive_enabled = %s AND A.post_status = 'published' 
                                 ORDER BY A.publish_date DESC"""),
                 [True]
@@ -722,16 +721,14 @@ class PostsGenerator:
                 "excerpt": post[6],
                 "css": post[7],
                 "js": post[8],
-                "thumbnail": post[9],
-                "thumbnail_alt": post[10],
-                "publish_date": post[11],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date": post[12],
-                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[13],
+                "publish_date": post[9],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date": post[10],
+                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[11],
                 "tags": taxonomies["tags"],
                 "categories": taxonomies["categories"],
-                "post_type_slug": post[14]
+                "post_type_slug": post[12]
             })
 
         self.generate_rss(posts=rss_posts, path=Path(self.config["OUTPUT_PATH"]))
