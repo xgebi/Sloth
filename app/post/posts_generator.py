@@ -692,9 +692,13 @@ class PostsGenerator:
 
             content = doc.createElement('content:encoded')
             content_text = ""
+            md_parser = MarkdownParser()
             if len(post["excerpt"]) == 0:
+                post["content"] = md_parser.to_html_string(post["content"])
                 content_text = doc.createCDATASection(post['content'])
             else:
+                post["excerpt"] = md_parser.to_html_string(post["excerpt"])
+                post["content"] = md_parser.to_html_string(post["content"])
                 content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
             content.appendChild(content_text)
             post_item.appendChild(content)
