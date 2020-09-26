@@ -17,7 +17,7 @@ import re
 import collections
 from jinja2 import Template
 from app.post.post_types import PostTypes
-from app.toes.MarkdownParser import MarkdownParser
+from app.toes.markdown_parser import MarkdownParser
 
 from app.utilities.db_connection import db_connection
 

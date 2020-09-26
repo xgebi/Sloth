@@ -1,6 +1,6 @@
 import unittest
 
-from app.toes.Node import Node
+from app.toes.node import Node
 
 
 class MyTestCase(unittest.TestCase):

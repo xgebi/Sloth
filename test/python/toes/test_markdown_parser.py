@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from app.toes.MarkdownParser import MarkdownParser
+from app.toes.markdown_parser import MarkdownParser
 
 
 class MyTestCase(unittest.TestCase):

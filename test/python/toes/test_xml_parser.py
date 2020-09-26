@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from app.toes.XMLParser import XMLParser
+from app.toes.xml_parser import XMLParser
 
 
 class MyTestCase(unittest.TestCase):

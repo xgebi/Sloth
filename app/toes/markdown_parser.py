@@ -10,7 +10,9 @@ class MarkdownParser:
     def to_html_string(self, text: str = "") -> str:
         if text:
             self.text = text
-        if text is None:
+        if len(text) == 0:
+            return text
+        if self.text is None:
             return "Error: empty text"
         result = self.parse_code_block(self.text)
         result = self.parse_list(result)

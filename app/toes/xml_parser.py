@@ -1,6 +1,6 @@
 import enum
-from app.toes.Node import Node
-from app.toes.Tree import Tree
+from app.toes.node import Node
+from app.toes.tree import Tree
 
 
 class STATES(enum.Enum):
