@@ -17,6 +17,7 @@ import re
 import collections
 from jinja2 import Template
 from app.post.post_types import PostTypes
+from app.toes.MarkdownParser import MarkdownParser
 
 from app.utilities.db_connection import db_connection
 
@@ -336,6 +337,9 @@ class PostsGenerator:
             os.makedirs(post_path_dir)
 
         with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
+            md_parser = MarkdownParser()
+            post["excerpt"] = md_parser.to_html_string(post["excerpt"])
+            post["content"] = md_parser.to_html_string(post["content"])
             f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
                                     api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer,
                                     menus=self.menus))
@@ -366,9 +370,8 @@ class PostsGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                        sm.file_path, sm.alt, A.publish_date, A.update_date, A.post_status, A.import_approved, A.imported
+                                A.thumbnail, A.publish_date, A.update_date, A.post_status, A.import_approved, A.imported
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                    INNER JOIN sloth_media sm on sm.uuid = A.thumbnail
                                     WHERE post_type = %s AND post_status = 'published' ORDER BY A.publish_date DESC;"""),
                 [post_type["uuid"]]
             )
@@ -390,20 +393,30 @@ class PostsGenerator:
                 "excerpt": temp_post[6],
                 "css": temp_post[7],
                 "js": temp_post[8],
-                "thumbnail": temp_post[9],
-                "thumbnail_alt": temp_post[10],
-                "publish_date": temp_post[11],
-                "update_date": temp_post[12],
-                "publish_date_formatted": datetime.fromtimestamp(float(temp_post[11]) / 1000).strftime(
+                "thumbnail_uuid": temp_post[9],
+                "publish_date": temp_post[10],
+                "update_date": temp_post[11],
+                "publish_date_formatted": datetime.fromtimestamp(float(temp_post[10]) / 1000).strftime(
                     "%Y-%m-%d %H:%M"),
-                "update_date_formatted": datetime.fromtimestamp(float(temp_post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": temp_post[13],
+                "update_date_formatted": datetime.fromtimestamp(float(temp_post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": temp_post[12],
                 "tags": taxonomies["tags"],
                 "categories": taxonomies["categories"],
                 "post_type_slug": post_type["slug"],
-                "approved": temp_post[14],
-                "imported": temp_post[15]
+                "approved": temp_post[13],
+                "imported": temp_post[14]
             })
+            if posts[-1]["thumbnail_uuid"] is not None:
+                try:
+                    cur.execute(
+                        sql.SQL("""SELECT file_path, alt FROM sloth_media WHERE uuid = %s;"""),
+                        [posts[-1]["thumbnail_uuid"]]
+                    )
+                    raw_items = cur.fetchone()
+                    posts[-1]["thumbnail_path"] = raw_items[0]
+                    posts[-1]["thumbnail_alt"] = raw_items[1]
+                except Exception as e:
+                    print(traceback.format_exc())
         cur.close()
 
         if post_type["tags_enabled"]:
@@ -456,7 +469,13 @@ class PostsGenerator:
                 if i > 0 and not os.path.exists(os.path.join(post_path_dir, tag["slug"], str(i))):
                     os.makedirs(os.path.join(post_path_dir, tag["slug"], str(i)))
 
-                with open(os.path.join(post_path_dir, tag["slug"], str(i) if i != 0 else '', 'index.html'), 'w') as f:
+                path_to_index = ""
+                if i == 0:
+                    path_to_index = os.path.join(post_path_dir, tag["slug"], 'index.html')
+                else:
+                    path_to_index = os.path.join(post_path_dir, tag["slug"], str(i), 'index.html')
+
+                with open(path_to_index, 'w') as f:
                     lower = 10 * i
                     upper = (10 * i) + 10 if (10 * i) + 10 < len(tags_posts_list[tag["uuid"]]) else len(
                         tags_posts_list[tag["uuid"]])
@@ -545,7 +564,11 @@ class PostsGenerator:
             if i > 0 and not os.path.exists(os.path.join(post_path_dir, str(i))):
                 os.makedirs(os.path.join(post_path_dir, str(i)))
 
-            with open(os.path.join(post_path_dir, str(i) if i != 0 else '', 'index.html'), 'w') as f:
+            path_to_index = os.path.join(post_path_dir, str(i), 'index.html')
+            if i == 0:
+                path_to_index = os.path.join(post_path_dir, 'index.html')
+
+            with open(path_to_index, 'w') as f:
                 lower = 10 * i
                 upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
                     posts)
@@ -558,7 +581,7 @@ class PostsGenerator:
                     sloth_footer=self.sloth_footer,
                     menus=self.menus,
                     current_page_number=i,
-                    not_last_page=True if math.ceil(len(posts) / 10) != i else False
+                    not_last_page=True if math.floor(len(posts) / 10) != i else False
                 ))
 
     # Generate rss
@@ -668,7 +691,11 @@ class PostsGenerator:
             post_item.appendChild(description)
 
             content = doc.createElement('content:encoded')
-            content_text = doc.createCDATASection(post['content'])
+            content_text = ""
+            if len(post["excerpt"]) == 0:
+                content_text = doc.createCDATASection(post['content'])
+            else:
+                content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
             content.appendChild(content_text)
             post_item.appendChild(content)
             channel.appendChild(post_item)

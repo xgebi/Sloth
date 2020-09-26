@@ -525,8 +525,8 @@ def save_post(*args, connection=None, **kwargs):
                     unique_post = True
 
             cur.execute(
-                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s"),
-                [f"{filled['slug']}-%", f"{filled['slug']}%"]
+                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"),
+                [f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]]
             )
             similar = cur.fetchone()[0]
             if int(similar) > 0:

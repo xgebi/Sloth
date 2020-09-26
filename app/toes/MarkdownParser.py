@@ -2,11 +2,16 @@ import re
 
 
 class MarkdownParser:
-    def __init__(self, *args, path, **kwargs):
-        with open(path, mode="r") as text_file:
-            self.text = text_file.read()
+    def __init__(self, *args, path=None, **kwargs):
+        if path:
+            with open(path, mode="r") as text_file:
+                self.text = text_file.read()
 
-    def to_html_string(self) -> str:
+    def to_html_string(self, text: str = "") -> str:
+        if text:
+            self.text = text
+        if text is None:
+            return "Error: empty text"
         result = self.parse_code_block(self.text)
         result = self.parse_list(result)
         result = self.parse_headlines(result)
