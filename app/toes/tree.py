@@ -1,5 +1,9 @@
+from typing import List, Dict
+
 from app.toes.node import Node
 
 
 class Tree:
-    pass
+    type: str
+    attributes: Dict
+    children: List[Node]
