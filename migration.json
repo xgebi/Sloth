@@ -1,12 +1,3 @@
 [
-  {
-    "type": "sql",
-    "folder": "setup",
-    "file": "023_mock_endpoint_table.sql"
-  },
-  {
-    "type": "sql",
-    "folder": "setup",
-    "file": "024_remove_post_slug_constraint.sql"
-  }
+
 ]
