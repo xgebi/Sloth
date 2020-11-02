@@ -1,14 +1,13 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
+from flask import request, abort, redirect, render_template
 from app.utilities.db_connection import db_connection
-from app.authorization.authorize import authorize_web
+from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
 from app.post.posts_generator import PostsGenerator
-import psycopg2
 from psycopg2 import sql
-import datetime
+import json
 import uuid
 
-from app.web.post_type import post_type
+from app.post_type import post_type
 
 
 @post_type.route("/post-types")
@@ -162,14 +161,44 @@ def create_post_type(*args, permission_level, connection, post_type_id, **kwargs
     return redirect(f"/post-type/{post_type_id}")
 
 
-@post_type.route("/post-type/<post_type_id>/delete", methods=["POST", "PUT", "DELETE"])
-@authorize_web(1)
+@post_type.route("/api/post-type/delete", methods=["DELETE"])
+@authorize_rest(1)
 @db_connection
-def delete_post_type(*args, permission_level, connection, post_type_id, **kwargs):
+def delete_post_type(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
 
-    # 1. delete from database
-    # 2. delete post type
+    data = json.loads(request.data)
+    cur = connection.cursor()
+    if data["action"] == "delete":
+        try:
+            cur.execute(
+                sql.SQL("""DELETE FROM sloth_posts WHERE post_type = %s"""),
+                [data["current"]]
+            )
+        except Exception as e:
+            print(e)
+    else:
+        try:
+            cur.execute(
+                sql.SQL("""UPDATE sloth_posts SET post_type = %s  WHERE post_type = %s"""),
+                [data["action"], data["current"]]
+            )
+        except Exception as e:
+            print(e)
+    try:
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_post_types WHERE uuid = %s"""),
+            [data["current"]]
+        )
+    except Exception as e:
+        print(e)
+    connection.commit()
+    cur.close()
+    if data["action"] != "delete":
+        gen = PostsGenerator(connection=connection)
+        gen.run(post_type=data["action"])
+    else:
+        connection.close()
 
-    return redirect("/post-type")
+    return json.dumps({"deleted": True})

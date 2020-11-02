@@ -180,6 +180,10 @@ select {
 	display: contents;
 }
 
+.dangerzone .confirm-deletion {
+
+}
+
 /* Sloth Editor */
 .sloth-editor {
 	width: 80ch;

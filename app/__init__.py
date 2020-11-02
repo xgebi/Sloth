@@ -79,7 +79,7 @@ def create_app():  # dev, test, or prod
     from app.api.site import site
     app.register_blueprint(site)
 
-    from app.web.post_type import post_type
+    from app.post_type import post_type
     app.register_blueprint(post_type)
 
     from app.api.messages import messages as messages_api
