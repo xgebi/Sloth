@@ -100,6 +100,14 @@
                     {% endif %}
                 {% endfor %}
             </select>
+            {% if data["status"] != 'protected' %}
+            <label for="password_protection" id="password_protection_label" class="hidden" >Password:</label>
+            <input id="password_protection" type="text" class="hidden" /><!-- In this case type password is unnecessary, may change -->
+            {% endif %}
+            {% if data["status"] == 'protected' %}
+            <label for="password_protection" id="password_protection_label" >Password:</label>
+            <input id="password_protection" type="text" value="{{ data["password"] }}"/><!-- In this case type password is unnecessary, may change -->
+            {% endif %}
             {% if data["imported"] %}
                 <label for="import_approved">Imported post approved:</label>
                 {% if data["approved"] %}
@@ -112,7 +120,7 @@
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
             {% endif %}
-            {% if data["status"] == 'published' or data["status"] == 'scheduled' %}
+            {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
                 <button id="update-button">Update post</button>
             {% endif %}
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>

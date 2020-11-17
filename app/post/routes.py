@@ -15,6 +15,7 @@ from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 from app.post.posts_generator import PostsGenerator
+from app.post.post_generator_2 import PostGenerator as PostGenerator2
 
 from app.post import post
 
@@ -65,9 +66,11 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
             "uuid": item[0],
             "title": item[1],
             "publish_date":
-                datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d") if item[2] is not None else "",
+                datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d") if item[
+                                                                                                     2] is not None else "",
             "update_date":
-                datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d") if item[3] is not None else "",
+                datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d") if item[
+                                                                                                     3] is not None else "",
             "status": item[4],
             "author": item[5]
         })
@@ -103,7 +106,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
         cur.execute(
             sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
-            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, A.import_approved
+            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, A.import_approved,
+            A.password
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
@@ -183,7 +187,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "tags": [tag["display_name"] for tag in taxonomies["tags"]],
         "post_type": raw_post[13],
         "imported": raw_post[14],
-        "approved": raw_post[15]
+        "approved": raw_post[15],
+        "password": raw_post[16]
     }
 
     return render_template(
@@ -511,6 +516,13 @@ def save_post(*args, connection=None, **kwargs):
             connection.commit()
         # get user
         author = request.headers.get('authorization').split(":")[1]
+        publish_date = -1
+        if filled["post_status"] == 'published' and filled["publish_date"] is None:
+            publish_date = str(time() * 1000)
+        elif filled["post_status"] == 'scheduled':
+            publish_date = filled["publish_date"]  # TODO scheduling
+        else:
+            publish_date = None
         # save post
         if filled["new"]:
             unique_post = False
@@ -532,21 +544,15 @@ def save_post(*args, connection=None, **kwargs):
             if int(similar) > 0:
                 filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
-            publish_date = -1
-            if filled["post_status"] == 'published' and filled["publish_date"] is None:
-                publish_date = str(time() * 1000)
-            elif filled["post_status"] == 'scheduled':
-                publish_date = filled["publish_date"]  # TODO scheduling
-            else:
-                publish_date = None
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en')"""),
+                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en', %s)"""),
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
-                 filled["post_status"]]
+                 filled["post_status"], filled["password"]]
             )
+            connection.commit()
             for category in filled["categories"]:
                 cur.execute(
                     sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
@@ -561,11 +567,15 @@ def save_post(*args, connection=None, **kwargs):
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
-                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s WHERE uuid = %s;"""),
+                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
+                 password = %s WHERE uuid = %s;"""),
                 [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
-                 filled["thumbnail"] if filled["thumbnail"] != "None" else None, filled["publish_date"],
-                 str(time() * 1000), filled["post_status"], filled["approved"], filled["uuid"]]
+                 filled["thumbnail"] if filled["thumbnail"] != "None" else None,
+                 filled["publish_date"] if filled["publish_date"] is not None else publish_date,
+                 str(time() * 1000), filled["post_status"], filled["approved"],
+                 filled["password"] if "password" in filled else None, filled["uuid"]]
             )
+            connection.commit()
             cur.execute(
                 sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
                 [filled["uuid"]]
@@ -582,44 +592,55 @@ def save_post(*args, connection=None, **kwargs):
                 )
         connection.commit()
 
+        cur.execute(
+            sql.SQL("""SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, A.content, 
+                                A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, A.update_date, 
+                                A.post_status, A.imported, A.import_approved FROM sloth_posts as A WHERE A.uuid = %s;"""),
+            [filled["uuid"]]
+        )
+        generatable_post_raw = cur.fetchone()
+        generatable_post = {
+            "uuid": generatable_post_raw[0],
+            "original_lang_entry_uuid": generatable_post_raw[1],
+            "lang": generatable_post_raw[2],
+            "slug": generatable_post_raw[3],
+            "post_type": generatable_post_raw[4],
+            "author": generatable_post_raw[5],
+            "title": generatable_post_raw[6],
+            "content": generatable_post_raw[7],
+            "excerpt": generatable_post_raw[8],
+            "css": generatable_post_raw[9],
+            "use_theme_css": generatable_post_raw[10],
+            "js": generatable_post_raw[11],
+            "use_theme_js": generatable_post_raw[12],
+            "thumbnail": generatable_post_raw[13],
+            "publish_date": generatable_post_raw[14],
+            "publish_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post_raw[14]) / 1000).strftime(
+                "%Y-%m-%d %H:%M") if generatable_post_raw[14] is not None else None,
+            "update_date": generatable_post_raw[15],
+            "update_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post_raw[15]) / 1000).strftime(
+                "%Y-%m-%d %H:%M") if generatable_post_raw[15] is not None else None,
+            "post_status": generatable_post_raw[16],
+            "imported": generatable_post_raw[17],
+            "approved": generatable_post_raw[18]
+        }
+
         # get post
         if filled["post_status"] == 'published':
-            cur.execute(
-                sql.SQL("""SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, A.content, 
-                        A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, A.update_date, 
-                        A.post_status, A.imported, A.import_approved FROM sloth_posts as A WHERE A.uuid = %s;"""),
-                [filled["uuid"]]
-            )
-            generatable_post = cur.fetchone()
-
             gen = PostsGenerator(connection=connection)
-            taxonomies = gen.get_taxonomy_for_post(generatable_post[0])
-            gen.run(post={
-                "uuid": generatable_post[0],
-                "original_lang_entry_uuid": generatable_post[1],
-                "lang": generatable_post[2],
-                "slug": generatable_post[3],
-                "post_type": generatable_post[4],
-                "author": generatable_post[5],
-                "title": generatable_post[6],
-                "content": generatable_post[7],
-                "excerpt": generatable_post[8],
-                "css": generatable_post[9],
-                "use_theme_css": generatable_post[10],
-                "js": generatable_post[11],
-                "use_theme_js": generatable_post[12],
-                "thumbnail": generatable_post[13],
-                "publish_date": generatable_post[14],
-                "publish_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post[14]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date": generatable_post[15],
-                "update_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post[15]) / 1000).strftime(
-                    "%Y-%m-%d %H:%M"),
-                "post_status": generatable_post[16],
-                "tags": taxonomies["tags"],
-                "categories": taxonomies["categories"],
-                "imported": generatable_post[17],
-                "approved": generatable_post[18]
-            })
+            taxonomies = gen.get_taxonomy_for_post(generatable_post_raw[0])
+            gen.run(post=generatable_post)
+
+        if filled["post_status"] == 'protected':
+            # get post type slug
+            cur.execute(
+                sql.SQL("""SELECT slug FROM sloth_post_types WHERE uuid = %s;"""),
+                [generatable_post["post_type"]]
+            )
+            post_type_slug = cur.fetchone()
+            # get post slug
+            gen = PostsGenerator()
+            gen.delete_post_files(post_type=post_type_slug[0], post=generatable_post["slug"])
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
 
@@ -703,3 +724,36 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
     gen.run(posts=True)
 
     return json.dumps({"generating": True})
+
+
+@post.route("/api/post/secret", methods=["POST"])
+@db_connection
+def get_protected_post(*args, connection, **kwargs):
+    filled = json.loads(request.data)
+
+    raw_post = []
+
+    try:
+        cur = connection.cursor()
+        cur.execute(
+            sql.SQL("""SELECT uuid 
+            FROM sloth_posts WHERE password = %s AND slug = %s;"""),
+            [filled["password"], filled["slug"]]
+        )
+        raw_post = cur.fetchone()
+    except Exception as e:
+        print(e)
+
+    if len(raw_post) != 1:
+        return json.dumps({"unauthorized": True}), 401
+
+    gen = PostGenerator2(connection=connection)
+    protected_post = gen.get_protected_post(uuid=raw_post[0])
+
+    if type(protected_post) is str:
+        return json.dumps({
+            "content": protected_post
+        }), 200
+    else:
+        return json.dumps(protected_post), 200
+

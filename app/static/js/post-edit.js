@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	document.querySelector("#delete-button")?.addEventListener('click', deletePost);
 
 	//document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
+	document.querySelector("#post_status").addEventListener('change', postStatusChanged);
 });
 
 function openGalleryDialog(data, type) {
@@ -143,7 +144,7 @@ function publishPost() {
 	if (!values) {
 		return;
 	}
-	values["post_status"] = "published";
+	console.log(values);
 	savePost(values);
 }
 
@@ -195,6 +196,11 @@ function collectValues() {
 	}
 	post["tags"] = document.querySelector("#tags").value;
 	post["post_status"] = document.querySelector("#post_status").value;
+	console.log(post["post_status"])
+	debugger;
+	if (post["post_status"] === "protected") {
+		post["password"] = document.querySelector("#password_protection").value;
+	}
 	post["approved"] = document.querySelector("#import_approved") ? document.querySelector("#import_approved").checked : false;
 	return post;
 }
@@ -304,6 +310,16 @@ function deletePost() {
 		.catch((error) => {
 			console.error('Error:', error);
 		});
+}
+
+function postStatusChanged(event) {
+	if (event.target.value === "protected") {
+		document.querySelector("#password_protection_label").classList.remove("hidden");
+		document.querySelector("#password_protection").classList.remove("hidden");
+	} else {
+		document.querySelector("#password_protection_label").classList.add("hidden");
+		document.querySelector("#password_protection").classList.add("hidden");
+	}
 }
 
 function getSelectionHtml() {

@@ -18,6 +18,7 @@ import collections
 from jinja2 import Template
 from app.post.post_types import PostTypes
 from app.toes.markdown_parser import MarkdownParser
+import codecs
 
 from app.utilities.db_connection import db_connection
 
@@ -51,6 +52,7 @@ class PostsGenerator:
     theme_path = ""
     connection = {}
     sloth_footer = ""
+    sloth_secret_script = ""
     menus = {}
 
     # Constructor
@@ -91,24 +93,37 @@ class PostsGenerator:
         )
 
         # Footer for post
+        raw_api_url = []
+        cur = connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL("""SELECT settings_value FROM sloth_settings 
+                WHERE settings_name = %s"""),
+                ['api_url']
+            )
+            raw_api_url = cur.fetchone()
+        except Exception as e:
+            print(traceback.format_exc())
+        cur.close()
+
         with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
             footer_template = Template(f.read())
             cur = connection.cursor()
             raw_item = []
-            try:
-                cur.execute(
-                    sql.SQL("""SELECT settings_value FROM sloth_settings 
-                    WHERE settings_name = %s"""),
-                    ['api_url']
-                )
-                raw_item = cur.fetchone()
-            except Exception as e:
-                print(traceback.format_exc())
-            cur.close()
-            if len(raw_item) == 1:
-                self.sloth_footer = footer_template.render(api_url=raw_item[0])
+
+            if len(raw_api_url) == 1:
+                self.sloth_footer = footer_template.render(api_url=raw_api_url[0])
             else:
                 self.sloth_footer = ""
+
+        with open(Path(__file__).parent / "../templates/secret-script.html", 'r') as f:
+            # This will refactored
+            secret_template = Template(f.read())
+
+            if len(raw_api_url) == 1:
+                self.sloth_secret_script = secret_template.render(api_url=raw_api_url[0])
+            else:
+                self.sloth_secret_script = ""
 
         # menus
         self.menus = get_menus(connection=connection)
@@ -336,13 +351,15 @@ class PostsGenerator:
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
 
-        with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
+        # with open(os.path.join(post_path_dir, 'index.html'), 'w') as f:
+        with codecs.open(os.path.join(post_path_dir, 'index.html') , "w", "utf-8") as f:
             md_parser = MarkdownParser()
             post["excerpt"] = md_parser.to_html_string(post["excerpt"])
             post["content"] = md_parser.to_html_string(post["content"])
-            f.write(template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
+            rendered = template.render(post=post, sitename=self.settings["sitename"]["settings_value"],
                                     api_url=self.settings["api_url"]["settings_value"], sloth_footer=self.sloth_footer,
-                                    menus=self.menus))
+                                    menus=self.menus)
+            f.write(rendered)
 
         if post["js"] and len(post["js"]) > 0:
             with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
@@ -419,11 +436,11 @@ class PostsGenerator:
                     print(traceback.format_exc())
         cur.close()
 
-        if post_type["tags_enabled"]:
-            self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'], posts=posts)
+        # if post_type["tags_enabled"]:
+        #     self.generate_tags(post_type_slug=post_type["slug"], tags=post['tags'], posts=posts)
 
-        if post_type["categories_enabled"]:
-            self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'], posts=posts)
+        # if post_type["categories_enabled"]:
+        #     self.generate_categories(post_type_slug=post_type["slug"], categories=post['categories'], posts=posts)
 
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts, post_type=post_type)
@@ -705,12 +722,9 @@ class PostsGenerator:
             channel.appendChild(post_item)
         root_node.appendChild(channel)
 
-        doc.writexml(
-            open(str(os.path.join(path, "feed.xml")), 'w'),
-            indent="  ",
-            addindent="  ",
-            newl='\n'
-        )
+        with codecs.open(os.path.join(path, "feed.xml"), "w", "utf-8") as f:
+            f.write(doc.toprettyxml())
+
 
     # Generate home page
     def generate_home(self):
@@ -808,7 +822,7 @@ class PostsGenerator:
             f.write(template.render(
                 posts=posts, sitename=self.settings["sitename"]["settings_value"],
                 page_name="Home", api_url=self.settings["api_url"]["settings_value"],
-                sloth_footer=self.sloth_footer,
+                sloth_footer=self.sloth_footer + self.sloth_secret_script,
                 menus=self.menus
             ))
 
@@ -843,8 +857,14 @@ class PostsGenerator:
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     # delete post files
-    def delete_post_files(self, post_type, post):
-        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], post["slug"])
+    def delete_post_files(self, *args, post_type, post, **kwargs):
+        post_type_slug = post_type
+        post_slug = post
+        if type(post) is not str:
+            post_slug = post["slug"]
+        if type(post_type) is not str:
+            post_type_slug = post["slug"]
+        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
 
         if os.path.exists(post_path_dir):
             shutil.rmtree(post_path_dir)
