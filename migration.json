@@ -1,7 +1,3 @@
 [
-  {
-    "type": "sql",
-    "folder": "setup",
-    "file": "025_add_protected_type_post_status.sql"
-  }
+
 ]

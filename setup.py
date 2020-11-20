@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="slothcms",
-    version="0.3.0",
+    version="0.3.1",
     author="Sarah Gebauer",
     author_email="sarah@sarahgebauer.com",
     description="Sloth Content Management System",
