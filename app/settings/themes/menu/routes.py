@@ -76,10 +76,7 @@ def get_menu(*args, connection, menu, **kwargs):
             "position": item[4]
         })
 
-    response = make_response(json.dumps(result))
-    response.headers['Content-Type'] = 'application/json'
-
-    return response
+    return json.dumps(result), 200, {'Content-Type': 'application/json'}
 
 
 @menu.route("/settings/themes/menu/save", methods=["POST", "PUT"])
