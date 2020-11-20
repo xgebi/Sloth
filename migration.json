@@ -1,3 +1,7 @@
 [
-
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "026_add_position_to_menu_items.sql"
+  },
 ]
