@@ -196,8 +196,6 @@ function collectValues() {
 	}
 	post["tags"] = document.querySelector("#tags").value;
 	post["post_status"] = document.querySelector("#post_status").value;
-	console.log(post["post_status"])
-	debugger;
 	if (post["post_status"] === "protected") {
 		post["password"] = document.querySelector("#password_protection").value;
 	}

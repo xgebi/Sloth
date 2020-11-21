@@ -100,7 +100,6 @@ function setupNewMenu(menuData, name, uuid) {
                 newMenuIndex++;
             }
         }
-        debugger;
         nameInput.setAttribute("data-uuid", `new-${newMenuIndex + 1}`);
 
         formClone.querySelector("#save-menu").addEventListener('click', saveMenu);
@@ -172,7 +171,6 @@ function saveMenu() {
         }
         throw `${response.status} ${response.statusText}`;
     }).then(data => {
-        debugger;
         if (document.querySelector(`#menu-${data["uuid"]}`)) {
             document.querySelector(`#menu-${data["uuid"]} .menu-name`).textContent = data["name"];
         } else {
@@ -203,7 +201,6 @@ function saveMenu() {
 }
 
 function addNewItem() {
-    debugger;
     const menuItemsTbody = document.querySelector("#menu-items tbody");
     const itemTemplate = document.querySelector('#item-row');
     const item = itemTemplate.content.cloneNode(true);
@@ -239,7 +236,6 @@ function deleteMenu() {
         })
     })
         .then(response => {
-            debugger;
             if (response.ok) {
                 const rows = document.querySelector("#menu-table tbody").children;
                 for (let i = 0; i < rows.length; i++) {

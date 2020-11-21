@@ -38,10 +38,13 @@
             </button>
         </td>
         <td>
+        {% if not language["default"] %}
             <button
+                    data-uuid="{{ language['uuid'] }}"
                     class="delete-button"
             >Delete
             </button>
+        {% endif %}
         </td>
         </tr>
         {% endfor %}

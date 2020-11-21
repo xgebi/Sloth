@@ -103,6 +103,25 @@ def save_language_info(*args, connection=None, lang_id: str, **kwargs):
 @language_settings.route("/api/settings/language/<lang_id>/delete", methods=["DELETE"])
 @authorize_rest(1)
 @db_connection
-def delete_language(*args, connection=None, **kwargs):
-    pass
+def delete_language(*args, connection=None, lang_id: str, **kwargs):
+    if connection is None:
+        abort(500)
 
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_language_settings WHERE uuid = %s;"""),
+            [lang_id]
+        )
+        connection.commit()
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    cur.close()
+    connection.close()
+
+    return json.dumps({
+        "uuid": lang_id,
+        "deleted": True
+    })
