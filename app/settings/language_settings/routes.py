@@ -26,7 +26,13 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
 
     cur = connection.cursor()
     temp_languages = []
+    default_language = ""
     try:
+        cur.execute(
+            sql.SQL("""SELECT settings_value from sloth_settings WHERE settings_name = %s"""),
+            ['main_language']
+        )
+        default_language = cur.fetchone()[0]
         cur.execute(
             sql.SQL("""SELECT uuid, short_name, long_name FROM sloth_language_settings""")
         )
@@ -42,7 +48,8 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
         languages.append({
             "uuid": lang[0],
             "short_name": lang[1],
-            "long_name": lang[2]
+            "long_name": lang[2],
+            "default": lang[1] == default_language
         })
 
     return render_template("language.html", post_types=post_types_result, permission_level=permission_level,
@@ -64,12 +71,13 @@ def save_language_info(*args, connection=None, lang_id: str, **kwargs):
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_language_settings VALUES (%s, %s, %s)
                 RETURNING uuid, short_name, long_name;"""),
-                [str(uuid.uuid4(), filled["shortName"], filled["longName"])]
+                [str(uuid.uuid4()), filled["shortName"], filled["longName"]]
             )
         else:
             cur.execute(
                 sql.SQL("""UPDATE sloth_language_settings SET short_name = %s, long_name = %s WHERE uuid = %s
-                RETURNING uuid, short_name, long_name;""")
+                RETURNING uuid, short_name, long_name;"""),
+                [filled["shortName"], filled["longName"], lang_id]
             )
         connection.commit()
         temp_result = cur.fetchone()

@@ -10,15 +10,25 @@
         <tr>
             <th>Long name</th>
             <th>Short name</th>
+            <th>Default</th>
             <th>Edit</th>
             <th>Delete</th>
         </tr>
         </thead>
         <tbody>
         {% for language in languages %}
+            {% if language["default"] %}
+            <tr id="language-{{ language['uuid'] }}" class="bold">
+            {% else %}
             <tr id="language-{{ language['uuid'] }}">
+            {% endif %}
                 <td class="language-long-name">{{ language["long_name"] }}</td>
                 <td class="language-short-name">{{ language["short_name"] }}</td>
+                <td>
+                {% if language["default"] %}
+                yes
+                {% endif %}
+                </td>
                 <td>
                     <button
                             class="action-button"

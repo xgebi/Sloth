@@ -184,6 +184,10 @@ select {
 
 }
 
+.bold {
+	font-weight: 700;
+}
+
 /* Sloth Editor */
 .sloth-editor {
 	width: 80ch;
