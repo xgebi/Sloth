@@ -18,32 +18,32 @@
         <tbody>
         {% for language in languages %}
             {% if language["default"] %}
-            <tr id="language-{{ language['uuid'] }}" class="bold">
-            {% else %}
-            <tr id="language-{{ language['uuid'] }}">
+                <tr id="language-{{ language['uuid'] }}" class="bold">
+                    {% else %}
+                <tr id="language-{{ language['uuid'] }}">
             {% endif %}
-                <td class="language-long-name">{{ language["long_name"] }}</td>
-                <td class="language-short-name">{{ language["short_name"] }}</td>
-                <td>
-                {% if language["default"] %}
+        <td class="language-long-name">{{ language["long_name"] }}</td>
+        <td class="language-short-name">{{ language["short_name"] }}</td>
+        <td>
+            {% if language["default"] %}
                 yes
-                {% endif %}
-                </td>
-                <td>
-                    <button
-                            class="action-button"
-                            data-action="edit"
-                            data-uuid="{{ language['uuid'] }}"
-                    >Edit
-                    </button>
-                </td>
-                <td>
-                    <button
-                            class="delete-button"
-                    >Delete
-                    </button>
-                </td>
-            </tr>
+            {% endif %}
+        </td>
+        <td>
+            <button
+                    class="action-button"
+                    data-action="edit"
+                    data-uuid="{{ language['uuid'] }}"
+            >Edit
+            </button>
+        </td>
+        <td>
+            <button
+                    class="delete-button"
+            >Delete
+            </button>
+        </td>
+        </tr>
         {% endfor %}
         </tbody>
     </table>
