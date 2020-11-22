@@ -3,7 +3,13 @@
 {% block title %}Menus{% endblock %}
 
 {% block body %}
-    <h1>Menus</h1>
+    <h1 data-uuid="{{ current_lang['uuid'] }}">{{ current_lang['long_name'] }} menus</h1>
+    <p>
+    Other languages:
+    {% for lang in languages %}
+        <a href="/settings/themes/menu/{{ lang['uuid'] }}">{{ lang["long_name"] }}</a>
+    {% endfor %}
+    </p>
     <button id="create-new-menu">Create new menu</button>
     <table id="menu-table">
         <thead>

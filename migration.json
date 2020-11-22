@@ -8,5 +8,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "027_change_lang_sloth_posts.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "028_add_language_menus.sql"
   }
 ]

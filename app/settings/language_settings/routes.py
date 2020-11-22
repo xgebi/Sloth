@@ -49,7 +49,7 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
             "uuid": lang[0],
             "short_name": lang[1],
             "long_name": lang[2],
-            "default": lang[1] == default_language
+            "default": lang[0] == default_language
         })
 
     return render_template("language.html", post_types=post_types_result, permission_level=permission_level,

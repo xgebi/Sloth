@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 			.trim()
 			.toLocaleLowerCase()
 			.replace(/\s+/g, '-')
+			.replace(/-+/g, '-')
 			.replace(/[^a-zA-Z0-9\-]+/g,"");
     });
 

@@ -23,34 +23,105 @@ def show_menus(*args, permission_level, connection, **kwargs):
     temp_menu_types = []
     try:
         cur.execute(
-            sql.SQL("""SELECT uuid, name FROM sloth_menus""")
+            sql.SQL("""SELECT uuid, name FROM sloth_menus 
+                WHERE lang = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language');""")
         )
         temp_result = cur.fetchall()
         cur.execute(
-            sql.SQL("SELECT unnest(enum_range(NULL::sloth_menu_item_types))")
+            sql.SQL("""SELECT unnest(enum_range(NULL::sloth_menu_item_types))""")
         )
         temp_menu_types = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings""")
+        )
+        temp_languages = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+        )
+        main_lang = cur.fetchone()[0]
     except Exception as e:
         print(e)
         abort(500)
 
-    result = []
-    for item in temp_result:
-        result.append({
-            "uuid": item[0],
-            "name": item[1]
-        })
+    result = [{
+        "uuid": item[0],
+        "name": item[1]
+    } for item in temp_result]
+    languages = [{
+        "uuid": lang[0],
+        "long_name": lang[1]
+    } for lang in temp_languages if lang[0] != main_lang]
+    current_lang = [{
+        "uuid": lang[0],
+        "long_name": lang[1]
+    } for lang in temp_languages if lang[0] == main_lang][0]
 
     return render_template(
         "menu.html",
         permission_level=permission_level,
         post_types=post_types_result,
         menus=result,
-        item_types=[item for sublist in temp_menu_types for item in sublist]
+        item_types=[item for sublist in temp_menu_types for item in sublist],
+        languages=languages,
+        current_lang=current_lang
     )
 
 
-@menu.route("/settings/themes/menu/<menu>")
+@menu.route("/settings/themes/menu/<lang_id>")
+@authorize_web(0)
+@db_connection
+def show_lang_menus(*args, permission_level, connection, lang_id, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    cur = connection.cursor()
+    temp_result = []
+    temp_menu_types = []
+    temp_languages = []
+    main_lang = ""
+    try:
+        cur.execute(
+            sql.SQL("""SELECT uuid, name FROM sloth_menus WHERE lang = %s;"""),
+            [lang_id]
+        )
+        temp_result = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT unnest(enum_range(NULL::sloth_menu_item_types))""")
+        )
+        temp_menu_types = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings""")
+        )
+        temp_languages = cur.fetchall()
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    result = [{
+        "uuid": item[0],
+        "name": item[1]
+    } for item in temp_result]
+    languages = [{
+        "uuid": lang[0],
+        "long_name": lang[1]
+    } for lang in temp_languages if lang[0] != lang_id]
+    current_lang = [{
+        "uuid": lang[0],
+        "long_name": lang[1]
+    } for lang in temp_languages if lang[0] == lang_id][0]
+
+    return render_template(
+        "menu.html",
+        permission_level=permission_level,
+        post_types=post_types_result,
+        menus=result,
+        item_types=[item for sublist in temp_menu_types for item in sublist],
+        languages=languages,
+        current_lang=current_lang
+    )
+
+
+@menu.route("/api/settings/themes/menu/<menu>")
 @authorize_rest(0)
 @db_connection
 def get_menu(*args, connection, menu, **kwargs):
@@ -79,7 +150,7 @@ def get_menu(*args, connection, menu, **kwargs):
     return json.dumps(result), 200, {'Content-Type': 'application/json'}
 
 
-@menu.route("/settings/themes/menu/save", methods=["POST", "PUT"])
+@menu.route("/api/settings/themes/menu/save", methods=["POST", "PUT"])
 @authorize_rest(0)
 @db_connection
 def save_menu(*args, connection, **kwargs):
@@ -132,7 +203,7 @@ def save_menu(*args, connection, **kwargs):
     return json.dumps(result)
 
 
-@menu.route("/settings/themes/menu/delete", methods=["DELETE"])
+@menu.route("/api/settings/themes/menu/delete", methods=["DELETE"])
 @authorize_rest(0)
 @db_connection
 def delete_menu(*args, connection, **kwargs):

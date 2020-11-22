@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function editMenu(event) {
     const button = event.target;
-    fetch(`/settings/themes/menu/${event?.target?.dataset["uuid"]}`, {
+    fetch(`/api/settings/themes/menu/${event?.target?.dataset["uuid"]}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
