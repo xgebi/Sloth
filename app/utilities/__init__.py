@@ -23,3 +23,19 @@ def get_languages(*args, connection, lang_id, **kwargs):
     } for lang in temp_languages if lang[0] == lang_id][0]
 
     return current_lang, languages
+
+
+def get_default_language(*args, connection, **kwargs):
+    cur = connection.cursor()
+    main_language = []
+    try:
+        cur.execute(
+            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings 
+            WHERE uuid = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language')""")
+        )
+        main_language = cur.fetchone()
+    except Exception as e:
+        print(e)
+        return ()
+
+    return main_language

@@ -13,5 +13,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "028_add_language_menus.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "029_add_language_to_taxonomy.sql"
   }
 ]

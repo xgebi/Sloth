@@ -16,7 +16,7 @@
         {% for post_type in post_types %}
             <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
                 <ul>
-                    <li><a href="/post/{{ post_type['uuid'] }}/new">Add New {{ post_type['display_name'] }}</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/new/{{ current_lang['uuid'] }}">Add New {{ post_type['display_name'] }}</a></li>
                     <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
                     <li><a href="/post/{{ post_type['uuid'] }}/formats">Post Formats</a></li>
                 </ul>

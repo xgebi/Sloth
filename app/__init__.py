@@ -34,9 +34,6 @@ def create_app():  # dev, test, or prod
     from app.errors import errors
     app.register_blueprint(errors)
 
-    from app.api.dashboard import dashboard
-    app.register_blueprint(dashboard)
-
     from app.api.content_management import content_management
     app.register_blueprint(content_management)
 
@@ -49,8 +46,8 @@ def create_app():  # dev, test, or prod
     from app.web.login import login
     app.register_blueprint(login)
 
-    from app.web.dashboard import dashboard as dash
-    app.register_blueprint(dash)
+    from app.dashboard import dashboard
+    app.register_blueprint(dashboard)
 
     from app.settings import settings
     app.register_blueprint(settings)
