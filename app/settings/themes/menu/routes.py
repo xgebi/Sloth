@@ -6,6 +6,7 @@ from app.authorization.authorize import authorize_web, authorize_rest
 import datetime
 
 from app.utilities.db_connection import db_connection
+from app.utilities import get_languages
 from app.post.post_types import PostTypes
 
 from app.settings.themes.menu import menu
@@ -15,26 +16,9 @@ from app.settings.themes.menu import menu
 @authorize_web(0)
 @db_connection
 def show_menus(*args, permission_level, connection, **kwargs):
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-
     cur = connection.cursor()
-    temp_result = []
-    temp_menu_types = []
+    main_lang = ""
     try:
-        cur.execute(
-            sql.SQL("""SELECT uuid, name FROM sloth_menus 
-                WHERE lang = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language');""")
-        )
-        temp_result = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT unnest(enum_range(NULL::sloth_menu_item_types))""")
-        )
-        temp_menu_types = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings""")
-        )
-        temp_languages = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
         )
@@ -43,42 +27,23 @@ def show_menus(*args, permission_level, connection, **kwargs):
         print(e)
         abort(500)
 
-    result = [{
-        "uuid": item[0],
-        "name": item[1]
-    } for item in temp_result]
-    languages = [{
-        "uuid": lang[0],
-        "long_name": lang[1]
-    } for lang in temp_languages if lang[0] != main_lang]
-    current_lang = [{
-        "uuid": lang[0],
-        "long_name": lang[1]
-    } for lang in temp_languages if lang[0] == main_lang][0]
-
-    return render_template(
-        "menu.html",
-        permission_level=permission_level,
-        post_types=post_types_result,
-        menus=result,
-        item_types=[item for sublist in temp_menu_types for item in sublist],
-        languages=languages,
-        current_lang=current_lang
-    )
+    return return_menu_language(permission_level=permission_level, connection=connection, lang_id=main_lang)
 
 
 @menu.route("/settings/themes/menu/<lang_id>")
 @authorize_web(0)
 @db_connection
 def show_lang_menus(*args, permission_level, connection, lang_id, **kwargs):
+    return return_menu_language(permission_level=permission_level, connection=connection, lang_id=lang_id)
+
+
+def return_menu_language(*args, permission_level, connection, lang_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
     cur = connection.cursor()
     temp_result = []
     temp_menu_types = []
-    temp_languages = []
-    main_lang = ""
     try:
         cur.execute(
             sql.SQL("""SELECT uuid, name FROM sloth_menus WHERE lang = %s;"""),
@@ -89,10 +54,6 @@ def show_lang_menus(*args, permission_level, connection, lang_id, **kwargs):
             sql.SQL("""SELECT unnest(enum_range(NULL::sloth_menu_item_types))""")
         )
         temp_menu_types = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings""")
-        )
-        temp_languages = cur.fetchall()
     except Exception as e:
         print(e)
         abort(500)
@@ -101,14 +62,8 @@ def show_lang_menus(*args, permission_level, connection, lang_id, **kwargs):
         "uuid": item[0],
         "name": item[1]
     } for item in temp_result]
-    languages = [{
-        "uuid": lang[0],
-        "long_name": lang[1]
-    } for lang in temp_languages if lang[0] != lang_id]
-    current_lang = [{
-        "uuid": lang[0],
-        "long_name": lang[1]
-    } for lang in temp_languages if lang[0] == lang_id][0]
+    cur.close()
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
 
     return render_template(
         "menu.html",

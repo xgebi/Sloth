@@ -7,13 +7,12 @@ from time import time
 import os
 import traceback
 import re
-
-from app.authorization.authorize import authorize_web
 import datetime
 
 from app.post.post_types import PostTypes
-from app.authorization.authorize import authorize_rest
+from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
+from app.utilities import get_languages
 from app.post.posts_generator import PostsGenerator
 from app.post.post_generator_2 import PostGenerator as PostGenerator2
 
@@ -27,6 +26,27 @@ reserved_folder_names = ('tag', 'category')
 @authorize_web(0)
 @db_connection
 def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
+    cur = connection.cursor()
+    lang_id = ""
+    try:
+        cur.execute(
+            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+        )
+        lang_id = cur.fetchone()[0]
+    except Exception as e:
+        print(e)
+        abort(500)
+    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type, lang_id=lang_id)
+
+
+@post.route("/post/<post_type>/<lang_id>")
+@authorize_web(0)
+@db_connection
+def show_posts_list_language(*args, permission_level, connection, post_type, lang_id, **kwargs):
+    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type, lang_id=lang_id)
+
+
+def return_post_list(*args, permission_level, connection, post_type, lang_id, **kwargs):
     if connection is None:
         return redirect("/database-error")
     post_type_info = {
@@ -49,8 +69,8 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
             FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-            WHERE A.post_type = %s ORDER BY  A.update_date DESC"""),
-            [post_type]
+            WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC"""),
+            [post_type, lang_id]
         )
         raw_items = cur.fetchall()
     except Exception as e:
@@ -58,6 +78,7 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
         abort(500)
 
     cur.close()
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     connection.close()
 
     items = []
@@ -80,6 +101,8 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
                            permission_level=permission_level,
                            post_list=items,
                            post_type=post_type_info,
+                           languages=languages,
+                           current_lang=current_lang
                            )
 
 
@@ -204,10 +227,10 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     )
 
 
-@post.route("/post/<post_type>/new")
+@post.route("/post/<post_type>/new/<lang_id>")
 @authorize_web(0)
 @db_connection
-def show_post_new(*args, permission_level, connection, post_type, **kwargs):
+def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -261,7 +284,8 @@ def show_post_new(*args, permission_level, connection, post_type, **kwargs):
         "use_theme_css": True,
         "status": "draft",
         "uuid": uuid.uuid4(),
-        "post_type": post_type
+        "post_type": post_type,
+        "lang": lang_id
     }
 
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
