@@ -130,7 +130,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
             A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, A.import_approved,
-            A.password
+            A.password, A.lang
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
@@ -168,6 +168,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         abort(500)
 
     cur.close()
+    current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
     connection.close()
 
     token = request.cookies.get('sloth_session')
@@ -211,7 +212,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "post_type": raw_post[13],
         "imported": raw_post[14],
         "approved": raw_post[15],
-        "password": raw_post[16]
+        "password": raw_post[16],
+        "lang": raw_post[17]
     }
 
     return render_template(
@@ -223,7 +225,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         data=data,
         media=media,
         all_categories=all_categories,
-        post_statuses=[item for sublist in temp_post_statuses for item in sublist]
+        post_statuses=[item for sublist in temp_post_statuses for item in sublist],
+        current_lang=current_lang
     )
 
 
@@ -265,6 +268,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         abort(500)
 
     cur.close()
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     connection.close()
 
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
@@ -290,7 +294,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
                            media=media, post_type_name=post_type_name, post_statuses=post_statuses,
-                           data=data, all_categories=all_categories)
+                           data=data, all_categories=all_categories, current_lang=current_lang)
 
 
 @post.route("/post/<type_id>/taxonomy")
@@ -321,6 +325,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
         abort(500)
 
     cur.close()
+    # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     connection.close()
 
     return render_template(

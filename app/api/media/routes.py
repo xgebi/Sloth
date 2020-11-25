@@ -133,7 +133,6 @@ def get_media(*args, connection, **kwargs):
         abort(500)
 
     cur.close()
-    connection.close()
 
     media_data = []
     for medium in raw_media:
