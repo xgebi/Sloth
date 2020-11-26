@@ -18,5 +18,19 @@
     "type": "sql",
     "folder": "setup",
     "file": "029_add_language_to_taxonomy.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "030_media_internationalization.sql"
+  },
+  {
+    "type": "py",
+    "file": "media_internationalization"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "031_media_internationalization_2.sql"
   }
 ]

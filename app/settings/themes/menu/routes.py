@@ -6,7 +6,7 @@ from app.authorization.authorize import authorize_web, authorize_rest
 import datetime
 
 from app.utilities.db_connection import db_connection
-from app.utilities import get_languages
+from app.utilities import get_languages, get_default_language
 from app.post.post_types import PostTypes
 
 from app.settings.themes.menu import menu
@@ -64,6 +64,7 @@ def return_menu_language(*args, permission_level, connection, lang_id, **kwargs)
     } for item in temp_result]
     cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_lang = get_default_language(connection=connection)
 
     return render_template(
         "menu.html",
@@ -72,7 +73,7 @@ def return_menu_language(*args, permission_level, connection, lang_id, **kwargs)
         menus=result,
         item_types=[item for sublist in temp_menu_types for item in sublist],
         languages=languages,
-        current_lang=current_lang
+        default_lang=default_lang
     )
 
 

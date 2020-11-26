@@ -22,5 +22,8 @@
 
 
 {% block scripts %}
+    <script>
+    const languages = JSON.parse(`{{ languages | tojson }}`);
+    </script>
     <script src="/static/js/media.js"></script>
 {% endblock %}

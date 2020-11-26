@@ -120,7 +120,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
         recent_posts=recent_posts,
         drafts=drafts,
         upcoming_posts=upcoming_posts,
-        current_lang=default_language
+        default_lang=default_language
     )
 
 

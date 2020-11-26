@@ -12,7 +12,7 @@ import datetime
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
-from app.utilities import get_languages
+from app.utilities import get_languages, get_default_language
 from app.post.posts_generator import PostsGenerator
 from app.post.post_generator_2 import PostGenerator as PostGenerator2
 
@@ -79,6 +79,7 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
 
     cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_lang = get_default_language(connection=connection)
     connection.close()
 
     items = []
@@ -102,6 +103,7 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
                            post_list=items,
                            post_type=post_type_info,
                            languages=languages,
+                           default_lang=default_lang,
                            current_lang=current_lang
                            )
 
@@ -169,6 +171,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
     cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
+    default_lang = get_default_language(connection=connection)
     connection.close()
 
     token = request.cookies.get('sloth_session')
@@ -226,7 +229,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         media=media,
         all_categories=all_categories,
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
-        current_lang=current_lang
+        default_lang=default_lang
     )
 
 
@@ -269,6 +272,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
     cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_lang = get_default_language(connection=connection)
     connection.close()
 
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
@@ -294,7 +298,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
                            media=media, post_type_name=post_type_name, post_statuses=post_statuses,
-                           data=data, all_categories=all_categories, current_lang=current_lang)
+                           data=data, all_categories=all_categories, default_lang=default_lang)
 
 
 @post.route("/post/<type_id>/taxonomy")

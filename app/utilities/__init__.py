@@ -1,7 +1,9 @@
 from psycopg2 import sql
+from typing import Tuple, List, Dict, Any
 
 
-def get_languages(*args, connection, lang_id, **kwargs):
+def get_languages(*args, connection, lang_id: str = "", **kwargs) \
+        -> Tuple[Dict[str, Any], List[Dict[str, Any]]] or List[Dict[str, Any]]:
     cur = connection.cursor()
     temp_languages = []
     try:
@@ -13,19 +15,24 @@ def get_languages(*args, connection, lang_id, **kwargs):
         print(e)
         return ()
 
-    languages = [{
+    if len(lang_id) != 0:
+        languages = [{
+            "uuid": lang[0],
+            "long_name": lang[1]
+        } for lang in temp_languages if lang[0] != lang_id]
+        current_lang = [{
+            "uuid": lang[0],
+            "long_name": lang[1]
+        } for lang in temp_languages if lang[0] == lang_id][0]
+
+        return current_lang, languages
+    return [{
         "uuid": lang[0],
         "long_name": lang[1]
-    } for lang in temp_languages if lang[0] != lang_id]
-    current_lang = [{
-        "uuid": lang[0],
-        "long_name": lang[1]
-    } for lang in temp_languages if lang[0] == lang_id][0]
-
-    return current_lang, languages
+    } for lang in temp_languages]
 
 
-def get_default_language(*args, connection, **kwargs):
+def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:
     cur = connection.cursor()
     main_language = []
     try:
@@ -36,6 +43,9 @@ def get_default_language(*args, connection, **kwargs):
         main_language = cur.fetchone()
     except Exception as e:
         print(e)
-        return ()
+        return {}
 
-    return main_language
+    return {
+        "uuid": main_language[0],
+        "long_name": main_language[1]
+    }

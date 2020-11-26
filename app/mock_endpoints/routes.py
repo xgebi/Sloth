@@ -5,6 +5,7 @@ import json
 import uuid
 from app.post.post_types import PostTypes
 from app.utilities.db_connection import db_connection
+from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web, authorize_rest
 
 from app.mock_endpoints import mock_endpoints
@@ -31,6 +32,7 @@ def show_endpoints_list(*args, permission_level, connection, **kwargs):
         abort(500)
 
     cur.close()
+    default_language = get_default_language(connection=connection)
     connection.close()
     endpoints_list = []
     for endpoint in temp_endpoints_list:
@@ -43,7 +45,8 @@ def show_endpoints_list(*args, permission_level, connection, **kwargs):
         "mock-endpoints-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        endpoints_list=endpoints_list
+        endpoints_list=endpoints_list,
+        default_lang=default_language
                            )
 
 

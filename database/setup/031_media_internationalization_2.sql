@@ -1,0 +1,1 @@
+ALTER TABLE sloth_media DROP COLUMN alt;

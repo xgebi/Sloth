@@ -44,6 +44,7 @@ if os.path.isfile("migration.json"):
             execute_python_scripts(con, migration)
 
     con.close()
-    os.remove("migration.json")
+    if os.environ["FLASK_ENV"] != "development":
+        os.remove("migration.json")
 
 print("Migrations done")

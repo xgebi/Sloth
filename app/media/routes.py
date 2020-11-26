@@ -1,16 +1,64 @@
-from flask import request, flash, url_for, current_app, abort
+from flask import request, current_app, abort, redirect, render_template
 import json
-import psycopg2
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import uuid
 from datetime import datetime
 import os
 import traceback
 
-from app.authorization.authorize import authorize_rest
+from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
+from app.utilities import get_default_language, get_languages
+from app.post.post_types import PostTypes
 
-from app.api.media import media
+from app.media import media
+
+
+@media.route("/media")
+@authorize_web(0)
+@db_connection
+def show_media_list(*args, permission_level, connection, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    media_data = get_media(connection=connection)
+    default_lang = get_default_language(connection=connection)
+    languages = get_languages(connection=connection)
+    connection.close()
+
+    return render_template(
+        "media.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        media=media_data,
+        default_lang=default_lang,
+        languages=languages
+    )
+
+@media.route("/media/<image>")
+@authorize_web(0)
+@db_connection
+def show_media(*args, permission_level, connection, image, **kwargs):
+    if connection is None:
+        return redirect("/database-error")
+
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+
+    media_data = get_media(connection=connection)
+    default_lang = get_default_language(connection=connection)
+    connection.close()
+
+    return render_template(
+        "media.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        media=media_data,
+        default_lang=default_lang
+    )
 
 
 @media.route("/api/media", methods=["GET"])
@@ -112,7 +160,7 @@ def delete_item(*args, connection=None, **kwargs):
     return json.dumps({"media": get_media(connection=connection)}), 201
 
 
-def get_media(*args, connection, **kwargs):
+def get_media(*args, connection, all_langs=False, **kwargs):
     cur = connection.cursor()
     raw_media = []
     site_url = -1
@@ -124,9 +172,16 @@ def get_media(*args, connection, **kwargs):
         if len(temp_site_url) != 1:
             abort(500)
         site_url = temp_site_url[0]
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
-        )
+        if not all_langs:
+            cur.execute(
+                sql.SQL("SELECT uuid, file_path FROM sloth_media")
+            )
+        else:
+            cur.execute(
+                sql.SQL("""SELECT uuid, file_path FROM sloth_media""")
+            )
+        # Get desired language
+        # get alts in desired language
         raw_media = cur.fetchall()
     except Exception as e:
         print("db error")
@@ -141,7 +196,6 @@ def get_media(*args, connection, **kwargs):
             "uuid": medium[0],
             "file_url": f"{site_url}/{path_fragment}",
             "file_path": f"{current_app.config['OUTPUT_PATH']}/{path_fragment}",
-            "alt": medium[2]
         })
     return media_data
 

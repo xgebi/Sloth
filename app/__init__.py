@@ -85,11 +85,8 @@ def create_app():  # dev, test, or prod
     from app.api.taxonomy import taxonomy as taxonomy_api
     app.register_blueprint(taxonomy_api)
 
-    from app.api.media import media as media_api
-    app.register_blueprint(media_api)
-
-    from app.web.media import media as media_web
-    app.register_blueprint(media_web)
+    from app.media import media
+    app.register_blueprint(media)
 
     from app.mock_endpoints import mock_endpoints
     app.register_blueprint(mock_endpoints)

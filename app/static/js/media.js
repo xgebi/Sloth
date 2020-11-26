@@ -26,15 +26,21 @@ function openModal() {
     fileUploadInput.setAttribute("type", "file");
     dialog.appendChild(fileUploadInput);
 
-    const altLabel = document.createElement('label');
-    altLabel.setAttribute('for', 'alt');
-    altLabel.textContent = "Alternative text";
-    dialog.appendChild(altLabel);
+    const h2 = document.createElement('h2');
+    h2.textContent = "Alt descriptions";
+    dialog.appendChild(h2)
 
-    const altInput = document.createElement('input');
-    altInput.setAttribute('id', 'alt');
-    altInput.setAttribute("type", "text");
-    dialog.appendChild(altInput);
+    languages.forEach(lang => {
+        const altLabel = document.createElement('label');
+        altLabel.setAttribute('for', 'alt');
+        altLabel.textContent = "Alternative text";
+        dialog.appendChild(altLabel);
+
+        const altInput = document.createElement('input');
+        altInput.setAttribute('id', 'alt');
+        altInput.setAttribute("type", "text");
+        dialog.appendChild(altInput);
+    })
 
     const uploadButton = document.createElement('button');
     uploadButton.textContent = "Upload file";
