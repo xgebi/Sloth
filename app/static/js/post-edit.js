@@ -238,6 +238,39 @@ function savePost(values) {
 		});
 }
 
+function saveCreatePost(values, lang) {
+	values["createTranslation"] = true;
+	const metadataButtons = document.querySelectorAll(".metadata button");
+	metadataButtons.forEach(button => {
+		button.setAttribute("disabled", "true");
+	});
+	fetch('/api/post', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'authorization': document.cookie
+			.split(';')
+		  	.find(row => row.trim().startsWith('sloth_session'))
+		  	.split('=')[1]
+		},
+		body: JSON.stringify(values)
+	})
+		.then(response => {
+			if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+		})
+		.then(data => {
+			window.location.replace(
+				`/${window.location.pathname.substring(1).split("/")[0]}/new/${lang}?original=${data['newUuid']}`
+			);
+		})
+		.catch((error) => {
+			console.error('Error:', error);
+		});
+}
+
 function createCategory() {
 	fetch('/api/taxonomy/category/new', {
 		method: 'POST',

@@ -255,7 +255,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         all_categories=all_categories,
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
         default_lang=default_lang,
-        languages=languages
+        languages=languages,
+        translations=translations
     )
 
 
@@ -263,6 +264,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 @authorize_web(0)
 @db_connection
 def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwargs):
+    original_post = request.args.get('original');
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -714,6 +716,8 @@ def save_post(*args, connection=None, **kwargs):
     cur.close()
 
     result["saved"] = True
+    if filled["createTranslation"]:
+        result["newUuid"] = str(uuid.uuid4())
     return json.dumps(result)
 
 

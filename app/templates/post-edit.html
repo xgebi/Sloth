@@ -17,6 +17,15 @@
             <label for="slug">Slug</label>
             <input id="slug" value="{{ data["slug"] }}"/>
         </div>
+        {% if translations | length > 0 %}
+        <div class="first-column">
+            Translations
+            {% for translation in translations %}
+                <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
+
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="first-column">
             <button id="gallery-opener">Open gallery</button>
             <dialog id="modal" class="gallery"></dialog>
@@ -133,6 +142,13 @@
             {% endif %}
             {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
                 <button id="update-button">Update post</button>
+                <select id="create-lang">
+                    <option value="" selected>---</option>
+                    {% for language in languages %}
+                    <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
+                    {% endfor %}
+                </select>
+                <button id="update-create">Update and Create translation</button>
             {% endif %}
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
