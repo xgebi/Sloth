@@ -14,7 +14,7 @@ const gallery = {
 
 document.addEventListener('DOMContentLoaded', (event) => {
     // 1. get gallery
-	fetch('/api/post/media', {
+	fetch(`/api/post/media/${currentLanguage}`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',

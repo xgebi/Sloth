@@ -43,7 +43,7 @@ def create_app():  # dev, test, or prod
     from app.registration import registration
     app.register_blueprint(registration)
 
-    from app.web.login import login
+    from app.login import login
     app.register_blueprint(login)
 
     from app.dashboard import dashboard
@@ -70,7 +70,7 @@ def create_app():  # dev, test, or prod
     from app.web.design import design
     app.register_blueprint(design)
 
-    from app.web.messages import messages
+    from app.messages import messages
     app.register_blueprint(messages)
 
     from app.api.site import site

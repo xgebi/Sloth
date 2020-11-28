@@ -1,12 +1,12 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
+from flask import abort, redirect, render_template
 from app.utilities.db_connection import db_connection
+from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web
 from app.post.post_types import PostTypes
-import psycopg2
 from psycopg2 import sql
 import datetime
 
-from app.web.messages import messages
+from app.messages import messages
 
 
 @messages.route("/messages")
@@ -33,6 +33,7 @@ def show_message_list(*args, permission_level, connection, **kwargs):
         abort(500)
 
     cur.close()
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     msgs = []
@@ -48,7 +49,8 @@ def show_message_list(*args, permission_level, connection, **kwargs):
         "message-list.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        messages=msgs
+        messages=msgs,
+        default_lang=default_language
     )
 
 

@@ -119,6 +119,17 @@
             {% if data["status"] == 'draft' %}
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
+                {% if languages | length > 0 %}
+                <label for="create-lang">For language:</label>
+                <select id="create-lang">
+                    <option value="" selected>---</option>
+                    {% for language in languages %}
+                    <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
+                    {% endfor %}
+                </select>
+                <button id="save-create">Save and Create translation</button>
+                <button id="publish-create">Publish and Create translation</button>
+                {% endif %}
             {% endif %}
             {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
                 <button id="update-button">Update post</button>
@@ -131,6 +142,9 @@
 {% endblock %}
 
 {% block scripts %}
+    <script>
+    const currentLanguage = `{{ current_lang_id }}`;
+    </script>
     <script src="/static/js/post-edit.js"></script>
     <!--script src="/static/js/editor.js"></script-->
 {% endblock %}

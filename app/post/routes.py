@@ -36,14 +36,16 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
     except Exception as e:
         print(e)
         abort(500)
-    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type, lang_id=lang_id)
+    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
+                            lang_id=lang_id)
 
 
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)
 @db_connection
 def show_posts_list_language(*args, permission_level, connection, post_type, lang_id, **kwargs):
-    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type, lang_id=lang_id)
+    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
+                            lang_id=lang_id)
 
 
 def return_post_list(*args, permission_level, connection, post_type, lang_id, **kwargs):
@@ -88,11 +90,11 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
             "uuid": item[0],
             "title": item[1],
             "publish_date":
-                datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).strftime("%Y-%m-%d") if item[
-                                                                                                     2] is not None else "",
+                datetime.datetime.fromtimestamp(float(item[2]) / 1000.0).
+                    strftime("%Y-%m-%d") if item[2] is not None else "",
             "update_date":
-                datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).strftime("%Y-%m-%d") if item[
-                                                                                                     3] is not None else "",
+                datetime.datetime.fromtimestamp(float(item[3]) / 1000.0).
+                    strftime("%Y-%m-%d") if item[3] is not None else "",
             "status": item[4],
             "author": item[5]
         })
@@ -125,14 +127,14 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     temp_thumbnail_info = []
     try:
         cur.execute(
-            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
+            sql.SQL("SELECT uuid, file_path FROM sloth_media")
         )
         media = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, 
-            A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, A.import_approved,
-            A.password, A.lang
+            sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js,
+             A.thumbnail, A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, 
+             A.import_approved, A.password, A.lang, A.original_lang_entry_uuid
                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
             [post_id]
         )
@@ -163,6 +165,30 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 [raw_post[8]]
             )
             temp_thumbnail_info = cur.fetchone()
+        current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
+        translations = []
+        if raw_post[18] is not None:
+            # Get original
+            # Get translations except current one
+            cur.execute(
+                sql.SQL("""SELECT uuid, lang FROM sloth_posts 
+                WHERE (original_lang_entry_uuid=%s AND uuid != %s) OR (uuid = %s)"""),
+                (post_id, post_id, raw_post[18])
+            )
+            temp_translations = cur.fetchall()
+        else:
+            cur.execute(
+                sql.SQL("""SELECT uuid, lang FROM sloth_posts WHERE original_lang_entry_uuid=%s"""),
+                (post_id, )
+            )
+            temp_translations = cur.fetchall()
+        for translation in temp_translations:
+            for language in languages:
+                if translation[1] == language['uuid']:
+                    translations.append({
+                        'uuid': translation[0],
+                        'language': language['long_name']
+                    })
 
     except Exception as e:
         print("db error B")
@@ -170,7 +196,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         abort(500)
 
     cur.close()
-    current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
     default_lang = get_default_language(connection=connection)
     connection.close()
 
@@ -229,7 +254,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         media=media,
         all_categories=all_categories,
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
-        default_lang=default_lang
+        default_lang=default_lang,
+        languages=languages
     )
 
 
@@ -248,7 +274,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     try:
 
         cur.execute(
-            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
+            sql.SQL("SELECT uuid, file_path FROM sloth_media")
         )
         media = cur.fetchall()
         cur.execute(
@@ -298,7 +324,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
                            media=media, post_type_name=post_type_name, post_statuses=post_statuses,
-                           data=data, all_categories=all_categories, default_lang=default_lang)
+                           data=data, all_categories=all_categories, default_lang=default_lang,
+                           current_lang_id=lang_id, languages=languages)
 
 
 @post.route("/post/<type_id>/taxonomy")
@@ -438,27 +465,42 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
 
 
 # API
-@post.route("/api/post/media", methods=["GET"])
+@post.route("/api/post/media/<lang_id>", methods=["GET"])
 @authorize_rest(0)
 @db_connection
-def get_media_data(*args, connection, **kwargs):
+def get_media_data(*args, connection, lang_id: str, **kwargs):
     if connection is None:
         abort(500)
 
     cur = connection.cursor()
-    raw_media = []
     site_url = ""
+    media = []
     try:
-
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path, alt FROM sloth_media")
-        )
-        raw_media = cur.fetchall()
         cur.execute(
             sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
         )
         site_url = cur.fetchone()
         site_url = site_url[0] if len(site_url) > 0 else ""
+        cur.execute(
+            sql.SQL("SELECT uuid, file_path FROM sloth_media")
+        )
+        raw_media = cur.fetchall()
+        media = {medium[0]: {
+            "uuid": medium[0],
+            "filePath": f"{site_url}/{medium[1]}"
+        } for medium in raw_media}
+        languages = get_languages(connection=connection)
+        cur.execute(
+            sql.SQL(
+                """SELECT media, alt FROM sloth_media_alts
+                           WHERE lang = %s;"""
+            ),
+            (lang_id, )
+        )
+        alts = cur.fetchall()
+        for alt in alts:
+            if media[alt[0]] is not None:
+                media[alt[0]]["alt"] = alt[1]
     except Exception as e:
         print("db error")
         abort(500)
@@ -466,15 +508,7 @@ def get_media_data(*args, connection, **kwargs):
     cur.close()
     connection.close()
 
-    media = []
-    for medium in raw_media:
-        media.append({
-            "uuid": medium[0],
-            "filePath": f"{site_url}/{medium[1]}",
-            "alt": medium[2]
-        })
-
-    return json.dumps({"media": media})
+    return json.dumps({"media": list(media.values())})
 
 
 @post.route("/api/post/upload-file", methods=['POST'])
@@ -580,7 +614,7 @@ def save_post(*args, connection=None, **kwargs):
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en', %s)"""), # this 'en' will throw error
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en', %s)"""),  # this 'en' will throw error
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], filled["password"]]
@@ -789,4 +823,3 @@ def get_protected_post(*args, connection, **kwargs):
         }), 200
     else:
         return json.dumps(protected_post), 200
-

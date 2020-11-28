@@ -1,9 +1,8 @@
-from flask import request, flash, url_for, current_app, abort, redirect, make_response, render_template
-from authlib.jose import jwt
+from flask import request, redirect, make_response, render_template
 
 from app.authorization.user import User
 
-from app.web.login import login
+from app.login import login
 
 
 @login.route("/login")
