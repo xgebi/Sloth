@@ -48,12 +48,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // 2. publish post button
 	document.querySelector("#publish-button")?.addEventListener('click', publishPost);
+	document.querySelector("#publish-create")?.addEventListener('click', publishPostCreate);
 
 	// 3. save draft button
 	document.querySelector("#save-draft")?.addEventListener('click', saveDraft);
+	document.querySelector("#save-create")?.addEventListener('click', saveDraftCreate);
 
 	// 4. update button
 	document.querySelector("#update-button")?.addEventListener('click', updatePost);
+	document.querySelector("#update-create")?.addEventListener('click', updatePostCreate)
 
 	// 5. schedule button
 	document.querySelector("#schedule-button")?.addEventListener('click', schedulePost);
@@ -145,8 +148,20 @@ function publishPost() {
 	if (!values) {
 		return;
 	}
+	values["post_status"] = "published";
 	console.log(values);
 	savePost(values);
+}
+
+function publishPostCreate() {
+	const values = collectValues();
+	if (!values) {
+		return;
+	}
+	values["post_status"] = "published";
+	values["createTranslation"] = document.querySelector("#create-lang").value.length > 0 ? document.querySelector("#create-lang").value : null;
+	console.log(values);
+	saveCreatePost(values);
 }
 
 function schedulePost() {
@@ -166,6 +181,16 @@ function saveDraft() {
 	values["post_status"] = "draft";
 	savePost(values);
 }
+function saveDraftCreate() {
+	const values = collectValues();
+	if (!values) {
+		return;
+	}
+	values["createTranslation"] = document.querySelector("#create-lang").value.length > 0 ?
+		document.querySelector("#create-lang").value : null;
+	values["post_status"] = "draft";
+	savePost(values);
+}
 function updatePost() {
 	const values = collectValues();
 	if (!values) {
@@ -173,11 +198,23 @@ function updatePost() {
 	}
 	savePost(values);
 }
+
+function updatePostCreate() {
+	const values = collectValues();
+	if (!values) {
+		return;
+	}
+	values["createTranslation"] = document.querySelector("#create-lang").value.length > 0 ?
+		document.querySelector("#create-lang").value : null;
+	saveCreatePost(values);
+}
+
 function collectValues() {
 	const post = {};
 	post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
 	post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
 	post["new"] = document.querySelector("#uuid").dataset["new"];
+	post["original_post"] = document.querySelector("#uuid").dataset["originalPost"];
 	post["title"] = document.querySelector("#title").value;
 	if (post["title"].length === 0) {
 		return false;
@@ -201,6 +238,7 @@ function collectValues() {
 		post["password"] = document.querySelector("#password_protection").value;
 	}
 	post["approved"] = document.querySelector("#import_approved") ? document.querySelector("#import_approved").checked : false;
+	post["lang"] = currentLanguage;
 	return post;
 }
 
@@ -227,7 +265,7 @@ function savePost(values) {
             throw `${response.status}: ${response.statusText}`
 		})
 		.then(data => {
-			if (window.location.pathname.endsWith("/new")) {
+			if (window.location.pathname.indexOf("/new/") >= 0) {
 				window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
 			} else {
 				metadataButtons.forEach(button => button.removeAttribute("disabled"));
@@ -238,8 +276,7 @@ function savePost(values) {
 		});
 }
 
-function saveCreatePost(values, lang) {
-	values["createTranslation"] = true;
+function saveCreatePost(values) {
 	const metadataButtons = document.querySelectorAll(".metadata button");
 	metadataButtons.forEach(button => {
 		button.setAttribute("disabled", "true");
@@ -263,7 +300,7 @@ function saveCreatePost(values, lang) {
 		})
 		.then(data => {
 			window.location.replace(
-				`/${window.location.pathname.substring(1).split("/")[0]}/new/${lang}?original=${data['newUuid']}`
+				`/${window.location.pathname.substring(1).split("/")[0]}/${window.location.pathname.substring(1).split("/")[1]}/new/${values["createTranslation"]}?original=${data['uuid']}`
 			);
 		})
 		.catch((error) => {

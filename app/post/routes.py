@@ -166,7 +166,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             )
             temp_thumbnail_info = cur.fetchone()
         current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
-        translations = []
+        translatable = []
         if raw_post[18] is not None:
             # Get original
             # Get translations except current one
@@ -182,14 +182,27 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 (post_id, )
             )
             temp_translations = cur.fetchall()
+
+        translated_languages = []
         for translation in temp_translations:
+            addable = True
             for language in languages:
                 if translation[1] == language['uuid']:
-                    translations.append({
+                    addable = False
+                    translated_languages.append({
                         'uuid': translation[0],
-                        'language': language['long_name']
+                        'long_name': language['long_name']
                     })
+            if addable:
+                translatable.append(language)
 
+        """translatable_languages = [lang for lang in languages if lang['uuid'] not in [uuid[0] for uuid in raw_langs]]
+        translations = [lang for lang in languages if lang['uuid'] in [uuid[0] for uuid in raw_langs]]
+        for translated_post in raw_langs:
+            for lang in translations:
+                if translated_post[0] == lang['uuid']:
+                    lang["post"] = translated_post[1]
+                    break"""
     except Exception as e:
         print("db error B")
         print(e)
@@ -255,8 +268,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         all_categories=all_categories,
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
         default_lang=default_lang,
-        languages=languages,
-        translations=translations
+        languages=translatable,
+        translations=translated_languages
     )
 
 
@@ -294,13 +307,28 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             [post_type]
         )
         raw_all_categories = cur.fetchall()
+        current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+        default_lang = get_default_language(connection=connection)
+        if original_post:
+            # Get existing languages
+            cur.execute(
+                sql.SQL(
+                    """SELECT lang, uuid FROM sloth_posts WHERE uuid = %s OR original_lang_entry_uuid = %s;"""),
+                (original_post, original_post, )
+            )
+            raw_langs = cur.fetchall()
+            translatable_languages = [lang for lang in languages if lang['uuid'] not in [uuid[0] for uuid in raw_langs]]
+            translations = [lang for lang in languages if lang['uuid'] in [uuid[0] for uuid in raw_langs]]
+            for translated_post in raw_langs:
+                for lang in translations:
+                    if translated_post[0] == lang['uuid']:
+                        lang["post"] = translated_post[1]
+                        break
     except Exception as e:
         print("db error A")
         abort(500)
 
     cur.close()
-    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
-    default_lang = get_default_language(connection=connection)
     connection.close()
 
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
@@ -321,13 +349,14 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "status": "draft",
         "uuid": uuid.uuid4(),
         "post_type": post_type,
-        "lang": lang_id
+        "lang": lang_id,
+        "original_post": original_post
     }
 
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
                            media=media, post_type_name=post_type_name, post_statuses=post_statuses,
                            data=data, all_categories=all_categories, default_lang=default_lang,
-                           current_lang_id=lang_id, languages=languages)
+                           current_lang_id=lang_id, languages=languages, translations=translatable_languages)
 
 
 @post.route("/post/<type_id>/taxonomy")
@@ -613,13 +642,23 @@ def save_post(*args, connection=None, **kwargs):
             if int(similar) > 0:
                 filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
+            if "lang" not in filled:
+                cur.execute(
+                    sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';"),
+                )
+                lang = cur.fetchone()[0]
+            else:
+                lang = filled["lang"]
+
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'en', %s)"""),  # this 'en' will throw error
+                title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
+                original_lang_entry_uuid) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),  # this 'en' will throw error
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
-                 filled["post_status"], filled["password"]]
+                 filled["post_status"], lang, filled["password"] if "password" in filled else None,
+                 filled["original_post"] if "original_post" in filled else None]
             )
             connection.commit()
             for category in filled["categories"]:
@@ -695,7 +734,7 @@ def save_post(*args, connection=None, **kwargs):
         }
 
         # get post
-        if filled["post_status"] == 'published':
+        if filled["post_status"] == 'published' and False: # temporarily disabled generation
             gen = PostsGenerator(connection=connection)
             taxonomies = gen.get_taxonomy_for_post(generatable_post_raw[0])
             gen.run(post=generatable_post)
@@ -716,8 +755,6 @@ def save_post(*args, connection=None, **kwargs):
     cur.close()
 
     result["saved"] = True
-    if filled["createTranslation"]:
-        result["newUuid"] = str(uuid.uuid4())
     return json.dumps(result)
 
 

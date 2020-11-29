@@ -8,7 +8,7 @@
         <h1 class="full-width">{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit
             {{ post_type_name }}{% endif %}</h1>
         <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
-              data-posttype-uuid="{{ data["post_type"] }}"></span>
+              data-posttype-uuid="{{ data["post_type"] }}" data-original-post="{{ data["original_post"] }}"></span>
         <div class="first-column">
             <label for="title">Title (may not be empty)</label>
             <input id="title" value="{{ data["title"] }}" required/>
@@ -17,6 +17,7 @@
             <label for="slug">Slug</label>
             <input id="slug" value="{{ data["slug"] }}"/>
         </div>
+        {{ translations }}
         {% if translations | length > 0 %}
         <div class="first-column">
             Translations
@@ -153,6 +154,7 @@
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
         </div>
+        {{ data["original_post"] }}
     </article>
     <!--div class="sloth-editor"></div-->
 {% endblock %}
