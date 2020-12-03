@@ -65,7 +65,7 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
         permission_level=permission_level,
         themes=themes,
         active_theme=active_theme,
-        regenarating=Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
+        regenerating=Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
     )
 
 

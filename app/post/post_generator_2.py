@@ -35,13 +35,11 @@ class PostGenerator:
         )
         self.set_footer(connection=connection)
 
-    def run(self, *args, lang: str, post: str, post_type: str, everything: bool = True, **kwargs):
+    def run(self, *args, post: str, post_type: str, everything: bool = True, **kwargs):
         """ Main function that runs everything
 
             Attributes
             ----------
-            lang : str
-                UUID of a language, defaults to main language
             post: str
                 Everything regarding a post will be regenerated
             post_type : str
@@ -54,6 +52,7 @@ class PostGenerator:
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             # return self.add_to_queue(post=post)
+            pass
 
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
             f.write("generation locked")
@@ -70,6 +69,8 @@ class PostGenerator:
         t.start()
         return True
 
+    def generate_all(self):
+        pass
 
     def get_theme_path(self, *args, **kwargs):
         cur = self.connection.cursor()

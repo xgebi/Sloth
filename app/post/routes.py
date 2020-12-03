@@ -828,7 +828,7 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
 
-    gen = PostsGenerator(connection=connection)
+    gen = PostGenerator2(connection=connection)
     gen.run(posts=True)
 
     return json.dumps({"generating": True})
