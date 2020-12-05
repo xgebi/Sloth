@@ -5,6 +5,9 @@ import os
 from jinja2 import Template
 import json
 import threading
+import shutil
+from typing import Dict, List
+from datetime import datetime
 
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
@@ -70,7 +73,98 @@ class PostGenerator:
         return True
 
     def generate_all(self):
-        pass
+        if Path(self.config["OUTPUT_PATH"], "assets").is_dir():
+            shutil.rmtree(Path(self.config["OUTPUT_PATH"], "assets"))
+        if Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets").is_dir():
+            shutil.copytree(Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets"),
+                            Path(self.config["OUTPUT_PATH"], "assets"))
+
+        # get languages
+        languages = self.get_languages()
+        # get post types
+        post_types = self.get_post_types()
+        # generate posts for main language
+        # generate posts for other languages
+        for language in languages:
+            self.generate_posts_for_language(language=language, post_types=post_types)
+        # generate home & RSS feed
+
+    def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
+        if language["uuid"] == self.settings["main_language"]:
+            output_path = Path(self.config["OUTPUT_PATH"])
+        else:
+            output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+
+        for post_type in post_types:
+            posts = self.get_posts_from_post_type_language(
+                post_type_uuid=post_type['uuid'],
+                post_type_slug=post_type['slug'],
+                language_uuid=language['uuid']
+            );
+
+    def get_posts_from_post_type_language(
+            self,
+            *args,
+            post_type_uuid: str,
+            language_uuid: str,
+            post_type_slug: str,
+            **kwargs
+    ):
+        cur = self.connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                        A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail
+                                    FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                    WHERE post_type = %s AND lang = %s AND post_status = 'published' 
+                                    ORDER BY A.publish_date DESC;"""),
+                (post_type_uuid, language_uuid)
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(e)
+
+        cur.close()
+
+        posts = []
+
+        for post in raw_items:
+            thumbnail = None
+            thumbnail_alt = None
+            if post[13] is not None:
+                cur = self.connection.cursor()
+                try:
+                    cur.execute(
+                        sql.SQL("""SELECT file_path, alt FROM sloth_media WHERE uuid = %s;"""),
+                        [post[13]]
+                    )
+                    raw_thumbnail = cur.fetchone()
+                    thumbnail = raw_thumbnail[0]
+                    thumbnail_alt = raw_thumbnail[1]
+                except Exception as e:
+                    print(e)
+            posts.append({
+                "uuid": post[0],
+                "slug": post[1],
+                "author_name": post[2],
+                "author_uuid": post[3],
+                "title": post[4],
+                "content": post[5],
+                "excerpt": post[6],
+                "css": post[7],
+                "js": post[8],
+                "publish_date": post[9],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "updated_date": post[10],
+                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[11],
+                "post_type_slug": post_type_slug,
+                "approved": post[12],
+                "thumbnail": thumbnail,
+                "thumbnail_alt": thumbnail_alt
+            })
+
+        return posts
 
     def get_theme_path(self, *args, **kwargs):
         cur = self.connection.cursor()
@@ -161,7 +255,7 @@ class PostGenerator:
             )
             raw_api_url = cur.fetchone()
         except Exception as e:
-            print(traceback.format_exc())
+            print(e)
         cur.close()
 
         with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
@@ -194,3 +288,52 @@ class PostGenerator:
                 "settings_value": item[1],
                 "settings_value_type": item[2]
             }
+
+    def get_post_types(self):
+        cur = self.connection.cursor()
+
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
+                        FROM sloth_post_types""")
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(e)
+
+        cur.close()
+
+        post_types = []
+        for item in raw_items:
+            post_types.append({
+                "uuid": item[0],
+                "slug": item[1],
+                "display_name": item[2],
+                "tags_enabled": item[3],
+                "categories_enabled": item[4],
+                "archive_enabled": item[5]
+            })
+
+        return post_types
+
+    def get_languages(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(e)
+
+        cur.close()
+
+        languages = []
+        for item in raw_items:
+            languages.append({
+                "uuid": item[0],
+                "long_name": item[1],
+                "short_name": item[2]
+            })
+
+        return languages
