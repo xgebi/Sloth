@@ -11,6 +11,7 @@ import zipfile
 import shutil
 
 from app.utilities.db_connection import db_connection
+from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web
 from app.post.posts_generator import PostsGenerator
 
@@ -46,6 +47,7 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
         abort(500)
 
     cur.close()
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     list_of_dirs = os.listdir(config["THEMES_PATH"])
@@ -65,7 +67,8 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
         permission_level=permission_level,
         themes=themes,
         active_theme=active_theme,
-        regenerating=Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
+        regenerating=Path(os.path.join(os.getcwd(), 'generating.lock')).is_file(),
+        default_lang=default_language
     )
 
 

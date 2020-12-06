@@ -20,6 +20,7 @@ class PostGenerator:
 
     @db_connection
     def __init__(self, *args, connection, **kwargs):
+        self.settings = {}
         if connection is None:
             self.is_runnable = False
 
@@ -38,7 +39,7 @@ class PostGenerator:
         )
         self.set_footer(connection=connection)
 
-    def run(self, *args, post: str, post_type: str, everything: bool = True, **kwargs):
+    def run(self, *args, post: str = "", post_type: str = "", everything: bool = True, **kwargs):
         """ Main function that runs everything
 
             Attributes
@@ -50,12 +51,12 @@ class PostGenerator:
             everything : bool
                 Tells the function that everything will be regeneratable
         """
-        if not self.runnable or (post and post_type):
+        if not self.runnable or (len(post) > 0 and len(post_type) > 0):
             return False
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             # return self.add_to_queue(post=post)
-            pass
+            return False
 
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
             f.write("generation locked")
@@ -89,8 +90,11 @@ class PostGenerator:
             self.generate_posts_for_language(language=language, post_types=post_types)
         # generate home & RSS feed
 
+        # remove lock
+        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
     def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
-        if language["uuid"] == self.settings["main_language"]:
+        if language["uuid"] == self.settings["main_language"]['settings_value']:
             output_path = Path(self.config["OUTPUT_PATH"])
         else:
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
@@ -100,7 +104,12 @@ class PostGenerator:
                 post_type_uuid=post_type['uuid'],
                 post_type_slug=post_type['slug'],
                 language_uuid=language['uuid']
-            );
+            )
+            self.delete_post_type_post_files(post_type=post_type)
+            self.generate_post_type(posts=posts, output=output_path)
+            # generate archive and RSS if enabled
+        # generate home
+        # generate RSS feed
 
     def get_posts_from_post_type_language(
             self,
@@ -114,7 +123,8 @@ class PostGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                        A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail
+                         A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail,
+                         A.original_lang_entry_uuid
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
                                     WHERE post_type = %s AND lang = %s AND post_status = 'published' 
                                     ORDER BY A.publish_date DESC;"""),
@@ -131,18 +141,42 @@ class PostGenerator:
         for post in raw_items:
             thumbnail = None
             thumbnail_alt = None
-            if post[13] is not None:
-                cur = self.connection.cursor()
-                try:
+
+            cur = self.connection.cursor()
+            try:
+                if post[13] is not None:
                     cur.execute(
-                        sql.SQL("""SELECT file_path, alt FROM sloth_media WHERE uuid = %s;"""),
-                        [post[13]]
+                        sql.SQL("""SELECT file_path FROM sloth_media WHERE uuid = %s;"""),
+                        (post[13],)
                     )
                     raw_thumbnail = cur.fetchone()
                     thumbnail = raw_thumbnail[0]
-                    thumbnail_alt = raw_thumbnail[1]
-                except Exception as e:
-                    print(e)
+
+                if post[14]:
+                    cur.execute(
+                        sql.SQL(
+                            """SELECT lang, slug FROM sloth_posts 
+                            WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);"""
+                        ),
+                        (post[14], post[14], post[0])
+                    )
+                    temp_language_variants = cur.fetchall()
+                else:
+                    cur.execute(
+                        sql.SQL(
+                            """SELECT lang, slug FROM sloth_posts 
+                            WHERE original_lang_entry_uuid = %s;"""
+                        ),
+                        (post[14],)
+                    )
+                    temp_language_variants = cur.fetchall()
+            except Exception as e:
+                print(e)
+
+            language_variants = [{
+                "lang": temp[0],
+                "slug": temp[1]
+            } for temp in temp_language_variants]
             posts.append({
                 "uuid": post[0],
                 "slug": post[1],
@@ -161,10 +195,14 @@ class PostGenerator:
                 "post_type_slug": post_type_slug,
                 "approved": post[12],
                 "thumbnail": thumbnail,
-                "thumbnail_alt": thumbnail_alt
+                "thumbnail_alt": thumbnail_alt,
+                "language_variants": language_variants
             })
 
         return posts
+
+    def generate_post_type(self, *args, posts, output, **kwargs):
+        pass
 
     def get_theme_path(self, *args, **kwargs):
         cur = self.connection.cursor()
@@ -337,3 +375,23 @@ class PostGenerator:
             })
 
         return languages
+
+    # delete post files
+    def delete_post_files(self, *args, post_type, post, **kwargs):
+        post_type_slug = post_type
+        post_slug = post
+        if type(post) is not str:
+            post_slug = post["slug"]
+        if type(post_type) is not str:
+            post_type_slug = post["slug"]
+        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
+
+        if os.path.exists(post_path_dir):
+            shutil.rmtree(post_path_dir)
+
+    # delete post type files
+    def delete_post_type_post_files(self, post_type):
+        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+
+        if os.path.exists(posts_path_dir):
+            shutil.rmtree(posts_path_dir)

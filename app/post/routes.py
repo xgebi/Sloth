@@ -829,7 +829,7 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
         abort(500)
 
     gen = PostGenerator2(connection=connection)
-    gen.run(posts=True)
+    gen.run()
 
     return json.dumps({"generating": True})
 
