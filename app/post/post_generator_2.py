@@ -89,7 +89,8 @@ class PostGenerator:
         for language in languages:
             self.generate_posts_for_language(language=language, post_types=post_types)
         # generate home & RSS feed
-
+        self.generate_home()
+        self.generate_rss()
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
@@ -108,6 +109,8 @@ class PostGenerator:
             self.delete_post_type_post_files(post_type=post_type)
             self.generate_post_type(posts=posts, output=output_path)
             # generate archive and RSS if enabled
+            if post_type["archive_enabled"]:
+                pass
         # generate home
         # generate RSS feed
 
@@ -395,3 +398,9 @@ class PostGenerator:
 
         if os.path.exists(posts_path_dir):
             shutil.rmtree(posts_path_dir)
+
+    def generate_home(self):
+        pass
+
+    def generate_rss(self):
+        pass
