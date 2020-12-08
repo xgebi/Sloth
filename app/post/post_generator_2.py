@@ -11,6 +11,7 @@ from datetime import datetime
 
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
+from app.post.post_types import PostTypes
 
 
 class PostGenerator:
@@ -83,21 +84,20 @@ class PostGenerator:
         # get languages
         languages = self.get_languages()
         # get post types
-        post_types = self.get_post_types()
-        # generate posts for main language
-        # generate posts for other languages
+        post_types_object = PostTypes()
+        post_types = post_types_object.get_post_type_list(self.connection)
+        # generate posts for languages
         for language in languages:
             self.generate_posts_for_language(language=language, post_types=post_types)
-        # generate home & RSS feed
-        self.generate_home()
-        self.generate_rss()
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
+            # path for main language
             output_path = Path(self.config["OUTPUT_PATH"])
         else:
+            # path for other languages
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
 
         for post_type in post_types:
@@ -112,7 +112,9 @@ class PostGenerator:
             if post_type["archive_enabled"]:
                 pass
         # generate home
+        self.generate_home(output_path=output_path, post_types=post_types)
         # generate RSS feed
+        self.generate_rss(output_path=output_path)
 
     def get_posts_from_post_type_language(
             self,
@@ -330,33 +332,6 @@ class PostGenerator:
                 "settings_value_type": item[2]
             }
 
-    def get_post_types(self):
-        cur = self.connection.cursor()
-
-        try:
-            cur.execute(
-                sql.SQL("""SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
-                        FROM sloth_post_types""")
-            )
-            raw_items = cur.fetchall()
-        except Exception as e:
-            print(e)
-
-        cur.close()
-
-        post_types = []
-        for item in raw_items:
-            post_types.append({
-                "uuid": item[0],
-                "slug": item[1],
-                "display_name": item[2],
-                "tags_enabled": item[3],
-                "categories_enabled": item[4],
-                "archive_enabled": item[5]
-            })
-
-        return post_types
-
     def get_languages(self):
         cur = self.connection.cursor()
         try:
@@ -399,8 +374,8 @@ class PostGenerator:
         if os.path.exists(posts_path_dir):
             shutil.rmtree(posts_path_dir)
 
-    def generate_home(self):
+    def generate_home(self, *args, output_path: Path, post_types: List[Dict[str, str]], **kwargs):
         pass
 
-    def generate_rss(self):
+    def generate_rss(self, *args, output_path: Path, **kwargs):
         pass
