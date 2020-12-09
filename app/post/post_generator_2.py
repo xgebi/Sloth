@@ -209,12 +209,48 @@ class PostGenerator:
 
         return posts
 
-    def generate_post_type(self, *args, posts, output_path, post_type, **kwargs):
+    def generate_post_type(self, *args, posts, output_path, post_type, language, **kwargs):
         for post in posts:
-            self.generate_post(post=post, output_path=output_path, post_type=post_type)
+            self.generate_post(post=post, output_path=output_path, post_type=post_type, language=language)
 
-    def generate_post(self, *args, post, output_path, post_type, **kwargs):
-        pass
+    def generate_post(self, *args, post, output_path, post_type, language, **kwargs):
+        post_path_dir = Path(output_path, post_type["slug"], post["slug"])
+        self.theme_path = Path(output_path, self.settings['active_theme']['settings_value'])
+
+        if os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{language['short_name']}.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}.html")
+        else:
+            post_template_path = Path(self.theme_path, "post.html")
+
+        with open(post_template_path, 'r') as f:
+            template = Template(f.read())
+
+        if not os.path.exists(post_path_dir):
+            os.makedirs(post_path_dir)
+
+        with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
+            md_parser = MarkdownParser()
+            post["excerpt"] = md_parser.to_html_string(post["excerpt"])
+            post["content"] = md_parser.to_html_string(post["content"])
+            rendered = template.render(
+                post=post,
+                sitename=self.settings["sitename"]["settings_value"],
+                api_url=self.settings["api_url"]["settings_value"],
+                sloth_footer=self.sloth_footer,
+                menus=self.menus)
+            f.write(rendered)
+
+        if post["js"] and len(post["js"]) > 0:
+            with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
+                f.write(post["js"])
+
+        if post["css"] and len(post["css"]) > 0:
+            with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
+                f.write(post["css"])
 
     def generate_archive(self, *args, posts, output_path, post_type, **kwargs):
         pass
