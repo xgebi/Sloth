@@ -1,0 +1,1 @@
+INSERT INTO sloth_settings VALUES ('number_rss_posts', 'Number of latest posts in RSS', 'text', 'sloth', 10)

@@ -8,6 +8,9 @@ import threading
 import shutil
 from typing import Dict, List
 from datetime import datetime
+import codecs
+from xml.dom import minidom
+import time
 
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
@@ -32,6 +35,7 @@ class PostGenerator:
 
         self.set_individual_settings(connection=connection, setting_name='active_theme')
         self.set_individual_settings(connection=connection, setting_name='main_language')
+        self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
 
         # Set path to the theme
         self.theme_path = Path(
@@ -107,14 +111,13 @@ class PostGenerator:
                 language_uuid=language['uuid']
             )
             self.delete_post_type_post_files(post_type=post_type)
-            self.generate_post_type(posts=posts, output=output_path)
+            self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type)
             # generate archive and RSS if enabled
             if post_type["archive_enabled"]:
-                pass
+                self.generate_archive(posts=posts, post_type=post_type, output_path=output_path)
+                self.generate_rss(output_path=output_path, posts=posts)
         # generate home
-        self.generate_home(output_path=output_path, post_types=post_types)
-        # generate RSS feed
-        self.generate_rss(output_path=output_path)
+        self.generate_home(output_path=output_path, post_types=post_types, language=language)
 
     def get_posts_from_post_type_language(
             self,
@@ -206,7 +209,14 @@ class PostGenerator:
 
         return posts
 
-    def generate_post_type(self, *args, posts, output, **kwargs):
+    def generate_post_type(self, *args, posts, output_path, post_type, **kwargs):
+        for post in posts:
+            self.generate_post(post=post, output_path=output_path, post_type=post_type)
+
+    def generate_post(self, *args, post, output_path, post_type, **kwargs):
+        pass
+
+    def generate_archive(self, *args, posts, output_path, post_type, **kwargs):
         pass
 
     def get_theme_path(self, *args, **kwargs):
@@ -374,8 +384,215 @@ class PostGenerator:
         if os.path.exists(posts_path_dir):
             shutil.rmtree(posts_path_dir)
 
-    def generate_home(self, *args, output_path: Path, post_types: List[Dict[str, str]], **kwargs):
-        pass
+    def generate_home(
+            self,
+            *args,
+            output_path: Path,
+            post_types: List[Dict[str, str]],
+            language,
+            **kwargs
+    ):
+        self.generate_rss(posts=self.prepare_rss_home_data(language=language), path=output_path)
+        posts = {}
+        try:
+            cur = self.connection.cursor()
 
-    def generate_rss(self, *args, output_path: Path, **kwargs):
-        pass
+            for post_type in post_types:
+                cur.execute(
+                    sql.SQL(
+                        """SELECT uuid, title, slug, excerpt, publish_date FROM sloth_posts 
+                            WHERE post_type = %s AND post_status = 'published' AND lang = %s
+                            ORDER BY publish_date DESC LIMIT %s"""
+                    ),
+                    (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
+                )
+                raw_items = cur.fetchall()
+
+                posts[post_type['slug']] = [{
+                    "uuid": item[0],
+                    "title": item[1],
+                    "slug": item[2],
+                    "excerpt": item[3],
+                    "publish_date": item[4],
+                    "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
+                        "%Y-%m-%d %H:%M"),
+                    "post_type_slug": post_type['slug']
+                } for item in raw_items]
+            cur.close()
+        except Exception as e:
+            print(390)
+            print(e)
+
+        # get template
+        home_template_path = Path(self.theme_path, f"home-{language['short_name']}.html")
+        if not home_template_path.is_file():
+            home_template_path = Path(self.theme_path, f"home.html")
+
+        with open(home_template_path, 'r') as f:
+            template = Template(f.read())
+
+        # write file
+        home_path_dir = os.path.join(output_path, "index.html")
+
+        with open(home_path_dir, 'w') as f:
+            f.write(template.render(
+                posts=posts, sitename=self.settings["sitename"]["settings_value"],
+                page_name="Home", api_url=self.settings["api_url"]["settings_value"],
+                sloth_footer=self.sloth_footer + self.sloth_secret_script,
+                menus=self.menus
+            ))
+
+    def prepare_rss_home_data(self, *args, language, **kwargs):
+        try:
+            cur = self.connection.cursor()
+            cur.execute(
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                    A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
+                                FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
+                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
+                                WHERE C.archive_enabled = %s AND A.post_status = 'published' AND A.lang = %s
+                                ORDER BY A.publish_date DESC LIMIT %s"""),
+                (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
+            )
+            raw_posts = cur.fetchall()
+            cur.close()
+        except Exception as e:
+            print(371)
+            print(e)
+
+        return [{
+            "uuid": post[0],
+            "slug": post[1],
+            "author_name": post[2],
+            "author_uuid": post[3],
+            "title": post[4],
+            "content": post[5],
+            "excerpt": post[6],
+            "css": post[7],
+            "js": post[8],
+            "publish_date": post[9],
+            "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "update_date": post[10],
+            "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "post_status": post[11],
+            "post_type_slug": post[12]
+        } for post in raw_posts]
+
+    def generate_rss(self, *args, output_path: Path, posts, **kwargs):
+        doc = minidom.Document()
+        root_node = doc.createElement('rss')
+
+        root_node.setAttribute('version', '2.0')
+        root_node.setAttribute('xmlns:content', 'http://purl.org/rss/1.0/modules/content/')
+        root_node.setAttribute('xmlns:wfw', 'http://wellformedweb.org/CommentAPI/')
+        root_node.setAttribute('xmlns:dc', 'http://purl.org/dc/elements/1.1/')
+        root_node.setAttribute('xmlns:atom', 'http://www.w3.org/2005/Atom')
+        root_node.setAttribute('xmlns:sy', 'http://purl.org/rss/1.0/modules/syndication/')
+        root_node.setAttribute('xmlns:slash', 'http://purl.org/rss/1.0/modules/slash/')
+        doc.appendChild(root_node)
+
+        channel = doc.createElement("channel")
+
+        title = doc.createElement("title")
+        title_text = doc.createTextNode(self.settings["sitename"]["settings_value"])
+        title.appendChild(title_text)
+        channel.appendChild(title)
+
+        atom_link = doc.createElement("atom:link")
+        atom_link.setAttribute('href', self.settings["site_url"]["settings_value"])
+        atom_link.setAttribute('rel', 'self')
+        atom_link.setAttribute('type', 'application/rss+xml')
+        channel.appendChild(atom_link)
+
+        link = doc.createElement('link')
+        link_text = doc.createTextNode(self.settings["site_url"]["settings_value"])
+        link.appendChild(link_text)
+        channel.appendChild(link)
+
+        description = doc.createElement('description')
+
+        description_text = doc.createTextNode(self.settings["site_description"]["settings_value"])
+        description.appendChild(description_text)
+        channel.appendChild(description)
+        # <lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>
+        last_build = doc.createElement('lastBuildDate')
+        d = datetime.fromtimestamp(time.time()).astimezone()
+        last_build_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S %z'))
+        last_build.appendChild(last_build_text)
+        channel.appendChild(last_build)
+        # <language>en-US</language>
+        language = doc.createElement('language')
+        language_text = doc.createTextNode('en-US')
+        language.appendChild(language_text)
+        channel.appendChild(language)
+        # <sy:updatePeriod>hourly</sy:updatePeriod>
+        update_period = doc.createElement('sy:updatePeriod')
+        update_period_text = doc.createTextNode('hourly')
+        update_period.appendChild(update_period_text)
+        channel.appendChild(update_period)
+        # <sy:updateFrequency>1</sy:updateFrequency>
+        update_frequency = doc.createElement('sy:updateFrequency')
+        update_frequency_text = doc.createTextNode('1')
+        update_frequency.appendChild(update_frequency_text)
+        channel.appendChild(update_frequency)
+        # <generator>https://wordpress.org/?v=5.2.2</generator>
+        generator = doc.createElement('generator')
+        generator_text = doc.createTextNode('SlothCMS')
+        generator.appendChild(generator_text)
+        channel.appendChild(generator)
+
+        for post in posts:
+            # <item>
+            post_item = doc.createElement('item')
+            # <title>Irregular Batch of Interesting Links #10</title>
+            post_title = doc.createElement('title')
+            post_title_text = doc.createTextNode(post['title'])
+            post_title.appendChild(post_title_text)
+            post_item.appendChild(post_title)
+            # <link>https://www.sarahgebauer.com/irregular-batch-of-interesting-links-10/</link>
+            post_link = doc.createElement('link')
+
+            post_link_text = doc.createTextNode(
+                f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}")
+            post_link.appendChild(post_link_text)
+            post_item.appendChild(post_link)
+            guid = doc.createElement("guid")
+            guid.appendChild(doc.createTextNode(
+                f"{self.settings['site_url']['settings_value']}/{post['post_type_slug']}/{post['slug']}"))
+            post_item.appendChild(guid)
+            # <pubDate>Wed, 28 Aug 2019 07:00:17 +0000</pubDate>
+            pub_date = doc.createElement('pubDate')
+            d = datetime.fromtimestamp(post['publish_date'] / 1000).astimezone()
+            pub_date_text = doc.createTextNode(d.strftime('%a, %d %b %Y %H:%M:%S %z'))
+            pub_date.appendChild(pub_date_text)
+            post_item.appendChild(pub_date)
+
+            # <dc:creator><![CDATA[Sarah Gebauer]]></dc:creator>
+            # <category><![CDATA[Interesting links]]></category>
+            # if isinstance(post['categories'], collections.Iterable):
+            #    for category in post['categories']:
+            #        category_node = doc.createElement('category')
+            #        category_text = doc.createCDATASection(category["display_name"])
+            #        category_node.appendChild(category_text)
+            #        post_item.appendChild(category_node)
+            # <content:encoded><![CDATA[
+            description = doc.createElement('description')
+            post_item.appendChild(description)
+
+            content = doc.createElement('content:encoded')
+
+            md_parser = MarkdownParser()
+            if len(post["excerpt"]) == 0:
+                post["content"] = md_parser.to_html_string(post["content"])
+                content_text = doc.createCDATASection(post['content'])
+            else:
+                post["excerpt"] = md_parser.to_html_string(post["excerpt"])
+                post["content"] = md_parser.to_html_string(post["content"])
+                content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
+            content.appendChild(content_text)
+            post_item.appendChild(content)
+            channel.appendChild(post_item)
+        root_node.appendChild(channel)
+
+        with codecs.open(os.path.join(output_path, "feed.xml"), "w", "utf-8") as f:
+            f.write(doc.toprettyxml())

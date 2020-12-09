@@ -32,5 +32,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "031_media_internationalization_2.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup_data",
+    "file": "001_add_number_of_posts_in_rss.sql"
   }
 ]
