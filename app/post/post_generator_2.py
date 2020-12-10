@@ -11,6 +11,7 @@ from datetime import datetime
 import codecs
 from xml.dom import minidom
 import time
+import math
 
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
@@ -30,7 +31,6 @@ class PostGenerator:
 
         self.connection = connection
         self.config = current_app.config
-        self.theme_path = self.get_theme_path()
         self.menus = self.get_menus()
 
         self.set_individual_settings(connection=connection, setting_name='active_theme')
@@ -110,11 +110,11 @@ class PostGenerator:
                 post_type_slug=post_type['slug'],
                 language_uuid=language['uuid']
             )
-            self.delete_post_type_post_files(post_type=post_type)
-            self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type)
+            self.delete_post_type_post_files(post_type=post_type, language=language)
+            self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type, language=language)
             # generate archive and RSS if enabled
             if post_type["archive_enabled"]:
-                self.generate_archive(posts=posts, post_type=post_type, output_path=output_path)
+                self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
                 self.generate_rss(output_path=output_path, posts=posts)
         # generate home
         self.generate_home(output_path=output_path, post_types=post_types, language=language)
@@ -215,7 +215,6 @@ class PostGenerator:
 
     def generate_post(self, *args, post, output_path, post_type, language, **kwargs):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
-        self.theme_path = Path(output_path, self.settings['active_theme']['settings_value'])
 
         if os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
             post_template_path = os.path.join(self.theme_path,
@@ -252,30 +251,50 @@ class PostGenerator:
             with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
                 f.write(post["css"])
 
-    def generate_archive(self, *args, posts, output_path, post_type, **kwargs):
-        pass
+    def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
+        if len(posts) == 0:
+            return
 
-    def get_theme_path(self, *args, **kwargs):
-        cur = self.connection.cursor()
-        active_theme = ""
-        try:
-            cur.execute(
-                sql.SQL("""SELECT settings_name, settings_value, settings_value_type 
-                        FROM sloth_settings WHERE settings_name = %s OR settings_type = %s"""),
-                ['active_theme', 'sloth']
-            )
-            raw_item = cur.fetchone()
-            active_theme = raw_item[1]
-        except Exception as e:
-            print(f"getting theme path error: {e}")
+        archive_path_dir = Path(output_path, post_type["slug"])
 
-        cur.close()
+        if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.html")):
+            archive_template_path = os.path.join(self.theme_path,
+                                              f"archive-{post_type['slug']}-{language['short_name']}.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.html")):
+            archive_template_path = os.path.join(self.theme_path,
+                                              f"archive-{post_type['slug']}.html")
+        else:
+            archive_template_path = Path(self.theme_path, "archive.html")
 
-        # Set path to the theme
-        return Path(
-            self.config["THEMES_PATH"],
-            active_theme
-        )
+        with open(archive_template_path, 'r') as f:
+            template = Template(f.read())
+
+        if not os.path.exists(archive_path_dir):
+            os.makedirs(archive_path_dir)
+
+        for i in range(math.ceil(len(posts) / 10)):
+            if i > 0 and not os.path.exists(os.path.join(archive_path_dir, str(i))):
+                os.makedirs(os.path.join(archive_path_dir, str(i)))
+
+            path_to_index = os.path.join(archive_path_dir, str(i), 'index.html')
+            if i == 0:
+                path_to_index = os.path.join(archive_path_dir, 'index.html')
+
+            with open(path_to_index, 'w') as f:
+                lower = 10 * i
+                upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
+                    posts)
+
+                f.write(template.render(
+                    posts=posts[lower: upper],
+                    sitename=self.settings["sitename"]["settings_value"],
+                    page_name=f"Archive for {post_type['display_name']}",
+                    api_url=self.settings["api_url"]["settings_value"],
+                    sloth_footer=self.sloth_footer,
+                    menus=self.menus,
+                    current_page_number=i,
+                    not_last_page=True if math.floor(len(posts) / 10) != i else False
+                ))
 
     def get_menus(self, *args, **kwargs):
         menus = {}
@@ -357,6 +376,15 @@ class PostGenerator:
             else:
                 self.sloth_footer = ""
 
+        with open(Path(__file__).parent / "../templates/secret-script.html", 'r') as f:
+            # This will refactored
+            secret_template = Template(f.read())
+
+            if len(raw_api_url) == 1:
+                self.sloth_secret_script = secret_template.render(api_url=raw_api_url[0])
+            else:
+                self.sloth_secret_script = ""
+
     def set_individual_settings(self, *args, connection, setting_name, **kwargs):
         cur = connection.cursor()
         try:
@@ -401,21 +429,31 @@ class PostGenerator:
         return languages
 
     # delete post files
-    def delete_post_files(self, *args, post_type, post, **kwargs):
+    def delete_post_files(self, *args, post_type, post, language, **kwargs):
         post_type_slug = post_type
         post_slug = post
         if type(post) is not str:
             post_slug = post["slug"]
         if type(post_type) is not str:
             post_type_slug = post["slug"]
-        post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
+        if language["uuid"] == self.settings["main_language"]['settings_value']:
+            # path for main language
+            post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
+        else:
+            # path for other languages
+            post_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type_slug, post_slug)
 
         if os.path.exists(post_path_dir):
             shutil.rmtree(post_path_dir)
 
     # delete post type files
-    def delete_post_type_post_files(self, post_type):
-        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+    def delete_post_type_post_files(self, *args, post_type, language, **kwargs):
+        if language["uuid"] == self.settings["main_language"]['settings_value']:
+            # path for main language
+            posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
+        else:
+            # path for other languages
+            posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"])
 
         if os.path.exists(posts_path_dir):
             shutil.rmtree(posts_path_dir)
@@ -428,7 +466,7 @@ class PostGenerator:
             language,
             **kwargs
     ):
-        self.generate_rss(posts=self.prepare_rss_home_data(language=language), path=output_path)
+        self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path)
         posts = {}
         try:
             cur = self.connection.cursor()
