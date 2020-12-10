@@ -32,6 +32,8 @@ class PostGenerator:
         self.connection = connection
         self.config = current_app.config
         self.menus = self.get_menus()
+        # get languages
+        self.languages = self.get_languages()
 
         self.set_individual_settings(connection=connection, setting_name='active_theme')
         self.set_individual_settings(connection=connection, setting_name='main_language')
@@ -85,13 +87,11 @@ class PostGenerator:
             shutil.copytree(Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets"),
                             Path(self.config["OUTPUT_PATH"], "assets"))
 
-        # get languages
-        languages = self.get_languages()
         # get post types
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
         # generate posts for languages
-        for language in languages:
+        for language in self.languages:
             self.generate_posts_for_language(language=language, post_types=post_types)
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
@@ -250,6 +250,17 @@ class PostGenerator:
         if post["css"] and len(post["css"]) > 0:
             with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
                 f.write(post["css"])
+
+        for related_post in post["related_posts"]:
+            for lang in self.languages:
+                if lang['uuid'] == related_post['lang']:
+                    self.generate_post(
+                        post=related_post,
+                        output_path=output_path,
+                        post_type=post_type,
+                        language=lang)
+                    break
+
 
     def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
         if len(posts) == 0:

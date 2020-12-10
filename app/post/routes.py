@@ -8,6 +8,7 @@ import os
 import traceback
 import re
 import datetime
+from typing import List, Dict, Any
 
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
@@ -179,7 +180,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         else:
             cur.execute(
                 sql.SQL("""SELECT uuid, lang FROM sloth_posts WHERE original_lang_entry_uuid=%s"""),
-                (post_id, )
+                (post_id,)
             )
             temp_translations = cur.fetchall()
 
@@ -314,7 +315,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             cur.execute(
                 sql.SQL(
                     """SELECT lang, uuid FROM sloth_posts WHERE uuid = %s OR original_lang_entry_uuid = %s;"""),
-                (original_post, original_post, )
+                (original_post, original_post,)
             )
             raw_langs = cur.fetchall()
             translatable_languages = [lang for lang in languages if lang['uuid'] not in [uuid[0] for uuid in raw_langs]]
@@ -526,7 +527,7 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
                 """SELECT media, alt FROM sloth_media_alts
                            WHERE lang = %s;"""
             ),
-            (lang_id, )
+            (lang_id,)
         )
         alts = cur.fetchall()
         for alt in alts:
@@ -654,7 +655,8 @@ def save_post(*args, connection=None, **kwargs):
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
                 original_lang_entry_uuid) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),  # this 'en' will throw error
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
+                # this 'en' will throw error
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
@@ -706,37 +708,31 @@ def save_post(*args, connection=None, **kwargs):
                                 A.post_status, A.imported, A.import_approved FROM sloth_posts as A WHERE A.uuid = %s;"""),
             [filled["uuid"]]
         )
-        generatable_post_raw = cur.fetchone()
-        generatable_post = {
-            "uuid": generatable_post_raw[0],
-            "original_lang_entry_uuid": generatable_post_raw[1],
-            "lang": generatable_post_raw[2],
-            "slug": generatable_post_raw[3],
-            "post_type": generatable_post_raw[4],
-            "author": generatable_post_raw[5],
-            "title": generatable_post_raw[6],
-            "content": generatable_post_raw[7],
-            "excerpt": generatable_post_raw[8],
-            "css": generatable_post_raw[9],
-            "use_theme_css": generatable_post_raw[10],
-            "js": generatable_post_raw[11],
-            "use_theme_js": generatable_post_raw[12],
-            "thumbnail": generatable_post_raw[13],
-            "publish_date": generatable_post_raw[14],
-            "publish_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post_raw[14]) / 1000).strftime(
-                "%Y-%m-%d %H:%M") if generatable_post_raw[14] is not None else None,
-            "update_date": generatable_post_raw[15],
-            "update_date_formatted": datetime.datetime.fromtimestamp(float(generatable_post_raw[15]) / 1000).strftime(
-                "%Y-%m-%d %H:%M") if generatable_post_raw[15] is not None else None,
-            "post_status": generatable_post_raw[16],
-            "imported": generatable_post_raw[17],
-            "approved": generatable_post_raw[18]
-        }
-
+        generatable_post = parse_raw_post(cur.fetchone())
+        if generatable_post["original_lang_entry_uuid"] is not None:
+            cur.execute(
+                sql.SQL(
+                    """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title,
+                     A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
+                     A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
+                     WHERE A.uuid = %s OR (A.original_lang_entry_uuid = %s AND A.uuid <> %s);"""),
+                (generatable_post["original_lang_entry_uuid"], generatable_post["original_lang_entry_uuid"],
+                 generatable_post["uuid"])
+            )
+        else:
+            cur.execute(
+                sql.SQL(
+                    """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, 
+                    A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
+                    A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
+                    WHERE A.original_lang_entry_uuid = %s;"""),
+                (filled["uuid"], )
+            )
+        related_posts_raw = cur.fetchall()
+        generatable_post["related_posts"] = [parse_raw_post(related_post) for related_post in related_posts_raw]
         # get post
-        if filled["post_status"] == 'published' and False: # temporarily disabled generation
+        if filled["post_status"] == 'published' and False:  # temporarily disabled generation
             gen = PostsGenerator(connection=connection)
-            taxonomies = gen.get_taxonomy_for_post(generatable_post_raw[0])
             gen.run(post=generatable_post)
 
         if filled["post_status"] == 'protected':
@@ -756,6 +752,34 @@ def save_post(*args, connection=None, **kwargs):
 
     result["saved"] = True
     return json.dumps(result)
+
+
+def parse_raw_post(raw_post: List) -> Dict[str, str] or Any:
+    return {
+        "uuid": raw_post[0],
+        "original_lang_entry_uuid": raw_post[1],
+        "lang": raw_post[2],
+        "slug": raw_post[3],
+        "post_type": raw_post[4],
+        "author": raw_post[5],
+        "title": raw_post[6],
+        "content": raw_post[7],
+        "excerpt": raw_post[8],
+        "css": raw_post[9],
+        "use_theme_css": raw_post[10],
+        "js": raw_post[11],
+        "use_theme_js": raw_post[12],
+        "thumbnail": raw_post[13],
+        "publish_date": raw_post[14],
+        "publish_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[14]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if raw_post[14] is not None else None,
+        "update_date": raw_post[15],
+        "update_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[15]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if raw_post[15] is not None else None,
+        "post_status": raw_post[16],
+        "imported": raw_post[17],
+        "approved": raw_post[18]
+    }
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
