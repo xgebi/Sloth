@@ -57,6 +57,7 @@ def delete_posts(*args, permission_level, connection, **kwargs):
                 """DELETE FROM sloth_posts;"""
             )
         )
+        connection.commit()
     except Exception as e:
         print(e)
         abort(500)
@@ -82,6 +83,7 @@ def delete_taxonomy(*args, permission_level, connection, **kwargs):
                 """DELETE FROM sloth_taxonomy;"""
             )
         )
+        connection.commit()
     except Exception as e:
         print(e)
         abort(500)

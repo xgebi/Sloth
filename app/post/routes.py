@@ -371,6 +371,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
 
     cur.close()
     # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     return render_template(
@@ -379,7 +380,8 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
         permission_level=permission_level,
         taxonomy_types=taxonomy_types,
         taxonomy_list=taxonomy,
-        post_uuid=type_id
+        post_uuid=type_id,
+        default_lang=default_language
     )
 
 
