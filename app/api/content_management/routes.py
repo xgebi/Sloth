@@ -305,7 +305,6 @@ def process_posts(items, connection, base_import_link, import_count):
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                             title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, imported) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, (SELECT uuid FROM sloth_media WHERE wp_id = %s LIMIT 1), %s, %s, %s, 'en', %s)"""),
-                # this 'en' will throw error
                 [post_uuid, post_slug, post_types[post_type], request.headers.get('authorization').split(":")[1], title,
                  content, excerpt, "", "", f"{import_count}-{thumbnail_id}",
                  pub_date, pub_date, status, True]

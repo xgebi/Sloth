@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+
+{% block title %}Dev Settings{% endblock %}
+
+{% block body %}
+    <h1>Dev Settings</h1>
+    {% if error %}
+        <h1>Database error</h1>
+    {% endif %}
+
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/js/dev-settings.js"></script>
+{% endblock %}

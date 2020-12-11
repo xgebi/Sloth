@@ -261,7 +261,6 @@ class PostGenerator:
                         language=lang)
                     break
 
-
     def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
         if len(posts) == 0:
             return
@@ -270,10 +269,10 @@ class PostGenerator:
 
         if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.html")):
             archive_template_path = os.path.join(self.theme_path,
-                                              f"archive-{post_type['slug']}-{language['short_name']}.html")
+                                                 f"archive-{post_type['slug']}-{language['short_name']}.html")
         elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.html")):
             archive_template_path = os.path.join(self.theme_path,
-                                              f"archive-{post_type['slug']}.html")
+                                                 f"archive-{post_type['slug']}.html")
         else:
             archive_template_path = Path(self.theme_path, "archive.html")
 

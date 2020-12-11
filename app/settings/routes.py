@@ -10,6 +10,7 @@ from app.post.post_types import PostTypes
 from app.post.posts_generator import PostsGenerator
 
 from app.settings import settings
+from app.utilities import get_default_language
 
 
 @settings.route("/settings")
@@ -37,6 +38,7 @@ def show_settings(*args, permission_level, connection, **kwargs):
         abort(500)
 
     cur.close()
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     items = []
@@ -48,8 +50,12 @@ def show_settings(*args, permission_level, connection, **kwargs):
             "settings_value_type": item[3]
         })
 
-    return render_template("settings.html", post_types=post_types_result, permission_level=permission_level,
-                           settings=items)
+    return render_template("settings.html",
+                           post_types=post_types_result,
+                           permission_level=permission_level,
+                           settings=items,
+                           default_lang=default_language
+                           )
 
 
 @settings.route("/settings/save", methods=["POST"])

@@ -94,4 +94,7 @@ def create_app():  # dev, test, or prod
     from app.settings.language_settings import language_settings
     app.register_blueprint(language_settings)
 
+    from app.settings.dev import dev_settings
+    app.register_blueprint(dev_settings)
+
     return app

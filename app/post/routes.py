@@ -14,8 +14,7 @@ from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
 from app.utilities import get_languages, get_default_language
-from app.post.posts_generator import PostsGenerator
-from app.post.post_generator_2 import PostGenerator as PostGenerator2
+from app.post.post_generator import PostGenerator
 
 from app.post import post
 
@@ -145,8 +144,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             [raw_post[13]]
         )
         post_type_name = cur.fetchone()[0]
-        gen = PostsGenerator(connection=connection)
-        taxonomies = gen.get_taxonomy_for_post(post_id)
 
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
@@ -215,19 +212,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
     token = request.cookies.get('sloth_session')
 
-    post_categories = [cat["uuid"] for cat in taxonomies["categories"]]
-
-    all_categories = []
-    for category in raw_all_categories:
-        selected = False
-        if category[0] in post_categories:
-            selected = True
-        all_categories.append({
-            "uuid": category[0],
-            "display_name": category[1],
-            "selected": selected
-        })
-
     publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000) if raw_post[9] else None
 
     data = {
@@ -248,9 +232,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "update_date": raw_post[10],
         "status": raw_post[11],
         "display_name": raw_post[12],
-        "post_categories": taxonomies["categories"],
-        "all_categories": all_categories,
-        "tags": [tag["display_name"] for tag in taxonomies["tags"]],
         "post_type": raw_post[13],
         "imported": raw_post[14],
         "approved": raw_post[15],
@@ -266,7 +247,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         post_type_name=post_type_name,
         data=data,
         media=media,
-        all_categories=all_categories,
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
         default_lang=default_lang,
         languages=translatable,
@@ -325,6 +305,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
                     if translated_post[0] == lang['uuid']:
                         lang["post"] = translated_post[1]
                         break
+        else:
+            translatable_languages = []
     except Exception as e:
         print("db error A")
         abort(500)
@@ -656,7 +638,6 @@ def save_post(*args, connection=None, **kwargs):
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
                 original_lang_entry_uuid) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
-                # this 'en' will throw error
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
@@ -732,7 +713,7 @@ def save_post(*args, connection=None, **kwargs):
         generatable_post["related_posts"] = [parse_raw_post(related_post) for related_post in related_posts_raw]
         # get post
         if filled["post_status"] == 'published' and False:  # temporarily disabled generation
-            gen = PostsGenerator(connection=connection)
+            gen = PostGenerator(connection=connection)
             gen.run(post=generatable_post)
 
         if filled["post_status"] == 'protected':
@@ -743,7 +724,7 @@ def save_post(*args, connection=None, **kwargs):
             )
             post_type_slug = cur.fetchone()
             # get post slug
-            gen = PostsGenerator()
+            gen = PostGenerator()
             gen.delete_post_files(post_type=post_type_slug[0], post=generatable_post["slug"])
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
@@ -813,7 +794,7 @@ def delete_post(*args, permission_level, connection, **kwargs):
     except Exception as e:
         abort(500)
     cur.close()
-    gen = PostsGenerator(connection=connection)
+    gen = PostGenerator(connection=connection)
     if count[0] == 0:
         gen.delete_post_type_post_files({"slug": res[2]})
     else:
@@ -852,7 +833,7 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
 
-    gen = PostGenerator2(connection=connection)
+    gen = PostGenerator(connection=connection)
     gen.run()
 
     return json.dumps({"generating": True})
@@ -879,7 +860,7 @@ def get_protected_post(*args, connection, **kwargs):
     if len(raw_post) != 1:
         return json.dumps({"unauthorized": True}), 401
 
-    gen = PostGenerator2(connection=connection)
+    gen = PostGenerator(connection=connection)
     protected_post = gen.get_protected_post(uuid=raw_post[0])
 
     if type(protected_post) is str:
