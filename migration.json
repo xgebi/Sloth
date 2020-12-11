@@ -37,5 +37,10 @@
     "type": "sql",
     "folder": "setup_data",
     "file": "001_add_number_of_posts_in_rss.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "032_change_taxonomy_constraints.sql"
   }
 ]

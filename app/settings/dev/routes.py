@@ -39,3 +39,53 @@ def show_dev_settings(*args, permission_level, connection, **kwargs):
                            permission_level=permission_level,
                            default_lang=default_language
                            )
+
+
+@dev_settings.route("/api/settings/dev/posts", methods=["DELETE"])
+@authorize_web(1)
+@db_connection
+def delete_posts(*args, permission_level, connection, **kwargs):
+    if os.environ["FLASK_ENV"] != "development":
+        abort(403)
+    if connection is None:
+        return redirect("/database-error")
+
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL(
+                """DELETE FROM sloth_posts;"""
+            )
+        )
+    except Exception as e:
+        print(e)
+        abort(500)
+    cur.close()
+    connection.close()
+
+    return json.dumps({"postsDeleted": True})
+
+
+@dev_settings.route("/api/settings/dev/taxonomy", methods=["DELETE"])
+@authorize_web(1)
+@db_connection
+def delete_taxonomy(*args, permission_level, connection, **kwargs):
+    if os.environ["FLASK_ENV"] != "development":
+        abort(403)
+    if connection is None:
+        return redirect("/database-error")
+
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL(
+                """DELETE FROM sloth_taxonomy;"""
+            )
+        )
+    except Exception as e:
+        print(e)
+        abort(500)
+    cur.close()
+    connection.close()
+
+    return json.dumps({"taxonomyDeleted": True})
