@@ -242,12 +242,14 @@ class PostGenerator:
             )
             # generate archive and RSS if enabled
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts)
+            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
+
+        self.generate_home(output_path=output_path, post_types=post_types, language=language)
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
-    def generate_post(self, *args, post, output_path, post_type, language, **kwargs):
+    def generate_post(self, *args, post, output_path, post_type, language, original_post=None, **kwargs):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 
         if os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
@@ -280,12 +282,16 @@ class PostGenerator:
         if post["js"] and len(post["js"]) > 0:
             with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
                 f.write(post["js"])
+        elif (Path(os.path.join(post_path_dir, 'script.js'))).is_file():
+            os.remove(Path(os.path.join(post_path_dir, 'script.js')))
 
         if post["css"] and len(post["css"]) > 0:
             with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
                 f.write(post["css"])
+        elif (Path(os.path.join(post_path_dir, 'style.css'))).is_file():
+            os.remove(Path(os.path.join(post_path_dir, 'style.css')))
 
-        if "related_posts" in post:
+        if "related_posts" in post and original_post is None:
             for related_post in post["related_posts"]:
                 for lang in self.languages:
                     if lang['uuid'] == related_post['lang']:
@@ -293,7 +299,9 @@ class PostGenerator:
                             post=related_post,
                             output_path=output_path,
                             post_type=post_type,
-                            language=lang)
+                            language=lang,
+                            original_post=post
+                        )
                         break
 
     def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
