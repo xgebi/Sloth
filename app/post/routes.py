@@ -13,7 +13,7 @@ from typing import List, Dict, Any
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
-from app.utilities import get_languages, get_default_language
+from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.post.post_generator import PostGenerator
 
 from app.post import post
@@ -692,27 +692,7 @@ def save_post(*args, connection=None, **kwargs):
             [filled["uuid"]]
         )
         generatable_post = parse_raw_post(cur.fetchone())
-        if generatable_post["original_lang_entry_uuid"] is not None:
-            cur.execute(
-                sql.SQL(
-                    """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title,
-                     A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
-                     A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
-                     WHERE A.uuid = %s OR (A.original_lang_entry_uuid = %s AND A.uuid <> %s);"""),
-                (generatable_post["original_lang_entry_uuid"], generatable_post["original_lang_entry_uuid"],
-                 generatable_post["uuid"])
-            )
-        else:
-            cur.execute(
-                sql.SQL(
-                    """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, 
-                    A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
-                    A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
-                    WHERE A.original_lang_entry_uuid = %s;"""),
-                (filled["uuid"], )
-            )
-        related_posts_raw = cur.fetchall()
-        generatable_post["related_posts"] = [parse_raw_post(related_post) for related_post in related_posts_raw]
+        generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
         # get post
         if filled["post_status"] == 'published':
             gen = PostGenerator(connection=connection)
@@ -748,34 +728,6 @@ def save_post(*args, connection=None, **kwargs):
 
     result["saved"] = True
     return json.dumps(result)
-
-
-def parse_raw_post(raw_post: List) -> Dict[str, str] or Any:
-    return {
-        "uuid": raw_post[0],
-        "original_lang_entry_uuid": raw_post[1],
-        "lang": raw_post[2],
-        "slug": raw_post[3],
-        "post_type": raw_post[4],
-        "author": raw_post[5],
-        "title": raw_post[6],
-        "content": raw_post[7],
-        "excerpt": raw_post[8],
-        "css": raw_post[9],
-        "use_theme_css": raw_post[10],
-        "js": raw_post[11],
-        "use_theme_js": raw_post[12],
-        "thumbnail": raw_post[13],
-        "publish_date": raw_post[14],
-        "publish_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[14]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[14] is not None else None,
-        "update_date": raw_post[15],
-        "update_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[15]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[15] is not None else None,
-        "post_status": raw_post[16],
-        "imported": raw_post[17],
-        "approved": raw_post[18]
-    }
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])

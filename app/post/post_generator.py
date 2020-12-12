@@ -13,6 +13,7 @@ from xml.dom import minidom
 import time
 import math
 
+from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
 from app.post.post_types import PostTypes
@@ -69,7 +70,7 @@ class PostGenerator:
             f.write("generation locked")
 
         if len(post.keys()) > 0:
-            self.prepare_single_post(post=post)
+            t = threading.Thread(target=self.prepare_single_post, kwargs=dict(post=post))
         elif len(post_type) > 0:
             pass
         elif everything:
@@ -214,7 +215,37 @@ class PostGenerator:
             self.generate_post(post=post, output_path=output_path, post_type=post_type, language=language)
 
     def prepare_single_post(self, *args, post, **kwargs):
-        pass
+        post_types_object = PostTypes()
+        post_types = post_types_object.get_post_type_list(self.connection)
+        for pt in post_types:
+            if pt['uuid'] == post["post_type"]:
+                post_type = pt
+                break
+        for lang in self.languages:
+            if lang['uuid'] == post['lang']:
+                language = lang
+                break
+        if language["uuid"] == self.settings["main_language"]['settings_value']:
+            # path for main language
+            output_path = Path(self.config["OUTPUT_PATH"])
+        else:
+            # path for other languages
+            output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+            post["related_posts"] = get_related_posts(connection=self.connection, post=post)
+        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path)
+
+        if post_type["archive_enabled"]:
+            posts = self.get_posts_from_post_type_language(
+                post_type_uuid=post_type['uuid'],
+                post_type_slug=post_type['slug'],
+                language_uuid=language['uuid']
+            )
+            # generate archive and RSS if enabled
+            self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
+            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts)
+
+        if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
+            os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def generate_post(self, *args, post, output_path, post_type, language, **kwargs):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
@@ -254,21 +285,24 @@ class PostGenerator:
             with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
                 f.write(post["css"])
 
-        for related_post in post["related_posts"]:
-            for lang in self.languages:
-                if lang['uuid'] == related_post['lang']:
-                    self.generate_post(
-                        post=related_post,
-                        output_path=output_path,
-                        post_type=post_type,
-                        language=lang)
-                    break
+        if "related_posts" in post:
+            for related_post in post["related_posts"]:
+                for lang in self.languages:
+                    if lang['uuid'] == related_post['lang']:
+                        self.generate_post(
+                            post=related_post,
+                            output_path=output_path,
+                            post_type=post_type,
+                            language=lang)
+                        break
 
     def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
         if len(posts) == 0:
             return
 
         archive_path_dir = Path(output_path, post_type["slug"])
+        if language["uuid"] != self.settings["main_language"]['settings_value']:
+            archive_path_dir = Path(output_path, language["short_name"], post_type["slug"])
 
         if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.html")):
             archive_template_path = os.path.join(self.theme_path,
