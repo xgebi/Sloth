@@ -182,9 +182,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             temp_translations = cur.fetchall()
 
         translated_languages = []
-        for translation in temp_translations:
+        for language in languages:
             addable = True
-            for language in languages:
+            for translation in temp_translations:
                 if translation[1] == language['uuid']:
                     addable = False
                     translated_languages.append({
@@ -193,14 +193,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                     })
             if addable:
                 translatable.append(language)
-
-        """translatable_languages = [lang for lang in languages if lang['uuid'] not in [uuid[0] for uuid in raw_langs]]
-        translations = [lang for lang in languages if lang['uuid'] in [uuid[0] for uuid in raw_langs]]
-        for translated_post in raw_langs:
-            for lang in translations:
-                if translated_post[0] == lang['uuid']:
-                    lang["post"] = translated_post[1]
-                    break"""
     except Exception as e:
         print("db error B")
         print(e)

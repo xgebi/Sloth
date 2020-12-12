@@ -281,6 +281,7 @@ function saveCreatePost(values) {
 	metadataButtons.forEach(button => {
 		button.setAttribute("disabled", "true");
 	});
+	debugger;
 	fetch('/api/post', {
 		method: 'POST',
 		headers: {
@@ -300,7 +301,7 @@ function saveCreatePost(values) {
 		})
 		.then(data => {
 			window.location.replace(
-				`/${window.location.pathname.substring(1).split("/")[0]}/${window.location.pathname.substring(1).split("/")[1]}/new/${values["createTranslation"]}?original=${data['uuid']}`
+				`/${window.location.pathname.substring(1).split("/")[0]}/${window.location.pathname.substring(1).split("/")[1]}/new/${values["createTranslation"]}?original=${values['uuid']}`
 			);
 		})
 		.catch((error) => {

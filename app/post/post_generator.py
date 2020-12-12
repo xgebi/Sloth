@@ -311,9 +311,13 @@ class PostGenerator:
             for related_post in post["related_posts"]:
                 for lang in self.languages:
                     if lang['uuid'] == related_post['lang']:
+                        if lang['uuid'] == self.settings["main_language"]['settings_value']:
+                            loc_output_path = output_path = Path(self.config["OUTPUT_PATH"])
+                        else:
+                            loc_output_path = output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
                         self.generate_post(
                             post=related_post,
-                            output_path=output_path,
+                            output_path=loc_output_path,
                             post_type=post_type,
                             language=lang,
                             original_post=post,
