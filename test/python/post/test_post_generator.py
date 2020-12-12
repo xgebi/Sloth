@@ -1,6 +1,6 @@
 import unittest
 
-from app.post.posts_generator import PostsGenerator
+from app.post.post_generator import PostGenerator
 
 
 class MyTestCase(unittest.TestCase):

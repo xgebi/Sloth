@@ -8,7 +8,7 @@ import uuid
 import bcrypt
 import traceback
 
-from app.post.posts_generator import PostsGenerator
+from app.post.post_generator import PostGenerator
 
 
 class Registration:
@@ -118,8 +118,8 @@ class Registration:
             with open(os.path.join(os.getcwd(), 'registration.lock'), 'w') as f:
                 f.write("registration locked")
 
-            generator = PostsGenerator(connection=self.connection)
-            if generator.run(posts=True):
+            generator = PostGenerator(connection=self.connection)
+            if generator.run(everything=True):
                 return {"state": "ok", "status": 201}
             return {"status": 500, "error": "Generating post"}
 

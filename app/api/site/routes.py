@@ -11,7 +11,6 @@ import traceback
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
-from app.post.posts_generator import PostsGenerator
 
 from app.api.site import site
 

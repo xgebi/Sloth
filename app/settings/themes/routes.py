@@ -13,7 +13,7 @@ import shutil
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web
-from app.post.posts_generator import PostsGenerator
+from app.post.post_generator import PostGenerator
 
 from app.post.post_types import PostTypes
 
@@ -88,8 +88,8 @@ def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
         print("db error")
         abort(500)
     # regenerate all post
-    posts_gen = PostsGenerator()
-    posts_gen.run(posts=True)
+    posts_gen = PostGenerator()
+    posts_gen.run(everything=True)
 
     return redirect("/settings/themes")
 

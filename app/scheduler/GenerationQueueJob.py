@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2 import sql, errors
 from datetime import datetime
-from app.post.posts_generator import PostsGenerator
+from app.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 
 
