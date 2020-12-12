@@ -212,7 +212,13 @@ class PostGenerator:
 
     def generate_post_type(self, *args, posts, output_path, post_type, language, **kwargs):
         for post in posts:
-            self.generate_post(post=post, output_path=output_path, post_type=post_type, language=language)
+            self.generate_post(
+                post=post,
+                output_path=output_path,
+                post_type=post_type,
+                language=language,
+                multiple=True
+            )
 
     def prepare_single_post(self, *args, post, **kwargs):
         post_types_object = PostTypes()
@@ -249,7 +255,17 @@ class PostGenerator:
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
-    def generate_post(self, *args, post, output_path, post_type, language, original_post=None, **kwargs):
+    def generate_post(
+            self,
+            *args,
+            post,
+            output_path,
+            post_type,
+            language,
+            original_post=None,
+            multiple: bool = False,
+            **kwargs
+    ):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 
         if os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
@@ -291,7 +307,7 @@ class PostGenerator:
         elif (Path(os.path.join(post_path_dir, 'style.css'))).is_file():
             os.remove(Path(os.path.join(post_path_dir, 'style.css')))
 
-        if "related_posts" in post and original_post is None:
+        if "related_posts" in post and original_post is None and not multiple:
             for related_post in post["related_posts"]:
                 for lang in self.languages:
                     if lang['uuid'] == related_post['lang']:
@@ -300,7 +316,8 @@ class PostGenerator:
                             output_path=output_path,
                             post_type=post_type,
                             language=lang,
-                            original_post=post
+                            original_post=post,
+                            multiple=multiple
                         )
                         break
 
