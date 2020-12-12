@@ -46,7 +46,7 @@ class PostGenerator:
         )
         self.set_footer(connection=connection)
 
-    def run(self, *args, post: str = "", post_type: str = "", everything: bool = True, **kwargs):
+    def run(self, *args, post: Dict = {}, post_type: str = "", everything: bool = True, **kwargs):
         """ Main function that runs everything
 
             Attributes
@@ -68,9 +68,9 @@ class PostGenerator:
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
             f.write("generation locked")
 
-        if post:
-            pass
-        elif post_type:
+        if len(post.keys()) > 0:
+            self.prepare_single_post(post=post)
+        elif len(post_type) > 0:
             pass
         elif everything:
             t = threading.Thread(target=self.generate_all)
@@ -212,6 +212,9 @@ class PostGenerator:
     def generate_post_type(self, *args, posts, output_path, post_type, language, **kwargs):
         for post in posts:
             self.generate_post(post=post, output_path=output_path, post_type=post_type, language=language)
+
+    def prepare_single_post(self, *args, post, **kwargs):
+        pass
 
     def generate_post(self, *args, post, output_path, post_type, language, **kwargs):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])

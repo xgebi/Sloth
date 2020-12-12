@@ -714,7 +714,7 @@ def save_post(*args, connection=None, **kwargs):
         related_posts_raw = cur.fetchall()
         generatable_post["related_posts"] = [parse_raw_post(related_post) for related_post in related_posts_raw]
         # get post
-        if filled["post_status"] == 'published' and False:  # temporarily disabled generation
+        if filled["post_status"] == 'published':
             gen = PostGenerator(connection=connection)
             gen.run(post=generatable_post)
 
@@ -722,12 +722,25 @@ def save_post(*args, connection=None, **kwargs):
             # get post type slug
             cur.execute(
                 sql.SQL("""SELECT slug FROM sloth_post_types WHERE uuid = %s;"""),
-                [generatable_post["post_type"]]
+                (generatable_post["post_type"], )
             )
             post_type_slug = cur.fetchone()
+            cur.execute(
+                sql.SQL("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;"""),
+                (generatable_post["lang"],)
+            )
+            language_raw = cur.fetchone()
             # get post slug
             gen = PostGenerator()
-            gen.delete_post_files(post_type=post_type_slug[0], post=generatable_post["slug"])
+            gen.delete_post_files(
+                post_type=post_type_slug[0],
+                post=generatable_post["slug"],
+                language={
+                    "uuid": language_raw[0],
+                    "short_name": language_raw[1],
+                    "long_name": language_raw[2]
+                }
+            )
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
 
