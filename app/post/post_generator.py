@@ -207,6 +207,7 @@ class PostGenerator:
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
+                "original_lang_entry_uuid": post[14],
                 "lang": post[15]
             })
 

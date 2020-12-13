@@ -7,8 +7,13 @@
     <article class="post-edit">
         <h1 class="full-width">{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit
             {{ post_type_name }}{% endif %}</h1>
+        {% if data["original_post"]  %}
         <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
               data-posttype-uuid="{{ data["post_type"] }}" data-original-post="{{ data["original_post"] }}"></span>
+        {% else %}
+        <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
+              data-posttype-uuid="{{ data["post_type"] }}"></span>
+        {% endif %}
         <div class="first-column">
             <label for="title">Title (may not be empty)</label>
             <input id="title" value="{{ data["title"] }}" required/>
@@ -22,6 +27,7 @@
         <div class="first-column">
             Translations
             {% for translation in translations %}
+                {{ translation }}
                 <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
 
             {% endfor %}

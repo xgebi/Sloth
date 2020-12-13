@@ -712,6 +712,7 @@ def save_post(*args, connection=None, **kwargs):
     cur.close()
 
     result["saved"] = True
+    result["postType"] = generatable_post["post_type"]
     return json.dumps(result)
 
 
