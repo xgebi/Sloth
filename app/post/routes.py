@@ -393,6 +393,7 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         abort(500)
 
     cur.close()
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     taxonomy = {
@@ -407,7 +408,8 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         post_types=post_types_result,
         permission_level=permission_level,
         taxonomy=taxonomy,
-        taxonomy_type=taxonomy_type
+        taxonomy_type=taxonomy_type,
+        default_lang=default_language
     )
 
 
@@ -447,7 +449,7 @@ def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_type, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
-
+    default_language = get_default_language(connection=connection)
     connection.close()
 
     taxonomy = {
@@ -461,7 +463,8 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
         permission_level=permission_level,
         taxonomy=taxonomy,
         taxonomy_type=taxonomy_type,
-        new=True
+        new=True,
+        default_lang=default_language
     )
 
 
