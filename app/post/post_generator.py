@@ -13,6 +13,7 @@ from xml.dom import minidom
 import time
 import math
 
+from app.post import get_translations
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
@@ -283,6 +284,12 @@ class PostGenerator:
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
 
+        translations, translatable_languages = get_translations(
+            connection=self.connection,
+            post_uuid=post['uuid'],
+            languages=self.languages
+        )
+
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
             md_parser = MarkdownParser()
             post["excerpt"] = md_parser.to_html_string(post["excerpt"])
@@ -292,7 +299,9 @@ class PostGenerator:
                 sitename=self.settings["sitename"]["settings_value"],
                 api_url=self.settings["api_url"]["settings_value"],
                 sloth_footer=self.sloth_footer,
-                menus=self.menus)
+                menus=self.menus,
+                translations=translations
+            )
             f.write(rendered)
 
         if post["js"] and len(post["js"]) > 0:

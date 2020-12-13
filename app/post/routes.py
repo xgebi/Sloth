@@ -16,7 +16,7 @@ from app.utilities.db_connection import db_connection
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.post.post_generator import PostGenerator
 
-from app.post import post
+from app.post import post, get_translations
 
 reserved_folder_names = ('tag', 'category')
 
@@ -283,22 +283,14 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
         default_lang = get_default_language(connection=connection)
         if original_post:
-            # Get existing languages
-            cur.execute(
-                sql.SQL(
-                    """SELECT lang, uuid FROM sloth_posts WHERE uuid = %s OR original_lang_entry_uuid = %s;"""),
-                (original_post, original_post,)
+            translations, translatable_languages = get_translations(
+                connection=connection,
+                post_uuid=original_post,
+                languages=languages
             )
-            raw_langs = cur.fetchall()
-            translatable_languages = [lang for lang in languages if lang['uuid'] not in [uuid[0] for uuid in raw_langs]]
-            translations = [lang for lang in languages if lang['uuid'] in [uuid[0] for uuid in raw_langs]]
-            for translated_post in raw_langs:
-                for lang in translations:
-                    if translated_post[0] == lang['uuid']:
-                        lang["post"] = translated_post[1]
-                        break
         else:
-            translatable_languages = []
+            translatable_languages = languages
+            translations = []
     except Exception as e:
         print("db error A")
         abort(500)
@@ -331,7 +323,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
                            media=media, post_type_name=post_type_name, post_statuses=post_statuses,
                            data=data, all_categories=all_categories, default_lang=default_lang,
-                           current_lang_id=lang_id, languages=languages, translations=translatable_languages)
+                           current_lang_id=lang_id, languages=translatable_languages, translations=translations)
 
 
 @post.route("/post/<type_id>/taxonomy")
