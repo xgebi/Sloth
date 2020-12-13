@@ -285,7 +285,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         if original_post:
             translations, translatable_languages = get_translations(
                 connection=connection,
-                post_uuid=original_post,
+                post_uuid="",
+                original_entry_uuid=original_post,
                 languages=languages
             )
         else:
@@ -627,7 +628,7 @@ def save_post(*args, connection=None, **kwargs):
                 [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
-                 filled["original_post"] if "original_post" in filled else None]
+                 filled["original_post"] if "original_post" in filled else ""]
             )
             connection.commit()
             for category in filled["categories"]:

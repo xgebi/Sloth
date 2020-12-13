@@ -134,7 +134,7 @@ class PostGenerator:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                          A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail,
-                         A.original_lang_entry_uuid
+                         A.original_lang_entry_uuid, A.lang
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
                                     WHERE post_type = %s AND lang = %s AND post_status = 'published' 
                                     ORDER BY A.publish_date DESC;"""),
@@ -206,7 +206,8 @@ class PostGenerator:
                 "approved": post[12],
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
-                "language_variants": language_variants
+                "language_variants": language_variants,
+                "lang": post[15]
             })
 
         return posts
@@ -284,11 +285,13 @@ class PostGenerator:
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
 
-        translations, translatable_languages = get_translations(
+        translations_temp, translatable_languages = get_translations(
             connection=self.connection,
             post_uuid=post['uuid'],
+            original_entry_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post else "",
             languages=self.languages
         )
+        translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
             md_parser = MarkdownParser()
@@ -333,6 +336,24 @@ class PostGenerator:
                             multiple=multiple
                         )
                         break
+
+    def get_translation_links(self, *args, translations, post_type, post, **kwargs):
+        # {'uuid': '48ab80ef-b83b-40f7-9dab-c3343bae7d0e', 'long_name': 'English', 'short_name': 'en', 'post': 'fb2e1b26-3361-4239-9b97-aedcde0f57cf'}
+        # /<short_name>/<post_type_slug>/<post_slug>
+        result = []
+        for translation in translations:
+            if post['lang'] != translation['uuid']:
+                if translation["uuid"] != self.settings["main_language"]['settings_value']:
+                    result.append({
+                        "language": translation['long_name'],
+                        "link": f"/{translation['short_name']}/{post_type['slug']}/{translation['slug']}"
+                    })
+                else:
+                    result.append({
+                        "language": translation['long_name'],
+                        "link": f"/{post_type['slug']}/{translation['slug']}"
+                    })
+        return result
 
     def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
         if len(posts) == 0:
