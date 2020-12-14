@@ -322,7 +322,8 @@ function createCategory() {
 			categoryName: document.querySelector("#new-category").value,
 			slug: document.querySelector("#new-category").value.trim().replace(/\s+/g, '-'),
 			postType: document.querySelector("#uuid").dataset["posttypeUuid"],
-			post: document.querySelector("#uuid").dataset["uuid"]
+			post: document.querySelector("#uuid").dataset["uuid"],
+			lang: currentLanguage
 		})
 	})
 		.then(response => {

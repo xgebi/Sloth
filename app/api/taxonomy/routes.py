@@ -44,14 +44,14 @@ def create_category(*args, connection, **kwargs):
         connection.commit()
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
-                                        WHERE post_type = %s"""),
-            [filled["postType"]]
+                                        WHERE post_type = %s AND lang = %s"""),
+            [filled["postType"], None]
         )
         raw_all_categories = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT uuid FROM sloth_taxonomy
                                 WHERE post_type = %s AND uuid IN 
-                                (SELECT array_to_string(categories, ',') FROM sloth_posts WHERE uuid = %s)"""),
+                                (SELECT taxonomy FROM sloth_post_taxonomies WHERE post = %s)"""),
             [filled["postType"], filled["post"]]
         )
         raw_post_categories = cur.fetchall()
