@@ -22,6 +22,7 @@ Change {{ taxonomy_type }}
 
     <label for="display-name">Display name:</label>
 	<input type="text" name="display_name" id="display-name" value="{{ taxonomy["display_name"] }}" />
+    <input type="text" name="language" class="hidden" value="{{ current_lang_uuid }}" />
 
 	<input type="submit" value="save" />
 </form>

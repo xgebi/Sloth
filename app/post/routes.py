@@ -330,7 +330,28 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 @post.route("/post/<type_id>/taxonomy")
 @authorize_web(0)
 @db_connection
-def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
+def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, **kwargs):
+    return show_taxonomy(
+        permission_level=permission_level,
+        connection=connection,
+        type_id=type_id,
+        lang_id=get_default_language(connection=connection)["uuid"],
+    )
+
+
+@post.route("/post/<type_id>/taxonomy/<lang_id>")
+@authorize_web(0)
+@db_connection
+def show_post_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwargs):
+    return show_taxonomy(
+        permission_level=permission_level,
+        connection=connection,
+        type_id=type_id,
+        lang_id=lang_id
+    )
+
+
+def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -357,6 +378,7 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, **kwargs):
     cur.close()
     # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_language = get_default_language(connection=connection)
+
     connection.close()
 
     return render_template(
@@ -394,6 +416,7 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 
     cur.close()
     default_language = get_default_language(connection=connection)
+    current_lang, languages = get_languages(connection=connection)
     connection.close()
 
     taxonomy = {
@@ -409,7 +432,8 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         permission_level=permission_level,
         taxonomy=taxonomy,
         taxonomy_type=taxonomy_type,
-        default_lang=default_language
+        default_lang=default_language,
+        current_lang_uuid=current_lang["uuid"]
     )
 
 
@@ -450,6 +474,7 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
+    current_lang, languages = get_languages(connection=connection)
     connection.close()
 
     taxonomy = {
@@ -464,7 +489,8 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
         taxonomy=taxonomy,
         taxonomy_type=taxonomy_type,
         new=True,
-        default_lang=default_language
+        default_lang=default_language,
+        current_lang_uuid=current_lang['uuid']
     )
 
 

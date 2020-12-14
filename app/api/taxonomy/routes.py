@@ -36,9 +36,10 @@ def create_category(*args, connection, **kwargs):
         if temp[0] > 0:
             filled["slug"] = f"{filled['slug']}-{temp[0]+1}"
         cur.execute(
-            sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
-            VALUES (%s, %s, %s, %s, %s)"""),
-            [str(uuid.uuid4()), filled["slug"], filled["categoryName"], filled["postType"], "category"]
+            sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+            VALUES (%s, %s, %s, %s, %s, %s)"""),
+            (str(uuid.uuid4()), filled["slug"], filled["categoryName"], filled["postType"], "category",
+             filled["language"])
         )
         connection.commit()
         cur.execute(
