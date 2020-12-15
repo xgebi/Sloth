@@ -335,7 +335,7 @@ def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, *
         permission_level=permission_level,
         connection=connection,
         type_id=type_id,
-        lang_id=get_default_language(connection=connection)["uuid"],
+        lang_id=get_default_language(connection=connection)["uuid"]
     )
 
 
@@ -365,8 +365,8 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
         for taxonomy_type in taxonomy_types:
             cur.execute(
                 sql.SQL("""SELECT uuid, display_name 
-                FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s"""),
-                [type_id, taxonomy_type]
+                FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s AND lang = %s"""),
+                (type_id, taxonomy_type, lang_id)
             )
             taxonomy[taxonomy_type] = cur.fetchall()
     except Exception as e:
@@ -378,6 +378,7 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
     cur.close()
     # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_language = get_default_language(connection=connection)
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
 
     connection.close()
 
@@ -387,8 +388,9 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
         permission_level=permission_level,
         taxonomy_types=taxonomy_types,
         taxonomy_list=taxonomy,
-        post_uuid=type_id,
-        default_lang=default_language
+        post_type_uuid=type_id,
+        default_lang=default_language,
+        languages=languages
     )
 
 
@@ -453,9 +455,13 @@ def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
         )
         res = cur.fetchall()
         if len(res) == 0:
-            cur.execute(sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
-            VALUES (%s, %s, %s, %s, %s);"""),
-                        [taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type])
+            cur.execute(
+                sql.SQL(
+                    """INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                    VALUES (%s, %s, %s, %s, %s, %s);"""
+                ),
+                (taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type, filled["language"])
+            )
         else:
             cur.execute(sql.SQL("""UPDATE sloth_taxonomy SET slug = %s, display_name = %s WHERE uuid = %s;"""),
                         [filled["slug"], filled["display_name"], taxonomy_id])

@@ -5,6 +5,12 @@
 {% block body %}
 <h1>List of taxonomies</h1>
 Note: Custom taxonomies are on To Do list
+    <p>
+    Other languages:
+    {% for lang in languages %}
+        <a href="/post/{{  post_type_uuid }}/taxonomy/{{ lang['uuid'] }}">{{ lang["long_name"] }}</a>
+    {% endfor %}
+    </p>
 {% for key in taxonomy_types %}
 <h2>{{ key }}</h2>
 {% if  key != 'tag'%}
