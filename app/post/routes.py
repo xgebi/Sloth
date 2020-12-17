@@ -147,8 +147,14 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
-                                WHERE post_type = %s AND taxonomy_type=%s"""),
-            [raw_post[13], 'category']
+                                WHERE post_type = %s AND taxonomy_type=%s AND lang = %s"""),
+            (raw_post[13], 'category', raw_post[17])
+        )
+        raw_all_categories = cur.fetchall()
+        cur.execute(
+            sql.SQL("""SELECT taxonomy FROM sloth_post_taxonomies
+                                        WHERE post_type = %s AND taxonomy_type=%s AND lang = %s"""),
+            (raw_post[13], 'category', raw_post[17])
         )
         raw_all_categories = cur.fetchall()
         cur.execute(
