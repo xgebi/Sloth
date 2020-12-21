@@ -121,9 +121,6 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     media = []
     post_type_name = ""
     raw_post = {}
-    raw_tags = []
-    raw_post_categories = []
-    raw_all_categories = []
     temp_thumbnail_info = []
     try:
         cur.execute(
@@ -147,16 +144,16 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
         cur.execute(
             sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
-                                WHERE post_type = %s AND taxonomy_type=%s AND lang = %s"""),
+                                WHERE post_type = %s AND lang = %s"""),
             (raw_post[13], 'category', raw_post[17])
         )
-        raw_all_categories = cur.fetchall()
+        raw_all_taxonomies = cur.fetchall()
         cur.execute(
             sql.SQL("""SELECT taxonomy FROM sloth_post_taxonomies
-                                        WHERE post_type = %s AND taxonomy_type=%s AND lang = %s"""),
-            (raw_post[13], 'category', raw_post[17])
+                                        WHERE post = %s"""),
+            (post_id, )
         )
-        raw_all_categories = cur.fetchall()
+        raw_post_taxonomies = cur.fetchall()
         cur.execute(
             sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
         )
@@ -212,6 +209,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
     publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000) if raw_post[9] else None
 
+    categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
+
     data = {
         "uuid": post_id,
         "title": raw_post[0],
@@ -234,7 +233,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "imported": raw_post[14],
         "approved": raw_post[15],
         "password": raw_post[16],
-        "lang": raw_post[17]
+        "lang": raw_post[17],
+        "categories": categories,
+        "tags": tags
     }
 
     return render_template(
@@ -250,6 +251,15 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         languages=translatable,
         translations=translated_languages
     )
+
+
+def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[Dict], List[Dict]):
+    categories = []
+    tags = []
+
+
+
+    return categories, tags
 
 
 @post.route("/post/<post_type>/new/<lang_id>")
