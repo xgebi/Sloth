@@ -152,12 +152,11 @@
                     {% endif %}
                 {% endfor %}
             </div>
-            <!-- {'uuid': '1234', 'display_name': 'tag 1', 'type': 'tag', 'selected': False} -->
         </div>
         <div class="second-column categories">
             <label for="categories">Categories</label>
             <select id="categories" multiple="multiple">
-                {% for category in all_categories %}
+                {% for category in data["categories"] %}
                     {% if category["selected"] %}
                         <option value="{{ category['uuid'] }}" selected>{{ category['display_name'] }}</option>
                     {% else %}
