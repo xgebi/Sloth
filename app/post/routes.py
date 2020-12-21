@@ -143,7 +143,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         post_type_name = cur.fetchone()[0]
 
         cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+            sql.SQL("""SELECT uuid, display_name, taxonomy_type FROM sloth_taxonomy
                                 WHERE post_type = %s AND lang = %s"""),
             (raw_post[13], raw_post[17])
         )
@@ -257,7 +257,19 @@ def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[D
     categories = []
     tags = []
 
+    flat_post_taxonomies = [pt[0] for pt in post_taxonomies]
 
+    for raw_taxonomy in taxonomies:
+        taxonomy = {
+            "uuid": raw_taxonomy[0],
+            "display_name": raw_taxonomy[1],
+            "type": raw_taxonomy[2],
+            "selected": True if raw_taxonomy[0] in flat_post_taxonomies else False
+        }
+        if taxonomy["type"] == 'category':
+            categories.append(taxonomy)
+        elif taxonomy["type"] == 'tag':
+            tags.append(taxonomy)
 
     return categories, tags
 

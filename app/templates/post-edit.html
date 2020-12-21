@@ -127,6 +127,7 @@
             {% endif %}
             {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
                 <button id="update-button">Update post</button>
+                {% if languages | length > 0 %}
                 <select id="create-lang">
                     <option value="" selected>---</option>
                     {% for language in languages %}
@@ -134,6 +135,7 @@
                     {% endfor %}
                 </select>
                 <button id="update-create">Update and Create translation</button>
+                {% endif %}
             {% endif %}
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
