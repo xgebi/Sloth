@@ -125,6 +125,7 @@ select {
 .post-edit {
     display: grid;
     grid-template-columns: auto 16rem;
+    grid-template-rows: masonry;
     column-gap: 3rem;
     padding: 2rem 4rem;
     row-gap: 1rem;
@@ -145,22 +146,6 @@ select {
 
 .post-edit .second-column {
     grid-column: 2 / 3;
-}
-
-.post-edit .metadata {
-    grid-row: 2 / 6;
-}
-
-.post-edit .thumbnail {
-    grid-row: 6 / 7;
-}
-
-.post-edit .tags {
-    grid-row: 7 / 8;
-}
-
-.post-edit .categories {
-    grid-row: 8 / 10;
 }
 
 .post-edit #thumbnail-wrapper img {

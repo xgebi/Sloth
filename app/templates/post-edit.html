@@ -27,7 +27,6 @@
         <div class="first-column">
             Translations
             {% for translation in translations %}
-                {{ translation }}
                 <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
 
             {% endfor %}
@@ -80,28 +79,7 @@
             <button id="pick-thumbnail">Pick thumbnail</button>
             <input id="thumbnail" class="hidden" value="{{ data["thumbnail_uuid"] }}"/>
         </div>
-        <div class="second-column tags">
-            <label for="tags">Tags</label>
-            <input id="tags" value="{{ data["tags"] | join(', ') }}"/>
-        </div>
-        <div class="second-column categories">
-            <label for="categories">Categories</label>
-            <select id="categories" multiple="multiple">
-                {% for category in all_categories %}
-                    {% if category["selected"] %}
-                        <option value="{{ category['uuid'] }}" selected>{{ category['display_name'] }}</option>
-                    {% else %}
-                        <option value="{{ category['uuid'] }}">{{ category['display_name'] }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-            <div>
-                <label for="new-category">New category name:</label>
-                <input type="text" id="new-category">
-                <button id="create-category">Create new category</button>
-            </div>
-        </div>
-        <div class="metadata second-column">
+    <div class="metadata second-column">
             <label for="publish_date">Publish date</label>
             <input id="publish_date" type="date" value="{{ data["publish_date"] }}"/>
             <label for="publish_time">Publish time</label>
@@ -160,7 +138,27 @@
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
         </div>
-        {{ data["original_post"] }}
+        <div class="second-column tags">
+            <label for="tags">Tags</label>
+            <input id="tags" value="{{ data["tags"] | join(', ') }}"/>
+        </div>
+        <div class="second-column categories">
+            <label for="categories">Categories</label>
+            <select id="categories" multiple="multiple">
+                {% for category in all_categories %}
+                    {% if category["selected"] %}
+                        <option value="{{ category['uuid'] }}" selected>{{ category['display_name'] }}</option>
+                    {% else %}
+                        <option value="{{ category['uuid'] }}">{{ category['display_name'] }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <div>
+                <label for="new-category">New category name:</label>
+                <input type="text" id="new-category">
+                <button id="create-category">Create new category</button>
+            </div>
+        </div>
     </article>
     <!--div class="sloth-editor"></div-->
 {% endblock %}
