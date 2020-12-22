@@ -244,7 +244,6 @@ function collectValues() {
             displayName: node.dataset["displayName"]
         })
     }
-    console.log(post["tags"]);
     post["post_status"] = document.querySelector("#post_status").value;
     if (post["post_status"] === "protected") {
         post["password"] = document.querySelector("#password_protection").value;

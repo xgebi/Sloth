@@ -619,34 +619,53 @@ def save_post(*args, connection=None, **kwargs):
     filled = json.loads(request.data)
     filled["thumbnail"] = filled["thumbnail"] if len(filled["thumbnail"]) > 0 else None
     cur = connection.cursor()
+    if "lang" not in filled:
+        cur.execute(
+            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';"),
+        )
+        lang = cur.fetchone()[0]
+    else:
+        lang = filled["lang"]
     try:
         # process tags
         cur.execute(
-            sql.SQL("SELECT uuid, slug, display_name, post_type, taxonomy_type "
-                    "FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = 'tag';"),
-            [filled["post_type_uuid"]]
+            sql.SQL(
+                """SELECT uuid, slug, display_name, post_type, taxonomy_type 
+                    FROM sloth_taxonomy 
+                    WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;"""
+            ),
+            (filled["post_type_uuid"], lang)
         )
         existing_tags = cur.fetchall()
-        trimmed_tags = [tag.strip() for tag in filled["tags"].split(",")]
-        matched_tags = [tag[0] for tag in existing_tags if tag[2] in trimmed_tags]
-        new_tags = [tag for tag in trimmed_tags if tag not in
-                    [existing_tag[2] for existing_tag in existing_tags]]
-        if len(new_tags) > 0:
-            for new_tag in new_tags:
-                if len(new_tag) == 0:
-                    continue
-                slug = re.sub("\s+", "-", new_tag.strip())
-                new_uuid = str(uuid.uuid4())
-                try:
-                    cur.execute(
-                        sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 
-                                    VALUES (%s, %s, %s, %s, 'tag');"""),
-                        [new_uuid, slug, new_tag, filled["post_type_uuid"]]
-                    )
-                    matched_tags.append(new_uuid)
-                except Exception as e:
-                    print(e)
-            connection.commit()
+
+        existing_tags_slugs = [slug[1] for slug in existing_tags]
+        # refactoring candidate:
+        matched_tags = []
+        new_tags = []
+        for tag in filled["tags"]:
+            if tag["slug"] in existing_tags_slugs:
+                if tag["uuid"] == "added":
+                    for et in existing_tags:
+                        if et[1] == tag["slug"]:
+                            tag["uuid"] = et[0]
+                            break
+                matched_tags.append(tag)
+            else:
+                tag["uuid"] = str(uuid.uuid4())
+                new_tags.append(tag)
+
+        for new_tag in new_tags:
+            try:
+                cur.execute(
+                    sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                                VALUES (%s, %s, %s, %s, 'tag', %s);"""),
+                    (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
+                     filled["lang"])
+                )
+                matched_tags.append(new_tag)
+            except Exception as e:
+                print(e)
+        connection.commit()
         # get user
         author = request.headers.get('authorization').split(":")[1]
         publish_date = -1
@@ -677,14 +696,6 @@ def save_post(*args, connection=None, **kwargs):
             if int(similar) > 0:
                 filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
-            if "lang" not in filled:
-                cur.execute(
-                    sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';"),
-                )
-                lang = cur.fetchone()[0]
-            else:
-                lang = filled["lang"]
-
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
@@ -696,16 +707,7 @@ def save_post(*args, connection=None, **kwargs):
                  filled["original_post"] if "original_post" in filled else ""]
             )
             connection.commit()
-            for category in filled["categories"]:
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-                    [str(uuid.uuid4()), filled["uuid"], category]
-                )
-            for tag in matched_tags:
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-                    [str(uuid.uuid4()), filled["uuid"], tag]
-                )
+            sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
             result["uuid"] = filled["uuid"]
         else:
             cur.execute(
@@ -719,20 +721,7 @@ def save_post(*args, connection=None, **kwargs):
                  filled["password"] if "password" in filled else None, filled["uuid"]]
             )
             connection.commit()
-            cur.execute(
-                sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
-                [filled["uuid"]]
-            )
-            for category in filled["categories"]:
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-                    [str(uuid.uuid4()), filled["uuid"], category]
-                )
-            for tag in matched_tags:
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-                    [str(uuid.uuid4()), filled["uuid"], tag]
-                )
+            sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
         connection.commit()
 
         cur.execute(
@@ -779,6 +768,47 @@ def save_post(*args, connection=None, **kwargs):
     result["saved"] = True
     result["postType"] = generatable_post["post_type"]
     return json.dumps(result)
+
+
+def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
+    cur = connection.cursor()
+    categories = article["categories"]
+    cur.execute(
+        sql.SQL("""SELECT uuid, taxonomy FROM sloth_post_taxonomies WHERE post = %s;"""),
+        (article["uuid"], )
+    )
+    raw_taxonomies = cur.fetchall()
+    taxonomies = [{
+        "uuid": taxonomy[0],
+        "taxonomy": taxonomy[1]
+    } for taxonomy in raw_taxonomies]
+    for_deletion = []
+    tag_ids = [tag["uuid"] for tag in tags]
+    for taxonomy in taxonomies:
+        if taxonomy["taxonomy"] not in categories and taxonomy["taxonomy"] not in tag_ids:
+            for_deletion = taxonomy
+        elif taxonomy["taxonomy"] in categories:
+            categories.remove(taxonomy["taxonomy"])
+        elif taxonomy["taxonomy"] in tag_ids:
+            tags = [tag for tag in tags if tag["uuid"] != taxonomy["taxonomy"]]
+    for taxonomy in for_deletion:
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s"""),
+            (taxonomy["uuid"], )
+        )
+        taxonomies.remove(taxonomy)
+
+    for category in categories:
+        cur.execute(
+            sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+            (str(uuid.uuid4()), article["uuid"], category)
+        )
+    for tag in tags:
+        cur.execute(
+            sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
+            (str(uuid.uuid4()), article["uuid"], tag["uuid"])
+        )
+    cur.close()
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
