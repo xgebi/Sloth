@@ -253,10 +253,60 @@ class PostGenerator:
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
             self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
 
+        if post_type["categories_enabled"] or post_type["tags_enabled"]:
+            categories, tags = self.prepare_categories_tags(post=post, language=language)
+
+        if post_type["categories_enabled"]:
+            pass
+
+        if post_type["tags_enabled"]:
+            pass
+
         self.generate_home(output_path=output_path, post_types=post_types, language=language)
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
+    def generate_taxonomy(self, *args, taxonomy, language, output_path, post_type, **kwargs):
+        # This needs to be better designed
+        self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
+        self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
+
+    def prepare_categories_tags(self, *args, post, language, **kwargs):
+        cur = self.connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL(
+                    """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
+                    FROM sloth_post_taxonomies as spt INNER JOIN sloth_taxonomy as st ON spt.taxonomy = st.uuid 
+                    WHERE spt.post = %s;"""
+                ),
+                (post["uuid"], )
+            )
+            taxonomies = cur.fetchall()
+        except Exception as e:
+            print(e)
+        cur.close()
+        categories = []
+        tags = []
+        for taxonomy in taxonomies:
+            if taxonomy[1] == 'category':
+                categories.append({
+                    "uuid": taxonomy[0],
+                    "type": taxonomy[1],
+                    "slug": taxonomy[2],
+                    "display_name": taxonomy[3],
+                    "lang": taxonomy[4]
+                })
+            elif taxonomy[1] == 'tag':
+                tags.append({
+                    "uuid": taxonomy[0],
+                    "type": taxonomy[1],
+                    "slug": taxonomy[2],
+                    "display_name": taxonomy[3],
+                    "lang": taxonomy[4]
+                })
+        return categories, tags
 
     def generate_post(
             self,

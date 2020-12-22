@@ -74,7 +74,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     //document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
     document.querySelector("#post_status").addEventListener('change', postStatusChanged);
 
-    document.querySelector("#add-tags")?.addEventListener('click', addTags)
+    document.querySelector("#add-tags")?.addEventListener('click', addTags);
+    document.querySelectorAll(".delete-tag").forEach(button => {
+        button.addEventListener('click', deleteTag)
+    });
 });
 
 function openGalleryDialog(data, type) {
