@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             throw `${response.status}: ${response.statusText}`
         })
         .then(data => {
-            console.log('Success:', data);
             gallery.images = data.media;
         })
         .catch((error) => {
@@ -234,7 +233,18 @@ function collectValues() {
     for (const option of document.querySelector("#categories").selectedOptions) {
         post["categories"].push(option.value);
     }
-    post["tags"] = document.querySelector("#tags").value;
+    post["tags"] = [];
+    for (const node of document.querySelector("#tags-div").childNodes) {
+        if (!node.dataset) {
+            continue;
+        }
+        post["tags"].push({
+            uuid: node.dataset["uuid"],
+            slug: node.dataset["slug"],
+            displayName: node.dataset["displayName"]
+        })
+    }
+    console.log(post["tags"]);
     post["post_status"] = document.querySelector("#post_status").value;
     if (post["post_status"] === "protected") {
         post["password"] = document.querySelector("#password_protection").value;
