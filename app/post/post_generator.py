@@ -268,9 +268,13 @@ class PostGenerator:
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def generate_taxonomy(self, *args, taxonomy, language, output_path, post_type, **kwargs):
-        # This needs to be better designed
-        self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-        self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
+
+        self.generate_archive(
+            posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=taxonomy
+        )
+        self.generate_rss(
+            output_path=os.path.join(output_path, post_type['slug'], taxonomy["slug"]), posts=posts, language=language
+        )
 
     def prepare_categories_tags(self, *args, post, language, **kwargs):
         cur = self.connection.cursor()
@@ -406,13 +410,20 @@ class PostGenerator:
                     })
         return result
 
-    def generate_archive(self, *args, posts, output_path, post_type, language, **kwargs):
+    def generate_archive(self, *args, posts, output_path, post_type, language, taxonomy=None, **kwargs):
         if len(posts) == 0:
             return
 
-        archive_path_dir = Path(output_path, post_type["slug"])
+        if taxonomy:
+            archive_path_dir = Path(output_path, post_type["slug"], taxonomy["slug"])
+        else:
+            archive_path_dir = Path(output_path, post_type["slug"])
+
         if language["uuid"] != self.settings["main_language"]['settings_value']:
-            archive_path_dir = Path(output_path, language["short_name"], post_type["slug"])
+            if taxonomy:
+                archive_path_dir = Path(output_path, language["short_name"], post_type["slug"], taxonomy["slug"])
+            else:
+                archive_path_dir = Path(output_path, language["short_name"], post_type["slug"])
 
         if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.html")):
             archive_template_path = os.path.join(self.theme_path,
