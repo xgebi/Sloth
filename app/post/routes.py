@@ -249,7 +249,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         post_statuses=[item for sublist in temp_post_statuses for item in sublist],
         default_lang=default_lang,
         languages=translatable,
-        translations=translated_languages
+        translations=translated_languages,
+        current_lang_id=data["lang"]
     )
 
 
