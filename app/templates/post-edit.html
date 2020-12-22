@@ -143,10 +143,15 @@
         <div class="second-column tags">
             <label for="tags">Tags</label>
             <input id="tags-input" />
+            <button id="add-tags">Add</button>
             <div id="tags-div">
                 {% for tag in data["tags"] %}
                     {% if tag["selected"] %}
-                        <span data-uuid="{{ tag['uuid'] }}">{{ tag["display_name"] }}
+                        <span
+                                data-uuid="{{ tag['uuid'] }}"
+                                data-slug="{{ tag['slug'] }}"
+                                data-display-name="{{ tag['display_name'] }}"
+                        >{{ tag["display_name"] }}
                             <button class="delete-tag">🚮</button>
                         </span>
                     {% endif %}

@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     //document.querySelector("#weird-button").addEventListener('click', replaceSelectionWithHtml);
     document.querySelector("#post_status").addEventListener('change', postStatusChanged);
+
+    document.querySelector("#add-tags")?.addEventListener('click', addTags)
 });
 
 function openGalleryDialog(data, type) {
@@ -390,6 +392,37 @@ function postStatusChanged(event) {
         document.querySelector("#password_protection_label").classList.add("hidden");
         document.querySelector("#password_protection").classList.add("hidden");
     }
+}
+
+function addTags(event) {
+    const newTags = document.querySelector("#tags-input")?.value.split(",");
+    document.querySelector("#tags-input")?.value = "";
+    const nodes = [];
+    for (const tag of newTags) {
+        const span = document.createElement('span');
+        span.setAttribute("data-uuid", "added");
+        span.setAttribute("data-slug",
+            tag.trim()
+                .toLocaleLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/[^a-zA-Z0-9\-]+/g, ""));
+        span.setAttribute("data-display-name", tag.trim());
+        span.textContent = tag.trim();
+
+        const deleteTagButton = document.createElement('button');
+        deleteTagButton.setAttribute("class", "delete-tag");
+        deleteTagButton.addEventListener('click', deleteTag);
+        deleteTagButton.textContent = "🚮";
+
+        span.append(deleteTagButton)
+        nodes.push(span);
+    }
+    document.querySelector("#tags-div").append(...nodes);
+}
+
+function deleteTag(event) {
+    event.target.parentNode.parentNode.removeChild(event.target.parentNode)
 }
 
 function getSelectionHtml() {
