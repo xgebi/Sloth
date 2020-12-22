@@ -396,27 +396,42 @@ function postStatusChanged(event) {
 
 function addTags(event) {
     const newTags = document.querySelector("#tags-input")?.value.split(",");
-    document.querySelector("#tags-input")?.value = "";
+    document.querySelector("#tags-input").value = "";
     const nodes = [];
     for (const tag of newTags) {
-        const span = document.createElement('span');
-        span.setAttribute("data-uuid", "added");
-        span.setAttribute("data-slug",
-            tag.trim()
-                .toLocaleLowerCase()
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/[^a-zA-Z0-9\-]+/g, ""));
-        span.setAttribute("data-display-name", tag.trim());
-        span.textContent = tag.trim();
+        let canBeAdded = true;
+        const tagSlug = tag.trim()
+            .toLocaleLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/[^a-zA-Z0-9\-]+/g, "");
+        /* refactoring candidate */
+        for (const node of document.querySelector("#tags-div").childNodes) {
+            if (node.dataset?.slug === tagSlug) {
+                canBeAdded = false;
+            }
+        }
+        for (const node of nodes) {
+            console.log(node, tagSlug)
+            if (node.dataset?.slug === tagSlug) {
+                canBeAdded = false;
+            }
+        }
+        if (canBeAdded) {
+            const span = document.createElement('span');
+            span.setAttribute("data-uuid", "added");
+            span.setAttribute("data-slug", tagSlug);
+            span.setAttribute("data-display-name", tag.trim());
+            span.textContent = tag.trim();
 
-        const deleteTagButton = document.createElement('button');
-        deleteTagButton.setAttribute("class", "delete-tag");
-        deleteTagButton.addEventListener('click', deleteTag);
-        deleteTagButton.textContent = "🚮";
+            const deleteTagButton = document.createElement('button');
+            deleteTagButton.setAttribute("class", "delete-tag");
+            deleteTagButton.addEventListener('click', deleteTag);
+            deleteTagButton.textContent = "🚮";
 
-        span.append(deleteTagButton)
-        nodes.push(span);
+            span.append(deleteTagButton);
+            nodes.push(span);
+        }
     }
     document.querySelector("#tags-div").append(...nodes);
 }
