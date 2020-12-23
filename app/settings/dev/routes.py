@@ -9,7 +9,6 @@ from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 
 from app.post.post_types import PostTypes
-from app.post.posts_generator import PostsGenerator
 
 from app.settings.dev import dev_settings
 

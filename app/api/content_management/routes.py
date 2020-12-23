@@ -13,10 +13,11 @@ import traceback
 import zipfile
 import shutil
 from datetime import datetime
+
+from app.post.post_generator import PostGenerator
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
-from app.post.posts_generator import PostsGenerator
 
 from app.api.content_management import content_management
 
@@ -122,8 +123,8 @@ def import_wordpress_content(*args, connection=None, **kwargs):
 
         process_attachments(attachments, connection, import_count)
         rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
-        generator = PostsGenerator()
-        generator.run(posts=True)
+        generator = PostGenerator()
+        generator.run(everything=True)
     return json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.get("filename")})
 
 

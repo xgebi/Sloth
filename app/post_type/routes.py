@@ -1,8 +1,9 @@
 from flask import request, abort, redirect, render_template
+
+from app.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
-from app.post.posts_generator import PostsGenerator
 from psycopg2 import sql
 import json
 import uuid
@@ -97,7 +98,7 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
         abort(500)
     cur.close()
 
-    gen = PostsGenerator(connection)
+    gen = PostGenerator(connection)
     run_gen = False
     # 2. if slug or display name changed
     if updated_post_type['slug'] != existing_post_type['slug'] \
@@ -196,7 +197,7 @@ def delete_post_type(*args, permission_level, connection, **kwargs):
     connection.commit()
     cur.close()
     if data["action"] != "delete":
-        gen = PostsGenerator(connection=connection)
+        gen = PostGenerator(connection=connection)
         gen.run(post_type=data["action"])
     else:
         connection.close()

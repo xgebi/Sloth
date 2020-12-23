@@ -3,11 +3,12 @@ from psycopg2 import sql
 import os
 import json
 from pathlib import Path
+
+from app.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 
 from app.post.post_types import PostTypes
-from app.post.posts_generator import PostsGenerator
 
 from app.settings import settings
 from app.utilities import get_default_language
@@ -81,8 +82,8 @@ def save_settings(*args, permission_level, connection, **kwargs):
 
     cur.close()
 
-    generator = PostsGenerator(connection=connection)
-    if generator.run(posts=True):
+    generator = PostGenerator()
+    if generator.run(everything=True):
         return redirect("/settings")
     return redirect("/settings?error=generating")
 
