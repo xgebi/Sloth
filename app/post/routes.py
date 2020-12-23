@@ -668,7 +668,7 @@ def save_post(*args, connection=None, **kwargs):
         connection.commit()
         # get user
         author = request.headers.get('authorization').split(":")[1]
-        publish_date = -1
+
         if filled["post_status"] == 'published' and filled["publish_date"] is None:
             publish_date = str(time() * 1000)
         elif filled["post_status"] == 'scheduled':
@@ -707,7 +707,7 @@ def save_post(*args, connection=None, **kwargs):
                  filled["original_post"] if "original_post" in filled else ""]
             )
             connection.commit()
-            sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
+            taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
             result["uuid"] = filled["uuid"]
         else:
             cur.execute(
@@ -721,7 +721,7 @@ def save_post(*args, connection=None, **kwargs):
                  filled["password"] if "password" in filled else None, filled["uuid"]]
             )
             connection.commit()
-            sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
+            taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
         connection.commit()
 
         cur.execute(
@@ -735,7 +735,7 @@ def save_post(*args, connection=None, **kwargs):
         # get post
         if filled["post_status"] == 'published':
             gen = PostGenerator(connection=connection)
-            gen.run(post=generatable_post)
+            gen.run(post=generatable_post, regenerate_taxonomies=taxonomy_to_clean)
 
         if filled["post_status"] == 'protected':
             # get post type slug
@@ -786,17 +786,19 @@ def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
     tag_ids = [tag["uuid"] for tag in tags]
     for taxonomy in taxonomies:
         if taxonomy["taxonomy"] not in categories and taxonomy["taxonomy"] not in tag_ids:
-            for_deletion = taxonomy
+            for_deletion.append(taxonomy)
         elif taxonomy["taxonomy"] in categories:
             categories.remove(taxonomy["taxonomy"])
         elif taxonomy["taxonomy"] in tag_ids:
             tags = [tag for tag in tags if tag["uuid"] != taxonomy["taxonomy"]]
+
     for taxonomy in for_deletion:
         cur.execute(
             sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s"""),
             (taxonomy["uuid"], )
         )
         taxonomies.remove(taxonomy)
+    connection.commit()
 
     for category in categories:
         cur.execute(
@@ -808,7 +810,10 @@ def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
             sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
             (str(uuid.uuid4()), article["uuid"], tag["uuid"])
         )
+    connection.commit()
     cur.close()
+
+    return for_deletion
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])

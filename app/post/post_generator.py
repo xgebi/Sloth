@@ -48,7 +48,14 @@ class PostGenerator:
         )
         self.set_footer(connection=connection)
 
-    def run(self, *args, post: Dict = {}, post_type: str = "", everything: bool = True, **kwargs):
+    def run(
+            self,
+            *args, post: Dict = {},
+            post_type: str = "",
+            everything: bool = True,
+            regenerate_taxonomies: List = [],
+            **kwargs
+    ):
         """ Main function that runs everything
 
             Attributes
@@ -71,7 +78,13 @@ class PostGenerator:
             f.write("generation locked")
 
         if len(post.keys()) > 0:
-            t = threading.Thread(target=self.prepare_single_post, kwargs=dict(post=post))
+            t = threading.Thread(
+                target=self.prepare_single_post,
+                kwargs=dict(
+                    post=post,
+                    regenerate_taxonomies=regenerate_taxonomies
+                )
+            )
         elif len(post_type) > 0:
             pass
         elif everything:
@@ -275,7 +288,8 @@ class PostGenerator:
                 multiple=True
             )
 
-    def prepare_single_post(self, *args, post, **kwargs):
+    def prepare_single_post(self, *args, post, regenerate_taxonomies, **kwargs):
+        self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
         for pt in post_types:
@@ -331,9 +345,48 @@ class PostGenerator:
                     posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item
                 )
                 self.generate_rss(
-                    output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]), posts=posts,
-                    language=language
+                    output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]), posts=posts
                 )
+
+    def clean_taxonomy(self, *args, taxonomies_for_cleanup, **kwargs):
+        cur = self.connection.cursor()
+        try:
+            for taxonomy in taxonomies_for_cleanup:
+                cur.execute(
+                    sql.SQL(
+                        """SELECT st.slug, st.taxonomy_type, sls.uuid, sls.short_name, spt.uuid, spt.slug
+                        FROM sloth_taxonomy AS st
+                        INNER JOIN sloth_language_settings AS sls ON st.lang = sls.uuid
+                        INNER JOIN sloth_post_types spt on st.post_type = spt.uuid
+                        WHERE st.uuid = %s"""
+                    ),
+                    (taxonomy["taxonomy"], )
+                )
+                raw_taxonomy = cur.fetchone()
+                taxonomy["slug"] = raw_taxonomy[0]
+                taxonomy["type"] = raw_taxonomy[1]
+                language = {"short_name": raw_taxonomy[3], "uuid": raw_taxonomy[2]}
+                post_type = {"slug": raw_taxonomy[5], "uuid": raw_taxonomy[4]}
+                if language["uuid"] == self.settings["main_language"]['settings_value']:
+                    # path for main language
+                    posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy["type"], taxonomy["slug"])
+                    output_path = Path(self.config["OUTPUT_PATH"])
+                else:
+                    posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"], taxonomy["type"], taxonomy["slug"])
+                    output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+
+                if os.path.exists(posts_path_dir):
+                    shutil.rmtree(posts_path_dir)
+
+                self.generate_taxonomy(
+                    taxonomy=(taxonomy, ),
+                    language=language,
+                    output_path=output_path,
+                    post_type=post_type,
+                )
+        except Exception as e:
+            print(e)
+        cur.close()
 
     def prepare_categories_tags(self, *args, post, **kwargs):
         cur = self.connection.cursor()
