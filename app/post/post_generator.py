@@ -118,6 +118,18 @@ class PostGenerator:
             if post_type["archive_enabled"]:
                 self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
                 self.generate_rss(output_path=output_path, posts=posts)
+
+            if post_type["categories_enabled"] or post_type["tags_enabled"]:
+                categories, tags = self.prepare_categories_tags_post_type(post_type=post_type, language=language)
+
+            if post_type["categories_enabled"]:
+                self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
+                                       post_type=post_type)
+
+            if post_type["tags_enabled"]:
+                self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
+                                       post_type=post_type)
+
         # generate home
         self.generate_home(output_path=output_path, post_types=post_types, language=language)
 
@@ -314,15 +326,16 @@ class PostGenerator:
                 post_type_slug=post_type["slug"],
                 taxonomy_uuid=item["uuid"]
             )
-            self.generate_archive(
-                posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item
-            )
-            self.generate_rss(
-                output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]), posts=posts,
-                language=language
-            )
+            if len(posts) > 0:
+                self.generate_archive(
+                    posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item
+                )
+                self.generate_rss(
+                    output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]), posts=posts,
+                    language=language
+                )
 
-    def prepare_categories_tags(self, *args, post, language, **kwargs):
+    def prepare_categories_tags(self, *args, post, **kwargs):
         cur = self.connection.cursor()
         try:
             cur.execute(
@@ -337,6 +350,26 @@ class PostGenerator:
         except Exception as e:
             print(e)
         cur.close()
+        return self.process_categories_tags(taxonomies=taxonomies)
+
+    def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs):
+        cur = self.connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL(
+                    """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
+                    FROM sloth_taxonomy as st 
+                    WHERE st.post_type = %s AND st.lang = %s;"""
+                ),
+                (post_type["uuid"], language["uuid"])
+            )
+            taxonomies = cur.fetchall()
+        except Exception as e:
+            print(e)
+        cur.close()
+        return self.process_categories_tags(taxonomies=taxonomies)
+
+    def process_categories_tags(self, *args, taxonomies, **kwargs):
         categories = []
         tags = []
         for taxonomy in taxonomies:
