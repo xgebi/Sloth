@@ -78,6 +78,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelectorAll(".delete-tag").forEach(button => {
         button.addEventListener('click', deleteTag)
     });
+
+    setInterval(keepLoggedIn, 10 * 60 * 1000);
 });
 
 function openGalleryDialog(data, type) {
@@ -450,6 +452,27 @@ function addTags(event) {
 
 function deleteTag(event) {
     event.target.parentNode.parentNode.removeChild(event.target.parentNode)
+}
+
+function keepLoggedIn() {
+    fetch('/api/user/keep-logged-in', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1]
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                window.location.replace(`${window.location.origin}/login?redirect=${window.location.pathname}`);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
 }
 
 function getSelectionHtml() {

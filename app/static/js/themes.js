@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 });
 
 function checkRegenerationLock() {
-    console.log("regenerating?", new Date());
     fetch('/api/post/is-generating', {
         method: 'GET',
         headers: {

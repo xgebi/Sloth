@@ -12,11 +12,17 @@
 <nav>
     <ul>
         <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/messages">Messages</a></li>
+        <li>Content
+            <ul>
+                <li><a href="/messages">Messages</a></li>
+                <li><a href="/rss">RSS reader</a></li>
+            </ul>
+        </li>
         {% for post_type in post_types %}
             <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
                 <ul>
-                    <li><a href="/post/{{ post_type['uuid'] }}/new/{{ default_lang['uuid'] }}">Add New {{ post_type['display_name'] }}</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/new/{{ default_lang['uuid'] }}">Add
+                        New {{ post_type['display_name'] }}</a></li>
                     <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
                     <li><a href="/post/{{ post_type['uuid'] }}/formats">Post Formats</a></li>
                 </ul>

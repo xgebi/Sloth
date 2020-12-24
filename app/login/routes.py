@@ -1,6 +1,8 @@
 from flask import request, redirect, make_response, render_template
 
+from app.authorization.authorize import authorize_rest
 from app.authorization.user import User
+import json
 
 from app.login import login
 
@@ -45,3 +47,9 @@ def logout():
     response = make_response(redirect('/login'))
     response.set_cookie('sloth_session', "")
     return response
+
+
+@login.route("/api/user/keep-logged-in", methods=["POST"])
+@authorize_rest(0)
+def keep_logged_in(*args, permission_level, **kwargs):
+    return json.dumps({"loggedIn": True})
