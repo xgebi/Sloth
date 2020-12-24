@@ -42,6 +42,7 @@ if os.path.isfile("migration.json"):
             execute_sql_scripts(con, migration)
         if migration["type"] == "py":
             execute_python_scripts(con, migration)
+        print(f"Processed {migration['file']}")
 
     con.close()
     if os.environ["FLASK_ENV"] != "development":
