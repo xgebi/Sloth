@@ -118,6 +118,8 @@ class PostGenerator:
         else:
             # path for other languages
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+            if not output_path.is_dir():
+                os.makedirs(output_path)
 
         for post_type in post_types:
             posts = self.get_posts_from_post_type_language(

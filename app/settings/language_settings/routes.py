@@ -9,6 +9,7 @@ import json
 import uuid
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
+from app.utilities import get_default_language
 from app.utilities.db_connection import db_connection
 
 from app.settings.language_settings import language_settings
@@ -41,6 +42,7 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
         print(e)
         abort(500)
     cur.close()
+    default_lang = get_default_language(connection=connection)
     connection.close()
 
     languages = []
@@ -53,7 +55,7 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
         })
 
     return render_template("language.html", post_types=post_types_result, permission_level=permission_level,
-                           languages=languages)
+                           languages=languages, default_lang=default_lang)
 
 
 @language_settings.route("/api/settings/language/<lang_id>/save", methods=["POST", "PUT"])

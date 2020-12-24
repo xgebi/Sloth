@@ -1,14 +1,13 @@
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
+from flask import request, current_app, abort, redirect, render_template
 import json
-import psycopg2
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import uuid
 from time import time
 import os
 import traceback
-import re
+from pathlib import Path
 import datetime
-from typing import List, Dict, Any
+from typing import List, Dict
 
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
@@ -922,3 +921,11 @@ def get_protected_post(*args, connection, **kwargs):
         }), 200
     else:
         return json.dumps(protected_post), 200
+
+
+@post.route("/api/post/is-generating", methods=["GET"])
+@authorize_rest(0)
+def is_generating(*args, permission_level, **kwargs):
+    return json.dumps({
+        "generating": Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
+    })
