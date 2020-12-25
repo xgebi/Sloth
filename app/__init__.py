@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
+from app.utilities.job_runner import JobRunner
 
 bcrypt = Bcrypt()
 
@@ -96,5 +97,11 @@ def create_app():  # dev, test, or prod
 
     from app.settings.dev import dev_settings
     app.register_blueprint(dev_settings)
+
+    from app.rss import rss
+    app.register_blueprint(rss)
+
+    job_runner = JobRunner(config=app.config)
+    job_runner.run()
 
     return app
