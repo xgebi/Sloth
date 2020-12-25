@@ -480,6 +480,7 @@ class PostGenerator:
             original_entry_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post else "",
             languages=self.languages
         )
+
         translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
@@ -530,6 +531,9 @@ class PostGenerator:
         # {'uuid': '48ab80ef-b83b-40f7-9dab-c3343bae7d0e', 'long_name': 'English', 'short_name': 'en', 'post': 'fb2e1b26-3361-4239-9b97-aedcde0f57cf'}
         # /<short_name>/<post_type_slug>/<post_slug>
         result = []
+        if translations is None:
+            return result
+
         for translation in translations:
             if post['lang'] != translation['uuid']:
                 if translation["uuid"] != self.settings["main_language"]['settings_value']:
