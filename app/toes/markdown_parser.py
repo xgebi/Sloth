@@ -29,7 +29,7 @@ class MarkdownParser:
     def parse_paragraphs(self, text: str) -> str:
         lines = text.split("\n")
         result = []
-        paragraph_start_pattern = re.compile('(\d+)? ?[a-zA-z]+')
+        paragraph_start_pattern = re.compile('(\d+)? ?[a-zA-z\*~]+')
         for i, line in enumerate(lines):
             if len(line) > 0 and paragraph_start_pattern.match(line):
                 if i != 0 and result[-1].endswith("</p>") and not \
@@ -142,7 +142,10 @@ class MarkdownParser:
         return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
 
     def parse_italic_bold(self, text: str) -> str:
-        return text
+        strikethrough = re.sub(r"(~~)(.*)(~~)", "<span class='strikethrough'>\g<2></span>", text)
+        bi = re.sub(r"(\*\*\*)(.*)(\*\*\*)", "<strong><em>\g<2></em></strong>", strikethrough)
+        b = re.sub(r"(\*\*)(.*)(\*\*)", "<strong>\g<2></strong>", bi)
+        return re.sub(r"(\*)(.*)(\*)", "<em>\g<2></em>", b)
 
     def parse_escaped_characters(self, text: str) -> str:
         return text
