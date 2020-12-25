@@ -1,13 +1,12 @@
-from flask import request, flash, url_for, current_app, make_response, abort
-import psycopg2
+from flask import request, abort
 from psycopg2 import sql
-import bcrypt
 import json
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 from app.api.sloth_settings import sloth_settings
+
 
 @sloth_settings.route("/api/settings", methods=["GET"])
 @authorize_rest(1)
@@ -44,41 +43,3 @@ def show_settings(*args, connection=None, **kwargs):
 		})
 
 	return json.dumps({ "postTypes": postTypesResult, "settings": items })
-
-@sloth_settings.route("/api/settings/save", methods=["PUT", "POST"])
-@authorize_rest(1)
-@db_connection
-def save_settings(*args, connection=None, **kwargs):
-	updated_settings = json.loads(request.data);
-
-	cur = connection.cursor()
-	raw_items = []
-	try:		
-		for setting in updated_settings['settings']:
-			cur.execute(
-				sql.SQL("UPDATE sloth_settings SET settings_value = %s WHERE settings_name = %s"),
-				[setting["settingsValue"], setting["settingsName"]]
-			)
-		connection.commit()
-
-		cur.execute(
-			"SELECT settings_name, display_name, settings_value, settings_value_type FROM sloth_settings WHERE settings_type = 'sloth'"
-		)
-		raw_items = cur.fetchall()
-	except Exception as e:
-		print("db error c")
-		abort(500)
-
-	cur.close()
-	connection.close()
-
-	items = []
-	for item in raw_items:
-		items.append({
-			"settingsName": item[0],
-			"displayName": item[1],
-			"settingsValue": item[2],
-			"settingsValueType": item[3]
-		})
-
-	return json.dumps({ "settings": items })

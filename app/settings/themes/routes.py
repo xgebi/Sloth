@@ -12,7 +12,7 @@ import shutil
 
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
-from app.authorization.authorize import authorize_web
+from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_generator import PostGenerator
 
 from app.post.post_types import PostTypes
@@ -95,7 +95,7 @@ def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
 
 
 @settings_themes.route("/api/upload-theme", methods=["POST"])
-@authorize_web(1)
+@authorize_rest(1)
 def upload_theme(*args, **kwargs):
     theme = request.files["image"]
     if theme.mimetype == 'application/x-zip-compressed' and theme.filename.endswith(".zip"):
@@ -111,3 +111,30 @@ def upload_theme(*args, **kwargs):
         return json.dumps({"theme_uploaded": theme.filename[:theme.filename.rfind(".zip")]}), 201
     else:
         abort(500)
+
+
+@settings_themes.route("/api/themes/list", methods=["GET"])
+@authorize_rest(1)
+@db_connection
+def show_themes_list(*args, connection=None, **kwargs):
+    if connection is None:
+        abort(500)
+
+    postTypes = PostTypes()
+    postTypesResult = postTypes.get_post_type_list(connection)
+
+    config = current_app.config
+
+    listOfDirs = os.listdir(config["THEMES_PATH"])
+    themes = []
+
+    for folder in listOfDirs:
+        theme_file = Path(config["THEMES_PATH"], folder, 'theme.json')
+        if (theme_file.is_file()):
+            with open(theme_file, 'r') as f:
+                theme = json.loads(f.read())
+                if (theme["choosable"]):
+                    themes.append(theme)
+
+    connection.close()
+    return json.dumps({"postTypes": postTypesResult, "themes": themes})

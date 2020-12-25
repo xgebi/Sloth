@@ -5,7 +5,7 @@ from app.authorization.authorize import authorize_web
 
 from app.post.post_types import PostTypes
 
-from settings import content
+from app.settings.content import content
 
 
 @content.route("/settings/import")

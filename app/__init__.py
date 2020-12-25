@@ -59,7 +59,7 @@ def create_app():  # dev, test, or prod
     from app.settings.themes.menu import menu
     app.register_blueprint(menu)
 
-    from app.web.settings.content import content
+    from app.settings.content import content
     app.register_blueprint(content)
 
     from app.web.settings.users import settings_users
@@ -74,7 +74,7 @@ def create_app():  # dev, test, or prod
     from app.messages import messages
     app.register_blueprint(messages)
 
-    from app.api.site import site
+    from app.site import site
     app.register_blueprint(site)
 
     from app.post_type import post_type

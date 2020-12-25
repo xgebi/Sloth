@@ -1,19 +1,14 @@
-from flask import request, flash, url_for, current_app, abort
+from flask import request, abort
 from flask_cors import cross_origin
 import json
-import psycopg2
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import uuid
 from time import time
-import os
 import traceback
 
-from app.post.post_types import PostTypes
-from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
-from app.api.site import site
-
+from app.site import site
 
 
 @site.route("/api/analytics", methods=["POST"])
@@ -37,14 +32,14 @@ def update_analytics(*args, connection, **kwargs):
 	cur.close()
 	connection.close()
 
-	return json.dumps({ "page_recorded": "ok" })
+	return json.dumps({"page_recorded": "ok"})
+
 
 @site.route("/api/messages", methods=["POST"])
 @cross_origin()
 @db_connection
 def send_message(*args, connection, **kwargs):	
 	message_data = request.get_json()
-	import pdb; pdb.set_trace()
 	try:
 		cur = connection.cursor()
 		cur.execute(
@@ -59,4 +54,4 @@ def send_message(*args, connection, **kwargs):
 	
 	cur.close()
 	connection.close()
-	return json.dumps({ "sent": "ok" })
+	return json.dumps({"sent": "ok"})
