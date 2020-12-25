@@ -781,12 +781,12 @@ class PostGenerator:
                     (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
                 )
                 raw_items = cur.fetchall()
-
+                md_parser = MarkdownParser()
                 posts[post_type['slug']] = [{
                     "uuid": item[0],
                     "title": item[1],
                     "slug": item[2],
-                    "excerpt": item[3],
+                    "excerpt": md_parser.to_html_string(item[3]),
                     "publish_date": item[4],
                     "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
                         "%Y-%m-%d %H:%M"),
