@@ -159,10 +159,15 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         temp_post_statuses = cur.fetchall()
         if raw_post[8] is not None:
             cur.execute(
-                sql.SQL("""SELECT alt, 
-                        concat((SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'), '/',file_path)
-                        FROM sloth_media WHERE uuid=%s"""),
-                [raw_post[8]]
+                sql.SQL(
+                    """SELECT sma.alt, 
+                    concat(
+                        (SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'), '/',file_path
+                    )
+                        FROM sloth_media AS sm 
+                        INNER JOIN sloth_media_alts sma on sm.uuid = sma.media
+                        WHERE sm.uuid=%s AND sma.lang = %s"""),
+                (raw_post[8], raw_post[17])
             )
             temp_thumbnail_info = cur.fetchone()
         current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
