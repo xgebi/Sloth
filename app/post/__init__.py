@@ -8,7 +8,7 @@ def get_translations(*args, connection, post_uuid, original_entry_uuid, language
     cur = connection.cursor()
     try:
         # Get existing languages
-        if len(original_entry_uuid) != 0 and original_entry_uuid != 'None':
+        if original_entry_uuid is not None and len(original_entry_uuid) != 0 and original_entry_uuid != 'None':
             cur.execute(
                 sql.SQL(
                     """SELECT lang, uuid, slug FROM sloth_posts 
