@@ -101,7 +101,7 @@ def create_app():  # dev, test, or prod
     from app.rss import rss
     app.register_blueprint(rss)
 
-    job_runner = JobRunner(config=app.config)
-    job_runner.run()
+    #job_runner = JobRunner(config=app.config)
+    #job_runner.run()
 
     return app
