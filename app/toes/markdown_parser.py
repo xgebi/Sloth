@@ -136,7 +136,8 @@ class MarkdownParser:
         return text
 
     def parse_link(self, text: str) -> str:
-        return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)]\((.*)\)", "\g<1><a href='\g<4>'>\g<2>\g<3></a>", text)
+        return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)\]\(([\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#[A-z0-9]+)\)",
+                      "\g<1><a href='\g<4>'>\g<2>\g<3></a>", text)
 
     def parse_image(self, text: str) -> str:
         return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
