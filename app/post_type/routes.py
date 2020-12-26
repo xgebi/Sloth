@@ -1,6 +1,7 @@
 from flask import request, abort, redirect, render_template
 
 from app.post.post_generator import PostGenerator
+from app.utilities import get_default_language
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
@@ -20,8 +21,15 @@ def show_post_types(*args, permission_level, connection, **kwargs):
 
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
+    default_lang = get_default_language(connection=connection)
+    connection.close()
 
-    return render_template("post-types-list.html", post_types=post_types_result, permission_level=permission_level)
+    return render_template(
+        "post-types-list.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        default_lang=default_lang
+    )
 
 
 @post_type.route("/post-type/new", methods=["GET"])
