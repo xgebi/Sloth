@@ -45,6 +45,7 @@ def new_post_type_page(*args, permission_level, connection, **kwargs):
     pt = {
         "uuid": uuid.uuid4()
     }
+    default_lang = get_default_language(connection=connection)
 
     return render_template(
         "post-type.html",
@@ -52,7 +53,8 @@ def new_post_type_page(*args, permission_level, connection, **kwargs):
         permission_level=permission_level,
         post_type=type,
         new=True,
-        pt=pt
+        pt=pt,
+        default_lang=default_lang
     )
 
 
@@ -67,12 +69,14 @@ def show_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     post_types_result = post_types.get_post_type_list(connection)
 
     pt = post_types.get_post_type(connection, post_type_id)
+    default_lang = get_default_language(connection=connection)
 
     return render_template(
         "post-type.html",
         post_types=post_types_result,
         permission_level=permission_level,
-        pt=pt
+        pt=pt,
+        default_lang=default_lang
     )
 
 
