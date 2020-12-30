@@ -465,6 +465,9 @@ class PostGenerator:
         elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post_type['slug']}.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{language['short_name']}.html")
         else:
             post_template_path = Path(self.theme_path, "post.html")
 

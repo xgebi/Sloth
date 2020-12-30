@@ -12,13 +12,13 @@
 <nav>
     <ul>
         <li><a href="/dashboard">Dashboard</a></li>
-        <li>Content
+        <!--li>Content
             <ul>
                 <li><a href="/messages">Messages</a></li>
                 <li><a href="/rss">RSS reader</a></li>
                 <li><a href="/analytics">Analytics</a></li>
             </ul>
-        </li>
+        </li-->
         {% for post_type in post_types %}
             <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
                 <ul>
