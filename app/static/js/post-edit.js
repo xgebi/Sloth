@@ -64,6 +64,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             .toLocaleLowerCase()
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[\u00DF]/g, "ss")
             .replace(/[^a-zA-Z0-9\-]+/g, "");
     });
 
@@ -334,7 +337,15 @@ function createCategory() {
         },
         body: JSON.stringify({
             categoryName: document.querySelector("#new-category").value,
-            slug: document.querySelector("#new-category").value.trim().replace(/\s+/g, '-'),
+            slug: document.querySelector("#new-category").value
+                .trim()
+                .toLocaleLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[\u00DF]/g, "ss")
+                .replace(/[^a-zA-Z0-9\-]+/g, ""),
             postType: document.querySelector("#uuid").dataset["posttypeUuid"],
             post: document.querySelector("#uuid").dataset["uuid"],
             lang: currentLanguage
@@ -424,7 +435,6 @@ function addTags(event) {
             }
         }
         for (const node of nodes) {
-            console.log(node, tagSlug)
             if (node.dataset?.slug === tagSlug) {
                 canBeAdded = false;
             }

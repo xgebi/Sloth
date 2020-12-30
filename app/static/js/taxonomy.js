@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // display-name
     document.querySelector("#display-name").addEventListener('blur', (event) => {
-        document.querySelector("#slug").value = event.target?.value.trim().replace(/\s+/g, '-');
+        document.querySelector("#slug").value = event.target?.value
+            .trim()
+            .toLocaleLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[\u00DF]/g, "ss")
+            .replace(/[^a-zA-Z0-9\-]+/g, "");
     });
 });
