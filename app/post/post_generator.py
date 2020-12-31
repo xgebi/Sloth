@@ -566,6 +566,9 @@ class PostGenerator:
         elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.html")):
             archive_template_path = os.path.join(self.theme_path,
                                                  f"archive-{post_type['slug']}.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{language['short_name']}.html")):
+            archive_template_path = os.path.join(self.theme_path,
+                                                 f"archive-{language['short_name']}.html")
         else:
             archive_template_path = Path(self.theme_path, "archive.html")
 
