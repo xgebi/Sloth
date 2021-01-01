@@ -23,7 +23,7 @@
                     <td class="display-name">{{ pt['display_name'] }}</td>
                     <td class="slug">{{ pt['slug'] }}</td>
                     <td class="action">
-                        <button class="edit-button" data-uuid="{{ pt['uuid'] }}">Edit</button>
+                        <button class="edit-button" data-deletable="{{ pt['deletable'] }}" data-uuid="{{ pt['uuid'] }}">Edit</button>
                     </td>
                 </tr>
             {% endfor %}
@@ -31,13 +31,15 @@
         </table>
     {% endif %}
 
-    <template id="new-format">
+    <template id="format-form">
         <tr>
             <td class="display-name"><input type="text" /></td>
             <td class="slug"><input type="text" /></td>
             <td class="action">
-                <button class="save-button" data-uuid="{{ pt['uuid'] }}">Save</button>
+                <button class="save-button">Save</button>
                 <button class="cancel-button">Cancel</button>
+                <br />
+                <button class="delete-button">Delete</button>
             </td>
         </tr>
     </template>
