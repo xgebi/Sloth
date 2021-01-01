@@ -130,8 +130,11 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js,
              A.thumbnail, A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, 
-             A.import_approved, A.password, A.lang, A.original_lang_entry_uuid
-                    FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid WHERE A.uuid = %s"""),
+             A.import_approved, A.password, A.lang, A.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name
+                    FROM sloth_posts AS A 
+                    INNER JOIN sloth_users AS B ON A.author = B.uuid 
+                    INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
+                    WHERE A.uuid = %s"""),
             [post_id]
         )
         raw_post = cur.fetchone()
@@ -239,7 +242,10 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "password": raw_post[16],
         "lang": raw_post[17],
         "categories": categories,
-        "tags": tags
+        "tags": tags,
+        "format_uuid": raw_post[19],
+        "format_slug": raw_post[20],
+        "format_name": raw_post[21]
     }
 
     return render_template(
@@ -731,7 +737,10 @@ def save_post(*args, connection=None, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, A.content, 
                                 A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, A.update_date, 
-                                A.post_status, A.imported, A.import_approved FROM sloth_posts as A WHERE A.uuid = %s;"""),
+                                A.post_status, A.imported, A.import_approved, spf.uuid, spf.slug, spf.display_name
+                                FROM sloth_posts as A 
+                                INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
+                                WHERE A.uuid = %s;"""),
             [filled["uuid"]]
         )
         generatable_post = parse_raw_post(cur.fetchone())

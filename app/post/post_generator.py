@@ -162,9 +162,11 @@ class PostGenerator:
                 sql.SQL(
                     """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
                         sp.js, sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
-                        sp.original_lang_entry_uuid, sp.lang FROM sloth_post_taxonomies AS spt
+                        sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name 
+                        FROM sloth_post_taxonomies AS spt
                         INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
                         INNER JOIN sloth_users AS su ON sp.author = su.uuid
+                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
                         WHERE spt.taxonomy = %s AND sp.post_type = %s AND sp.post_status = 'published'
                         ORDER BY sp.publish_date DESC;"""
                 ),
@@ -191,8 +193,10 @@ class PostGenerator:
             cur.execute(
                 sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
                          A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail,
-                         A.original_lang_entry_uuid, A.lang
-                                    FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid
+                         A.original_lang_entry_uuid, A.lang, spf.uuid, spf.slug, spf.display_name
+                                    FROM sloth_posts AS A 
+                                    INNER JOIN sloth_users AS B ON A.author = B.uuid
+                                    INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
                                     WHERE post_type = %s AND lang = %s AND post_status = 'published' 
                                     ORDER BY A.publish_date DESC;"""),
                 (post_type_uuid, language_uuid)
@@ -275,7 +279,10 @@ class PostGenerator:
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
                 "original_lang_entry_uuid": post[14],
-                "lang": post[15]
+                "lang": post[15],
+                "format_uuid": post[16],
+                "format_slug": post[17],
+                "format_name": post[18]
             })
 
         return posts
@@ -362,7 +369,7 @@ class PostGenerator:
                         INNER JOIN sloth_post_types spt on st.post_type = spt.uuid
                         WHERE st.uuid = %s"""
                     ),
-                    (taxonomy["taxonomy"], )
+                    (taxonomy["taxonomy"],)
                 )
                 raw_taxonomy = cur.fetchone()
                 taxonomy["slug"] = raw_taxonomy[0]
@@ -371,17 +378,19 @@ class PostGenerator:
                 post_type = {"slug": raw_taxonomy[5], "uuid": raw_taxonomy[4]}
                 if language["uuid"] == self.settings["main_language"]['settings_value']:
                     # path for main language
-                    posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy["type"], taxonomy["slug"])
+                    posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy["type"],
+                                          taxonomy["slug"])
                     output_path = Path(self.config["OUTPUT_PATH"])
                 else:
-                    posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"], taxonomy["type"], taxonomy["slug"])
+                    posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"],
+                                          taxonomy["type"], taxonomy["slug"])
                     output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
 
                 if os.path.exists(posts_path_dir):
                     shutil.rmtree(posts_path_dir)
 
                 self.generate_taxonomy(
-                    taxonomy=(taxonomy, ),
+                    taxonomy=(taxonomy,),
                     language=language,
                     output_path=output_path,
                     post_type=post_type,
@@ -459,15 +468,35 @@ class PostGenerator:
     ):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 
-        if os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
+        # post type, post format, language
+        if os.path.isfile(os.path.join(self.theme_path,
+                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")
+        # post type, post format
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{post['format_slug']}.html")
+        # post format, language
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post['format_slug']}-{language['short_name']}.html")
+        # post type, language
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post_type['slug']}-{language['short_name']}.html")
+        # post type
         elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post_type['slug']}.html")
+        # language
         elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{language['short_name']}.html")
+        # post format
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post['format_slug']}.html")
         else:
             post_template_path = Path(self.theme_path, "post.html")
 

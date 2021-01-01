@@ -102,5 +102,8 @@ def parse_raw_post(raw_post: List) -> Dict[str, str] or Any:
             "%Y-%m-%d %H:%M") if raw_post[15] is not None else None,
         "post_status": raw_post[16],
         "imported": raw_post[17],
-        "approved": raw_post[18]
+        "approved": raw_post[18],
+        "format_uuid": raw_post[19] if raw_post[19] is not None else None,
+        "format_slug": raw_post[20] if raw_post[20] is not None else None,
+        "format_name": raw_post[21] if raw_post[21] is not None else None
     }

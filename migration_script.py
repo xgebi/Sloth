@@ -38,6 +38,11 @@ if os.path.isfile("migration.json"):
         migrations = json.load(migrations_file)
 
     for migration in migrations:
+        if os.environ["FLASK_ENV"] == "development":
+            answer = input(f"Should process {migration['file']}? (y/N)")
+            if answer.lower() != 'y':
+                continue
+
         if migration["type"] == "sql":
             execute_sql_scripts(con, migration)
         if migration["type"] == "py":
@@ -48,4 +53,4 @@ if os.path.isfile("migration.json"):
     if os.environ["FLASK_ENV"] != "development":
         os.remove("migration.json")
 
-print("Migrations done")
+print("\nMigrations done")

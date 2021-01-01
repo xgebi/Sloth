@@ -13,7 +13,7 @@ Y bigger changes or database changes
 X after a bigger batch of changes
 
 ### 1.0.0 requirements
-- multilingual blog
+- multilingual blog ✅
 - rss reader
 - post scheduler
 - twitter integration
