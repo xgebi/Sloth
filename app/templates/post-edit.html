@@ -7,12 +7,12 @@
     <article class="post-edit">
         <h1 class="full-width">{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit
             {{ post_type_name }}{% endif %}</h1>
-        {% if data["original_post"]  %}
-        <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
-              data-posttype-uuid="{{ data["post_type"] }}" data-original-post="{{ data["original_post"] }}"></span>
+        {% if data["original_post"] %}
+            <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
+                  data-posttype-uuid="{{ data["post_type"] }}" data-original-post="{{ data["original_post"] }}"></span>
         {% else %}
-        <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
-              data-posttype-uuid="{{ data["post_type"] }}"></span>
+            <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
+                  data-posttype-uuid="{{ data["post_type"] }}"></span>
         {% endif %}
         <div class="first-column">
             <label for="title">Title (may not be empty)</label>
@@ -24,13 +24,13 @@
         </div>
 
         {% if translations | length > 0 %}
-        <div class="first-column">
-            Translations
-            {% for translation in translations %}
-                <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
+            <div class="first-column">
+                Translations
+                {% for translation in translations %}
+                    <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
 
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
         {% endif %}
         <div class="first-column">
             <button id="gallery-opener">Open gallery</button>
@@ -73,13 +73,13 @@
             <label for="thumbnail">Thumbnail</label>
             <figure id="thumbnail-wrapper">
                 {% if data["thumbnail_uuid"] %}
-                <img src="{{ data["thumbnail_path"] }}" alt="{{ data["thumbnail_alt"] }}" />
+                    <img src="{{ data["thumbnail_path"] }}" alt="{{ data["thumbnail_alt"] }}"/>
                 {% endif %}
             </figure>
             <button id="pick-thumbnail">Pick thumbnail</button>
             <input id="thumbnail" class="hidden" value="{{ data["thumbnail_uuid"] }}"/>
         </div>
-    <div class="metadata second-column">
+        <div class="metadata second-column">
             <label for="publish_date">Publish date</label>
             <input id="publish_date" type="date" value="{{ data["publish_date"] }}"/>
             <label for="publish_time">Publish time</label>
@@ -95,12 +95,14 @@
                 {% endfor %}
             </select>
             {% if data["status"] != 'protected' %}
-            <label for="password_protection" id="password_protection_label" class="hidden" >Password:</label>
-            <input id="password_protection" type="text" class="hidden" /><!-- In this case type password is unnecessary, may change -->
+                <label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
+                <input id="password_protection" type="text" class="hidden"/>
+                <!-- In this case type password is unnecessary, may change -->
             {% endif %}
             {% if data["status"] == 'protected' %}
-            <label for="password_protection" id="password_protection_label" >Password:</label>
-            <input id="password_protection" type="text" value="{{ data["password"] }}"/><!-- In this case type password is unnecessary, may change -->
+                <label for="password_protection" id="password_protection_label">Password:</label>
+                <input id="password_protection" type="text" value="{{ data["password"] }}"/>
+                <!-- In this case type password is unnecessary, may change -->
             {% endif %}
             {% if data["imported"] %}
                 <label for="import_approved">Imported post approved:</label>
@@ -114,27 +116,27 @@
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
                 {% if languages | length > 0 %}
-                <label for="create-lang">For language:</label>
-                <select id="create-lang">
-                    <option value="" selected>---</option>
-                    {% for language in languages %}
-                    <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
-                    {% endfor %}
-                </select>
-                <button id="save-create">Save and Create translation</button>
-                <button id="publish-create">Publish and Create translation</button>
+                    <label for="create-lang">For language:</label>
+                    <select id="create-lang">
+                        <option value="" selected>---</option>
+                        {% for language in languages %}
+                            <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
+                        {% endfor %}
+                    </select>
+                    <button id="save-create">Save and Create translation</button>
+                    <button id="publish-create">Publish and Create translation</button>
                 {% endif %}
             {% endif %}
             {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
                 <button id="update-button">Update post</button>
                 {% if languages | length > 0 %}
-                <select id="create-lang">
-                    <option value="" selected>---</option>
-                    {% for language in languages %}
-                    <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
-                    {% endfor %}
-                </select>
-                <button id="update-create">Update and Create translation</button>
+                    <select id="create-lang">
+                        <option value="" selected>---</option>
+                        {% for language in languages %}
+                            <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
+                        {% endfor %}
+                    </select>
+                    <button id="update-create">Update and Create translation</button>
                 {% endif %}
             {% endif %}
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
@@ -142,7 +144,7 @@
         </div>
         <div class="second-column tags">
             <label for="tags">Tags</label>
-            <input id="tags-input" />
+            <input id="tags-input"/>
             <button id="add-tags">Add</button>
             <div id="tags-div">
                 {% for tag in data["tags"] %}
@@ -175,13 +177,26 @@
                 <button id="create-category">Create new category</button>
             </div>
         </div>
+        <div class="second-column post-formats">
+            <fieldset id="post-formats">
+                <legend>Post format</legend>
+                {% for pf in post_formats %}
+                    {% if data['format_uuid'] == pf['uuid'] %}
+                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked>
+                    {% else %}
+                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}">
+                    {% endif %}
+                    <label for="{{ pf['slug'] }}">{{ pf['display_name'] }}</label><br/>
+                {% endfor %}
+            </fieldset>
+        </div>
     </article>
     <!--div class="sloth-editor"></div-->
 {% endblock %}
 
 {% block scripts %}
     <script>
-    const currentLanguage = `{{ current_lang_id }}`;
+        const currentLanguage = `{{ current_lang_id }}`;
     </script>
     <script src="/static/js/post-edit.js"></script>
     <!--script src="/static/js/editor.js"></script-->

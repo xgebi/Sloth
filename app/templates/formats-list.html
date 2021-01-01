@@ -3,38 +3,36 @@
 {% block title %}List of formats{% endblock %}
 
 {% block body %}
-<h1>List of Formats</h1>
-Note: Formats aren't separated by languages
-{% for key in taxonomy_types %}
-<h2>{{ key }}</h2>
-{% if  key != 'tag'%}
-<a href="/post/{{ post_uuid}}/taxonomy/{{ key }}/new?type={{ key }}">Add new {{ key }}</a>
-{% endif %}
+    <h1>List of formats</h1>
+    Note: Formats aren't separated by languages
+    <div>
+        <button id="create-new-post-format">Create new post format</button>
+    </div>
+    {% if post_formats | length > 0 %}
+        <table>
+            <thead>
+            <tr>
+                <th>Display name</th>
+                <th>Slug</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for pt in post_formats %}
+                <tr>
+                    <td>{{ pt['display_name'] }}</td>
+                    <td>{{ pt['slug'] }}</td>
+                    <td>
+                        <button data-uuid="{{ pt['uuid'] }}">Edit</button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
-{% if taxonomy_list[key]|length > 0 %}
-<table>
-	<thead>
-		<tr>
-			<th>Name</th>
-            {% if  key != 'tag'%}
-			<th>Action</th>
-            {% endif %}
-		</tr>
-	</thead>
-	<tbody>
-		{% for taxonomy in taxonomy_list[key] %}
-        <tr>
-            <td>{{ taxonomy[1] }}</td>
-            {% if  key != 'tag'%}
-            <td><a href="/post/{{ post_uuid }}/taxonomy/{{ key }}/{{ taxonomy[0] }}">Edit</a></td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-	</tbody>
-</table>
-{% else %}
-<p>No items</p>
-{% endif %}
-{% endfor %}
+{% endblock %}
 
+{% block scripts %}
+<script src="/static/js/post-formats.js"></script>
 {% endblock %}

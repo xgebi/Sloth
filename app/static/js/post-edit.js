@@ -256,6 +256,11 @@ function collectValues() {
     }
     post["approved"] = document.querySelector("#import_approved") ? document.querySelector("#import_approved").checked : false;
     post["lang"] = currentLanguage;
+    document.querySelectorAll("#post-formats input").forEach(input => {
+        if (input.checked) {
+            post["post_format"] = input.value;
+        }
+    });
     return post;
 }
 

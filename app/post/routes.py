@@ -153,7 +153,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         cur.execute(
             sql.SQL("""SELECT taxonomy FROM sloth_post_taxonomies
                                         WHERE post = %s"""),
-            (post_id, )
+            (post_id,)
         )
         raw_post_taxonomies = cur.fetchall()
         cur.execute(
@@ -203,6 +203,17 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                     })
             if addable:
                 translatable.append(language)
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
+            ),
+            (raw_post[13],)
+        )
+        post_formats = [{
+            "uuid": pf[0],
+            "slug": pf[1],
+            "display_name": pf[2]
+        } for pf in cur.fetchall()]
     except Exception as e:
         print("db error B")
         print(e)
@@ -260,7 +271,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         default_lang=default_lang,
         languages=translatable,
         translations=translated_languages,
-        current_lang_id=data["lang"]
+        current_lang_id=data["lang"],
+        post_formats=post_formats
     )
 
 
@@ -332,6 +344,17 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         else:
             translatable_languages = languages
             translations = []
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
+            ),
+            (post_type,)
+        )
+        post_formats = [{
+            "uuid": pf[0],
+            "slug": pf[1],
+            "display_name": pf[2]
+        } for pf in cur.fetchall()]
     except Exception as e:
         print("db error A")
         abort(500)
@@ -361,10 +384,21 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "original_post": original_post
     }
 
-    return render_template("post-edit.html", post_types=post_types_result, permission_level=permission_level,
-                           media=media, post_type_name=post_type_name, post_statuses=post_statuses,
-                           data=data, all_categories=all_categories, default_lang=default_lang,
-                           current_lang_id=lang_id, languages=translatable_languages, translations=translations)
+    return render_template(
+        "post-edit.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        media=media,
+        post_type_name=post_type_name,
+        post_statuses=post_statuses,
+        data=data,
+        all_categories=all_categories,
+        default_lang=default_lang,
+        current_lang_id=lang_id,
+        languages=translatable_languages,
+        translations=translations,
+        post_formats=post_formats
+    )
 
 
 @post.route("/post/<type_id>/taxonomy")
@@ -449,7 +483,7 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
                  FROM sloth_post_formats
                  WHERE post_type = %s"""
             ),
-            (type_id, )
+            (type_id,)
         )
         post_formats = [{
             "uuid": pt[0],
@@ -799,7 +833,7 @@ def save_post(*args, connection=None, **kwargs):
             # get post type slug
             cur.execute(
                 sql.SQL("""SELECT slug FROM sloth_post_types WHERE uuid = %s;"""),
-                (generatable_post["post_type"], )
+                (generatable_post["post_type"],)
             )
             post_type_slug = cur.fetchone()
             cur.execute(
@@ -833,7 +867,7 @@ def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
     categories = article["categories"]
     cur.execute(
         sql.SQL("""SELECT uuid, taxonomy FROM sloth_post_taxonomies WHERE post = %s;"""),
-        (article["uuid"], )
+        (article["uuid"],)
     )
     raw_taxonomies = cur.fetchall()
     taxonomies = [{
@@ -853,7 +887,7 @@ def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
     for taxonomy in for_deletion:
         cur.execute(
             sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s"""),
-            (taxonomy["uuid"], )
+            (taxonomy["uuid"],)
         )
         taxonomies.remove(taxonomy)
     connection.commit()

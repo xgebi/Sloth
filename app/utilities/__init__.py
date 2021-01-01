@@ -54,7 +54,7 @@ def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:
 
 def get_related_posts(*args, post, connection, **kwargs):
     cur = connection.cursor()
-    if post["original_lang_entry_uuid"] is not None:
+    if post["original_lang_entry_uuid"] is not None and len(post["original_lang_entry_uuid"]) > 0:
         cur.execute(
             sql.SQL(
                 """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title,
