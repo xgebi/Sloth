@@ -20,8 +20,6 @@ function addPostFormat() {
 }
 
 function editRow(event) {
-    console.log(event.target.parentNode.parentNode, event.target.parentNode.parentNode.parentNode);
-    debugger;
     const formatFormTemplate = document.querySelector("#format-form");
     const formatForm = formatFormTemplate.content.cloneNode(true);
 
@@ -31,6 +29,7 @@ function editRow(event) {
     const saveButton = formatForm.querySelector(".save-button");
     saveButton.addEventListener('click', saveFormat);
     saveButton.setAttribute('data-uuid', event.target.dataset["uuid"]);
+    saveButton.setAttribute('data-deletable', event.target.dataset["deletable"]);
     const cancelButton = formatForm.querySelector(".cancel-button");
     cancelButton.addEventListener('click', cancelAddingFormat);
     if (event.target.dataset["deletable"] === 'False') {
@@ -41,28 +40,47 @@ function editRow(event) {
     event.target.parentNode.parentNode.parentNode.replaceChild(formatForm, event.target.parentNode.parentNode)
 }
 
-function saveFormat() {
+function saveFormat(event) {
+    event.target.parentNode.parentNode.querySelector(".display-name input").value;
+    event.target.parentNode.parentNode.querySelector(".slug input").value;
 
+    fetch('/api/settings/dev/posts', {
+        method: 'DELETE',
+        headers: {
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1],
+        }
+    }).then(response => {
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
+    }).then(data => {
+        console.log('Success:', data);
+    }).catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 function cancelAddingFormat(event) {
     if (event.target.parentNode.querySelector(".save-button").dataset["uuid"] === 'new') {
-
+        event.target.parentNode.parentNode.parentNode.removeChild(event.target.parentNode.parentNode)
     } else {
+        event.target.parentNode.parentNode.querySelector(".display-name").textContent = event.target.parentNode.parentNode.querySelector(".display-name input").value;
+        event.target.parentNode.parentNode.querySelector(".slug").textContent = event.target.parentNode.parentNode.querySelector(".slug input").value;
+        const editButton = document.createElement("button");
+        editButton.setAttribute('data-uuid', event.target.dataset["uuid"]);
+        editButton.setAttribute('data-deletable', event.target.dataset["deletable"]);
+        editButton.textContent = "Edit";
+        const actionTd = event.target.parentNode;
+        while (actionTd.firstChild) {
+            actionTd.removeChild(
+                actionTd.lastChild
+            );
+        }
+        actionTd.appendChild(editButton);
 
     }
 }
-
-/*
-<template id="format-form">
-        <tr>
-            <td class="display-name"><input type="text" /></td>
-            <td class="slug"><input type="text" /></td>
-            <td class="action">
-                <button class="save-button">Save</button>
-                <button class="cancel-button">Cancel</button>
-                <b
-            </td>
-        </tr>
-    </template>
- */

@@ -513,6 +513,77 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
     )
 
 
+@post.route("/api/post/<type_id>/formats", methods=["POST", "PUT"])
+@authorize_web(0)
+@db_connection
+def save_post_format(*args, permission_level, connection, type_id, **kwargs):
+    filled = json.loads(request.data)
+    cur = connection.cursor()
+    try:
+
+        cur.execute(
+            sql.SQL("SELECT count(slug) FROM sloth_post_formats WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"),
+            (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"])
+        )
+        similar = cur.fetchone()[0]
+        if int(similar) > 0:
+            filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+
+
+    except Exception as e:
+        print("db error C")
+        abort(500)
+
+    cur.close()
+    # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_language = get_default_language(connection=connection)
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+
+    connection.close()
+
+
+@post.route("/api/post/<type_id>/formats", methods=["DELETE"])
+@authorize_web(0)
+@db_connection
+def delete_post_format(*args, permission_level, connection, type_id, **kwargs):
+    filled = json.loads(request.data)
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL(
+                """DELETE FROM sloth_post_formats
+                 WHERE uuid = %s AND deletable = %s"""
+            ),
+            (filled["uuid"], True)
+        )
+        connection.commit()
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid FROM sloth_post_formats
+                 WHERE uuid = %s"""
+            ),
+            (filled["uuid"], True)
+        )
+        if len(cur.fetchall) > 0:
+            cur.close()
+            connection.close()
+            return json.dumps({
+                "uuid": filled["uuid"],
+                "deleted": False
+            }), 406
+    except Exception as e:
+        print("db error C")
+        abort(500)
+
+    cur.close()
+    connection.close()
+
+    return json.dumps({
+        "uuid": filled["uuid"],
+        "deleted": True
+    }), 204
+
+
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
 @db_connection
