@@ -20,10 +20,10 @@
             <tbody>
             {% for pt in post_formats %}
                 <tr>
-                    <td>{{ pt['display_name'] }}</td>
-                    <td>{{ pt['slug'] }}</td>
-                    <td>
-                        <button data-uuid="{{ pt['uuid'] }}">Edit</button>
+                    <td class="display-name">{{ pt['display_name'] }}</td>
+                    <td class="slug">{{ pt['slug'] }}</td>
+                    <td class="action">
+                        <button class="edit-button" data-uuid="{{ pt['uuid'] }}">Edit</button>
                     </td>
                 </tr>
             {% endfor %}
@@ -31,8 +31,19 @@
         </table>
     {% endif %}
 
+    <template id="new-format">
+        <tr>
+            <td class="display-name"><input type="text" /></td>
+            <td class="slug"><input type="text" /></td>
+            <td class="action">
+                <button class="save-button" data-uuid="{{ pt['uuid'] }}">Save</button>
+                <button class="cancel-button">Cancel</button>
+            </td>
+        </tr>
+    </template>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/post-formats.js"></script>
+    <script src="/static/js/post-formats.js"></script>
 {% endblock %}
