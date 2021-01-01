@@ -14,15 +14,15 @@ X after a bigger batch of changes
 
 ### 1.0.0 requirements
 - multilingual blog ✅
-- rss reader
+- rss reader 🛠
 - post scheduler
 - twitter integration
-- post formats
+- post formats 🛠
 - user management
 
 ### 2.0.0 requirements
 - Toe compiler (Python)
-- Markdown compiler (Python)
+- Markdown compiler (Python) ✅
 - IndieWeb
 
 ### 3.0.0

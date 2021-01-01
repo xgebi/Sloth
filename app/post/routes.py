@@ -410,8 +410,6 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
             )
             taxonomy[taxonomy_type] = cur.fetchall()
     except Exception as e:
-        import pdb;
-        pdb.set_trace()
         print("db error C")
         abort(500)
 
@@ -428,6 +426,53 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
         permission_level=permission_level,
         taxonomy_types=taxonomy_types,
         taxonomy_list=taxonomy,
+        post_type_uuid=type_id,
+        default_lang=default_language,
+        languages=languages
+    )
+
+
+@post.route("/post/<type_id>/formats")
+@authorize_web(0)
+@db_connection
+def show_formats(*args, permission_level, connection, type_id, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+    lang_id = get_default_language(connection=connection)["uuid"]
+
+    cur = connection.cursor()
+    taxonomy = {}
+    try:
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, slug, display_name, deletable
+                 FROM sloth_post_formats
+                 WHERE post_type = %s"""
+            ),
+            (type_id, )
+        )
+        post_formats = [{
+            "uuid": pt[0],
+            "slug": pt[1],
+            "display_name": pt[2],
+            "deletable": pt[3]
+        } for pt in cur.fetchall()]
+    except Exception as e:
+        print("db error C")
+        abort(500)
+
+    cur.close()
+    # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+    default_language = get_default_language(connection=connection)
+    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+
+    connection.close()
+
+    return render_template(
+        "formats-list.html",
+        post_types=post_types_result,
+        permission_level=permission_level,
+        post_formats=post_formats,
         post_type_uuid=type_id,
         default_lang=default_language,
         languages=languages

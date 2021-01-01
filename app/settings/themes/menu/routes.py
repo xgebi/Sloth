@@ -73,7 +73,8 @@ def return_menu_language(*args, permission_level, connection, lang_id, **kwargs)
         menus=result,
         item_types=[item for sublist in temp_menu_types for item in sublist],
         languages=languages,
-        default_lang=default_lang
+        default_lang=default_lang,
+        current_lang=current_lang
     )
 
 
