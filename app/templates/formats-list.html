@@ -47,5 +47,8 @@
 {% endblock %}
 
 {% block scripts %}
+    <script>
+        const postTypeUuid = "{{ post_type_uuid }}";
+    </script>
     <script src="/static/js/post-formats.js"></script>
 {% endblock %}

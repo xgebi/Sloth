@@ -35,30 +35,49 @@ function editRow(event) {
     if (event.target.dataset["deletable"] === 'False') {
         formatForm.querySelector("br").classList.add("hidden");
         formatForm.querySelector(".delete-button").classList.add("hidden");
+    } else {
+        formatForm.querySelector(".delete-button").addEventListener('click', deleteFormat);
+        formatForm.querySelector(".delete-button").setAttribute('data-uuid', event.target.dataset["uuid"]);
     }
 
     event.target.parentNode.parentNode.parentNode.replaceChild(formatForm, event.target.parentNode.parentNode)
 }
 
 function saveFormat(event) {
-    event.target.parentNode.parentNode.querySelector(".display-name input").value;
-    event.target.parentNode.parentNode.querySelector(".slug input").value;
-
-    fetch('/api/settings/dev/posts', {
-        method: 'DELETE',
+    fetch('/api/post/formats', {
+        method: 'POST',
         headers: {
             'authorization': document.cookie
                 .split(';')
                 .find(row => row.trim().startsWith('sloth_session'))
                 .split('=')[1],
-        }
+        },
+        body: JSON.stringify({
+            post_type_uuid: postTypeUuid,
+            display_name: event.target.parentNode.parentNode.querySelector(".display-name input").value,
+            slug: event.target.parentNode.parentNode.querySelector(".slug input").value,
+            uuid: event.target.dataset["uuid"]
+        })
     }).then(response => {
         if (response.ok) {
             return response.json()
         }
         throw `${response.status}: ${response.statusText}`
     }).then(data => {
-        console.log('Success:', data);
+        event.target.parentNode.parentNode.querySelector(".display-name").textContent = data["display_name"];
+        event.target.parentNode.parentNode.querySelector(".slug").textContent = data["slug"];
+        const editButton = document.createElement("button");
+        editButton.setAttribute('data-uuid', data["uuid"]);
+        editButton.setAttribute('data-deletable', data["deletable"]);
+        editButton.textContent = "Edit";
+        editButton.addEventListener('click', editRow);
+        const actionTd = event.target.parentNode;
+        while (actionTd.firstChild) {
+            actionTd.removeChild(
+                actionTd.lastChild
+            );
+        }
+        actionTd.appendChild(editButton);
     }).catch((error) => {
         console.error('Error:', error);
     });
@@ -83,4 +102,28 @@ function cancelAddingFormat(event) {
         actionTd.appendChild(editButton);
 
     }
+}
+
+function deleteFormat(event) {
+    fetch('/api/post/formats', {
+        method: 'DELETE',
+        headers: {
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1],
+        },
+        body: JSON.stringify({
+            uuid: event.target.dataset["uuid"]
+        })
+    }).then(response => {
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
+    }).then(data => {
+        event.target.parentNode.parentNode.parentNode.removeChild(event.target.parentNode.parentNode)
+    }).catch((error) => {
+        console.error('Error:', error);
+    });
 }

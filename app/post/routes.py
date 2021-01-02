@@ -355,6 +355,14 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             "slug": pf[1],
             "display_name": pf[2]
         } for pf in cur.fetchall()]
+
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid FROM sloth_post_formats WHERE post_type = %s AND deletable = %s """
+            ),
+            (post_type, False)
+        )
+        default_format = cur.fetchone()[0]
     except Exception as e:
         print("db error A")
         abort(500)
@@ -381,7 +389,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "uuid": uuid.uuid4(),
         "post_type": post_type,
         "lang": lang_id,
-        "original_post": original_post
+        "original_post": original_post,
+        "format_uuid": default_format
     }
 
     return render_template(
@@ -513,39 +522,72 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
     )
 
 
-@post.route("/api/post/<type_id>/formats", methods=["POST", "PUT"])
+@post.route("/api/post/formats", methods=["POST", "PUT"])
 @authorize_web(0)
 @db_connection
-def save_post_format(*args, permission_level, connection, type_id, **kwargs):
+def save_post_format(*args, permission_level, connection, **kwargs):
     filled = json.loads(request.data)
     cur = connection.cursor()
+    slug_changed = False
     try:
+        if filled['uuid'] != 'new':
+            cur.execute(
+                sql.SQL("""SELECT slug FROM sloth_post_formats WHERE uuid = %s;"""),
+                (filled["uuid"], )
+            )
+            old_slug = cur.fetchone()[0]
+            if filled['slug'] != old_slug:
+                slug_changed = True
 
-        cur.execute(
-            sql.SQL("SELECT count(slug) FROM sloth_post_formats WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"),
-            (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"])
-        )
-        similar = cur.fetchone()[0]
-        if int(similar) > 0:
-            filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+        if slug_changed or filled['uuid'] == 'new':
+            cur.execute(
+                sql.SQL(
+                    """SELECT count(slug) FROM sloth_post_formats 
+                    WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"""
+                ),
+                (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"])
+            )
+            similar = cur.fetchone()[0]
+            if int(similar) > 0:
+                filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
-
+        if filled['uuid'] == 'new':
+            cur.execute(
+                sql.SQL(
+                    """INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
+                    VALUES (%s, %s, %s, %s, %s) RETURNING uuid, slug, display_name, deletable;"""
+                ),
+                (str(uuid.uuid4()), filled['slug'], filled["display_name"], filled["post_type_uuid"], True)
+            )
+        else:
+            cur.execute(
+                sql.SQL(
+                    """UPDATE sloth_post_formats SET slug = %s, display_name = %s 
+                    WHERE uuid = %s RETURNING uuid, slug, display_name, deletable;"""
+                ),
+                (filled['slug'], filled["display_name"], filled["uuid"])
+            )
+        raw_result = cur.fetchone()
+        connection.commit()
     except Exception as e:
         print("db error C")
         abort(500)
 
     cur.close()
-    # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
-    default_language = get_default_language(connection=connection)
-    current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
-
     connection.close()
 
+    return json.dumps({
+        "uuid": raw_result[0],
+        "display_name": raw_result[2],
+        "slug": raw_result[1],
+        "deletable": raw_result[3]
+    }), 200
 
-@post.route("/api/post/<type_id>/formats", methods=["DELETE"])
+
+@post.route("/api/post/formats", methods=["DELETE"])
 @authorize_web(0)
 @db_connection
-def delete_post_format(*args, permission_level, connection, type_id, **kwargs):
+def delete_post_format(*args, permission_level, connection, **kwargs):
     filled = json.loads(request.data)
     cur = connection.cursor()
     try:
@@ -562,9 +604,9 @@ def delete_post_format(*args, permission_level, connection, type_id, **kwargs):
                 """SELECT uuid FROM sloth_post_formats
                  WHERE uuid = %s"""
             ),
-            (filled["uuid"], True)
+            (filled["uuid"], )
         )
-        if len(cur.fetchall) > 0:
+        if len(cur.fetchall()) > 0:
             cur.close()
             connection.close()
             return json.dumps({
