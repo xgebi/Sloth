@@ -191,20 +191,20 @@ class PostGenerator:
         cur = self.connection.cursor()
         try:
             cur.execute(
-                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
-                         A.publish_date, A.update_date, A.post_status, A.import_approved, A.thumbnail,
-                         A.original_lang_entry_uuid, A.lang, spf.uuid, spf.slug, spf.display_name
-                                    FROM sloth_posts AS A 
-                                    INNER JOIN sloth_users AS B ON A.author = B.uuid
-                                    INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
-                                    WHERE post_type = %s AND lang = %s AND post_status = 'published' 
-                                    ORDER BY A.publish_date DESC;"""),
+                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, sp.js,
+                         sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
+                         sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name
+                                    FROM sloth_posts AS sp 
+                                    INNER JOIN sloth_users AS su ON sp.author = su.uuid
+                                    INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                                    WHERE sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published' 
+                                    ORDER BY sp.publish_date DESC;"""),
                 (post_type_uuid, language_uuid)
             )
             raw_items = cur.fetchall()
         except Exception as e:
             print(e)
-            return False
+            return []
 
         cur.close()
         return self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)

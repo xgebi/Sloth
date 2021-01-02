@@ -901,12 +901,12 @@ def save_post(*args, connection=None, **kwargs):
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
-                original_lang_entry_uuid) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
-                [filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
+                original_lang_entry_uuid, post_format) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
+                (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
-                 filled["original_post"] if "original_post" in filled else ""]
+                 filled["original_post"] if "original_post" in filled else "", filled["post_format"])
             )
             connection.commit()
             taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
@@ -915,12 +915,12 @@ def save_post(*args, connection=None, **kwargs):
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
                  thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
-                 password = %s WHERE uuid = %s;"""),
-                [filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
+                 password = %s, post_format = %s WHERE uuid = %s;"""),
+                (filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
                  filled["thumbnail"] if filled["thumbnail"] != "None" else None,
                  filled["publish_date"] if filled["publish_date"] is not None else publish_date,
                  str(time() * 1000), filled["post_status"], filled["approved"],
-                 filled["password"] if "password" in filled else None, filled["uuid"]]
+                 filled["password"] if "password" in filled else None, filled["post_format"], filled["uuid"])
             )
             connection.commit()
             taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
@@ -933,7 +933,7 @@ def save_post(*args, connection=None, **kwargs):
                                 FROM sloth_posts as A 
                                 INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
                                 WHERE A.uuid = %s;"""),
-            [filled["uuid"]]
+            (filled["uuid"], )
         )
         generatable_post = parse_raw_post(cur.fetchone())
         generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)

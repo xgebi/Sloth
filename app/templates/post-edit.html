@@ -182,9 +182,9 @@
                 <legend>Post format</legend>
                 {% for pf in post_formats %}
                     {% if data['format_uuid'] == pf['uuid'] %}
-                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked>
+                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked name="post-format">
                     {% else %}
-                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}">
+                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" name="post-format">
                     {% endif %}
                     <label for="{{ pf['slug'] }}">{{ pf['display_name'] }}</label><br/>
                 {% endfor %}
