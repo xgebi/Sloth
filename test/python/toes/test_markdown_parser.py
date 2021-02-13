@@ -55,8 +55,12 @@ class MyTestCase(unittest.TestCase):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_code.md"))
         text = mdp.to_html_string()
 
-        self.assertIn("<pre><code class='language-javascript'>const i = 1</pre></code>", text)
-        self.assertIn("<pre><code class='language-javascript'>const i = 2</pre></code>", text)
+        self.assertIn("<span class='code'>raichu</span>", text)
+        self.assertIn("<span class='code'>pika?</span>", text)
+        self.assertIn("""<pre><code class='language-javascript'>const i = 3;
+
+<p>const j = 4;</p>
+</code></pre>""", text)
 
     def test_basic_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "basic_list.md"))

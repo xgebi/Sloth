@@ -1,4 +1,3 @@
-let regenerationCheckInterval = {};
 document.addEventListener('DOMContentLoaded', (event) => {
     const regenerateAllButton = document.querySelector("#regenerate-all-button");
     regenerateAllButton.addEventListener('click', function () {
@@ -13,7 +12,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             body: JSON.stringify({regenerateAll: true})
         }).then(response => {
             if (response.ok) {
-                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000)
+                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, document.querySelectorAll("#regenerate-all-button"))
                 return response.json()
             }
             throw `${response.status}: ${response.statusText}`
@@ -51,28 +50,3 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 });
-
-function checkRegenerationLock() {
-    fetch('/api/post/is-generating', {
-        method: 'GET',
-        headers: {
-            'authorization': document.cookie
-                .split(';')
-                .find(row => row.trim().startsWith('sloth_session'))
-                .split('=')[1]
-        }
-    }).then(response => {
-        if (response.ok) {
-            return response.json()
-        }
-        throw `${response.status}: ${response.statusText}`
-    }).then(result => {
-        console.log(result);
-        if (!result["generation"]) {
-            clearInterval(regenerationCheckInterval);
-            document.querySelector("#regenerate-all-button").removeAttribute("disabled");
-        }
-    }).catch(error => {
-        console.error('Error:', error);
-    });
-}

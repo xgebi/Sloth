@@ -7,3 +7,30 @@ function getCurrentTimezone(options) {
          }
      }
 }
+
+let regenerationCheckInterval = {};
+function checkRegenerationLock(disabledItems) {
+    fetch('/api/post/is-generating', {
+        method: 'GET',
+        headers: {
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1]
+        }
+    }).then(response => {
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
+    }).then(result => {
+        console.log(result);
+        if (!result["generation"]) {
+            clearInterval(regenerationCheckInterval);
+            disabledItems.forEach(button => button.removeAttribute("disabled"));
+
+        }
+    }).catch(error => {
+        console.error('Error:', error);
+    });
+}

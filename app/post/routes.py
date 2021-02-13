@@ -20,6 +20,17 @@ from app.post import post, get_translations
 reserved_folder_names = ('tag', 'category')
 
 
+@post.route("/post/nothing")
+@authorize_web(0)
+@db_connection
+def no_post(*args, permission_level, connection, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+    return render_template("no-post.html",
+                           post_types=post_types_result,
+                           permission_level=permission_level
+                           )
+
 # WEB
 @post.route("/post/<post_type>")
 @authorize_web(0)
@@ -138,6 +149,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             [post_id]
         )
         raw_post = cur.fetchone()
+        if raw_post is None:
+            return redirect('/post/nothing')
         cur.execute(
             sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
             [raw_post[13]]

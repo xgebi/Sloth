@@ -17,7 +17,7 @@ X after a bigger batch of changes
 - rss reader 🛠
 - post scheduler
 - twitter integration
-- post formats 🛠
+- post formats ✅
 - user management
 
 ### 2.0.0 requirements

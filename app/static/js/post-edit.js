@@ -290,7 +290,7 @@ function savePost(values) {
             if (window.location.pathname.indexOf("/new/") >= 0) {
                 window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
             } else {
-                metadataButtons.forEach(button => button.removeAttribute("disabled"));
+                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, metadataButtons)
             }
         })
         .catch((error) => {
