@@ -5,6 +5,7 @@ from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 from app.utilities.job_runner import JobRunner
+from uuid import uuid4
 
 bcrypt = Bcrypt()
 
@@ -14,11 +15,11 @@ def create_app():  # dev, test, or prod
     app = Flask(__name__)
     cors = CORS(app)
     app.config.from_mapping(
-        SECRET_KEY='dev'
+        SECRET_KEY='dev',
+        THREAD_ID=uuid4()
     )
-    configuration = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
 
-    app.config.from_pyfile(configuration)
+    app.config.from_pyfile(os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py'))
     app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
     app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
     app.config['CORS_HEADERS'] = 'Content-Type'
@@ -100,6 +101,9 @@ def create_app():  # dev, test, or prod
 
     from app.rss import rss
     app.register_blueprint(rss)
+
+    from app.lists import lists
+    app.register_blueprint(lists)
 
     #job_runner = JobRunner(config=app.config)
     #job_runner.run()

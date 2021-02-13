@@ -20,6 +20,7 @@ from app.post import post, get_translations
 reserved_folder_names = ('tag', 'category')
 
 
+# WEB
 @post.route("/post/nothing")
 @authorize_web(0)
 @db_connection
@@ -33,7 +34,7 @@ def no_post(*args, permission_level, connection, **kwargs):
                            default_lang=default_lang
                            )
 
-# WEB
+
 @post.route("/post/<post_type>")
 @authorize_web(0)
 @db_connection

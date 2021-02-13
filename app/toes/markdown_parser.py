@@ -18,6 +18,7 @@ class MarkdownParser:
         if self.text is None:
             return "Error: empty text"
         i = 0
+        result = self.text
         while i < len(text):
             if text[i] == "`":
                 i, result = self.parse_code_block(i=i, text=self.text)
