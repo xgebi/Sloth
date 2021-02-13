@@ -26,9 +26,11 @@ reserved_folder_names = ('tag', 'category')
 def no_post(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
+    default_lang = get_default_language(connection=connection)
     return render_template("no-post.html",
                            post_types=post_types_result,
-                           permission_level=permission_level
+                           permission_level=permission_level,
+                           default_lang=default_lang
                            )
 
 # WEB
