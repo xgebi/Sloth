@@ -1,11 +1,2 @@
 [
-  {
-    "type": "py",
-    "file": "none_post_format"
-  },
-  {
-    "type": "sql",
-    "folder": "setup",
-    "file": "033_assign_default_post_format.sql"
-  }
 ]
