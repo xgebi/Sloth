@@ -4,7 +4,7 @@ import re
 class MarkdownParser:
     def __init__(self, *args, path=None, **kwargs):
         if path:
-            with open(path, mode="r") as text_file:
+            with open(path, mode="r", encoding="utf-8") as text_file:
                 self.text = text_file.read()
         else:
             self.text = ""
@@ -18,12 +18,8 @@ class MarkdownParser:
         if self.text is None:
             return "Error: empty text"
         i = 0
-        result = self.text
-        while i < len(text):
-            if text[i] == "`":
-                i, result = self.parse_code_block(i=i, text=self.text)
-            else:
-                i += 1
+
+        result = self.parse_code_block(self.text)
         result = self.parse_list(result)
         result = self.parse_headlines(result)
         result = self.parse_image(result)
@@ -130,33 +126,38 @@ class MarkdownParser:
 
         return "\n".join(result)
 
-    def parse_code_block(self, i: int, text: str) -> str:
-        if (i - 1 < 0 or text[i - 1] == " " or text[i - 1] == "\n") and text[i + 1] != "`":
-            j = text[i + 1:].find("`") + (i + 1)
-            if text[j + 1] != "`":
-                replacement = f"<span class='code'>{text[i + 1:j]}</span>"
-                if i == 0:
-                    text = replacement + text[j + 1:]
+    def parse_code_block(self, text: str) -> str:
+        i = 0
+        while i < len(text):
+            if text[i] == "`":
+                if (i - 1 < 0 or text[i - 1] == " " or text[i - 1] == "\n") and text[i + 1] != "`":
+                    j = text[i + 1:].find("`") + (i + 1)
+                    if text[j + 1] != "`":
+                        replacement = f"<span class='code'>{text[i + 1:j]}</span>"
+                        if i == 0:
+                            text = replacement + text[j + 1:]
+                        else:
+                            text = text[:i] + replacement + text[j + 1:]
+                        i += (len(replacement) - 2)
+                    else:
+                        i += 1
+                elif (i - 1 < 0 or text[i - 1] == "\n") and text[i + 1] == "`" and text[i + 2] == "`":
+                    j = text[i + 3:].find("```") + (i + 3)
+                    first_line_end = text[i + 3:].find("\n") + (i + 3)
+                    lang = text[i + 3: first_line_end]
+                    if j != -1:
+                        replacement = f"<pre><code class='language-{lang}'>{text[first_line_end + 1:j]}</code></pre>"
+                        if i == 0:
+                            text = replacement + text[j + 3:]
+                        else:
+                            text = text[:i - 1] + replacement + text[j + 3:]
+                        i += len(replacement)
                 else:
-                    text = text[:i] + replacement + text[j + 1:]
-                i += (len(replacement) - 2)
+                    i += 1
             else:
                 i += 1
-        elif (i - 1 < 0 or text[i - 1] == "\n") and text[i + 1] == "`" and text[i + 2] == "`":
-            j = text[i + 3:].find("```") + (i + 3)
-            first_line_end = text[i + 3:].find("\n") + (i + 3)
-            lang = text[i + 3: first_line_end]
-            if j != -1:
-                replacement = f"<pre><code class='language-{lang}'>{text[first_line_end + 1:j]}</code></pre>"
-                if i == 0:
-                    text = replacement + text[j + 3:]
-                else:
-                    text = text[:i - 1] + replacement + text[j + 3:]
-                i += len(replacement)
-        else:
-            i += 1
 
-        return i, text
+        return text
 
     def parse_footnotes(self, text: str) -> str:
         footnote_pattern = r"\[\d+\. .+?\]"

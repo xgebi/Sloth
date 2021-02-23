@@ -500,7 +500,7 @@ class PostGenerator:
         else:
             post_template_path = Path(self.theme_path, "post.html")
 
-        with open(post_template_path, 'r') as f:
+        with open(post_template_path, 'r', encoding="utf-8") as f:
             template = Template(f.read())
 
         if not os.path.exists(post_path_dir):
@@ -530,13 +530,13 @@ class PostGenerator:
             f.write(rendered)
 
         if post["js"] and len(post["js"]) > 0:
-            with open(os.path.join(post_path_dir, 'script.js'), 'w') as f:
+            with open(os.path.join(post_path_dir, 'script.js'), 'w', encoding="utf-8") as f:
                 f.write(post["js"])
         elif (Path(os.path.join(post_path_dir, 'script.js'))).is_file():
             os.remove(Path(os.path.join(post_path_dir, 'script.js')))
 
         if post["css"] and len(post["css"]) > 0:
-            with open(os.path.join(post_path_dir, 'style.css'), 'w') as f:
+            with open(os.path.join(post_path_dir, 'style.css'), 'w', encoding="utf-8") as f:
                 f.write(post["css"])
         elif (Path(os.path.join(post_path_dir, 'style.css'))).is_file():
             os.remove(Path(os.path.join(post_path_dir, 'style.css')))
@@ -601,7 +601,7 @@ class PostGenerator:
         else:
             archive_template_path = Path(self.theme_path, "archive.html")
 
-        with open(archive_template_path, 'r') as f:
+        with open(archive_template_path, 'r', encoding="utf-8") as f:
             template = Template(f.read())
 
         if not os.path.exists(archive_path_dir):
@@ -615,7 +615,7 @@ class PostGenerator:
             if i == 0:
                 path_to_index = os.path.join(archive_path_dir, 'index.html')
 
-            with open(path_to_index, 'w') as f:
+            with open(path_to_index, 'w', encoding="utf-8") as f:
                 lower = 10 * i
                 upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
                     posts)
@@ -679,7 +679,7 @@ class PostGenerator:
             print(e)
 
         if os.path.isfile(os.path.join(self.theme_path, "secret.html")):
-            with open(os.path.join(self.theme_path, "secret.html"), 'r') as f:
+            with open(os.path.join(self.theme_path, "secret.html"), 'r', encoding="utf-8") as f:
                 protected_template = Template(f.read())
                 return protected_template.render(post=post)
 
@@ -701,7 +701,7 @@ class PostGenerator:
             print(e)
         cur.close()
 
-        with open(Path(__file__).parent / "../templates/analytics.html", 'r') as f:
+        with open(Path(__file__).parent / "../templates/analytics.html", 'r', encoding="utf-8") as f:
             footer_template = Template(f.read())
             cur = connection.cursor()
             raw_item = []
@@ -711,7 +711,7 @@ class PostGenerator:
             else:
                 self.sloth_footer = ""
 
-        with open(Path(__file__).parent / "../templates/secret-script.html", 'r') as f:
+        with open(Path(__file__).parent / "../templates/secret-script.html", 'r', encoding="utf-8") as f:
             # This will refactored
             secret_template = Template(f.read())
 
@@ -837,13 +837,13 @@ class PostGenerator:
         if not home_template_path.is_file():
             home_template_path = Path(self.theme_path, f"home.html")
 
-        with open(home_template_path, 'r') as f:
+        with open(home_template_path, 'r', encoding="utf-8") as f:
             template = Template(f.read())
 
         # write file
         home_path_dir = os.path.join(output_path, "index.html")
 
-        with open(home_path_dir, 'w') as f:
+        with open(home_path_dir, 'w', encoding="utf-8") as f:
             f.write(template.render(
                 posts=posts, sitename=self.settings["sitename"]["settings_value"],
                 page_name="Home", api_url=self.settings["api_url"]["settings_value"],

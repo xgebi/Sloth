@@ -891,7 +891,7 @@ def save_post(*args, connection=None, **kwargs):
             publish_date = str(time() * 1000)
         elif filled["post_status"] == 'scheduled':
             publish_date = filled["publish_date"]  # TODO scheduling
-        else:
+        elif filled['post_status'] == 'draft':
             publish_date = None
         # save post
         if filled["new"]:

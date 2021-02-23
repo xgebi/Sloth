@@ -30,7 +30,7 @@ class XMLParser:
 
     def __init__(self, *args, path, **kwargs):
         self.tree = Tree()
-        with open(path, mode="r") as text_file:
+        with open(path, mode="r", encoding="utf-8") as text_file:
             self.text = text_file.read()
 
     def parse_file(self):

@@ -62,6 +62,11 @@ class MyTestCase(unittest.TestCase):
 <p>const j = 4;</p>
 </code></pre>""", text)
 
+    def test_paragraph_with_code(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "real_text.md"))
+        text = mdp.to_html_string()
+        print(text)
+
     def test_basic_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "basic_list.md"))
         text = bl.to_html_string()

@@ -78,8 +78,8 @@ def get_related_posts(*args, post, connection, **kwargs):
     return [parse_raw_post(related_post) for related_post in related_posts_raw]
 
 
-def parse_raw_post(raw_post: List) -> Dict[str, str] or Any:
-    return {
+def parse_raw_post(raw_post) -> Dict[str, str] or Any:
+    result = {
         "uuid": raw_post[0],
         "original_lang_entry_uuid": raw_post[1],
         "lang": raw_post[2],
@@ -103,7 +103,14 @@ def parse_raw_post(raw_post: List) -> Dict[str, str] or Any:
         "post_status": raw_post[16],
         "imported": raw_post[17],
         "approved": raw_post[18],
-        "format_uuid": raw_post[19] if raw_post[19] is not None else None,
-        "format_slug": raw_post[20] if raw_post[20] is not None else None,
-        "format_name": raw_post[21] if raw_post[21] is not None else None
+        "format_uuid": None,
+        "format_slug": None,
+        "format_name": None
     }
+
+    if len(raw_post) == 22:
+        result["format_uuid"] = raw_post[19] if raw_post[19] is not None else None,
+        result["format_slug"] = raw_post[20] if raw_post[20] is not None else None,
+        result["format_name"] = raw_post[21] if raw_post[21] is not None else None
+
+    return result
