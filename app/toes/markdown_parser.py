@@ -1,6 +1,13 @@
 import re
 
 
+class ParsingInfo:
+    i = -1
+
+    def __init__(self):
+        self.i = 0
+
+
 class MarkdownParser:
     def __init__(self, *args, path=None, **kwargs):
         if path:
@@ -17,10 +24,19 @@ class MarkdownParser:
             return self.text
         if self.text is None:
             return "Error: empty text"
-        i = 0
 
-        result = self.parse_code_block(self.text)
-        result = self.parse_list(result)
+        result = self.text
+        parsing_info = ParsingInfo()
+        while parsing_info.i < len(text):
+            if text[parsing_info.i] == "`":
+                result, parsing_info = self.parse_code_block(result, parsing_info)
+            elif text[parsing_info.i] == '\-' or text[parsing_info.i] == '\*':
+                result, parsing_info = self.parse_unordered_list(result, parsing_info)
+            elif text[parsing_info.i].isdigit():
+                result, parsing_info = self.parse_ordered_list(result, parsing_info)
+            else:
+                parsing_info.i += 1
+
         result = self.parse_headlines(result)
         result = self.parse_image(result)
         result = self.parse_link(result)
@@ -59,12 +75,18 @@ class MarkdownParser:
             result.append(line)
         return "\n".join(result)
 
+    def parse_ordered_list(self, text: str, parsing_info: ParsingInfo):
+        return text, parsing_info
+
+    def parse_unordered_list(self, text: str, parsing_info: ParsingInfo):
+        return text, parsing_info
+
     # TODO refactor this when recoding to Rust
     def parse_list(self, text: str) -> str:
         lines = text.split("\n")
         result = []
         numeric_list_pattern = re.compile('^(\d+\. )')
-        points_list_pattern = re.compile('^([\-|\*] )')
+        points_list_pattern = re.compile('^([\-] )')
         line_pattern = re.compile("(^( )+)?(\d\.|\-)")
         current_level = -1
         lists = []
@@ -126,38 +148,33 @@ class MarkdownParser:
 
         return "\n".join(result)
 
-    def parse_code_block(self, text: str) -> str:
-        i = 0
-        while i < len(text):
-            if text[i] == "`":
-                if (i - 1 < 0 or text[i - 1] == " " or text[i - 1] == "\n") and text[i + 1] != "`":
-                    j = text[i + 1:].find("`") + (i + 1)
-                    if text[j + 1] != "`":
-                        replacement = f"<span class='code'>{text[i + 1:j]}</span>"
-                        if i == 0:
-                            text = replacement + text[j + 1:]
-                        else:
-                            text = text[:i] + replacement + text[j + 1:]
-                        i += (len(replacement) - 2)
-                    else:
-                        i += 1
-                elif (i - 1 < 0 or text[i - 1] == "\n") and text[i + 1] == "`" and text[i + 2] == "`":
-                    j = text[i + 3:].find("```") + (i + 3)
-                    first_line_end = text[i + 3:].find("\n") + (i + 3)
-                    lang = text[i + 3: first_line_end]
-                    if j != -1:
-                        replacement = f"<pre><code class='language-{lang}'>{text[first_line_end + 1:j]}</code></pre>"
-                        if i == 0:
-                            text = replacement + text[j + 3:]
-                        else:
-                            text = text[:i - 1] + replacement + text[j + 3:]
-                        i += len(replacement)
+    def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> str:
+        if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] != "`":
+            j = text[parsing_info.i + 1:].find("`") + (parsing_info.i + 1)
+            if text[j + 1] != "`":
+                replacement = f"<span class='code'>{text[parsing_info.i + 1:j]}</span>"
+                if parsing_info.i == 0:
+                    text = replacement + text[j + 1:]
                 else:
-                    i += 1
+                    text = text[:parsing_info.i] + replacement + text[j + 1:]
+                parsing_info.i += (len(replacement) - 2)
             else:
-                i += 1
+                parsing_info.i += 1
+        elif (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] == "`" and text[parsing_info.i + 2] == "`":
+            j = text[parsing_info.i + 3:].find("```") + (parsing_info.i + 3)
+            first_line_end = text[parsing_info.i + 3:].find("\n") + (parsing_info.i + 3)
+            lang = text[parsing_info.i + 3: first_line_end]
+            if j != -1:
+                replacement = f"<pre><code class='language-{lang}'>{text[first_line_end + 1:j]}</code></pre>"
+                if parsing_info.i == 0:
+                    text = replacement + text[j + 3:]
+                else:
+                    text = text[:parsing_info.i - 1] + replacement + text[j + 3:]
+                parsing_info.i += len(replacement)
+        else:
+            parsing_info.i += 1
 
-        return text
+        return text, parsing_info
 
     def parse_footnotes(self, text: str) -> str:
         footnote_pattern = r"\[\d+\. .+?\]"
