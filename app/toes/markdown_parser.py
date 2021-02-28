@@ -36,16 +36,16 @@ class MarkdownParser:
 
         result = self.text
         parsing_info = ParsingInfo()
-        while parsing_info.i < len(self.text):
-            if self.text[parsing_info.i] == "`":
+        while parsing_info.i < len(result):
+            if result[parsing_info.i] == "`":
                 result, parsing_info = self.parse_code_block(result, parsing_info)
-            elif self.text[parsing_info.i] == '\-' or self.text[parsing_info.i] == '\*':
+            elif result[parsing_info.i] == '\-' or result[parsing_info.i] == '\*':
                 result, parsing_info = self.parse_unordered_list(result, parsing_info)
-            elif self.text[parsing_info.i].isdigit():
+            elif result[parsing_info.i].isdigit():
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
-            elif self.text[parsing_info.i] == '\n':
-                if self.text[parsing_info.i + 1] == '\n':
-                    result, parsing_info = self.end_tags(text=self.text, parsing_info=parsing_info)
+            elif result[parsing_info.i] == '\n':
+                if result[parsing_info.i + 1] == '\n':
+                    result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.i += 1
             else:
@@ -91,14 +91,14 @@ class MarkdownParser:
 
     def parse_ordered_list(self, text: str, parsing_info: ParsingInfo):
         line_start = text[:parsing_info.i].rfind("\n") + 1
-        line_end = text[parsing_info.i:].find("\n") + (parsing_info.i - 1) if text[parsing_info.i:].find(
+        line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find(
             "\n") != -1 else len(text)
         line = text[line_start: line_end]
         numeric_list_pattern = re.compile('^(\d+\. )')
         if numeric_list_pattern.match(line.strip()):
             content_start = line.strip().find('.') + 2
             if parsing_info.list_info.level == -1:
-                text = f"{text[:line_start]}<ol>\n<li>{text[content_start + 2:]}"
+                text = f"{text[:line_start]}<ol>\n<li>{text[content_start:]}"
                 parsing_info.i += len("<ol>\n<li>")
                 parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
             elif parsing_info.list_info.level == 0:
@@ -125,8 +125,9 @@ class MarkdownParser:
                     text = f"{text[:line_start]}<ol><li>{text[content_start:]}"
                     parsing_info.i += len("</ol><li>")
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
+        else:
+            return self.start_paragraph(text=text, parsing_info=parsing_info)
 
-        parsing_info.i += 4
         return text, parsing_info
 
     def parse_unordered_list(self, text: str, parsing_info: ParsingInfo):
@@ -166,6 +167,16 @@ class MarkdownParser:
         return text, parsing_info
 
     def end_tags(self, text: str, parsing_info: ParsingInfo):
+        if parsing_info.list_info.level != -1:
+            while parsing_info.list_info.level != -1:
+                text = f"{text[:parsing_info.i]}</li></ol>{text[parsing_info.i:]}" if parsing_info.list_info.type.isdigit() else f"{text[:parsing_info.i]}</li></ul>{text[parsing_info.i:]}"
+                parsing_info.list_info = parsing_info.list_info.parent
+                parsing_info.i += len("</li></ol>")
+        else:
+            text += f"{text[:parsing_info.i+1]}</p>{text[parsing_info.i+1:]}"
+        return text, parsing_info
+
+    def start_paragraph(self, text: str, parsing_info: ParsingInfo):
         return text, parsing_info
 
     # TODO refactor this when recoding to Rust
