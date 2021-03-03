@@ -149,34 +149,46 @@ class MarkdownParser:
         line = text[line_start: line_end]
         points_list_pattern = re.compile('^([\-|\*] )')
         if points_list_pattern.match(line.strip()):
-            content_start = len(text[line_start: parsing_info.i]) + line.strip().find(' ') + 1
+            content_start = parsing_info.i + line.strip().find(' ') + 1
             if parsing_info.list_info.level == -1:
-                text = f"{text[:content_start]}<ul>\n<li>{text[content_start:]}"
-                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
+                text = f"{text[:line_start]}<ul>\n<li>{text[content_start:]}"
                 parsing_info.i += len("<ul>\n<li>")
+                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
             elif parsing_info.list_info.level == 0:
                 if len(text[content_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
-                    text = f"{text[:content_start]}<ul><li>{text[content_start:]}"
-                    parsing_info.i += len("<ul><li>")
+                    text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
+                    new_list = ListInfo(parent=parsing_info.list_info, type=1)
+                    parsing_info.list_info = new_list
+                    parsing_info.i += len("<ol><li>") - ListInfo.indent
                 else:
-                    text = f"{text[:content_start]}</li><li>{text[content_start:]}"
+                    text = f"{text[:line_start]}</li><li>{text[content_start:]}"
                     parsing_info.i += len("</li><li>")
             else:
-                level = math.ceil(len(text[content_start: parsing_info.i]) / ListInfo.indent)
+                level = math.ceil(len(text[line_start: parsing_info.i]) / ListInfo.indent)
                 if level == parsing_info.list_info.level:
-                    text = f"{text[:content_start]}</li><li>{text[content_start:]}"
-                    parsing_info.i += len("</li><li>")
+                    text = f"{text[:line_start]}</li><li>{text[content_start:]}"
+                    parsing_info.i += len("</li><li>") - (level*ListInfo.indent)
                 elif level < parsing_info.list_info.level:
+                    content_tail = text[content_start:]
+                    text_head = text[:line_start]
+
+                    while level < parsing_info.list_info.level:
+                        if type(parsing_info.list_info.type) is int:
+                            text_head = f"{text_head}</li></ol>"
+                        else:
+                            text_head = f"{text_head}</li></ul>"
+                        parsing_info.list_info = parsing_info.list_info.parent
+
                     if type(parsing_info.list_info.type) is int:
-                        text = f"{text[:content_start]}</ol></li><li>{text[content_start:]}"
+                        text = f"{text_head}</li><li>{content_tail}"
                     else:
-                        text = f"{text[:content_start]}</ul></li><li>{text[content_start:]}"
-                        parsing_info.i += len("</ul></li><li>")
-                    parsing_info.list_info = parsing_info.list_info.parent
+                        text = f"{text_head}</li><li>{content_tail}"
+                    parsing_info.i += (len(text_head) - len(text[:line_start])) - (level * ListInfo.indent) + len(
+                        "</li><li>")
                 elif level > parsing_info.list_info.level:
-                    text = f"{text[:content_start]}<ul><li>{text[content_start:]}"
-                    parsing_info.i += len("<ul><li>")
+                    text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
+                    parsing_info.i += len("</ul><li>") - (level*ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
 
         return text, parsing_info
