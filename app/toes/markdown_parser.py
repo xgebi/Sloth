@@ -145,7 +145,7 @@ class MarkdownParser:
 
     def parse_unordered_list(self, text: str, parsing_info: ParsingInfo):
         line_start = text[:parsing_info.i].rfind("\n") + 1
-        line_end = text[parsing_info.i:].find("\n") + (parsing_info.i - 1) if text[parsing_info.i:].find("\n") != -1 else len(text)
+        line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find("\n") != -1 else len(text)
         line = text[line_start: line_end]
         points_list_pattern = re.compile('^([\-|\*] )')
         if points_list_pattern.match(line.strip()):
@@ -155,12 +155,12 @@ class MarkdownParser:
                 parsing_info.i += len("<ul>\n<li>")
                 parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
             elif parsing_info.list_info.level == 0:
-                if len(text[content_start: parsing_info.i]) > 0:
+                if len(text[line_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
                     text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
-                    new_list = ListInfo(parent=parsing_info.list_info, type=1)
+                    new_list = ListInfo(parent=parsing_info.list_info, type='a')
                     parsing_info.list_info = new_list
-                    parsing_info.i += len("<ol><li>") - ListInfo.indent
+                    parsing_info.i += len("<ul><li>") - ListInfo.indent
                 else:
                     text = f"{text[:line_start]}</li><li>{text[content_start:]}"
                     parsing_info.i += len("</li><li>")
