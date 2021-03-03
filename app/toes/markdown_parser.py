@@ -15,6 +15,7 @@ class ParsingInfo:
     def __init__(self):
         self.i = 0
         self.list_info = ListInfo()
+        self.opened_paragraph = False
 
 
 class MarkdownParser:
@@ -39,17 +40,18 @@ class MarkdownParser:
         while parsing_info.i < len(result):
             if result[parsing_info.i] == "`":
                 result, parsing_info = self.parse_code_block(result, parsing_info)
-            elif result[parsing_info.i] == '\-' or result[parsing_info.i] == '\*':
+            elif result[parsing_info.i] == '-' or result[parsing_info.i] == '*':
                 result, parsing_info = self.parse_unordered_list(result, parsing_info)
             elif result[parsing_info.i].isdigit():
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
             elif result[parsing_info.i] == '\n':
-                if result[parsing_info.i + 1] == '\n':
+                if len(result) < parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
                     result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.i += 1
             else:
                 parsing_info.i += 1
+        result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
 
         """result = self.parse_headlines(result)
         result = self.parse_image(result)
@@ -89,14 +91,14 @@ class MarkdownParser:
             result.append(line)
         return "\n".join(result)
 
-    def parse_ordered_list(self, text: str, parsing_info: ParsingInfo):
+    def parse_ordered_list(self, text: str, parsing_info: ParsingInfo): #solve offsets!!!
         line_start = text[:parsing_info.i].rfind("\n") + 1
         line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find(
             "\n") != -1 else len(text)
         line = text[line_start: line_end]
         numeric_list_pattern = re.compile('^(\d+\. )')
         if numeric_list_pattern.match(line.strip()):
-            content_start = line.strip().find('.') + 2
+            content_start = parsing_info.i + line.strip().find(' ') + 1
             if parsing_info.list_info.level == -1:
                 text = f"{text[:line_start]}<ol>\n<li>{text[content_start:]}"
                 parsing_info.i += len("<ol>\n<li>")
@@ -105,7 +107,9 @@ class MarkdownParser:
                 if len(text[line_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
                     text = f"{text[:line_start]}<ol><li>{text[content_start:]}"
-                    parsing_info.i += len("<ol><li>")
+                    new_list = ListInfo(parent=parsing_info.list_info, type=1)
+                    parsing_info.list_info = new_list
+                    parsing_info.i += len("<ol><li>") - ListInfo.indent
                 else:
                     text = f"{text[:line_start]}</li><li>{text[content_start:]}"
                     parsing_info.i += len("</li><li>")
@@ -113,17 +117,26 @@ class MarkdownParser:
                 level = math.ceil(len(text[line_start: parsing_info.i]) / ListInfo.indent)
                 if level == parsing_info.list_info.level:
                     text = f"{text[:line_start]}</li><li>{text[content_start:]}"
-                    parsing_info.i += len("</li><li>")
+                    parsing_info.i += len("</li><li>") - (level*ListInfo.indent)
                 elif level < parsing_info.list_info.level:
-                    if parsing_info.list_info.type.isdigit():
-                        text = f"{text[:line_start]}</ol></li><li>{text[content_start:]}"
+                    content_tail = text[content_start:]
+                    text_head = text[:line_start]
+
+                    while level < parsing_info.list_info.level:
+                        if type(parsing_info.list_info.type) is int:
+                            text_head = f"{text_head}</li></ol>"
+                        else:
+                            text_head = f"{text_head}</li></ul>"
+                        parsing_info.list_info = parsing_info.list_info.parent
+
+                    if type(parsing_info.list_info.type) is int:
+                        text = f"{text_head}</li><li>{content_tail}"
                     else:
-                        text = f"{text[:line_start]}</ul></li><li>{text[content_start:]}"
-                    parsing_info.i += len("</ol></li><li>")
-                    parsing_info.list_info = parsing_info.list_info.parent
+                        text = f"{text_head}</li><li>{content_tail}"
+                    parsing_info.i += (len(text_head) - len(text[:line_start])) - (level*ListInfo.indent) + len("</li><li>")
                 elif level > parsing_info.list_info.level:
                     text = f"{text[:line_start]}<ol><li>{text[content_start:]}"
-                    parsing_info.i += len("</ol><li>")
+                    parsing_info.i += len("</ol><li>") - (level*ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
         else:
             return self.start_paragraph(text=text, parsing_info=parsing_info)
@@ -136,31 +149,33 @@ class MarkdownParser:
         line = text[line_start: line_end]
         points_list_pattern = re.compile('^([\-|\*] )')
         if points_list_pattern.match(line.strip()):
+            content_start = len(text[line_start: parsing_info.i]) + line.strip().find(' ') + 1
             if parsing_info.list_info.level == -1:
-                text = f"{text[:line_start]}<ul>\n<li>{text[line_start + 2:]}"
+                text = f"{text[:content_start]}<ul>\n<li>{text[content_start:]}"
                 parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
+                parsing_info.i += len("<ul>\n<li>")
             elif parsing_info.list_info.level == 0:
-                if len(text[line_start: parsing_info.i]) > 0:
+                if len(text[content_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
-                    text = f"{text[:line_start]}<ul><li>{text[line_start + 2:]}"
+                    text = f"{text[:content_start]}<ul><li>{text[content_start:]}"
                     parsing_info.i += len("<ul><li>")
                 else:
-                    text = f"{text[:line_start]}</li><li>{text[line_start + 2:]}"
+                    text = f"{text[:content_start]}</li><li>{text[content_start:]}"
                     parsing_info.i += len("</li><li>")
             else:
-                level = math.ceil(len(text[line_start: parsing_info.i]) / ListInfo.indent)
+                level = math.ceil(len(text[content_start: parsing_info.i]) / ListInfo.indent)
                 if level == parsing_info.list_info.level:
-                    text = f"{text[:line_start]}</li><li>{text[line_start + 2:]}"
+                    text = f"{text[:content_start]}</li><li>{text[content_start:]}"
                     parsing_info.i += len("</li><li>")
                 elif level < parsing_info.list_info.level:
-                    if parsing_info.list_info.type.isdigit():
-                        text = f"{text[:line_start]}</ol></li><li>{text[line_start + 2:]}"
+                    if type(parsing_info.list_info.type) is int:
+                        text = f"{text[:content_start]}</ol></li><li>{text[content_start:]}"
                     else:
-                        text = f"{text[:line_start]}</ul></li><li>{text[line_start + 2:]}"
+                        text = f"{text[:content_start]}</ul></li><li>{text[content_start:]}"
                         parsing_info.i += len("</ul></li><li>")
                     parsing_info.list_info = parsing_info.list_info.parent
                 elif level > parsing_info.list_info.level:
-                    text = f"{text[:line_start]}<ul><li>{text[line_start + 2:]}"
+                    text = f"{text[:content_start]}<ul><li>{text[content_start:]}"
                     parsing_info.i += len("<ul><li>")
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
 
@@ -169,11 +184,14 @@ class MarkdownParser:
     def end_tags(self, text: str, parsing_info: ParsingInfo):
         if parsing_info.list_info.level != -1:
             while parsing_info.list_info.level != -1:
-                text = f"{text[:parsing_info.i]}</li></ol>{text[parsing_info.i:]}" if parsing_info.list_info.type.isdigit() else f"{text[:parsing_info.i]}</li></ul>{text[parsing_info.i:]}"
+                text = f"{text[:parsing_info.i]}</li>\n</ol>{text[parsing_info.i+1:]}" if type(parsing_info.list_info.type) is int else f"{text[:parsing_info.i]}</li>\n</ul>{text[parsing_info.i+1:]}"
                 parsing_info.list_info = parsing_info.list_info.parent
-                parsing_info.i += len("</li></ol>")
-        else:
+                parsing_info.i += len("</li>\n</ol>")
+        elif parsing_info.opened_paragraph:
             text += f"{text[:parsing_info.i+1]}</p>{text[parsing_info.i+1:]}"
+            parsing_info.i += len("</p>")
+        else:
+            parsing_info.i += 1
         return text, parsing_info
 
     def start_paragraph(self, text: str, parsing_info: ParsingInfo):
