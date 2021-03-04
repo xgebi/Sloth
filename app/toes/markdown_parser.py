@@ -47,6 +47,8 @@ class MarkdownParser:
                     result, parsing_info = self.parse_unordered_list(result, parsing_info)
             elif result[parsing_info.i].isdigit():
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
+            elif len(result) < parsing_info.i + 2 and result[parsing_info.i:parsing_info.i+2] == "![":
+                result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
             elif not result[parsing_info.i].isspace():
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
@@ -211,73 +213,6 @@ class MarkdownParser:
             parsing_info.i += 1
         return text, parsing_info
 
-    # TODO refactor this when recoding to Rust
-    def parse_list(self, text: str) -> str:
-        lines = text.split("\n")
-        result = []
-        numeric_list_pattern = re.compile('^(\d+\. )')
-        points_list_pattern = re.compile('^([\-] )')
-        line_pattern = re.compile("(^( )+)?(\d\.|\-)")
-        current_level = -1
-        lists = []
-        for i, line in enumerate(lines):
-            if len(line) > 0 and numeric_list_pattern.match(line.strip()):
-                if current_level == -1:
-                    line = f"<ol>\n<li>{line[line.index('. ') + 2:]}"
-                    current_level += 1
-                    lists.append("ol")
-                elif current_level > -1:
-                    if current_level == (
-                            len(line[:line.index(line[:line_pattern.match(line).end() - 1].strip())]) // 4):
-                        line = f"</li>\n<li>{line[line.index('. ') + 2:]}"
-                    elif current_level < (
-                            len(line[:line.index(line[:line_pattern.match(line).end() - 1].strip())]) // 4):
-                        line = f"<ol><li>{line[line.index('. ') + 2:]}"
-                        current_level += 1
-                        lists.append("ol")
-                    else:
-                        temp_line = ""
-                        while current_level > (
-                                len(line[:line.index(line[:line_pattern.match(line).end() - 1].strip())]) // 4):
-                            temp_line += f"</li>\n</{lists[-1]}>"
-                            current_level -= 1
-                            lists.pop()
-                        line = f"{temp_line}</li>\n<li>{line[line.index('. ') + 2:]}"
-            elif len(line) > 0 and points_list_pattern.match(line.strip()):
-                if current_level == -1:
-                    line = f"<ul>\n<li>{line[line.index('- ') + 2:]}"
-                    current_level += 1
-                    lists.append("ul")
-                elif current_level > -1:
-                    if current_level == (len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
-                        line = f"</li>\n<li>{line[line.index('- ') + 2:]}"
-                    elif current_level < (len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
-                        line = f"<ul><li>{line[line.index('- ') + 2:]}"
-                        current_level += 1
-                        lists.append("ul")
-                    else:
-                        temp_line = ""
-                        while current_level > (
-                                len(line[:line.index(line[:line_pattern.match(line).end()].strip())]) // 4):
-                            temp_line += f"</li>\n</{lists[-1]}>"
-                            current_level -= 1
-                            lists.pop()
-                        line = f"{temp_line}</li>\n<li>{line[line.index('- ') + 2:]}"
-            elif (len(line) == 0 or (len(line) > 0 and not (
-                    numeric_list_pattern.match(line.strip()) and points_list_pattern.match(
-                line.strip())))) and current_level > -1:
-                result.append(f"</li>\n</{lists[-1]}>")
-                current_level -= 1
-                lists.pop()
-            result.append(line)
-
-            if i + 1 == len(lines) and current_level > -1:
-                while current_level > -1:
-                    result.append(f"</li>\n</{lists[-1]}>")
-                    current_level -= 1
-
-        return "\n".join(result)
-
     def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] != "`":
             j = text[parsing_info.i + 1:].find("`") + (parsing_info.i + 1)
@@ -327,8 +262,13 @@ class MarkdownParser:
         return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)",
                       "\g<1><a href='\g<4>'>\g<2>\g<3></a>", text)
 
-    def parse_image(self, text: str) -> str:
-        return re.sub(r"!\[(.*)]\((.*)\)", "<img src='\g<2>' alt='\g<1>' />", text)
+    def parse_image(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        img_pattern = re.compile("!\[(.*)]\((.*)\)")
+        if img_pattern.match(text[parsing_info.i:]):
+            pass
+        else:
+            parsing_info += 1
+        return text, parsing_info
 
     def parse_italic_bold(self, text: str) -> str:
         strikethrough = re.sub(r"(~~)(.*)(~~)", "<span class='strikethrough'>\g<2></span>", text)
