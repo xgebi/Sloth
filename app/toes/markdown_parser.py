@@ -41,9 +41,14 @@ class MarkdownParser:
             if result[parsing_info.i] == "`":
                 result, parsing_info = self.parse_code_block(result, parsing_info)
             elif result[parsing_info.i] == '-' or result[parsing_info.i] == '*':
-                result, parsing_info = self.parse_unordered_list(result, parsing_info)
+                if result[parsing_info.i: parsing_info.i + 3] == '---':
+                    result, parsing_info = self.parse_horizontal_line(text=result, parsing_info=parsing_info)
+                else:
+                    result, parsing_info = self.parse_unordered_list(result, parsing_info)
             elif result[parsing_info.i].isdigit():
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
+            elif not result[parsing_info.i].isspace():
+                result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
                 if len(result) < parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
                     result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
@@ -57,27 +62,15 @@ class MarkdownParser:
         result = self.parse_image(result)
         result = self.parse_link(result)
         result = self.parse_footnotes(result)
-        result = self.parse_paragraphs(result)
         result = self.parse_italic_bold(result)
         result = self.parse_escaped_characters(result)"""
 
         return result
 
-    def parse_paragraphs(self, text: str) -> str:
-        lines = text.split("\n")
-        result = []
-        paragraph_start_pattern = re.compile('(\d+)? ?[a-zA-z\*~]+')
-        for i, line in enumerate(lines):
-            if len(line) > 0 and paragraph_start_pattern.match(line):
-                if i != 0 and result[-1].endswith("</p>") and not \
-                        (result[-1].endswith("</pre>") or result[-1].endswith("</ol>") or result[-1].endswith("</ul>")):
-                    result[-1] = f"{result[-1][:result[-1].index('</p>')]} {line}</p>"
-                    continue
-                else:
-                    line = f"<p>{line}</p>"
-            result.append(line)
-
-        return "\n".join(result)
+    def parse_horizontal_line(self, text: str, parsing_info: ParsingInfo)  -> (str, ParsingInfo):
+        text = f"{text[parsing_info.i-1:]}<hr />{text[parsing_info.i + 3:]}"
+        parsing_info.i += len("<hr />")
+        return text, parsing_info
 
     def parse_headlines(self, text: str) -> str:
         lines = text.split("\n")
@@ -139,7 +132,7 @@ class MarkdownParser:
                     parsing_info.i += len("</ol><li>") - (level*ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
         else:
-            return self.start_paragraph(text=text, parsing_info=parsing_info)
+            return self.parse_paragraph(text=text, parsing_info=parsing_info)
 
         return text, parsing_info
 
@@ -190,7 +183,8 @@ class MarkdownParser:
                     text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
                     parsing_info.i += len("</ul><li>") - (level*ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
-
+        else:
+            parsing_info.i += 1
         return text, parsing_info
 
     def end_tags(self, text: str, parsing_info: ParsingInfo):
@@ -199,14 +193,22 @@ class MarkdownParser:
                 text = f"{text[:parsing_info.i]}</li>\n</ol>{text[parsing_info.i+1:]}" if type(parsing_info.list_info.type) is int else f"{text[:parsing_info.i]}</li>\n</ul>{text[parsing_info.i+1:]}"
                 parsing_info.list_info = parsing_info.list_info.parent
                 parsing_info.i += len("</li>\n</ol>")
-        elif parsing_info.opened_paragraph:
-            text += f"{text[:parsing_info.i+1]}</p>{text[parsing_info.i+1:]}"
-            parsing_info.i += len("</p>")
         else:
             parsing_info.i += 1
         return text, parsing_info
 
-    def start_paragraph(self, text: str, parsing_info: ParsingInfo):
+    def parse_paragraph(self, text: str, parsing_info: ParsingInfo):
+        line_start = text[:parsing_info.i].rfind("\n\n") + 2 if text[:parsing_info.i].rfind("\n\n") >= 0 else 0
+        line_end = text[parsing_info.i:].find("\n\n") + parsing_info.i if text[parsing_info.i:].find(
+            "\n\n") != -1 else len(text)
+
+        line = text[line_start: line_end]
+
+        if len(line) > 1 and line[0] != "<":
+            text = f"{text[:line_start]}<p>{line}</p>{text[line_end:]}"
+            parsing_info.i += len("<p>")
+        else:
+            parsing_info.i += 1
         return text, parsing_info
 
     # TODO refactor this when recoding to Rust
@@ -276,7 +278,7 @@ class MarkdownParser:
 
         return "\n".join(result)
 
-    def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> str:
+    def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] != "`":
             j = text[parsing_info.i + 1:].find("`") + (parsing_info.i + 1)
             if text[j + 1] != "`":
