@@ -80,8 +80,26 @@ class MyTestCase(unittest.TestCase):
 
         print(text)
 
+    def test_nested_numeric_lists(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_numeric_list_weird.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
     def test_nested_points_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_points_list.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
+    def test_nested_points_lists_off(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_points_list_weird.md"))
+        text = bl.to_html_string()
+
+        print(text)
+
+    def test_nested_mixed_lists(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "nested_mixed_list.md"))
         text = bl.to_html_string()
 
         print(text)

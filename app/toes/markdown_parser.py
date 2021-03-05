@@ -52,7 +52,7 @@ class MarkdownParser:
             elif not result[parsing_info.i].isspace():
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
-                if len(result) < parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
+                if len(result) > parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
                     result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.i += 1
