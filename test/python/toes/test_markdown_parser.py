@@ -24,7 +24,7 @@ class MyTestCase(unittest.TestCase):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "headlines.md"))
         headlines = mdp.to_html_string()
         # Assert
-        self.assertEqual(headlines.count("<h1>"), 1)
+        self.assertEqual(headlines.count("<h1"), 1)
         self.assertEqual(headlines.count("</h1>"), 1)
         self.assertEqual(headlines.count("<h2>"), 1)
         self.assertEqual(headlines.count("</h2>"), 1)
@@ -34,8 +34,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(headlines.count("</h4>"), 1)
         self.assertEqual(headlines.count("<h5>"), 1)
         self.assertEqual(headlines.count("</h5>"), 1)
-        self.assertEqual(headlines.count("<h6>"), 1)
+        self.assertEqual(headlines.count("<h6"), 1)
         self.assertEqual(headlines.count("</h6>"), 1)
+        print(headlines)
 
     def test_paragraph_with_image_link_headlines(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_image_link_headlines.md"))

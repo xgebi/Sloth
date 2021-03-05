@@ -1,4 +1,4 @@
-# Headline 1
+# Headline 1 {# my-headline }
 
 ## Headline 2
 
@@ -8,4 +8,4 @@
 
 ##### Headline 5
 
-###### Headline 6
+###### Headline 6 {# otter }

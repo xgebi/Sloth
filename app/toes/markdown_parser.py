@@ -16,6 +16,9 @@ class ParsingInfo:
         self.i = 0
         self.list_info = ListInfo()
         self.opened_paragraph = False
+        
+    def move_index(self):
+        self.i += 1
 
 
 class MarkdownParser:
@@ -49,15 +52,20 @@ class MarkdownParser:
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
             elif len(result) < parsing_info.i + 2 and result[parsing_info.i:parsing_info.i+2] == "![":
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
+            elif result[parsing_info.i] == "#":
+                if parsing_info.i == 0 or result[parsing_info.i-1] != "\\":
+                    result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
+                else:
+                    parsing_info.move_index()
             elif not result[parsing_info.i].isspace():
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
                 if len(result) > parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
                     result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
                 else:
-                    parsing_info.i += 1
+                    parsing_info.move_index()
             else:
-                parsing_info.i += 1
+                parsing_info.move_index()
         result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
 
         """result = self.parse_headlines(result)
@@ -86,7 +94,26 @@ class MarkdownParser:
             result.append(line)
         return "\n".join(result)
 
-    def parse_ordered_list(self, text: str, parsing_info: ParsingInfo): #solve offsets!!!
+    def parse_headline(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        level = len(text[parsing_info.i:text[parsing_info.i:].find(" ") +  + parsing_info.i])
+        end_of_line = text[parsing_info.i:].find("\n")
+        tail = text[end_of_line + parsing_info.i:] if end_of_line >= 0 else ""
+        if text[parsing_info.i:text[parsing_info.i:].find("\n") + parsing_info.i].find("{#") > -1 \
+                or (text[parsing_info.i:].find("\n") == -1 and text[parsing_info.i:].find("{#") > -1):
+            id_start = text[parsing_info.i:].find("{#")
+            id = text[id_start + parsing_info.i + 3: text[parsing_info.i:].find("}") + parsing_info.i - 1]
+            content = text[parsing_info.i+level+1: text[parsing_info.i:].find(" {#") + parsing_info.i]
+            text = f"{text[:parsing_info.i]}<h{level} id=\"{id}\">{content}</h{level}>{tail}"
+            parsing_info.i += len(f"<h{level} id=\"{id}\">")
+        else:
+            old_length = len(text[parsing_info.i: text[parsing_info.i:].find("\n") + parsing_info.i])
+            content = text[parsing_info.i+level+1: text[parsing_info.i:].find("\n") + parsing_info.i] if text[parsing_info.i:].find("\n") >= 0 else text[parsing_info.i+level:]
+            text = f"{text[:parsing_info.i]}<h{level}>{content.strip()}</h{level}>{tail}"
+            parsing_info.i += len(f"<h{level}>")
+
+        return text, parsing_info
+
+    def parse_ordered_list(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         line_start = text[:parsing_info.i].rfind("\n") + 1
         line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find(
             "\n") != -1 else len(text)
@@ -186,7 +213,7 @@ class MarkdownParser:
                     parsing_info.i += len("</ul><li>") - (level*ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
         else:
-            parsing_info.i += 1
+            parsing_info.move_index()
         return text, parsing_info
 
     def end_tags(self, text: str, parsing_info: ParsingInfo):
@@ -196,7 +223,7 @@ class MarkdownParser:
                 parsing_info.list_info = parsing_info.list_info.parent
                 parsing_info.i += len("</li>\n</ol>")
         else:
-            parsing_info.i += 1
+            parsing_info.move_index()
         return text, parsing_info
 
     def parse_paragraph(self, text: str, parsing_info: ParsingInfo):
@@ -210,7 +237,7 @@ class MarkdownParser:
             text = f"{text[:line_start]}<p>{line}</p>{text[line_end:]}"
             parsing_info.i += len("<p>")
         else:
-            parsing_info.i += 1
+            parsing_info.move_index()
         return text, parsing_info
 
     def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
@@ -224,7 +251,7 @@ class MarkdownParser:
                     text = text[:parsing_info.i] + replacement + text[j + 1:]
                 parsing_info.i += (len(replacement) - 2)
             else:
-                parsing_info.i += 1
+                parsing_info.move_index()
         elif (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] == "`" and text[parsing_info.i + 2] == "`":
             j = text[parsing_info.i + 3:].find("```") + (parsing_info.i + 3)
             first_line_end = text[parsing_info.i + 3:].find("\n") + (parsing_info.i + 3)
@@ -237,7 +264,7 @@ class MarkdownParser:
                     text = text[:parsing_info.i - 1] + replacement + text[j + 3:]
                 parsing_info.i += len(replacement)
         else:
-            parsing_info.i += 1
+            parsing_info.move_index()
 
         return text, parsing_info
 
