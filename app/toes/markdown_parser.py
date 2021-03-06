@@ -56,7 +56,14 @@ class MarkdownParser:
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
-                parsing_info.move_index()
+                footnote_pattern = re.compile("\[\d+\. .+?\]")
+                link_pattern = re.compile("([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
+                if link_pattern.match(text[parsing_info.i:]):
+                    result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
+                elif footnote_pattern(text[parsing_info.i:]):
+                    result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
+                else:
+                    parsing_info.move_index()
             elif len(result) > parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
                 # parse image
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
@@ -306,7 +313,7 @@ class MarkdownParser:
 
         return text, parsing_info
 
-    def parse_footnotes(self, text: str) -> str:
+    def parse_footnote(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
         footnote_pattern = r"\[\d+\. .+?\]"
         re_fp = re.compile(footnote_pattern)
         footnotes = re_fp.findall(text)
@@ -323,7 +330,7 @@ class MarkdownParser:
             return " ".join([text, list])
         return text
 
-    def parse_link(self, text: str) -> str:
+    def parse_link(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
         return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)",
                       "\g<1><a href='\g<4>'>\g<2>\g<3></a>", text)
 
