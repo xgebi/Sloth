@@ -19,6 +19,14 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(two_paragraphs.count("<p>"), 2)
         self.assertEqual(two_paragraphs.count("</p>"), 2)
 
+    def test_paragraph_links_paragraphs_headlines(self):
+        # Assume
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_image_link_headlines.md"))
+        result = mdp.to_html_string()
+
+        print (result)
+
+
     def test_headlines(self):
         # Assume
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "headlines.md"))
@@ -42,6 +50,7 @@ class MyTestCase(unittest.TestCase):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "paragraph_with_image_link_headlines.md"))
         text = mdp.to_html_string()
 
+        print(text)
         self.assertEqual(text.count("<img "), 1)
         self.assertEqual(text.count("<a href"), 2)
 
