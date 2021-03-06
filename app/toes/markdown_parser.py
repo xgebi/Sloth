@@ -56,8 +56,8 @@ class MarkdownParser:
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
-                pass
-            elif len(result) < parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
+                parsing_info.move_index()
+            elif len(result) > parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
                 # parse image
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == "#":
@@ -83,7 +83,6 @@ class MarkdownParser:
         result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
 
         """
-        result = self.parse_image(result)
         result = self.parse_link(result)
         result = self.parse_footnotes(result)
         result = self.parse_italic_bold(result)
@@ -331,7 +330,13 @@ class MarkdownParser:
     def parse_image(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         img_pattern = re.compile("!\[(.*)]\((.*)\)")
         if img_pattern.match(text[parsing_info.i:]):
-            img_pattern.sub(img_pattern, "<img alt=\"\g<1>\" src=\"\g<1>\" />", 1)
+            img_info = text[
+                       parsing_info.i:
+                       img_pattern.match(text[parsing_info.i:]).span()[1] + parsing_info.i
+                       ].split("](")
+            img_code = f"<img alt=\"{img_info[0][2:]}\" src=\"{img_info[1][:len(img_info[1]) - 1]}\" />"
+            text = f"{text[:parsing_info.i]}{img_code}{text[img_pattern.match(text[parsing_info.i:]).span()[1] + parsing_info.i:]}"
+            parsing_info.move_index(len(img_code))
         else:
             parsing_info.move_index()
         return text, parsing_info
