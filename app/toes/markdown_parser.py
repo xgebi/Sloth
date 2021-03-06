@@ -211,8 +211,8 @@ class MarkdownParser:
     def end_tags(self, text: str, parsing_info: ParsingInfo):
         if parsing_info.list_info.level != -1:
             while parsing_info.list_info.level != -1:
-                text = f"{text[:parsing_info.i]}</li>\n</ol>{text[parsing_info.i + 1:]}" if type(
-                    parsing_info.list_info.type) is int else f"{text[:parsing_info.i]}</li>\n</ul>{text[parsing_info.i + 1:]}"
+                text = f"{text[:parsing_info.i]}</li>\n</ol>\n{text[parsing_info.i + 1:]}" if type(
+                    parsing_info.list_info.type) is int else f"{text[:parsing_info.i]}</li>\n</ul>\n{text[parsing_info.i + 1:]}"
                 parsing_info.list_info = parsing_info.list_info.parent
                 parsing_info.i += len("</li>\n</ol>")
         else:
@@ -221,37 +221,46 @@ class MarkdownParser:
 
     def parse_paragraph(self, text: str, parsing_info: ParsingInfo):
         line_start = text[:parsing_info.i].rfind("\n\n") + 2 if text[:parsing_info.i].rfind("\n\n") >= 0 else 0
+        alt_line_start = text[:parsing_info.i].rfind(">\n") + 2 if text[:parsing_info.i].rfind(">\n") >= 0 else 0
 
-        if (text[line_start:].startswith("<p>")):
+        if line_start < alt_line_start:
+            line_start = alt_line_start
+
+        if text[line_start:].startswith("<"):
             parsing_info.move_index()
             return text, parsing_info
 
-        line_end = text[parsing_info.i:].find("\n\n") + parsing_info.i if text[parsing_info.i:].find(
-            "\n\n") != -1 else len(text)
-        alt_line_end = line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find(
-            "\n") != -1 else len(text)
+        j = parsing_info.i
+        while j < len(text):
+            line_end = text[j:].find("\n\n") + j if text[j:].find("\n\n") != -1 else len(text)
+            alt_line_end = text[j:].find("\n") + j if text[j:].find("\n") != -1 else len(text)
 
-        if line_end == alt_line_end:
-            line = text[line_start: line_end]
-            text = f"{text[:line_start]}<p>{line}</p>{text[line_end:]}"
-            parsing_info.move_index(len("<p>"))
-        elif "#-*".index(text[alt_line_end + 1]):
-            line = text[line_start: alt_line_end]
-            text = f"{text[:line_start]}<p>{line}</p>{text[alt_line_end:]}"
-            parsing_info.move_index(len("<p>"))
-        elif text[alt_line_end + 1].isdigit():
-            j = alt_line_end + 2
-            while j < len(text) and text[j].isdigit():
-                j += 1
-            if text[j] == ".":
+            if line_end == alt_line_end:
+                line = text[line_start: line_end]
+                text = f"{text[:line_start]}<p>{line}</p>{text[line_end:]}"
+                parsing_info.move_index(len("<p>"))
+                break
+            elif "#-*".find(text[alt_line_end + 1]) >= 0:
                 line = text[line_start: alt_line_end]
                 text = f"{text[:line_start]}<p>{line}</p>{text[alt_line_end:]}"
                 parsing_info.move_index(len("<p>"))
-            if j == len(text):
-                text = f"{text[:line_start]}<p>{text[line_start]}:</p>"
-                parsing_info.move_index(len("<p>"))
-        else:
-            parsing_info.move_index()
+                break
+            elif text[alt_line_end + 1].isdigit():
+                j = alt_line_end + 2
+                while j < len(text) and text[j].isdigit():
+                    j += 1
+                if text[j] == ".":
+                    line = text[line_start: alt_line_end]
+                    text = f"{text[:line_start]}<p>{line}</p>{text[alt_line_end:]}"
+                    parsing_info.move_index(len("<p>"))
+                    break
+                if j == len(text):
+                    text = f"{text[:line_start]}<p>{text[line_start]}:</p>"
+                    parsing_info.move_index(len("<p>"))
+                    break
+            else:
+                j += (alt_line_end - j) + 1
+
         return text, parsing_info
 
     def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
