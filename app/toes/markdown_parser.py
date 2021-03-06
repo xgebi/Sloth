@@ -16,6 +16,7 @@ class ParsingInfo:
         self.i = 0
         self.list_info = ListInfo()
         self.opened_paragraph = False
+        self.footnotes = []
 
     def move_index(self, step: int = 1):
         self.i += step
@@ -42,30 +43,43 @@ class MarkdownParser:
         parsing_info = ParsingInfo()
         while parsing_info.i < len(result):
             if result[parsing_info.i] == "`":
+                # parse code
                 result, parsing_info = self.parse_code_block(result, parsing_info)
             elif result[parsing_info.i] == '-' or result[parsing_info.i] == '*':
+                # parse horizontal line, unordered list, bold and italic
                 if result[parsing_info.i: parsing_info.i + 3] == '---':
                     result, parsing_info = self.parse_horizontal_line(text=result, parsing_info=parsing_info)
                 else:
                     result, parsing_info = self.parse_unordered_list(result, parsing_info)
             elif result[parsing_info.i].isdigit():
+                # parse ordered list
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
+            elif result[parsing_info.i] == "[":
+                # parse footnote and link
+                pass
             elif len(result) < parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
+                # parse image
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == "#":
+                # parse list
                 if parsing_info.i == 0 or result[parsing_info.i - 1] != "\\":
                     result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
             elif not result[parsing_info.i].isspace():
+                # parse paragraph
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
+                # check for endings and stuff
                 if len(result) > parsing_info.i + 1 and result[parsing_info.i + 1] == '\n':
                     result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
             else:
+                # deal with the rest
                 parsing_info.move_index()
+
+        # clean up after parse
         result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
 
         """
