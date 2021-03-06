@@ -60,7 +60,7 @@ class MarkdownParser:
                 link_pattern = re.compile("([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
                 if link_pattern.match(text[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
-                elif footnote_pattern(text[parsing_info.i:]):
+                elif footnote_pattern.match(text[parsing_info.i:]):
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
                 else:
                     parsing_info.move_index()
@@ -314,21 +314,17 @@ class MarkdownParser:
         return text, parsing_info
 
     def parse_footnote(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
-        footnote_pattern = r"\[\d+\. .+?\]"
-        re_fp = re.compile(footnote_pattern)
-        footnotes = re_fp.findall(text)
-        list = "<ul>"
-        for note in footnotes:
-            index = note[1:note.find(".")]
-            text = text.replace(note, f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>")
+        end = pattern.match(text[parsing_info.i:]).span()[1]
+        raw_footnote = text[parsing_info.i + 1: parsing_info.i + end - 1]
+        index = raw_footnote[:raw_footnote.find(". ")]
+        footnote_content = raw_footnote[raw_footnote.find(". ")+2:]
+        footnote_code = f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>"
+        text = f"{text[:parsing_info.i]}{footnote_code}{text[parsing_info.i + len(footnote_code)]}"
 
-            list += f"<li id='footnote-{index}'>{note[note.find('. ') + 2:len(note) - 1]}"
-            list += f"<a href='#footnote-link-{index}'>🔼{index}</a></li>"
-
-        list += "</ul>"
-        if len(footnotes) > 0:
-            return " ".join([text, list])
-        return text
+        parsing_info.footnotes.append(
+            f"<li id='footnote-{index}'>{footnote_content}<a href='#footnote-link-{index}'>🔼{index}</a></li>"
+        )
+        return text, parsing_info
 
     def parse_link(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
         return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)",
