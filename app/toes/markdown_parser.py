@@ -36,7 +36,7 @@ class MarkdownParser:
         else:
             self.text = ""
 
-    def to_html_string(self, text: str = "") -> str:
+    def to_html_string(self, text: str = "", footnote: bool = False) -> str:
         # refactoring candidate
         if text:
             self.text = text
@@ -66,7 +66,7 @@ class MarkdownParser:
                 link_pattern = re.compile("\[(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
                 if link_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
-                elif footnote_pattern.match(result[parsing_info.i:]):
+                elif footnote_pattern.match(result[parsing_info.i:]) and not footnote:
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
                 else:
                     parsing_info.move_index()
@@ -79,7 +79,7 @@ class MarkdownParser:
                     result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
-            elif not result[parsing_info.i].isspace():
+            elif not result[parsing_info.i].isspace() and not footnote:
                 # parse paragraph
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
@@ -94,7 +94,8 @@ class MarkdownParser:
         # clean up after parse
         result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
         # add footnotes
-        result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
+        if not footnote:
+            result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
         """
         result = self.parse_italic_bold(result)
@@ -333,9 +334,15 @@ class MarkdownParser:
         return text, parsing_info
 
     def add_footnotes(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
-        # TODO Make footnotes word and list type configurable
-        footnotes = '\n'.join(parsing_info.footnotes)
-        text = f"{text}<h2>Footnotes</h2><ol>{footnotes}</ol>"
+        if len(parsing_info.footnotes) > 0:
+            # TODO Make footnotes word and list type configurable
+            footnotes = []
+            for footnote in parsing_info.footnotes:
+                footnote_parser = MarkdownParser()
+                parsed_footnote = footnote_parser.to_html_string(footnote.footnote, footnote=True)
+                footnotes.append(f"<li id='footnote-{footnote.index}'>{parsed_footnote}<a href='#footnote-link-{footnote.index}'>🔼{footnote.index}</a></li>")
+            footnotes_str = "\n".join(footnotes)
+            text = f"{text}<h2>Footnotes</h2><ol>{footnotes_str}</ol>"
         return text, parsing_info
 
     def parse_link(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
