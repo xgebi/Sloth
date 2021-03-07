@@ -98,10 +98,6 @@ class MarkdownParser:
         if not footnote:
             result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
-        """
-        result = self.parse_italic_bold(result)
-        result = self.parse_escaped_characters(result)"""
-
         return result
 
     def parse_horizontal_line(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
@@ -233,12 +229,12 @@ class MarkdownParser:
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
         else:
             if text[parsing_info.i + 1:].find('*') == -1:
-                isStandAlone = True
+                is_stand_alone = True
             elif text[parsing_info.i + 1:].find('\n') == -1 and text[parsing_info.i + 1:].find('*') >= 0:
-                isStandAlone = False
+                is_stand_alone = False
             else:
-                isStandAlone = text[parsing_info.i + 1:].find('*') > text[parsing_info.i + 1:].find('\n')
-            if isStandAlone:
+                is_stand_alone = text[parsing_info.i + 1:].find('*') > text[parsing_info.i + 1:].find('\n')
+            if is_stand_alone:
                 parsing_info.move_index()
             else:
                 if text[parsing_info.i: parsing_info.i + 3] == "***":
@@ -400,6 +396,3 @@ class MarkdownParser:
         bi = re.sub(r"(\*\*\*)(.*)(\*\*\*)", "<strong><em>\g<2></em></strong>", strikethrough)
         b = re.sub(r"(\*\*)(.*)(\*\*)", "<strong>\g<2></strong>", bi)
         return re.sub(r"(\*)(.*)(\*)", "<em>\g<2></em>", b)
-
-    def parse_escaped_characters(self, text: str) -> str:
-        return text
