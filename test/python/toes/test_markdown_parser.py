@@ -19,6 +19,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(two_paragraphs.count("<p>"), 2)
         self.assertEqual(two_paragraphs.count("</p>"), 2)
 
+    def test_styled_paragraph(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "styled_paragraph.md"))
+        result = mdp.to_html_string()
+        print(result)
 
     def test_headlines(self):
         # Assume

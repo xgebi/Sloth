@@ -56,6 +56,7 @@ class MarkdownParser:
                 if result[parsing_info.i: parsing_info.i + 3] == '---':
                     result, parsing_info = self.parse_horizontal_line(text=result, parsing_info=parsing_info)
                 else:
+                    # catches for italic and bold are caught inside
                     result, parsing_info = self.parse_unordered_list(result, parsing_info)
             elif result[parsing_info.i].isdigit():
                 # parse ordered list
@@ -231,7 +232,27 @@ class MarkdownParser:
                     parsing_info.i += len("</ul><li>") - (level * ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
         else:
-            parsing_info.move_index()
+            if text[parsing_info.i + 1:].find('*') == -1:
+                isStandAlone = True
+            elif text[parsing_info.i + 1:].find('\n') == -1 and text[parsing_info.i + 1:].find('*') >= 0:
+                isStandAlone = False
+            else:
+                isStandAlone = text[parsing_info.i + 1:].find('*') > text[parsing_info.i + 1:].find('\n')
+            if isStandAlone:
+                parsing_info.move_index()
+            else:
+                if text[parsing_info.i: parsing_info.i + 3] == "***":
+                    end_italics = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
+                    text = f"{text[:parsing_info.i]}<strong><em>{text[parsing_info.i + 1: end_italics]}</em></strong>{text[end_italics:]}"
+                    parsing_info.move_index(len("<strong><em>"))
+                elif text[parsing_info.i: parsing_info.i + 2] == "**":
+                    end_bold = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
+                    text = f"{text[:parsing_info.i]}<strong>{text[parsing_info.i + 1: end_bold]}</strong>{text[end_bold:]}"
+                    parsing_info.move_index(len("<strong>"))
+                else:
+                    end_italics = text[parsing_info.i + 1:].find('*') + parsing_info.i + 1
+                    text = f"{text[:parsing_info.i]}<em>{text[parsing_info.i + 1: end_italics]}</em>{text[end_italics:]}"
+                    parsing_info.move_index(len("<em>"))
         return text, parsing_info
 
     def end_tags(self, text: str, parsing_info: ParsingInfo):
@@ -252,7 +273,8 @@ class MarkdownParser:
         if line_start < alt_line_start:
             line_start = alt_line_start
 
-        if text[line_start:].startswith("<"):
+        if text[line_start:].startswith("<") and \
+                not (text[line_start:].startswith("<em") or text[line_start:].startswith("<strong") or text[line_start:].startswith("<span")):
             parsing_info.move_index()
             return text, parsing_info
 
