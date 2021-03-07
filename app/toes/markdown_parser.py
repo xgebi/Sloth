@@ -242,16 +242,16 @@ class MarkdownParser:
                 parsing_info.move_index()
             else:
                 if text[parsing_info.i: parsing_info.i + 3] == "***":
-                    end_italics = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<strong><em>{text[parsing_info.i + 1: end_italics]}</em></strong>{text[end_italics:]}"
+                    end_italics = text[parsing_info.i + 1:].find('***') + parsing_info.i + 1
+                    text = f"{text[:parsing_info.i]}<strong><em>{text[parsing_info.i + 3: end_italics]}</em></strong>{text[end_italics + 3:]}"
                     parsing_info.move_index(len("<strong><em>"))
                 elif text[parsing_info.i: parsing_info.i + 2] == "**":
                     end_bold = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<strong>{text[parsing_info.i + 1: end_bold]}</strong>{text[end_bold:]}"
+                    text = f"{text[:parsing_info.i]}<strong>{text[parsing_info.i + 2: end_bold]}</strong>{text[end_bold + 2:]}"
                     parsing_info.move_index(len("<strong>"))
                 else:
                     end_italics = text[parsing_info.i + 1:].find('*') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<em>{text[parsing_info.i + 1: end_italics]}</em>{text[end_italics:]}"
+                    text = f"{text[:parsing_info.i]}<em>{text[parsing_info.i + 1: end_italics]}</em>{text[end_italics + 1:]}"
                     parsing_info.move_index(len("<em>"))
         return text, parsing_info
 
