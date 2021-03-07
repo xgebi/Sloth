@@ -10,6 +10,12 @@ class ListInfo:
         self.type = type
         self.parent = parent
 
+class Footnote:
+    def __init__(self, index, footnote):
+        self.index = index
+        self.footnote = footnote
+    # f"<li id='footnote-{index}'>{footnote_content}<a href='#footnote-link-{index}'>🔼{index}</a></li>"
+
 
 class ParsingInfo:
     def __init__(self):
@@ -57,10 +63,10 @@ class MarkdownParser:
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
                 footnote_pattern = re.compile("\[\d+\. .+?\]")
-                link_pattern = re.compile("([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
-                if link_pattern.match(text[parsing_info.i:]):
+                link_pattern = re.compile("\[(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
+                if link_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
-                elif footnote_pattern.match(text[parsing_info.i:]):
+                elif footnote_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
                 else:
                     parsing_info.move_index()
@@ -85,13 +91,12 @@ class MarkdownParser:
             else:
                 # deal with the rest
                 parsing_info.move_index()
-
         # clean up after parse
         result, parsing_info = self.end_tags(text=result, parsing_info=parsing_info)
+        # add footnotes
+        result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
         """
-        result = self.parse_link(result)
-        result = self.parse_footnotes(result)
         result = self.parse_italic_bold(result)
         result = self.parse_escaped_characters(result)"""
 
@@ -319,16 +324,33 @@ class MarkdownParser:
         index = raw_footnote[:raw_footnote.find(". ")]
         footnote_content = raw_footnote[raw_footnote.find(". ")+2:]
         footnote_code = f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>"
-        text = f"{text[:parsing_info.i]}{footnote_code}{text[parsing_info.i + len(footnote_code)]}"
+        text = f"{text[:parsing_info.i]}{footnote_code}{text[parsing_info.i + end:]}"
 
         parsing_info.footnotes.append(
-            f"<li id='footnote-{index}'>{footnote_content}<a href='#footnote-link-{index}'>🔼{index}</a></li>"
+            Footnote(index=index, footnote=footnote_content)
         )
+        parsing_info.move_index(len(footnote_code))
+        return text, parsing_info
+
+    def add_footnotes(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        # TODO Make footnotes word and list type configurable
+        footnotes = '\n'.join(parsing_info.footnotes)
+        text = f"{text}<h2>Footnotes</h2><ol>{footnotes}</ol>"
         return text, parsing_info
 
     def parse_link(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
-        return re.sub(r"([^!]|^)\[([^(\d+\.)])(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)",
-                      "\g<1><a href='\g<4>'>\g<2>\g<3></a>", text)
+        possible_end = pattern.match(text[parsing_info.i:]).span()[1] + parsing_info.i
+        raw_link = text[parsing_info.i + 1: possible_end - 1].split("](")
+        if raw_link[1].find(') ') >= 0:
+            link_code = f"<a href=\"{raw_link[1][:raw_link[1].find(') ')]}\">{raw_link[0]}</a>"
+            text = f"{text[:parsing_info.i]}{link_code}{text[parsing_info.i + len(raw_link[0]) + 4 + raw_link[1].find(') '):]}"
+            parsing_info.move_index(len(f"<a href=\"{raw_link[1][:raw_link[1].find(') ')]}\">"))
+        else:
+            link_code = f"<a href=\"{raw_link[1]}\">{raw_link[0]}</a>"
+            text = f"{text[:parsing_info.i]}{link_code}{text[parsing_info.i + len(raw_link[0]) + len(raw_link[1]) + 4:]}"
+            parsing_info.move_index(len(f"<a href=\"{raw_link[1]}\">"))
+
+        return text, parsing_info
 
     def parse_image(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         img_pattern = re.compile("!\[(.*)]\((.*)\)")
