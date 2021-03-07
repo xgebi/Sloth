@@ -21,7 +21,6 @@ class ParsingInfo:
     def __init__(self):
         self.i = 0
         self.list_info = ListInfo()
-        self.opened_paragraph = False
         self.footnotes = []
 
     def move_index(self, step: int = 1):

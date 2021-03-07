@@ -3,8 +3,13 @@ from app.toes.node import Node
 from app.toes.tree import Tree
 
 
+class XmlParsingInfo:
+    def __init__(self):
+        self.i = 0
+
+
 class STATES(enum.Enum):
-    new = 0
+    new_page = 0
     initial_node = 1
     initial_node_read_node_name = 2
     initial_node_looking_for_attribute = 3
@@ -34,28 +39,4 @@ class XMLParser:
             self.text = text_file.read()
 
     def parse_file(self):
-        mode = STATES.initial_node
-        temp_attr = ""
-        for c in self.text:
-            if c == "<":
-                mode = STATES.new_node
-            elif mode == STATES.new_node and c == "?":
-                mode = STATES.initial_node
-            elif mode == STATES.initial_node and c.isalnum():
-                mode = STATES.initial_node_read_node_name
-                self.tree.type = c
-            elif mode == STATES.initial_node_attribute_name and c.isalnum():
-                self.text.type += c
-            elif mode == STATES.initial_node_attribute_name and c == " ":
-                mode = STATES.initial_node_looking_for_attribute
-            elif mode == STATES.initial_node_looking_for_attribute and c.isalpha():
-                mode = STATES.initial_node_read_node_name
-                temp_attr = c
-            elif mode == STATES.initial_node_read_node_name and c.isalnum():
-                temp_attr += c
-            elif mode == STATES.initial_node_read_node_name and c == "=":
-                self.tree.attributes[temp_attr] = ""
-                mode = STATES.initial_node_attribute_equals
-            elif mode == STATES.initial_node_attribute_equals and (c == "\"" or c == "\'"):
-                mode = STATES.initial_node_attribute_start
-                # TODO escape characters?
+        pass
