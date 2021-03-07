@@ -228,27 +228,7 @@ class MarkdownParser:
                     parsing_info.i += len("</ul><li>") - (level * ListInfo.indent) - 1
                     parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
         else:
-            if text[parsing_info.i + 1:].find('*') == -1:
-                is_stand_alone = True
-            elif text[parsing_info.i + 1:].find('\n') == -1 and text[parsing_info.i + 1:].find('*') >= 0:
-                is_stand_alone = False
-            else:
-                is_stand_alone = text[parsing_info.i + 1:].find('*') > text[parsing_info.i + 1:].find('\n')
-            if is_stand_alone:
-                parsing_info.move_index()
-            else:
-                if text[parsing_info.i: parsing_info.i + 3] == "***":
-                    end_italics = text[parsing_info.i + 1:].find('***') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<strong><em>{text[parsing_info.i + 3: end_italics]}</em></strong>{text[end_italics + 3:]}"
-                    parsing_info.move_index(len("<strong><em>"))
-                elif text[parsing_info.i: parsing_info.i + 2] == "**":
-                    end_bold = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<strong>{text[parsing_info.i + 2: end_bold]}</strong>{text[end_bold + 2:]}"
-                    parsing_info.move_index(len("<strong>"))
-                else:
-                    end_italics = text[parsing_info.i + 1:].find('*') + parsing_info.i + 1
-                    text = f"{text[:parsing_info.i]}<em>{text[parsing_info.i + 1: end_italics]}</em>{text[end_italics + 1:]}"
-                    parsing_info.move_index(len("<em>"))
+            return self.parse_italic_bold(text=text, parsing_info=parsing_info)
         return text, parsing_info
 
     def end_tags(self, text: str, parsing_info: ParsingInfo):
@@ -391,8 +371,27 @@ class MarkdownParser:
             parsing_info.move_index()
         return text, parsing_info
 
-    def parse_italic_bold(self, text: str) -> str:
-        strikethrough = re.sub(r"(~~)(.*)(~~)", "<span class='strikethrough'>\g<2></span>", text)
-        bi = re.sub(r"(\*\*\*)(.*)(\*\*\*)", "<strong><em>\g<2></em></strong>", strikethrough)
-        b = re.sub(r"(\*\*)(.*)(\*\*)", "<strong>\g<2></strong>", bi)
-        return re.sub(r"(\*)(.*)(\*)", "<em>\g<2></em>", b)
+    def parse_italic_bold(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        if text[parsing_info.i + 1:].find('*') == -1:
+            is_stand_alone = True
+        elif text[parsing_info.i + 1:].find('\n') == -1 and text[parsing_info.i + 1:].find('*') >= 0:
+            is_stand_alone = False
+        else:
+            is_stand_alone = text[parsing_info.i + 1:].find('*') > text[parsing_info.i + 1:].find('\n')
+        if is_stand_alone:
+            parsing_info.move_index()
+        else:
+            if text[parsing_info.i: parsing_info.i + 3] == "***":
+                end_italics = text[parsing_info.i + 1:].find('***') + parsing_info.i + 1
+                text = f"{text[:parsing_info.i]}<strong><em>{text[parsing_info.i + 3: end_italics]}</em></strong>{text[end_italics + 3:]}"
+                parsing_info.move_index(len("<strong><em>"))
+            elif text[parsing_info.i: parsing_info.i + 2] == "**":
+                end_bold = text[parsing_info.i + 1:].find('**') + parsing_info.i + 1
+                text = f"{text[:parsing_info.i]}<strong>{text[parsing_info.i + 2: end_bold]}</strong>{text[end_bold + 2:]}"
+                parsing_info.move_index(len("<strong>"))
+            else:
+                end_italics = text[parsing_info.i + 1:].find('*') + parsing_info.i + 1
+                text = f"{text[:parsing_info.i]}<em>{text[parsing_info.i + 1: end_italics]}</em>{text[end_italics + 1:]}"
+                parsing_info.move_index(len("<em>"))
+
+        return text, parsing_info
