@@ -14,7 +14,7 @@ fish = pd.read_csv('Fish.csv')
 R:
 ```R
 data <- read.csv("Fish.csv", sep=',', fileEncoding="UTF-8-BOM")
-&#35; file encoding ist notwendig sonst die erste Spalte wird mit 'i..' beginnen
+# file encoding ist notwendig sonst die erste Spalte wird mit 'i..' beginnen
 ```
 ## Python
 
@@ -33,20 +33,20 @@ for specie in fish["Species"].unique():
 Auf diesen Datenset können wir die Funktionen des Datenrahmens anwenden. Python und R sind auf Englisch basiert, so die Namen der Funktionen sind auch auf Englisch basiert.
 
 ```python
-&#35; Durchschnitt
+# Durchschnitt
 group.mean(axis=0)
-&#35; Zentralwert
+# Zentralwert
 group.median(axis=0)
-&#35; Minimum
+# Minimum
 group.min(axis=0)
-&#35; Maximum
+# Maximum
 group.max(axis=0)
 ```
 
 Die Differenzfunktion existiert in Python nicht. So ich musste das selbst machen. Ein Problem erscheint mit der ersten Spalte, die hat keine Nummern. Da müssen wir einen Parameter `numeric_only` benutzen.
 
 ```python
-&#35; Differenz
+# Differenz
 group.max(axis=0, numeric_only=True) - group.min(axis=0, numeric_only=True)
 ```
 

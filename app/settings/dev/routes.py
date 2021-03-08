@@ -90,3 +90,9 @@ def delete_taxonomy(*args, permission_level, connection, **kwargs):
     connection.close()
 
     return json.dumps({"taxonomyDeleted": True})
+
+@dev_settings.route("/api/settings/dev/health-check", methods=["GET"])
+@authorize_web(1)
+@db_connection
+def delete_taxonomy(*args, permission_level, connection, **kwargs):
+    pass

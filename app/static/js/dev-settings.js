@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 1. open upload modal
     document.querySelector("#delete-posts").addEventListener('click', deletePosts);
     document.querySelector("#delete-taxonomy").addEventListener('click', deleteTaxonomy);
+    document.querySelector("#post-health-check").addEventListener('click', postHealthCheck);
     // 2. upload file
 
     // 3. delete file query
@@ -30,6 +31,27 @@ function deletePosts() {
 
 function deleteTaxonomy() {
     fetch('/api/settings/dev/taxonomy', {
+        method: 'DELETE',
+        headers: {
+            'authorization': document.cookie
+                .split(';')
+                .find(row => row.trim().startsWith('sloth_session'))
+                .split('=')[1],
+        }
+    }).then(response => {
+        if (response.ok) {
+            return response.json()
+        }
+        throw `${response.status}: ${response.statusText}`
+    }).then(data => {
+        console.log('Success:', data);
+    }).catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+function postHealthCheck() {
+    fetch('/api/settings/dev/health-check', {
         method: 'DELETE',
         headers: {
             'authorization': document.cookie

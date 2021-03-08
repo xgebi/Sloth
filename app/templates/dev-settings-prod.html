@@ -4,10 +4,13 @@
 
 {% block body %}
     <h1>Dev Settings</h1>
-    <p>Dev Settings are not available in production settings</p>
-
+    <p>Some dev settings are not available in production settings</p>
+    <div>
+        <button id="post-health-check">Post health check</button>
+    </div>
 
 {% endblock %}
 
 {% block scripts %}
+    <script src="/static/js/dev-settings.js"></script>
 {% endblock %}

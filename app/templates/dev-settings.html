@@ -7,12 +7,16 @@
     {% if error %}
         <h1>Database error</h1>
     {% endif %}
-    <p>
+    <p class="dangerzone">
         <button id="delete-posts">Delete posts</button>
     </p>
-    <p>
+    <p class="dangerzone">
         <button id="delete-taxonomy">Delete taxonomy</button>
     </p>
+    <div>
+        <button id="post-health-check">Post health check</button>
+        <div id="post-health-check-results"></div>
+    </div>
 
 
 {% endblock %}

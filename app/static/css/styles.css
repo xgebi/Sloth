@@ -166,8 +166,9 @@ select {
     display: contents;
 }
 
-.dangerzone .confirm-deletion {
-
+p.dangerzone {
+    border: 2px solid red;
+    background: #ff3a3a;
 }
 
 .bold {
