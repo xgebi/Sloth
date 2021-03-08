@@ -91,8 +91,27 @@ def delete_taxonomy(*args, permission_level, connection, **kwargs):
 
     return json.dumps({"taxonomyDeleted": True})
 
+
 @dev_settings.route("/api/settings/dev/health-check", methods=["GET"])
-@authorize_web(1)
+@authorize_web(0)
 @db_connection
-def delete_taxonomy(*args, permission_level, connection, **kwargs):
-    pass
+def check_posts_health(*args, permission_level, connection, **kwargs):
+    if connection is None:
+        abort(500)
+
+    cur = connection.cursor()
+    try:
+        # from settings get default language
+        cur.execute(
+            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+        )
+        lang_id = cur.fetchone()[0]
+        # from posts get slugs, post_type, language
+        # from language_settings get short_name
+        # from post_types get slugs
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    cur.close()
+    connection.close()
