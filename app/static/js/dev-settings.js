@@ -52,7 +52,7 @@ function deleteTaxonomy() {
 
 function postHealthCheck() {
     fetch('/api/settings/dev/health-check', {
-        method: 'DELETE',
+        method: 'GET',
         headers: {
             'authorization': document.cookie
                 .split(';')

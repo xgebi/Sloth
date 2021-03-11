@@ -1,4 +1,4 @@
-from flask import request, abort, redirect, render_template
+from flask import request, abort, redirect, render_template, current_app
 from psycopg2 import sql
 import os
 import json
@@ -106,12 +106,43 @@ def check_posts_health(*args, permission_level, connection, **kwargs):
             sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
         )
         lang_id = cur.fetchone()[0]
-        # from posts get slugs, post_type, language
+
         # from language_settings get short_name
+        cur.execute(
+            sql.SQL("""SELECT uuid, short_name FROM sloth_language_settings""")
+        )
+        raw_languages = cur.fetchall()
+        languages = {lang[0]:lang[1] for lang in raw_languages}
         # from post_types get slugs
+        cur.execute(
+            sql.SQL("""SELECT uuid, slug FROM sloth_post_types""")
+        )
+        raw_post_types = cur.fetchall()
+        post_types = {pt[0]: pt[1] for pt in raw_post_types}
+        # from posts get slugs, post_type, language
+        cur.execute(
+            sql.SQL("""SELECT slug, post_type, lang FROM sloth_posts""")
+        )
+        posts = cur.fetchall()
+        urls = [
+            Path(os.path.join(
+                current_app.config["OUTPUT_PATH"],
+                languages[post[2]] if post[2] != lang_id else "",
+                post_types[post[1]],
+                post[0],
+                "index.html"
+            ))
+            for post in posts
+        ]
     except Exception as e:
         print(e)
         abort(500)
 
     cur.close()
     connection.close()
+
+    if urls:
+        urls_to_check = [url for url in urls if not url.is_file()]
+        return json.dumps(urls_to_check)
+    else:
+        abort(500)
