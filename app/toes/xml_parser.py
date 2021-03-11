@@ -3,11 +3,6 @@ from app.toes.node import Node
 from app.toes.tree import Tree
 
 
-class XmlParsingInfo:
-    def __init__(self):
-        self.i = 0
-
-
 class STATES(enum.Enum):
     new_page = 0
     initial_node = 1
@@ -30,6 +25,11 @@ class STATES(enum.Enum):
     closed_node = 17
 
 
+class XmlParsingInfo:
+    def __init__(self):
+        self.i = 0
+        self.state = STATES.new_page
+
 class XMLParser:
     tree: Tree
 
@@ -39,4 +39,12 @@ class XMLParser:
             self.text = text_file.read()
 
     def parse_file(self):
-        pass
+        if self.text is None:
+            return "Error: empty text"
+        if len(self.text) == 0:
+            return self.text
+
+        result = self.text
+        parsing_info = XmlParsingInfo()
+        while parsing_info.i < len(result):
+            pass
