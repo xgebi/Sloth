@@ -142,7 +142,7 @@ def check_posts_health(*args, permission_level, connection, **kwargs):
     connection.close()
 
     if urls:
-        urls_to_check = [url for url in urls if not url.is_file()]
-        return json.dumps(urls_to_check)
+        urls_to_check = [str(url) for url in urls if not url.is_file()]
+        return json.dumps({"urls": urls_to_check})
     else:
         abort(500)
