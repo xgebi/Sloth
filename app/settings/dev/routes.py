@@ -121,7 +121,7 @@ def check_posts_health(*args, permission_level, connection, **kwargs):
         post_types = {pt[0]: pt[1] for pt in raw_post_types}
         # from posts get slugs, post_type, language
         cur.execute(
-            sql.SQL("""SELECT slug, post_type, lang FROM sloth_posts""")
+            sql.SQL("""SELECT slug, post_type, lang FROM sloth_posts WHERE post_status = 'published'""")
         )
         posts = cur.fetchall()
         urls = [
