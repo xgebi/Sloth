@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     // 1. open upload modal
-    document.querySelector("#delete-posts").addEventListener('click', deletePosts);
-    document.querySelector("#delete-taxonomy").addEventListener('click', deleteTaxonomy);
+    document.querySelector("#delete-posts")?.addEventListener('click', deletePosts);
+    document.querySelector("#delete-taxonomy")?.addEventListener('click', deleteTaxonomy);
     document.querySelector("#post-health-check").addEventListener('click', postHealthCheck);
     // 2. upload file
 
