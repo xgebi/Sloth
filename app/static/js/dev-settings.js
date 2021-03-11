@@ -65,10 +65,27 @@ function postHealthCheck() {
         }
         throw `${response.status}: ${response.statusText}`
     }).then(data => {
-        console.log('Success:', data);
+        displayHealthCheckResults(data)
     }).catch((error) => {
         console.error('Error:', error);
     });
+}
+
+function displayHealthCheckResults(data) {
+    const resultsDiv = document.querySelector("#post-health-check-results");
+    while (resultsDiv.lastChild) {
+        resultsDiv.removeChild(resultsDiv.lastChild);
+    }
+    const h2 = document.createElement('h2');
+    h2.textContent = "There's issue with following pages";
+    resultsDiv.append(h2);
+    const ul = document.createElement('ul');
+    data["urls"]?.forEach(url => {
+        const li = document.createElement('li');
+        li.textContent = url;
+        ul.append(li)
+    });
+    resultsDiv.append(ul);
 }
 
 /*
