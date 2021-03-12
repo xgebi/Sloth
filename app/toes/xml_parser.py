@@ -30,6 +30,10 @@ class XmlParsingInfo:
         self.i = 0
         self.state = STATES.new_page
 
+        def move_index(self, step: int = 1):
+            self.i += step
+
+
 class XMLParser:
     tree: Tree
 
@@ -47,4 +51,13 @@ class XMLParser:
         result = self.text
         parsing_info = XmlParsingInfo()
         while parsing_info.i < len(result):
-            pass
+            if result[parsing_info.i] == "<":
+                pass
+            elif result[parsing_info.i] == ">":
+                pass
+            elif result[parsing_info.i] == "=":
+                pass
+            elif result[parsing_info.i] == "\"" or result[parsing_info.i] == "'":
+                pass
+            else:
+                parsing_info.move_index()
