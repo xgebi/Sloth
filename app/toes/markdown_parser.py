@@ -248,8 +248,9 @@ class MarkdownParser:
         if line_start < alt_line_start:
             line_start = alt_line_start
 
-        if text[line_start:].startswith("<") and \
-                not (text[line_start:].startswith("<em") or text[line_start:].startswith("<strong") or text[line_start:].startswith("<span")):
+        if text[line_start:].strip().startswith("<") and \
+                not (text[line_start:].startswith("<em") or text[line_start:].startswith("<strong") or \
+                     text[line_start:].startswith("<span")):
             parsing_info.move_index()
             return text, parsing_info
 

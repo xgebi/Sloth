@@ -21,8 +21,9 @@ X after a bigger batch of changes
 - user management
 
 ### 2.0.0 requirements
-- Toe compiler (Python)
+- Toe compiler (Python) 🛠
 - Markdown compiler (Python) ✅
+  - currently v2 (working name of Markdown dialect SlothMark)
 - IndieWeb
 
 ### 3.0.0

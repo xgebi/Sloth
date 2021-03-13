@@ -1,5 +1,14 @@
 üöäéžěář
 
+<table>
+  <thead>
+    <tr><th>a</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>b</td></tr>
+  </tbody>
+</table>
+
 Erstmals ist mein Ziel die Untersuchung der Daten. Ich will Minimum, Maximum, Durchschnitt, Zentralwert und Differenz erkennen. Die tiefere Analyse kommt später, wenn ich meine Fähigkeiten verbessern werde.
 
 Python muss als erst `pandas` importieren. Andererseits R ist fast bereit. In beiden Sprachen ist der Datenimport ähnlich:
