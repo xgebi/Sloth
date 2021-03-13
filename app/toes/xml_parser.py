@@ -52,12 +52,27 @@ class XMLParser:
         parsing_info = XmlParsingInfo()
         while parsing_info.i < len(result):
             if result[parsing_info.i] == "<":
-                pass
+                result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == ">":
-                pass
+                result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == "=":
-                pass
+                result, parsing_info = self.parse_attribute_dividing_character_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == "\"" or result[parsing_info.i] == "'":
-                pass
+                result, parsing_info = self.parse_quote_character(text=result, parsing_info=parsing_info)
             else:
-                parsing_info.move_index()
+                result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
+
+    def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        return text, parsing_info
+
+    def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        return text, parsing_info
+
+    def parse_attribute_dividing_character_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        return text, parsing_info
+
+    def parse_quote_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        return text, parsing_info
+
+    def parse_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        return text, parsing_info
