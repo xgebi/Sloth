@@ -34,8 +34,8 @@ class Node:
         if self.paired_tag:
             self.children.append(child)
 
-    def replace_child(self, replaced, replacee):
-        self.children = [replacee if item == replaced else item for item in self.children]
+    def replace_child(self, replacee, replacer):
+        self.children = [replacer if item == replacee else item for item in self.children]
 
     def remove_child(self, child):
         if self.paired_tag and child in self.children:
