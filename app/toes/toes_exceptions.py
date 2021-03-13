@@ -1,0 +1,2 @@
+class XMLParsingException(Exception):
+    pass
