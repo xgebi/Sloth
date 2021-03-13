@@ -1,5 +1,6 @@
 import enum
 from app.toes.node import Node
+from app.toes.root_node import RootNode
 from app.toes.tree import Tree
 
 
@@ -41,6 +42,7 @@ class XMLParser:
         self.tree = Tree()
         with open(path, mode="r", encoding="utf-8") as text_file:
             self.text = text_file.read()
+        self.root_node = RootNode()
 
     def parse_file(self):
         if self.text is None:
