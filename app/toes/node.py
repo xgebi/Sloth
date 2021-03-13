@@ -6,7 +6,7 @@ class Node:
     def __init__(
             self,
             *args,
-            name: str,
+            name: str = "",
             attributes: Dict = {},
             children: List = [],
             paired_tag: bool = True,

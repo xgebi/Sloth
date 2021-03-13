@@ -1,6 +1,5 @@
 import enum
 from app.toes.node import Node
-from app.toes.root_node import RootNode
 from app.toes.tree import Tree
 
 
@@ -29,6 +28,7 @@ class XmlParsingInfo:
     def __init__(self):
         self.i = 0
         self.state = STATES.new_page
+        self.current_node: Node = None
 
     def move_index(self, step: int = 1):
         self.i += step
@@ -41,7 +41,6 @@ class XMLParser:
         self.tree = Tree()
         with open(path, mode="r", encoding="utf-8") as text_file:
             self.text = text_file.read()
-        self.root_node = RootNode()
 
     def parse_file(self):
         if self.text is None:
@@ -72,8 +71,12 @@ class XMLParser:
                 parsing_info.move_index(2)
             else:
                 parsing_info.state = STATES.read_node_name
-                self.root_node.children.append(Node())
+                parsing_info.current_node = Node()
+                self.tree.children.append(parsing_info.current_node)
+                self.tree.type = 'xml'
                 parsing_info.move_index()
+        else:
+            parsing_info.move_index()
 
         return text, parsing_info
 
@@ -87,4 +90,15 @@ class XMLParser:
         return text, parsing_info
 
     def parse_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        if parsing_info.state == STATES.read_node_name:
+            name = text[parsing_info.i: text[parsing_info.i].find(" ")]
+            name_alt_end = text[parsing_info.i: text[parsing_info.i].find(">")]
+            name_alt_line = text[parsing_info.i: text[parsing_info.i].find("\n")]
+            parsing_info.current_node.name = ""
+            parsing_info.move_index(len(parsing_info.current_node.name))
+            parsing_info.state = STATES.looking_for_attribute
+        elif parsing_info.state == STATES.initial_node_read_node_name:
+            pass
+        else:
+            parsing_info.move_index()
         return text, parsing_info
