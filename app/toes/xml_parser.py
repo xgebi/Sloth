@@ -13,7 +13,6 @@ class STATES(enum.Enum):
     initial_node_attribute_equals = 5
     initial_node_attribute_start = 6
     initial_node_reading_attribute_value = 7
-    new_node = 7
     read_node_name = 8
     looking_for_attribute = 9
     attribute_name = 10
@@ -31,8 +30,8 @@ class XmlParsingInfo:
         self.i = 0
         self.state = STATES.new_page
 
-        def move_index(self, step: int = 1):
-            self.i += step
+    def move_index(self, step: int = 1):
+        self.i += step
 
 
 class XMLParser:
@@ -65,6 +64,17 @@ class XMLParser:
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
 
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        if text[parsing_info.i + 1] == " ":
+            parsing_info.move_index()
+        elif parsing_info.state == STATES.new_page:
+            if text[parsing_info.i + 1] == "?":
+                parsing_info.state = STATES.initial_node_read_node_name
+                parsing_info.move_index(2)
+            else:
+                parsing_info.state = STATES.read_node_name
+                self.root_node.children.append(Node())
+                parsing_info.move_index()
+
         return text, parsing_info
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):

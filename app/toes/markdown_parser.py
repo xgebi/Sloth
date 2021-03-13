@@ -10,11 +10,11 @@ class ListInfo:
         self.type = type
         self.parent = parent
 
+
 class Footnote:
-    def __init__(self, index, footnote):
+    def __init__(self, index: str or int, footnote: str):
         self.index = index
         self.footnote = footnote
-    # f"<li id='footnote-{index}'>{footnote_content}<a href='#footnote-link-{index}'>🔼{index}</a></li>"
 
 
 class ParsingInfo:

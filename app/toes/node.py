@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Type, Optional
 
 
 class Node:
@@ -10,6 +10,7 @@ class Node:
             attributes: Dict = {},
             children: List = [],
             paired_tag: bool = True,
+            parent: 'Node' = None,
             **kwargs
     ) -> None:
 
@@ -23,6 +24,8 @@ class Node:
         if paired_tag:
             self.children = children
         self.paired_tag = paired_tag
+        if parent:
+            self.parent = parent
 
     def set_attribute(self, name: str, value: str = ""):
         self.attributes[name] = value

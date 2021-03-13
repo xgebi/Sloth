@@ -10,3 +10,5 @@ class RootNode(Node):
                          children=[],
                          paired_tag=False)
         self.special_tag = True
+        self.parent = None
+        self.children = []
