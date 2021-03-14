@@ -1,6 +1,9 @@
 from psycopg2 import sql
 from typing import Tuple, List, Dict, Any
 import datetime
+import sys
+
+from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
 def get_languages(*args, connection, lang_id: str = "", **kwargs) \
@@ -114,3 +117,19 @@ def parse_raw_post(raw_post) -> Dict[str, str] or Any:
         result["format_name"] = raw_post[21] if raw_post[21] is not None else None
 
     return result
+
+
+def positive_min(*args, floats: bool = False):
+    if floats:
+        args = [float(arg) for arg in args if arg >= 0]
+    else:
+        args = [int(arg) for arg in args if arg >= 0]
+    positive_minimum = sys.maxsize
+    pm_change = False
+    for arg in args:
+        if arg < positive_minimum:
+            pm_change = True
+            positive_minimum = arg
+    if not pm_change:
+        raise NoPositiveMinimumException()
+    return positive_minimum

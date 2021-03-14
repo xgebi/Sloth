@@ -1,0 +1,2 @@
+class NoPositiveMinimumException(Exception):
+    pass

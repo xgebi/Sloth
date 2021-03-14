@@ -3,6 +3,8 @@ from app.toes.node import Node
 from app.toes.tree import Tree
 from app.toes.toes_exceptions import XMLParsingException
 
+from app.utilities import positive_min
+
 
 class STATES(enum.Enum):
     new_page = 0
@@ -82,6 +84,10 @@ class XMLParser:
         return text, parsing_info
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
+        if parsing_info.state == STATES.looking_for_attribute:
+            pass
+        else:
+            parsing_info.move_index()
         return text, parsing_info
 
     def parse_attribute_dividing_character_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
@@ -92,7 +98,7 @@ class XMLParser:
 
     def parse_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.read_node_name:
-            name_end = min(
+            name_end = positive_min(
                 text[parsing_info.i:].find(" "),
                 text[parsing_info.i:].find(">"),
                 text[parsing_info.i:].find("\n")
@@ -101,7 +107,7 @@ class XMLParser:
             parsing_info.move_index(name_end)
             parsing_info.state = STATES.looking_for_attribute if text[parsing_info.i: text[parsing_info.i].find(">")] != name_end else STATES.closing_node
         elif parsing_info.state == STATES.initial_node_read_node_name:
-            name_end = min(
+            name_end = positive_min(
                 text[parsing_info.i:].find(" "),
                 text[parsing_info.i:].find(">"),
                 text[parsing_info.i:].find("\n")
@@ -109,26 +115,27 @@ class XMLParser:
             self.tree.type = text[parsing_info.i: name_end]
             parsing_info.state = STATES.initial_node_looking_for_attribute
             parsing_info.move_index(name_end)
-        elif parsing_info.state == STATES.looking_for_attribute:
+        elif parsing_info.state == STATES.looking_for_attribute or parsing_info.state == STATES.initial_node_looking_for_attribute:
             if text[parsing_info.i].isalnum():
                 attr_divider = text[parsing_info.i:].find("=")
                 tag_end = text[parsing_info.i:].find(">")
                 if tag_end == -1:
                     raise XMLParsingException("Not properly closed tag")
-                if tag_end > attr_divider >= 0:
-                    name = text[parsing_info.i: parsing_info.i + attr_divider]
-                    attribute_value = ""
-                else:
-                    name = text[parsing_info.i: parsing_info.i + min(
+                if attr_divider > tag_end >= 0:
+                    name = text[parsing_info.i: parsing_info.i + positive_min(
                         text[parsing_info.i:].find(">"),
                         text[parsing_info.i:].find(" "),
                         text[parsing_info.i:].find("/>"),
                     )]
+                    attribute_value = ""
+                else:
+                    name = text[parsing_info.i: parsing_info.i + text[parsing_info.i:].find("=")]
                     attribute_value = self.get_attribute_value(text=text, parsing_info=parsing_info)
                     parsing_info.move_index(len(f"{name}='{attribute_value}'"))
-                parsing_info.current_node.attributes[name] = attribute_value
-        elif parsing_info.state == STATES.initial_node_looking_for_attribute:
-            pass
+                if parsing_info.state == STATES.looking_for_attribute:
+                    parsing_info.current_node.attributes[name] = attribute_value
+                else:
+                    self.tree.attributes[name] = attribute_value
         else:
             parsing_info.move_index()
         return text, parsing_info
@@ -138,5 +145,6 @@ class XMLParser:
         j = attribute_value_start + 1
         while j < len(text):
             if text[j] == "\"" and text[j-1] != "\\":
-                return text[attribute_value_start + 2: j + parsing_info.i]
+                return text[attribute_value_start + 1: j]
+            j += 1
         raise XMLParsingException("Attribute not ended")
