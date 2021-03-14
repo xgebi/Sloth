@@ -124,7 +124,8 @@ class XMLParser:
                         text[parsing_info.i:].find(" "),
                         text[parsing_info.i:].find("/>"),
                     )]
-                    attribute_value = ""
+                    attribute_value = self.get_attribute_value(text=text, parsing_info=parsing_info)
+                    parsing_info.move_index(len(f"{name}='{attribute_value}'"))
                 parsing_info.current_node.attributes[name] = attribute_value
         elif parsing_info.state == STATES.initial_node_looking_for_attribute:
             pass
@@ -132,5 +133,10 @@ class XMLParser:
             parsing_info.move_index()
         return text, parsing_info
 
-    def get_attribute_value(self, text: str, parsing_info: XmlParsingInfo) -> str:
+    def get_attribute_value(self, text: str, parsing_info: XmlParsingInfo) -> (str):
         attribute_value_start = text[parsing_info.i:].find("=") + 1 + parsing_info.i
+        j = attribute_value_start + 1
+        while j < len(text):
+            if text[j] == "\"" and text[j-1] != "\\":
+                return text[attribute_value_start + 2: j + parsing_info.i]
+        raise XMLParsingException("Attribute not ended")
