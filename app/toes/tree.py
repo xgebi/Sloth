@@ -8,4 +8,5 @@ class Tree:
     def __init__(self):
         self.type = ""
         self.attributes = {}
+        self.directives = []
         self.children = []

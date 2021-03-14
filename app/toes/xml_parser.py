@@ -77,6 +77,8 @@ class XMLParser:
                 self.tree.children.append(parsing_info.current_node)
                 self.tree.type = 'xml'
                 parsing_info.move_index()
+        elif parsing_info.state == STATES.looking_for_child_nodes:
+            pass
         else:
             parsing_info.move_index()
 
