@@ -25,6 +25,7 @@ class STATES(enum.Enum):
     inside_node = 15
     closing_node = 16
     closed_node = 17
+    looking_for_child_nodes = 18
 
 
 class XmlParsingInfo:
@@ -58,12 +59,10 @@ class XMLParser:
                 result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == ">":
                 result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
-            elif result[parsing_info.i] == "=":
-                result, parsing_info = self.parse_attribute_dividing_character_character(text=result, parsing_info=parsing_info)
-            elif result[parsing_info.i] == "\"" or result[parsing_info.i] == "'":
-                result, parsing_info = self.parse_quote_character(text=result, parsing_info=parsing_info)
-            else:
+            elif result[parsing_info.i].isalnum():
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
+            else:
+                parsing_info.move_index()
 
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if text[parsing_info.i + 1] == " ":
@@ -85,15 +84,12 @@ class XMLParser:
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.looking_for_attribute:
-            pass
+            if text[parsing_info.i - 1] == "/":
+                parsing_info.current_node = parsing_info.current_node.parent
+            parsing_info.state = STATES.looking_for_child_nodes
+            parsing_info.move_index()
         else:
             parsing_info.move_index()
-        return text, parsing_info
-
-    def parse_attribute_dividing_character_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
-        return text, parsing_info
-
-    def parse_quote_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         return text, parsing_info
 
     def parse_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
@@ -104,7 +100,7 @@ class XMLParser:
                 text[parsing_info.i:].find("\n")
             ) + parsing_info.i
             parsing_info.current_node.name = text[parsing_info.i: name_end]
-            parsing_info.move_index(name_end)
+            parsing_info.move_index(len(text[parsing_info.i: name_end]))
             parsing_info.state = STATES.looking_for_attribute if text[parsing_info.i: text[parsing_info.i].find(">")] != name_end else STATES.closing_node
         elif parsing_info.state == STATES.initial_node_read_node_name:
             name_end = positive_min(
@@ -114,7 +110,7 @@ class XMLParser:
             ) + parsing_info.i
             self.tree.type = text[parsing_info.i: name_end]
             parsing_info.state = STATES.initial_node_looking_for_attribute
-            parsing_info.move_index(name_end)
+            parsing_info.move_index(len(text[parsing_info.i: name_end]))
         elif parsing_info.state == STATES.looking_for_attribute or parsing_info.state == STATES.initial_node_looking_for_attribute:
             if text[parsing_info.i].isalnum():
                 attr_divider = text[parsing_info.i:].find("=")
