@@ -26,6 +26,7 @@ class STATES(enum.Enum):
     closing_node = 16
     closed_node = 17
     looking_for_child_nodes = 18
+    directive_read_name = 19
 
 
 class XmlParsingInfo:
@@ -59,6 +60,9 @@ class XMLParser:
                 result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == ">":
                 result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
+            elif result[parsing_info.i - 1] == "<" and result[parsing_info.i] == "!" and result[parsing_info.i+1].isalnum():
+                parsing_info.state = STATES.directive_read_name
+                result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i].isalnum():
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
             else:
@@ -78,6 +82,8 @@ class XMLParser:
                 self.tree.type = 'xml'
                 parsing_info.move_index()
         elif parsing_info.state == STATES.looking_for_child_nodes:
+            pass
+        elif parsing_info.state == STATES.directive_read_name:
             pass
         else:
             parsing_info.move_index()

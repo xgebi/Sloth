@@ -7,6 +7,9 @@ class Tree:
 
     def __init__(self):
         self.type = ""
-        self.attributes = {}
-        self.directives = []
-        self.children = []
+        self.attributes = {
+            "encoding": "utf-8",
+            "xml_version": "1.0"
+        }
+        self.directives: List[Node] = []
+        self.children: List[Node] = []
