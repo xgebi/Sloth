@@ -72,16 +72,19 @@ class XMLParser:
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if text[parsing_info.i + 1] == " ":
             parsing_info.move_index()
-        elif parsing_info.state == STATES.new_page: # reorganize this!!!
+        elif parsing_info.state == STATES.new_page:
             if text[parsing_info.i:].match("<?xml"):
-                parsing_info.state = STATES.initial_node_read_node_name
-                parsing_info.move_index(2)
-            elif text[parsing_info.i:].match("<?"):
-                parsing_info.state = STATES.read_node_name
-                parsing_info.move_index(2)
-                parsing_info.current_node = Node()
+                parsing_info.current_node = Node(name="xml")
                 self.tree.processing_information.append(parsing_info.current_node)
-            elif text[parsing_info.i:].match("<![CDATA["):
+                parsing_info.move_index(len("<?xml"))
+                parsing_info.state = STATES.looking_for_child_nodes
+            else:
+                self.tree.processing_information.append(Node(name="xml", attributes={"version": "1.0"}))
+                parsing_info.current_node = Node()
+                parsing_info.state = STATES.read_node_name
+                parsing_info.move_index()
+        elif parsing_info.state == STATES.looking_for_child_nodes:
+            if text[parsing_info.i:].match("<![CDATA["):
                 text[parsing_info.i:].find("]]>")
                 parsing_info.move_index(len("<![CDATA["))
                 parsing_info.current_node.children.append(
@@ -92,21 +95,18 @@ class XMLParser:
                     )
                 )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
+            elif text[parsing_info.i:].match("<?"):
+                parsing_info.state = STATES.read_node_name
+                parsing_info.move_index(2)
+                parsing_info.current_node = Node()
+                self.tree.processing_information.append(parsing_info.current_node)
             elif text[parsing_info.i:].match("<!"):
                 parsing_info.state = STATES.read_node_name
                 parsing_info.move_index(2)
                 parsing_info.current_node = Node()
                 self.tree.directives.append(parsing_info.current_node)
             else:
-                parsing_info.state = STATES.read_node_name
-                parsing_info.current_node = Node()
-                self.tree.children.append(parsing_info.current_node)
-                self.tree.type = 'xml'
-                parsing_info.move_index()
-        elif parsing_info.state == STATES.looking_for_child_nodes:
-            pass
-        elif parsing_info.state == STATES.directive_read_name:
-            pass
+                pass
         else:
             parsing_info.move_index()
 
