@@ -27,6 +27,7 @@ class STATES(enum.Enum):
     closing_node = 16
     closed_node = 17
     looking_for_child_nodes = 18
+    looking_for_sibling_nodes = 19
     directive_read_node_name = 21
     directive_look_for_attribute = 22
     processing_instruction_read_node_name = 23
@@ -83,17 +84,28 @@ class XMLParser:
                 parsing_info.current_node = Node()
                 parsing_info.state = STATES.read_node_name
                 parsing_info.move_index()
-        elif parsing_info.state == STATES.looking_for_child_nodes:
+        elif parsing_info.state in [
+            STATES.looking_for_child_nodes,
+            STATES.looking_for_sibling_nodes
+        ]:
             if text[parsing_info.i:].match("<![CDATA["):
-                text[parsing_info.i:].find("]]>")
                 parsing_info.move_index(len("<![CDATA["))
-                parsing_info.current_node.children.append(
-                    TextNode(
-                        parent=parsing_info.current_node,
-                        cdata=True,
-                        text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
+                if parsing_info.current_node:
+                    parsing_info.current_node.children.append(
+                        TextNode(
+                            parent=parsing_info.current_node,
+                            cdata=True,
+                            text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
+                        )
                     )
-                )
+                else:
+                    parsing_info.current_node.children.append(
+                        TextNode(
+                            parent=None,
+                            cdata=True,
+                            text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
+                        )
+                    )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
             elif text[parsing_info.i:].match("<?"):
                 parsing_info.state = STATES.read_node_name
@@ -106,7 +118,12 @@ class XMLParser:
                 parsing_info.current_node = Node()
                 self.tree.directives.append(parsing_info.current_node)
             else:
-                pass
+                parsing_info.state = STATES.read_node_name
+                if parsing_info.current_node:
+                    parsing_info.current_node.children.append(Node())
+                else:
+                    self.tree.children.append(Node())
+                parsing_info.move_index()
         else:
             parsing_info.move_index()
 
