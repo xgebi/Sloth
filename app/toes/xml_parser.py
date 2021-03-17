@@ -27,6 +27,11 @@ class STATES(enum.Enum):
     closed_node = 17
     looking_for_child_nodes = 18
     directive_read_name = 19
+    process_cdata = 20
+    directive_read_node_name = 21
+    directive_look_for_attribute = 22
+    processing_instruction_read_node_name = 23
+    processing_instruction_look_for_attribute = 24
 
 
 class XmlParsingInfo:
@@ -60,9 +65,6 @@ class XMLParser:
                 result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == ">":
                 result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
-            elif result[parsing_info.i - 1] == "<" and result[parsing_info.i] == "!" and result[parsing_info.i+1].isalnum():
-                parsing_info.state = STATES.directive_read_name
-                result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i].isalnum():
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
             else:
@@ -72,9 +74,15 @@ class XMLParser:
         if text[parsing_info.i + 1] == " ":
             parsing_info.move_index()
         elif parsing_info.state == STATES.new_page:
-            if text[parsing_info.i + 1] == "?":
+            if text[parsing_info.i:].match("<?xml"):
                 parsing_info.state = STATES.initial_node_read_node_name
                 parsing_info.move_index(2)
+            elif text[parsing_info.i:].match("<?"):
+                pass
+            elif text[parsing_info.i:].match("<![CDATA["):
+                pass
+            elif text[parsing_info.i:].match("<!"):
+                pass
             else:
                 parsing_info.state = STATES.read_node_name
                 parsing_info.current_node = Node()
