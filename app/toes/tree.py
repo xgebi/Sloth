@@ -12,4 +12,5 @@ class Tree:
             "xml_version": "1.0"
         }
         self.directives: List[Node] = []
+        self.processing_information: List[Node] = []
         self.children: List[Node] = []

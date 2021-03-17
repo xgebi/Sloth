@@ -1,5 +1,6 @@
 import enum
 from app.toes.node import Node
+from app.toes.text_node import TextNode
 from app.toes.tree import Tree
 from app.toes.toes_exceptions import XMLParsingException
 
@@ -26,8 +27,6 @@ class STATES(enum.Enum):
     closing_node = 16
     closed_node = 17
     looking_for_child_nodes = 18
-    directive_read_name = 19
-    process_cdata = 20
     directive_read_node_name = 21
     directive_look_for_attribute = 22
     processing_instruction_read_node_name = 23
@@ -73,16 +72,31 @@ class XMLParser:
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if text[parsing_info.i + 1] == " ":
             parsing_info.move_index()
-        elif parsing_info.state == STATES.new_page:
+        elif parsing_info.state == STATES.new_page: # reorganize this!!!
             if text[parsing_info.i:].match("<?xml"):
                 parsing_info.state = STATES.initial_node_read_node_name
                 parsing_info.move_index(2)
             elif text[parsing_info.i:].match("<?"):
-                pass
+                parsing_info.state = STATES.read_node_name
+                parsing_info.move_index(2)
+                parsing_info.current_node = Node()
+                self.tree.processing_information.append(parsing_info.current_node)
             elif text[parsing_info.i:].match("<![CDATA["):
-                pass
+                text[parsing_info.i:].find("]]>")
+                parsing_info.move_index(len("<![CDATA["))
+                parsing_info.current_node.children.append(
+                    TextNode(
+                        parent=parsing_info.current_node,
+                        cdata=True,
+                        text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
+                    )
+                )
+                parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
             elif text[parsing_info.i:].match("<!"):
-                pass
+                parsing_info.state = STATES.read_node_name
+                parsing_info.move_index(2)
+                parsing_info.current_node = Node()
+                self.tree.directives.append(parsing_info.current_node)
             else:
                 parsing_info.state = STATES.read_node_name
                 parsing_info.current_node = Node()
@@ -127,7 +141,10 @@ class XMLParser:
             self.tree.type = text[parsing_info.i: name_end]
             parsing_info.state = STATES.initial_node_looking_for_attribute
             parsing_info.move_index(len(text[parsing_info.i: name_end]))
-        elif parsing_info.state == STATES.looking_for_attribute or parsing_info.state == STATES.initial_node_looking_for_attribute:
+        elif parsing_info.state in [
+            STATES.looking_for_attribute,
+            STATES.initial_node_looking_for_attribute
+        ]:
             if text[parsing_info.i].isalnum():
                 attr_divider = text[parsing_info.i:].find("=")
                 tag_end = text[parsing_info.i:].find(">")
