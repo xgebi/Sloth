@@ -11,7 +11,6 @@ from app.utilities import positive_min
 
 class STATES(enum.Enum):
     new_page = 0
-    initial_node = 1
     initial_node_read_node_name = 2
     initial_node_looking_for_attribute = 3
     initial_node_attribute_name = 4
@@ -79,49 +78,24 @@ class XMLParser:
                 parsing_info.move_index(len("<?xml"))
                 parsing_info.state = STATES.looking_for_attribute
             else:
-                self.root_node.processing_information.append(Node(name="xml", attributes={"version": "1.0"}))
-                parsing_info = self.create_new_node(text, parsing_info)
+                parsing_info.current_node = self.root_node
+                parsing_info.current_node = self.create_new_node(text, parsing_info)
                 parsing_info.state = STATES.read_node_name
-        elif parsing_info.state in [
-            STATES.looking_for_child_nodes,
-            STATES.looking_for_sibling_nodes
-        ]:
+        elif parsing_info.state == STATES.looking_for_child_nodes:
             if text[parsing_info.i:].find("<![CDATA[") == 0:
                 parsing_info.move_index(len("<![CDATA["))
-                if parsing_info.current_node:
-                    parsing_info.current_node.children.append(
-                        TextNode(
-                            parent=parsing_info.current_node,
-                            cdata=True,
-                            text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
-                        )
+                parsing_info.current_node.children.append(
+                    TextNode(
+                        parent=parsing_info.current_node,
+                        cdata=True,
+                        text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
                     )
-                else:
-                    parsing_info.current_node.children.append(
-                        TextNode(
-                            parent=None,
-                            cdata=True,
-                            text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
-                        )
-                    )
+                )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
-            elif text[parsing_info.i:].find("<?") == 0:
-                parsing_info.state = STATES.read_node_name
-                parsing_info.move_index(2)
-                parsing_info.current_node = Node()
-                self.root_node.processing_information.append(parsing_info.current_node)
-            elif text[parsing_info.i:].find("<!") == 0:
-                parsing_info.state = STATES.read_node_name
-                parsing_info.move_index(2)
-                parsing_info.current_node = Node()
-                self.root_node.directives.append(parsing_info.current_node)
             else:
                 parsing_info.state = STATES.read_node_name
-                if parsing_info.current_node:
-                    parsing_info.current_node.children.append(Node())
-                else:
-                    self.root_node.children.append(Node())
-                parsing_info.move_index()
+                parsing_info = self.create_new_node(text=text, parsing_info=parsing_info)
+
         else:
             parsing_info.move_index()
 
