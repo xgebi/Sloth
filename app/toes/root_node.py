@@ -3,7 +3,7 @@ from typing import List, Dict
 from app.toes.node import Node
 
 
-class Tree:
+class RootNode:
 
     def __init__(self):
         self.type = ""
@@ -11,6 +11,4 @@ class Tree:
             "encoding": "utf-8",
             "xml_version": "1.0"
         }
-        self.directives: List[Node] = []
-        self.processing_information: List[Node] = []
         self.children: List[Node] = []

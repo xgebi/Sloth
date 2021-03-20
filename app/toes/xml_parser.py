@@ -1,7 +1,7 @@
 import enum
 from app.toes.node import Node
 from app.toes.text_node import TextNode
-from app.toes.tree import Tree
+from app.toes.root_node import RootNode
 from app.toes.toes_exceptions import XMLParsingException
 
 from app.utilities import positive_min
@@ -45,10 +45,10 @@ class XmlParsingInfo:
 
 
 class XMLParser:
-    tree: Tree
+    tree: RootNode
 
     def __init__(self, *args, path, **kwargs):
-        self.tree = Tree()
+        self.tree = RootNode()
         with open(path, mode="r", encoding="utf-8") as text_file:
             self.text = text_file.read()
 
@@ -74,11 +74,11 @@ class XMLParser:
         if text[parsing_info.i + 1] == " ":
             parsing_info.move_index()
         elif parsing_info.state == STATES.new_page:
-            if text[parsing_info.i:].match("<?xml"):
+            if text[parsing_info.i:].find("<?xml") == 0:
                 parsing_info.current_node = Node(name="xml")
                 self.tree.processing_information.append(parsing_info.current_node)
                 parsing_info.move_index(len("<?xml"))
-                parsing_info.state = STATES.looking_for_child_nodes
+                parsing_info.state = STATES.initial_node_looking_for_attribute
             else:
                 self.tree.processing_information.append(Node(name="xml", attributes={"version": "1.0"}))
                 parsing_info.current_node = Node()
@@ -88,7 +88,7 @@ class XMLParser:
             STATES.looking_for_child_nodes,
             STATES.looking_for_sibling_nodes
         ]:
-            if text[parsing_info.i:].match("<![CDATA["):
+            if text[parsing_info.i:].find("<![CDATA[") == 0:
                 parsing_info.move_index(len("<![CDATA["))
                 if parsing_info.current_node:
                     parsing_info.current_node.children.append(
@@ -107,12 +107,12 @@ class XMLParser:
                         )
                     )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
-            elif text[parsing_info.i:].match("<?"):
+            elif text[parsing_info.i:].find("<?") == 0:
                 parsing_info.state = STATES.read_node_name
                 parsing_info.move_index(2)
                 parsing_info.current_node = Node()
                 self.tree.processing_information.append(parsing_info.current_node)
-            elif text[parsing_info.i:].match("<!"):
+            elif text[parsing_info.i:].find("<!") == 0:
                 parsing_info.state = STATES.read_node_name
                 parsing_info.move_index(2)
                 parsing_info.current_node = Node()
