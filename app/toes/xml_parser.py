@@ -67,10 +67,8 @@ class XMLParser:
                 result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == ">":
                 result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
-            elif result[parsing_info.i].isalnum():
-                result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
             else:
-                parsing_info.move_index()
+                result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
 
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if text[parsing_info.i + 1] == " ":
@@ -136,13 +134,15 @@ class XMLParser:
             return parsing_info
         elif text[parsing_info.i:].find("<![CDATA["):
             parsing_info.move_index(len("<![CDATA["))
-            parsing_info.current_node.children.append(
-                TextNode(
-                    parent=parsing_info.current_node,
-                    cdata=True,
-                    text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
-                )
+            text_node = TextNode(
+                parent=parsing_info.current_node,
+                cdata=True,
+                text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
             )
+            parsing_info.current_node.children.append(
+                text_node
+            )
+            parsing_info.move_index(len(text_node.text) + len("]]>"))
             return parsing_info
         elif text[parsing_info.i + 1] == "!":
             parsing_info.move_index(2)
