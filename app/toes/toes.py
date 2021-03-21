@@ -45,15 +45,16 @@ class Toe:
                 lang = self.current_scope.find_variable('lang')
                 node.setAttribute('lang', lang if lang is not None else 'en')
 
-        xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toe_fragment_xml_undeclared.toe.html"))
+        xp = XMLParser(path=(os.path.join(path_to_templates, template)))
         self.tree = xp.parse_file()
 
     def process_tree(self):
         # There can only be one root element
-        if len(self.tree.childNodes) != 1:
+        if len(self.tree.children) != 1:
             return None
 
-        for node in self.tree.childNodes[0].childNodes:
+        for node in self.tree.children[0].children:
+            # TODO continue here
             res = self.process_subtree(self.new_tree.childNodes[1], node)
 
             if res is not None:
