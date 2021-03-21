@@ -1,14 +1,16 @@
 from typing import List, Dict
 
-from app.toes.node import Node
+from app.toes.processing_node import ProcessingNode
 
 
-class RootNode:
+class RootNode(ProcessingNode):
 
     def __init__(self):
-        self.type = ""
-        self.attributes = {
-            "encoding": "utf-8",
-            "xml_version": "1.0"
-        }
-        self.children: List[Node] = []
+        super(RootNode, self).__init__(
+            name="xml",
+            parent=None,
+            attributes={
+                "encoding": "utf-8",
+                "xml_version": "1.0"
+            }
+        )

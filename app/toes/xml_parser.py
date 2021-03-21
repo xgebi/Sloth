@@ -11,28 +11,9 @@ from app.utilities import positive_min
 
 class STATES(enum.Enum):
     new_page = 0
-    initial_node_read_node_name = 2
-    initial_node_looking_for_attribute = 3
-    initial_node_attribute_name = 4
-    initial_node_attribute_equals = 5
-    initial_node_attribute_start = 6
-    initial_node_reading_attribute_value = 7
     read_node_name = 8
     looking_for_attribute = 9
-    attribute_name = 10
-    attribute_value_check = 11
-    reading_attribute_value = 12
-    self_closing = 13
-    self_closed = 14
-    inside_node = 15
-    closing_node = 16
-    closed_node = 17
     looking_for_child_nodes = 18
-    looking_for_sibling_nodes = 19
-    directive_read_node_name = 21
-    directive_look_for_attribute = 22
-    processing_instruction_read_node_name = 23
-    processing_instruction_look_for_attribute = 24
 
 
 class XmlParsingInfo:
@@ -91,6 +72,13 @@ class XMLParser:
                     )
                 )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
+            elif text[parsing_info.i + 1] == "/":
+                name = text[parsing_info.i + 2: parsing_info.i + 2 + text[parsing_info.i + 2:].find(">")]
+                if parsing_info.current_node.name == name:
+                    parsing_info.current_node = parsing_info.current_node.parent
+                    parsing_info.move_index(len(f"</{name}>"))
+                else:
+                    raise XMLParsingException()
             else:
                 parsing_info.state = STATES.read_node_name
                 parsing_info = self.create_new_node(text=text, parsing_info=parsing_info)
@@ -135,7 +123,9 @@ class XMLParser:
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.looking_for_attribute:
             if text[parsing_info.i - 1] == "/":
+                parsing_info.current_node.paired_tag = False
                 parsing_info.current_node = parsing_info.current_node.parent
+
             parsing_info.state = STATES.looking_for_child_nodes
             parsing_info.move_index()
         else:
@@ -151,20 +141,8 @@ class XMLParser:
             ) + parsing_info.i
             parsing_info.current_node.name = text[parsing_info.i: name_end]
             parsing_info.move_index(len(text[parsing_info.i: name_end]))
-            parsing_info.state = STATES.looking_for_attribute if text[parsing_info.i: text[parsing_info.i].find(">")] != name_end else STATES.closing_node
-        elif parsing_info.state == STATES.initial_node_read_node_name:
-            name_end = positive_min(
-                text[parsing_info.i:].find(" "),
-                text[parsing_info.i:].find(">"),
-                text[parsing_info.i:].find("\n")
-            ) + parsing_info.i
-            self.root_node.type = text[parsing_info.i: name_end]
-            parsing_info.state = STATES.initial_node_looking_for_attribute
-            parsing_info.move_index(len(text[parsing_info.i: name_end]))
-        elif parsing_info.state in [
-            STATES.looking_for_attribute,
-            STATES.initial_node_looking_for_attribute
-        ]:
+            parsing_info.state = STATES.looking_for_attribute
+        elif parsing_info.state == STATES.looking_for_attribute:
             if text[parsing_info.i].isalnum():
                 attr_divider = text[parsing_info.i:].find("=")
                 tag_end = text[parsing_info.i:].find(">")
@@ -181,10 +159,7 @@ class XMLParser:
                     name = text[parsing_info.i: parsing_info.i + text[parsing_info.i:].find("=")]
                     attribute_value = self.get_attribute_value(text=text, parsing_info=parsing_info)
                     parsing_info.move_index(len(f"{name}='{attribute_value}'"))
-                if parsing_info.state == STATES.looking_for_attribute:
-                    parsing_info.current_node.attributes[name] = attribute_value
-                else:
-                    self.root_node.attributes[name] = attribute_value
+                parsing_info.current_node.attributes[name] = attribute_value
         else:
             parsing_info.move_index()
         return text, parsing_info
