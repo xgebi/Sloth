@@ -21,6 +21,7 @@ class RootNode(ProcessingNode):
             attributes=attributes
         )
         self.html = html
+        self.type = 'root'
 
     def to_xml_string(self):
         pass

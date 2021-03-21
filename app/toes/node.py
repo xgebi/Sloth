@@ -2,6 +2,7 @@ from typing import Dict, List
 
 
 class Node:
+    type: str = 'node'
 
     def __init__(
             self,

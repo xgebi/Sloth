@@ -11,3 +11,4 @@ class ProcessingNode(Node):
             paired_tag=False,
             attributes=attributes
         )
+        self.type = 'processing'
