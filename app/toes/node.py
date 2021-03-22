@@ -2,7 +2,14 @@ from typing import Dict, List
 
 
 class Node:
-    type: str = 'node'
+    NODE = 'node'
+    ROOT = 'root'
+    PROCESSING = 'processing'
+    DIRECTIVE = 'directive'
+    TEXT = 'text'
+    CDATA_TEXT = 'cdata'
+
+    type: str = NODE
 
     def __init__(
             self,

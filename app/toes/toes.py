@@ -1,12 +1,9 @@
 import os
 import re
 import uuid
-import xml
-from xml.dom import minidom
 
 from app.toes.node import Node
 from app.toes.root_node import RootNode
-from app.toes.toes_exceptions import ToeProcessingException
 from app.toes.xml_parser import XMLParser
 
 
@@ -41,7 +38,7 @@ class Toe:
         )
 
         for node in self.new_tree.children:
-            if node.type == 'node':
+            if node.type == Node.NODE:
                 lang = self.current_scope.find_variable('lang')
                 node.setAttribute('lang', lang if lang is not None else 'en')
 
@@ -54,23 +51,13 @@ class Toe:
             return None
 
         for node in self.tree.children[0].children:
-            # TODO continue here
-            res = self.process_subtree(self.new_tree.childNodes[1], node)
+            res = self.process_subtree(self.new_tree.children[0], node)
 
             if res is not None:
                 self.new_tree.childNodes[1].appendChild(res)
         xml_str = self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
         for key in self.later_replacement.keys():
             xml_str = xml_str.replace(key, self.later_replacement[key])
-
-        scripts_in_xml = xml_str.count("<script")
-        loc = 0
-        while xml_str[loc + 1:].count("<script") > 0:
-            loc = xml_str[loc + 1:].find("<script")
-            end_script = xml_str[loc + 1:].find("/>")
-            if xml_str[loc: loc + end_script + 1].find("src") >= 0:
-                xml_str = xml_str[:loc + end_script + 1] + "></script>" + xml_str[loc + end_script + 3:]
-            loc = loc + end_script + 1
 
         return xml_str
 
@@ -119,8 +106,8 @@ class Toe:
 
                 if type(res) is list:
                     for temp_node in res:
-                        if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[
-                            -1].nodeType == Node.TEXT_NODE:
+                        if len(new_tree_node.childNodes) > 0 \
+                                and new_tree_node.childNodes[-1].nodeType == Node.TEXT_NODE:
                             new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
                         new_tree_node.appendChild(temp_node)
                 if res is not None:

@@ -19,3 +19,4 @@ class TextNode(Node):
         self.text = True
         self.cdata = cdata
         self.content = ""
+        self.type = Node.CDATA_TEXT if cdata else Node.TEXT

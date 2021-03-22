@@ -4,7 +4,6 @@ from app.toes.processing_node import ProcessingNode
 
 
 class RootNode(ProcessingNode):
-
     def __init__(self, html: bool = False, doctype: str = ""):
         if html:
             attributes = {
@@ -21,7 +20,7 @@ class RootNode(ProcessingNode):
             attributes=attributes
         )
         self.html = html
-        self.type = 'root'
+        self.type = ProcessingNode.ROOT
 
     def to_xml_string(self):
         pass

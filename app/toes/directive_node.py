@@ -9,4 +9,4 @@ class DirectiveNode(Node):
             children=None,
             attributes=[]
         )
-        self.type = 'directive'
+        self.type = Node.DIRECTIVE
