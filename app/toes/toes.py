@@ -40,7 +40,7 @@ class Toe:
         for node in self.new_tree.children:
             if node.type == Node.NODE:
                 lang = self.current_scope.find_variable('lang')
-                node.setAttribute('lang', lang if lang is not None else 'en')
+                node.set_attribute(name='lang', value=lang if lang is not None else 'en')
 
         xp = XMLParser(path=(os.path.join(path_to_templates, template)))
         self.tree = xp.parse_file()

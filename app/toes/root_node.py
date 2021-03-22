@@ -14,10 +14,10 @@ class RootNode(ProcessingNode):
                 "encoding": "utf-8",
                 "xml_version": "1.0"
             }
-        super(RootNode, self).__init__(
+        super(ProcessingNode, self).__init__(
             name="xml",
             parent=None,
-            attributes=attributes
+            attributes=attributes,
         )
         self.html = html
         self.type = ProcessingNode.ROOT
