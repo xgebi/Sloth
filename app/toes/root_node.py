@@ -3,7 +3,7 @@ from typing import List, Dict
 from app.toes.processing_node import ProcessingNode
 
 
-class RootNode(Node):
+class RootNode(ProcessingNode):
     def __init__(self, html: bool = False, doctype: str = ""):
         if html:
             attributes = {
@@ -21,6 +21,7 @@ class RootNode(Node):
         )
         self.html = html
         self.type = ProcessingNode.ROOT
+        self.children = []
 
     def to_xml_string(self):
         pass

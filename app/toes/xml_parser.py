@@ -120,6 +120,7 @@ class XMLParser:
             n = Node(parent=parsing_info.current_node)
             parsing_info.current_node.children.append(n)
             parsing_info.current_node = n
+            parsing_info.current_node.children = [] # there was some weirdness, TODO investigate later
             return parsing_info
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):

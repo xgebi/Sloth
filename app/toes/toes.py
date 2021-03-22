@@ -69,7 +69,7 @@ class Toe:
 		Returns
 			Document or Node object
 		"""
-        if tree.nodeType == Node.TEXT_NODE:
+        if tree.type == Node.TEXT:
             return self.new_tree.createTextNode(tree.wholeText)
 
         # check for toe tags
@@ -121,10 +121,15 @@ class Toe:
 
         return new_tree_node
 
-    def process_toe_tag(self, parent_element, element):
-        if len(element.getAttribute('toe:if')) > 0:
-            if not self.process_condition(element.getAttribute('toe:if'))["value"]:
+    def process_toe_tag(self, parent_element: Node, element: Node):
+        # TODO toe:fragment condition
+
+        if len(element.get_attribute('toe:if')) > 0:
+            if not self.process_condition(element.get_attribute('toe:if'))["value"]:
                 return None
+
+        if element.name.startswith("toe:fragment"):
+            pass
 
         if element.tagName.find('import') > -1:
             return self.process_toe_import_tag(parent_element, element)

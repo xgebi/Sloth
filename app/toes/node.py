@@ -38,6 +38,9 @@ class Node:
     def set_attribute(self, name: str, value: str = ""):
         self.attributes[name] = value
 
+    def get_attribute(self, name):
+        return self.attributes[name]
+
     def remove_attribute(self, name: str):
         del self.attributes[name]
 
