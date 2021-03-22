@@ -51,6 +51,8 @@ class XMLParser:
             else:
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
 
+        return parsing_info.root_node
+
     def parse_starting_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if text[parsing_info.i + 1] == " ":
             parsing_info.move_index()
@@ -160,6 +162,8 @@ class XMLParser:
                     attribute_value = self.get_attribute_value(text=text, parsing_info=parsing_info)
                     parsing_info.move_index(len(f"{name}='{attribute_value}'"))
                 parsing_info.current_node.attributes[name] = attribute_value
+            else:
+                parsing_info.move_index()
         else:
             parsing_info.move_index()
         return text, parsing_info
