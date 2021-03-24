@@ -26,7 +26,7 @@ class Toe:
 
     def __init__(self, path_to_templates, template, data=None, **kwargs):
         self.path_to_templates = path_to_templates
-        self.variables = Variable_Scope(data, None)
+        self.variables = VariableScope(data, None)
         self.current_scope = self.variables
 
         self.new_tree = RootNode(html=True)
@@ -112,7 +112,7 @@ class Toe:
                             new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
                         new_tree_node.children.append(temp_node)
                 if res is not None:
-                    if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[-1].nodeType == Node.TEXT_NODE:
+                    if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[-1].type == Node.TEXT:
                         new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
                     if type(res) is list:
                         for thing in res:
@@ -156,7 +156,7 @@ class Toe:
             top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
             for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:
                 new_node = self.process_subtree(top_node, child_node)
-                if len(top_node.childNodes) >= 1 and top_node.childNodes[-1].nodeType == Node.TEXT_NODE:
+                if len(top_node.childNodes) >= 1 and top_node.childNodes[-1].type == Node.TEXT:
                     top_node.childNodes[-1].replaceWholeText(top_node.childNodes[-1].wholeText + " ")
                 if new_node is not None:
                     top_node.appendChild(new_node)
@@ -256,7 +256,7 @@ class Toe:
                         new_node.appendChild(self.new_tree.createTextNode(resolved_id))
                     else:
                         new_node.appendChild(self.new_tree.createTextNode(
-                            str(tree.childNodes[0].wholeText) if tree.childNodes[0].nodeType == Node.TEXT_NODE else ""))
+                            str(tree.childNodes[0].wholeText) if tree.childNodes[0].type == Node.TEXT else ""))
             else:
                 var_arr = re.split(r"[ ]?\+[ ]?", value)
                 if var_arr is None:
@@ -379,7 +379,7 @@ class Toe:
 
         for thing in iterable_item:
             # local scope creation
-            local_scope = Variable_Scope({}, self.current_scope)
+            local_scope = VariableScope({}, self.current_scope)
             self.current_scope = local_scope
 
             self.current_scope.variables[items[0]] = thing
@@ -412,7 +412,7 @@ class Toe:
 
         while self.process_condition(iterable_cond):
             # local scope creation
-            local_scope = Variable_Scope({}, self.current_scope)
+            local_scope = VariableScope({}, self.current_scope)
             self.current_scope = local_scope
 
             # process subtree
@@ -442,7 +442,7 @@ class Toe:
                 raise ValueError('Condition not allowed')
             return self.current_scope.find_variable(condition["value"])
 
-        if (condition["value"].count("and") > 0 or condition["value"].count("or") > 0):
+        if condition["value"].count("and") > 0 or condition["value"].count("or") > 0:
             return False
 
         # split condition["value"] by " xxx? "
@@ -486,14 +486,14 @@ class Toe:
     # Adapted from https://stackoverflow.com/a/16919069/6588356
     def remove_blanks(self, node):
         for x in node.childNodes:
-            if x.nodeType == Node.TEXT_NODE:
+            if x.type == Node.TEXT:
                 if x.nodeValue:
                     x.nodeValue = x.nodeValue.strip()
-            elif x.nodeType == Node.ELEMENT_NODE:
+            elif x.type == Node.NODE:
                 self.remove_blanks(x)
 
 
-class Variable_Scope:
+class VariableScope:
     variables = {}
     parent_scope = None
 
