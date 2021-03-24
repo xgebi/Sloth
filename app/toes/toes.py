@@ -61,7 +61,7 @@ class Toe:
 
         return xml_str
 
-    def process_subtree(self, new_tree_parent, tree):
+    def process_subtree(self, new_tree_parent: Node, tree: Node):
         """
 		Params:
 			new_tree_parent: Document or Node object
@@ -73,11 +73,11 @@ class Toe:
             return self.new_tree.createTextNode(tree.wholeText)
 
         # check for toe tags
-        if (tree.tagName.startswith('toe:')):
+        if tree.get_name().startswith('toe:'):
             return self.process_toe_tag(new_tree_parent, tree)
 
         # check for toe attributes
-        attributes = dict(tree.attributes).keys()
+        attributes = tree.attributes.keys()
         for attribute in attributes:
             if attribute == 'toe:if':
                 return self.process_if_attribute(new_tree_parent, tree)
@@ -87,7 +87,7 @@ class Toe:
                 return self.process_while_attribute(new_tree_parent, tree)
 
         # append regular element to parent element
-        new_tree_node = self.new_tree.createElement(tree.tagName)
+        new_tree_node = self.new_tree.children.append(Node(name=tree.get_name()))
         content_set = False
         if tree.attributes is not None or len(tree.attributes) > 0:
             for key in tree.attributes.keys():
@@ -99,17 +99,18 @@ class Toe:
                     content_set = True
                     self.process_toe_content_attribute(tree, new_tree_node)
                 else:
-                    new_tree_node.setAttribute(key, tree.getAttribute(key))
+                    new_tree_node.set_attribute(key, tree.getAttribute(key))
         if not content_set:
-            for node in tree.childNodes:
+            for node in tree.children:
                 res = self.process_subtree(new_tree_node, node)
 
                 if type(res) is list:
                     for temp_node in res:
-                        if len(new_tree_node.childNodes) > 0 \
-                                and new_tree_node.childNodes[-1].nodeType == Node.TEXT_NODE:
+                        if len(new_tree_node.children) > 0 \
+                                and new_tree_node.children[-1].type == Node.TEXT:
+                            # TODO look at replaceWholeText
                             new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
-                        new_tree_node.appendChild(temp_node)
+                        new_tree_node.children.append(temp_node)
                 if res is not None:
                     if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[-1].nodeType == Node.TEXT_NODE:
                         new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
@@ -128,19 +129,19 @@ class Toe:
             if not self.process_condition(element.get_attribute('toe:if'))["value"]:
                 return None
 
-        if element._name.startswith("toe:fragment"):
+        if element.get_name().startswith("toe:fragment"):
             pass
 
-        if element.tagName.find('import') > -1:
+        if element.get_name().find('import') > -1:
             return self.process_toe_import_tag(parent_element, element)
 
-        if element.tagName.find('assign') > -1:
+        if element.get_name().find('assign') > -1:
             return self.process_assign_tag(element)
 
-        if element.tagName.find('create') > -1:
+        if element.get_name().find('create') > -1:
             return self.process_create_tag(element)
 
-        if element.tagName.find('modify') > -1:
+        if element.get_name().find('modify') > -1:
             return self.process_modify_tag(element)
 
     def process_toe_import_tag(self, parent_element, element):
@@ -148,13 +149,10 @@ class Toe:
 
         imported_tree = {}
 
-        if file_name.endswith(".toe") or file_name.endswith(".toe"):
-            with open(os.path.join(self.path_to_templates, file_name)) as f:
-                imported_tree = minidom.parseString(str(f.read()))
-        if type(imported_tree) is xml.dom.minidom.Document:
-            self.remove_blanks(imported_tree)
-            imported_tree.normalize()
-
+        if file_name.endswith(".toe.html") or file_name.endswith(".toe.xml"):
+            xp = XMLParser(path=os.path.join(self.path_to_templates, file_name))
+            imported_tree = xp.parse_file()
+            # TODO continue here
             top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
             for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:
                 new_node = self.process_subtree(top_node, child_node)
