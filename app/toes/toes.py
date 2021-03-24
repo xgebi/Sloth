@@ -128,7 +128,7 @@ class Toe:
             if not self.process_condition(element.get_attribute('toe:if'))["value"]:
                 return None
 
-        if element.name.startswith("toe:fragment"):
+        if element._name.startswith("toe:fragment"):
             pass
 
         if element.tagName.find('import') > -1:

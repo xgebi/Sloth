@@ -7,12 +7,12 @@ class MyTestCase(unittest.TestCase):
     def test_node_gets_created(self):
         node = Node(name="my-node")
 
-        self.assertEqual(node.name, "my-node")
+        self.assertEqual(node._name, "my-node")
 
     def test_node_gets_created_with_attributes(self):
         node = Node(name="my-node", attributes={"attr": "1"})
 
-        self.assertEqual(node.name, "my-node")
+        self.assertEqual(node._name, "my-node")
         self.assertEqual(node.attributes["attr"], "1")
 
     def test_set_new_attribute_empty_existing_attribute_1(self):

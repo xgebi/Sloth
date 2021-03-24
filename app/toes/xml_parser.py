@@ -76,7 +76,7 @@ class XMLParser:
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
             elif text[parsing_info.i + 1] == "/":
                 name = text[parsing_info.i + 2: parsing_info.i + 2 + text[parsing_info.i + 2:].find(">")]
-                if parsing_info.current_node.name == name:
+                if parsing_info.current_node.get_name() == name:
                     parsing_info.current_node = parsing_info.current_node.parent
                     parsing_info.move_index(len(f"</{name}>"))
                 else:
@@ -125,8 +125,8 @@ class XMLParser:
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.looking_for_attribute:
-            if text[parsing_info.i - 1] == "/":
-                parsing_info.current_node.paired_tag = False
+            if text[parsing_info.i - 1] == "/" or not parsing_info.current_node.__paired_tag:
+                parsing_info.current_node.__paired_tag = False
                 parsing_info.current_node = parsing_info.current_node.parent
 
             parsing_info.state = STATES.looking_for_child_nodes
@@ -142,7 +142,7 @@ class XMLParser:
                 text[parsing_info.i:].find(">"),
                 text[parsing_info.i:].find("\n")
             ) + parsing_info.i
-            parsing_info.current_node.name = text[parsing_info.i: name_end]
+            parsing_info.current_node.set_name(text[parsing_info.i: name_end])
             parsing_info.move_index(len(text[parsing_info.i: name_end]))
             parsing_info.state = STATES.looking_for_attribute
         elif parsing_info.state == STATES.looking_for_attribute:
