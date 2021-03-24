@@ -4,6 +4,7 @@ import uuid
 
 from app.toes.node import Node
 from app.toes.root_node import RootNode
+from app.toes.text_node import TextNode
 from app.toes.xml_parser import XMLParser
 
 
@@ -22,7 +23,6 @@ class Toe:
     template_load_error = False
     variables = None
     current_scope = None
-    later_replacement = {}
 
     def __init__(self, path_to_templates, template, data=None, **kwargs):
         self.path_to_templates = path_to_templates
@@ -30,7 +30,7 @@ class Toe:
         self.current_scope = self.variables
 
         self.new_tree = RootNode(html=True)
-        self.new_tree.children.append(
+        self.new_tree.add_child(
             Node(
                 name='html',
                 parent=self.new_tree
@@ -53,13 +53,7 @@ class Toe:
         for node in self.tree.children[0].children:
             res = self.process_subtree(self.new_tree.children[0], node)
 
-            if res is not None:
-                self.new_tree.childNodes[1].appendChild(res)
-        xml_str = self.new_tree.toxml()[self.new_tree.toxml().find('?>') + 2:]
-        for key in self.later_replacement.keys():
-            xml_str = xml_str.replace(key, self.later_replacement[key])
-
-        return xml_str
+        return self.new_tree.to_html_string()
 
     def process_subtree(self, new_tree_parent: Node, tree: Node):
         """
@@ -87,7 +81,7 @@ class Toe:
                 return self.process_while_attribute(new_tree_parent, tree)
 
         # append regular element to parent element
-        new_tree_node = self.new_tree.children.append(Node(name=tree.get_name()))
+        new_tree_node = self.new_tree.add_child(Node(name=tree.get_name()))
         content_set = False
         if tree.attributes is not None or len(tree.attributes) > 0:
             for key in tree.attributes.keys():
@@ -110,7 +104,7 @@ class Toe:
                                 and new_tree_node.children[-1].type == Node.TEXT:
                             # TODO look at replaceWholeText
                             new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
-                        new_tree_node.children.append(temp_node)
+                        new_tree_node.add_child(temp_node)
                 if res is not None:
                     if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[-1].type == Node.TEXT:
                         new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
@@ -123,14 +117,13 @@ class Toe:
         return new_tree_node
 
     def process_toe_tag(self, parent_element: Node, element: Node):
-        # TODO toe:fragment condition
 
         if len(element.get_attribute('toe:if')) > 0:
             if not self.process_condition(element.get_attribute('toe:if'))["value"]:
                 return None
 
         if element.get_name().startswith("toe:fragment"):
-            pass
+            return element.children
 
         if element.get_name().find('import') > -1:
             return self.process_toe_import_tag(parent_element, element)
@@ -153,11 +146,11 @@ class Toe:
             xp = XMLParser(path=os.path.join(self.path_to_templates, file_name))
             imported_tree = xp.parse_file()
             # TODO continue here
-            top_node = self.new_tree.createElement(imported_tree.childNodes[0].childNodes[0].tagName)
-            for child_node in imported_tree.childNodes[0].childNodes[0].childNodes:
+            top_node: Node = self.new_tree.add_child(imported_tree.children[0].children[0].name)
+            for child_node in imported_tree.children[0].children[0].children:
                 new_node = self.process_subtree(top_node, child_node)
-                if len(top_node.childNodes) >= 1 and top_node.childNodes[-1].type == Node.TEXT:
-                    top_node.childNodes[-1].replaceWholeText(top_node.childNodes[-1].wholeText + " ")
+                if len(top_node.children) >= 1 and top_node.children[-1].type == Node.TEXT:
+                    top_node.children[-1].replaceWholeText(top_node.children[-1].wholeText + " ")
                 if new_node is not None:
                     top_node.appendChild(new_node)
             return top_node
@@ -241,22 +234,19 @@ class Toe:
             value_float = float(value)
 
             if value_int == value_float:
-                new_node.appendChild(self.new_tree.createTextNode(str(value_int)))
+                new_node.add_child(TextNode(content=str(value_int)))
             else:
-                new_node.appendChild(self.new_tree.createTextNode(str(value_float)))
+                new_node.add_child(TextNode(content=str(value_float)))
         except ValueError:
             if re.search(r"[ ]?\+[ ]?", value) is None:
                 if type(value) == str and value[0] == "'":
-                    new_node.appendChild(self.new_tree.createTextNode(value[1: len(value) - 1]))
+                    new_node.add_child(TextNode(content=value[1: len(value) - 1]))
                 else:
                     resolved_value = self.current_scope.find_variable(value)
-                    resolved_id = str(uuid.uuid4())
                     if resolved_value is not None:
-                        self.later_replacement[resolved_id] = resolved_value
-                        new_node.appendChild(self.new_tree.createTextNode(resolved_id))
+                        new_node.add_child(TextNode(content=resolved_value))
                     else:
-                        new_node.appendChild(self.new_tree.createTextNode(
-                            str(tree.childNodes[0].wholeText) if tree.childNodes[0].type == Node.TEXT else ""))
+                        new_node.add_child(TextNode(content=str(tree.children[0].text) if tree.children[0].type == Node.TEXT else ""))
             else:
                 var_arr = re.split(r"[ ]?\+[ ]?", value)
                 if var_arr is None:
@@ -268,9 +258,7 @@ class Toe:
                     else:
                         resolved_value = self.current_scope.find_variable(item)
                         result += resolved_value if resolved_value is not None else ""
-                result_id = str(uuid.uuid4())
-                self.later_replacement[result_id] = result
-                new_node.appendChild(self.new_tree.createTextNode(result_id))
+                new_node.add_child(TextNode(content=result))
 
     def process_assign_tag(self, element):
         var_name = element.get_attribute('var')

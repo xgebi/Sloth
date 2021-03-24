@@ -66,7 +66,7 @@ class XMLParser:
         elif parsing_info.state == STATES.looking_for_child_nodes:
             if text[parsing_info.i:].find("<![CDATA[") == 0:
                 parsing_info.move_index(len("<![CDATA["))
-                parsing_info.current_node.children.append(
+                parsing_info.current_node.add_child(
                     TextNode(
                         parent=parsing_info.current_node,
                         cdata=True,
@@ -94,7 +94,7 @@ class XMLParser:
         if text[parsing_info.i + 1] == "?":
             parsing_info.move_index(2)
             n = ProcessingNode(parent=parsing_info.current_node)
-            parsing_info.current_node.children.append(n)
+            parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             return parsing_info
         elif text[parsing_info.i:].find("<![CDATA[") == 0:
@@ -104,7 +104,7 @@ class XMLParser:
                 cdata=True,
                 text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
             )
-            parsing_info.current_node.children.append(
+            parsing_info.current_node.add_child(
                 text_node
             )
             parsing_info.move_index(len(text_node.text) + len("]]>"))
@@ -112,13 +112,13 @@ class XMLParser:
         elif text[parsing_info.i + 1] == "!":
             parsing_info.move_index(2)
             n = DirectiveNode(parent=parsing_info.current_node)
-            parsing_info.current_node.children.append(n)
+            parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             return parsing_info
         else:
             parsing_info.move_index()
             n = Node(parent=parsing_info.current_node)
-            parsing_info.current_node.children.append(n)
+            parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             parsing_info.current_node.children = [] # there was some weirdness, TODO investigate later
             return parsing_info

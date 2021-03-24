@@ -8,6 +8,7 @@ class TextNode(Node):
             *args,
             parent: 'Node' = None,
             cdata: bool = False,
+            content: str = "",
             **kwargs
     ) -> None:
         super(TextNode, self).__init__(
@@ -18,5 +19,5 @@ class TextNode(Node):
         )
         self.text = True
         self.cdata = cdata
-        self.content = ""
+        self.content = content
         self.type = Node.CDATA_TEXT if cdata else Node.TEXT
