@@ -99,7 +99,7 @@ class Toe:
                     content_set = True
                     self.process_toe_content_attribute(tree, new_tree_node)
                 else:
-                    new_tree_node.set_attribute(key, tree.getAttribute(key))
+                    new_tree_node.set_attribute(key, tree.get_attribute(key))
         if not content_set:
             for node in tree.children:
                 res = self.process_subtree(new_tree_node, node)
@@ -145,7 +145,7 @@ class Toe:
             return self.process_modify_tag(element)
 
     def process_toe_import_tag(self, parent_element, element):
-        file_name = element.getAttribute('file')
+        file_name = element.get_attribute('file')
 
         imported_tree = {}
 
@@ -164,25 +164,25 @@ class Toe:
         return None
 
     # toe:value="value"
-    def process_toe_value_attribute(self, tree, new_node):
-        value = tree.getAttribute("toe:value")
+    def process_toe_value_attribute(self, tree: Node, new_node: Node):
+        value = tree.get_attribute("toe:value")
 
         try:
             value_int = int(value)
             value_float = float(value)
 
             if value_int == value_float:
-                new_node.setAttribute("value", value_int)
+                new_node.set_attribute("value", value_int)
             else:
-                new_node.setAttribute("value", value_float)
+                new_node.set_attribute("value", value_float)
         except ValueError:
             if re.search(r"[ ]?\+[ ]?", value) is None:
                 if type(value) == str and value[0] == "'":
-                    new_node.setAttribute("value", value[1: len(value) - 1])
+                    new_node.set_attribute("value", value[1: len(value) - 1])
                 else:
                     resolved_value = self.current_scope.find_variable(value)
                     if resolved_value is not None:
-                        new_node.setAttribute("value", resolved_value)
+                        new_node.set_attribute("value", resolved_value)
             else:
                 var_arr = re.split(r"[ ]?\+[ ]?", value)
                 if var_arr is None:
@@ -195,29 +195,29 @@ class Toe:
                         resolved_value = self.current_scope.find_variable(item)
                         result += resolved_value if resolved_value is not None else ""
 
-                new_node.setAttribute("value", result)
+                new_node.set_attribute("value", result)
 
     # toe:attr-[attribute name]="value"
     def process_toe_attr_attribute(self, tree, new_node, key):
         new_key = key[key.find("-") + 1:]
-        value = tree.getAttribute(key)
+        value = tree.get_attribute(key)
 
         try:
             value_int = int(value)
             value_float = float(value)
 
             if value_int == value_float:
-                new_node.setAttribute(new_key, value_int)
+                new_node.set_attribute(new_key, value_int)
             else:
-                new_node.setAttribute(new_key, value_float)
+                new_node.set_attribute(new_key, value_float)
         except ValueError:
             if re.search(r"[ ]?\+[ ]?", value) is None:
                 if type(value) == str and value[0] == "'":
-                    new_node.setAttribute(new_key, value[1: len(value) - 1])
+                    new_node.set_attribute(new_key, value[1: len(value) - 1])
                 else:
                     resolved_value = self.current_scope.find_variable(value)
                     if resolved_value is not None:
-                        new_node.setAttribute(new_key, resolved_value)
+                        new_node.set_attribute(new_key, resolved_value)
             else:
                 var_arr = re.split(r"[ ]?\+[ ]?", value)
                 if var_arr is None:
@@ -230,11 +230,11 @@ class Toe:
                         resolved_value = self.current_scope.find_variable(item)
                         result += resolved_value if resolved_value is not None else ""
 
-                new_node.setAttribute(new_key, result)
+                new_node.set_attribute(new_key, result)
 
     # toe:content="value"
     def process_toe_content_attribute(self, tree, new_node):
-        value = tree.getAttribute("toe:content")
+        value = tree.get_attribute("toe:content")
 
         try:
             value_int = int(value)
@@ -273,8 +273,8 @@ class Toe:
                 new_node.appendChild(self.new_tree.createTextNode(result_id))
 
     def process_assign_tag(self, element):
-        var_name = element.getAttribute('var')
-        var_value = element.getAttribute('value')
+        var_name = element.get_attribute('var')
+        var_value = element.get_attribute('value')
 
         if var_name is None or len(var_name) == 0:
             raise ValueError('Variable cannot have no name')
@@ -287,8 +287,8 @@ class Toe:
         return None
 
     def process_create_tag(self, element):
-        var_name = element.getAttribute('var')
-        var_value = element.getAttribute('value')
+        var_name = element.get_attribute('var')
+        var_value = element.get_attribute('value')
 
         if var_name is None or len(var_name) == 0:
             raise ValueError('Variable cannot have no name')
@@ -300,8 +300,8 @@ class Toe:
         return None
 
     def process_modify_tag(self, element):
-        var_name = element.getAttribute('var')
-        var_value = element.getAttribute('value')
+        var_name = element.get_attribute('var')
+        var_value = element.get_attribute('value')
 
         if var_name is None or len(var_name) == 0:
             raise ValueError('Variable cannot have no name')
@@ -321,44 +321,44 @@ class Toe:
                 return None
 
         if element.hasAttribute('toe:add'):
-            if (type(variable) == int or type(variable) == float):
-                self.current_scope.assign_variable(var_name, variable + float(element.getAttribute('toe:add')))
+            if type(variable) == int or type(variable) == float:
+                self.current_scope.assign_variable(var_name, variable + float(element.get_attribute('toe:add')))
                 return None
 
         if element.hasAttribute('toe:sub'):
-            if (type(variable) == int or type(variable) == float):
-                self.current_scope.assign_variable(var_name, variable - float(element.getAttribute('toe:sub')))
+            if type(variable) == int or type(variable) == float:
+                self.current_scope.assign_variable(var_name, variable - float(element.get_attribute('toe:sub')))
                 return None
 
         if element.hasAttribute('toe:mul'):
-            if (type(variable) == int or type(variable) == float):
-                self.current_scope.assign_variable(var_name, variable * float(element.getAttribute('toe:mul')))
+            if type(variable) == int or type(variable) == float:
+                self.current_scope.assign_variable(var_name, variable * float(element.get_attribute('toe:mul')))
                 return None
 
         if element.hasAttribute('toe:div'):
-            if (type(variable) == int or type(variable) == float):
-                if (float(element.getAttribute('toe:div')) != 0):
-                    self.current_scope.assign_variable(var_name, variable / float(element.getAttribute('toe:div')))
+            if type(variable) == int or type(variable) == float:
+                if float(element.get_attribute('toe:div')) != 0:
+                    self.current_scope.assign_variable(var_name, variable / float(element.get_attribute('toe:div')))
                     return None
                 raise ZeroDivisionError()
 
         if element.hasAttribute('toe:mod'):
-            if (type(variable) == int or type(variable) == float):
-                if (float(element.getAttribute('toe:mod')) != 0):
-                    if (float(element.getAttribute('toe:mod')) != 0):
-                        self.current_scope.assign_variable(var_name, variable % float(element.getAttribute('toe:mod')))
+            if type(variable) == int or type(variable) == float:
+                if float(element.get_attribute('toe:mod')) != 0:
+                    if float(element.get_attribute('toe:mod')) != 0:
+                        self.current_scope.assign_variable(var_name, variable % float(element.get_attribute('toe:mod')))
                     return None
                 raise ZeroDivisionError()
 
         if element.hasAttribute('toe:pow'):
-            if (type(variable) == int or type(variable) == float):
-                self.current_scope.assign_variable(var_name, variable ** float(element.getAttribute('toe:pow')))
+            if type(variable) == int or type(variable) == float:
+                self.current_scope.assign_variable(var_name, variable ** float(element.get_attribute('toe:pow')))
                 return None
 
         return None
 
     def process_if_attribute(self, parent_element, element):
-        if not self.process_condition(element.getAttribute('toe:if')):
+        if not self.process_condition(element.get_attribute('toe:if')):
             return None
         element.removeAttribute('toe:if')
         return self.process_subtree(parent_element, element)
@@ -366,7 +366,7 @@ class Toe:
     def process_for_attribute(self, parent_element, element):
         result_nodes = []
         # get toe:for attribute
-        iterable_cond = element.getAttribute('toe:for')
+        iterable_cond = element.get_attribute('toe:for')
         # split string between " in "
         items = iterable_cond.split(" in ")
         # find variable on the right side
@@ -397,7 +397,7 @@ class Toe:
     def process_while_attribute(self, parent_element, element):
         result_nodes = []
         # get toe:for attribute
-        iterable_cond = element.getAttribute('toe:while')
+        iterable_cond = element.get_attribute('toe:while')
 
         contains_condition = False
         for cond in (" gt ", " gte ", " lt ", " lte ", " eq ", " neq "):
