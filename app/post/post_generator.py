@@ -3,7 +3,6 @@ from psycopg2 import sql, errors
 from pathlib import Path
 import os
 from jinja2 import Template
-import json
 import threading
 import shutil
 from typing import Dict, List
@@ -17,6 +16,7 @@ from app.post import get_translations
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
+from app.toes.toes import render_toe_from_path
 from app.post.post_types import PostTypes
 
 
@@ -519,6 +519,7 @@ class PostGenerator:
             md_parser = MarkdownParser()
             post["excerpt"] = md_parser.to_html_string(post["excerpt"])
             post["content"] = md_parser.to_html_string(post["content"])
+
             rendered = template.render(
                 post=post,
                 sitename=self.settings["sitename"]["settings_value"],

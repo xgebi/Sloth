@@ -60,6 +60,8 @@ class XMLParser:
             if text[parsing_info.i:].find("<?xml") == 0:
                 parsing_info.move_index(len("<?xml"))
                 parsing_info.state = STATES.looking_for_attribute
+            elif text[parsing_info.i:].find("<!DOCTYPE") == 0:
+                pass
             else:
                 parsing_info = self.create_new_node(text, parsing_info)
                 parsing_info.state = STATES.read_node_name

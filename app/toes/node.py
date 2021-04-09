@@ -10,6 +10,7 @@ class Node:
     CDATA_TEXT = 'cdata'
 
     type: str = NODE
+    html: bool = False
 
     UNPAIRED_TAGS = ["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input"]
     ALWAYS_PAIRED = ["script"]
@@ -63,8 +64,9 @@ class Node:
     def remove_attribute(self, name: str):
         del self.attributes[name]
 
-    def add_child(self, child):
+    def add_child(self, child: 'Node'):
         if self._paired_tag:
+            child.html = self.html
             self.children.append(child)
 
     def replace_child(self, replacee, replacer):
