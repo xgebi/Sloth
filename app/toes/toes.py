@@ -50,10 +50,10 @@ class Toe:
 
             xp = XMLParser(path=(os.path.join(path_to_templates, template_name)))
             self.tree = xp.parse_file()
-            return
-        if template_string is not None:
-            return
-        raise ToeProcessingException("Template not available")
+        elif template_string is not None:
+            pass
+        else:
+            raise ToeProcessingException("Template not available")
 
     def process_tree(self):
         # There can only be one root element

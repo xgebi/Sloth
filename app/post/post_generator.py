@@ -11,6 +11,7 @@ import codecs
 from xml.dom import minidom
 import time
 import math
+import traceback
 
 from app.post import get_translations
 from app.utilities import get_related_posts
@@ -37,6 +38,7 @@ class PostGenerator:
         # get languages
         self.languages = self.get_languages()
 
+        # setting global options
         self.set_individual_settings(connection=connection, setting_name='active_theme')
         self.set_individual_settings(connection=connection, setting_name='main_language')
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
@@ -175,6 +177,7 @@ class PostGenerator:
             raw_items = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
             return False
 
         cur.close()
@@ -204,6 +207,7 @@ class PostGenerator:
             raw_items = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
             return []
 
         cur.close()
@@ -253,6 +257,7 @@ class PostGenerator:
                     temp_language_variants = cur.fetchall()
             except Exception as e:
                 print(e)
+                traceback.print_exc()
 
             language_variants = [{
                 "lang": temp[0],
@@ -397,6 +402,7 @@ class PostGenerator:
                 )
         except Exception as e:
             print(e)
+            traceback.print_exc()
         cur.close()
 
     def prepare_categories_tags(self, *args, post, **kwargs):
@@ -413,6 +419,7 @@ class PostGenerator:
             taxonomies = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
         cur.close()
         return self.process_categories_tags(taxonomies=taxonomies)
 
@@ -430,6 +437,7 @@ class PostGenerator:
             taxonomies = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
         cur.close()
         return self.process_categories_tags(taxonomies=taxonomies)
 
@@ -648,6 +656,7 @@ class PostGenerator:
                 menus[menu]["items"] = cur.fetchall()
         except Exception as e:
             print(f"PostGenerator.get_menus {e}")
+            traceback.print_exc()
 
         cur.close()
         return menus
@@ -678,6 +687,7 @@ class PostGenerator:
                 post["thumbnail_alt"] = raw_thumbnail[1]
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
         if os.path.isfile(os.path.join(self.theme_path, "secret.html")):
             with open(os.path.join(self.theme_path, "secret.html"), 'r', encoding="utf-8") as f:
@@ -700,6 +710,7 @@ class PostGenerator:
             raw_api_url = cur.fetchone()
         except Exception as e:
             print(e)
+            traceback.print_exc()
         cur.close()
 
         with open(Path(__file__).parent / "../templates/analytics.html", 'r', encoding="utf-8") as f:
@@ -732,6 +743,7 @@ class PostGenerator:
             raw_items = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
         cur.close()
 
@@ -751,6 +763,7 @@ class PostGenerator:
             raw_items = cur.fetchall()
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
         cur.close()
 
@@ -832,6 +845,7 @@ class PostGenerator:
         except Exception as e:
             print(390)
             print(e)
+            traceback.print_exc()
 
         # get template
         home_template_path = Path(self.theme_path, f"home-{language['short_name']}.html")
@@ -869,6 +883,7 @@ class PostGenerator:
         except Exception as e:
             print(371)
             print(e)
+            traceback.print_exc()
 
         return [{
             "uuid": post[0],
