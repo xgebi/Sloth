@@ -42,6 +42,7 @@ class PostGenerator:
         self.set_individual_settings(connection=connection, setting_name='active_theme')
         self.set_individual_settings(connection=connection, setting_name='main_language')
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
+        self.set_individual_settings(connection=connection, setting_name='api_url', alternate_name='sloth_api_url')
 
         # Set path to the theme
         self.theme_path = Path(
@@ -504,7 +505,7 @@ class PostGenerator:
                 data={
                     "post": post,
                     "sitename": self.settings["sitename"]["settings_value"],
-                    "api_url": self.settings["api_url"]["settings_value"],
+                    "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "sloth_footer": self.sloth_footer,
                     "menus": self.menus,
                     "translations": translations
@@ -644,7 +645,7 @@ class PostGenerator:
                     posts=posts[lower: upper],
                     sitename=self.settings["sitename"]["settings_value"],
                     page_name=f"Archive for {post_type['display_name']}",
-                    api_url=self.settings["api_url"]["settings_value"],
+                    sloth_api_url=self.settings["sloth_api_url"]["settings_value"],
                     sloth_footer=self.sloth_footer,
                     menus=self.menus,
                     current_page_number=i,
@@ -710,34 +711,16 @@ class PostGenerator:
 
     def set_footer(self, *args, connection, **kwargs):
         # Footer for post
-        raw_api_url = []
-        cur = connection.cursor()
-        try:
-            cur.execute(
-                sql.SQL("""SELECT settings_value FROM sloth_settings 
-                        WHERE settings_name = %s"""),
-                ['api_url']
-            )
-            raw_api_url = cur.fetchone()
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
-        cur.close()
-
         with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
             footer_template = f.read()
-
-            if len(raw_api_url) == 1:
-                self.sloth_footer = render_toe_from_string(template=footer_template, data={"api_url": raw_api_url[0]})
+            self.sloth_footer = render_toe_from_string(template=footer_template, data={"sloth_api_url": self.settings["sloth_api_url"]["settings_value"]})
 
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
             secret_template = f.read()
+            self.sloth_secret_script = render_toe_from_string(template=secret_template,
+                                                                  data={"sloth_api_url": self.settings["sloth_api_url"]["settings_value"]})
 
-            if len(raw_api_url) == 1:
-                self.sloth_secret_script = render_toe_from_string(template=secret_template,
-                                                                  data={"api_url": raw_api_url[0]})
-
-    def set_individual_settings(self, *args, connection, setting_name, **kwargs):
+    def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, **kwargs):
         cur = connection.cursor()
         try:
             cur.execute(
@@ -752,12 +735,20 @@ class PostGenerator:
 
         cur.close()
 
-        for item in raw_items:
-            self.settings[str(item[0])] = {
-                "settings_name": item[0],
-                "settings_value": item[1],
-                "settings_value_type": item[2]
-            }
+        if alternate_name is not None:
+            for item in raw_items:
+                self.settings[str(item[0])] = {
+                    "settings_name": item[0],
+                    "settings_value": item[1],
+                    "settings_value_type": item[2]
+                }
+        else:
+            for item in raw_items:
+                self.settings[alternate_name] = {
+                    "settings_name": item[0],
+                    "settings_value": item[1],
+                    "settings_value_type": item[2]
+                }
 
     def get_languages(self):
         cur = self.connection.cursor()
@@ -866,7 +857,7 @@ class PostGenerator:
         with open(home_path_dir, 'w', encoding="utf-8") as f:
             f.write(template.render(
                 posts=posts, sitename=self.settings["sitename"]["settings_value"],
-                page_name="Home", api_url=self.settings["api_url"]["settings_value"],
+                page_name="Home", sloth_api_url=self.settings["sloth_api_url"]["settings_value"],
                 sloth_footer=self.sloth_footer + self.sloth_secret_script,
                 menus=self.menus
             ))
