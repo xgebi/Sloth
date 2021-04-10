@@ -17,7 +17,7 @@ from app.post import get_translations
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
-from app.toes.toes import render_toe_from_path
+from app.toes.toes import render_toe_from_path, render_toe_from_string
 from app.post.post_types import PostTypes
 
 
@@ -48,6 +48,9 @@ class PostGenerator:
             self.config["THEMES_PATH"],
             self.settings['active_theme']['settings_value']
         )
+
+        self.sloth_footer = ""
+        self.sloth_secret_script = ""
         self.set_footer(connection=connection)
 
     def run(
@@ -73,6 +76,7 @@ class PostGenerator:
             return False
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
+            # Queue is on the list of things to be done in foreseeable future
             # return self.add_to_queue(post=post)
             return False
 
@@ -509,7 +513,7 @@ class PostGenerator:
             post_template_path = Path(self.theme_path, "post.html")
 
         with open(post_template_path, 'r', encoding="utf-8") as f:
-            template = Template(f.read())
+            template = f.read()
 
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
@@ -528,13 +532,16 @@ class PostGenerator:
             post["excerpt"] = md_parser.to_html_string(post["excerpt"])
             post["content"] = md_parser.to_html_string(post["content"])
 
-            rendered = template.render(
-                post=post,
-                sitename=self.settings["sitename"]["settings_value"],
-                api_url=self.settings["api_url"]["settings_value"],
-                sloth_footer=self.sloth_footer,
-                menus=self.menus,
-                translations=translations
+            rendered = render_toe_from_string(
+                template=template,
+                data={
+                    "post": post,
+                    "sitename": self.settings["sitename"]["settings_value"],
+                    "api_url": self.settings["api_url"]["settings_value"],
+                    "sloth_footer": self.sloth_footer,
+                    "menus": self.menus,
+                    "translations": translations
+                }
             )
             f.write(rendered)
 
@@ -713,24 +720,18 @@ class PostGenerator:
             traceback.print_exc()
         cur.close()
 
-        with open(Path(__file__).parent / "../templates/analytics.html", 'r', encoding="utf-8") as f:
-            footer_template = Template(f.read())
-            cur = connection.cursor()
-            raw_item = []
+        with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
+            footer_template = f.read()
 
             if len(raw_api_url) == 1:
-                self.sloth_footer = footer_template.render(api_url=raw_api_url[0])
-            else:
-                self.sloth_footer = ""
+                self.sloth_footer = render_toe_from_string(template=footer_template, data={"api_url": raw_api_url[0]})
 
-        with open(Path(__file__).parent / "../templates/secret-script.html", 'r', encoding="utf-8") as f:
-            # This will refactored
-            secret_template = Template(f.read())
+        with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
+            secret_template = f.read()
 
             if len(raw_api_url) == 1:
-                self.sloth_secret_script = secret_template.render(api_url=raw_api_url[0])
-            else:
-                self.sloth_secret_script = ""
+                self.sloth_secret_script = render_toe_from_string(template=secret_template,
+                                                                  data={"api_url": raw_api_url[0]})
 
     def set_individual_settings(self, *args, connection, setting_name, **kwargs):
         cur = connection.cursor()

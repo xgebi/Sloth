@@ -24,6 +24,10 @@
 
 ### Toes specific
 
+#### `toe:inline-js`
+
+This attribute can be used when there's a need to use a variable passed from Python to JavaScript. Within `script` tag marked as such it's possible to print it with curly braces `{}`. This is not a systemic solution and most likely will be changed.
+
 #### `toe:if`
 
 #### `toe:for`
