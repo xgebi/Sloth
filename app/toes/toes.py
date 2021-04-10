@@ -10,7 +10,7 @@ from app.toes.xml_parser import XMLParser
 
 
 def render_toe_from_path(*args, template, path_to_templates, data=None, **kwargs):
-    if path_to_templates is None:
+    if path_to_templates is None and template is not None:
         return None
 
     toe_engine = Toe(path_to_templates, template, data=data, **kwargs)
@@ -18,7 +18,11 @@ def render_toe_from_path(*args, template, path_to_templates, data=None, **kwargs
 
 
 def render_toe_from_string(*args, template: str, data: Dict = None, **kwargs):
-    pass
+    if template is not None:
+        return None
+
+    toe_engine = Toe(template_string=template, data=data, **kwargs)
+    return toe_engine.process_tree()
 
 
 class Toe:

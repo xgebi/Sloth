@@ -29,9 +29,12 @@ class XmlParsingInfo:
 
 class XMLParser:
 
-    def __init__(self, *args, path, **kwargs):
-        with open(path, mode="r", encoding="utf-8") as text_file:
-            self.text = text_file.read()
+    def __init__(self, *args, path=None, template=None, **kwargs):
+        if path is not None:
+            with open(path, mode="r", encoding="utf-8") as text_file:
+                self.text = text_file.read()
+        elif template is not None:
+            self.text = template
 
     def parse_file(self):
         if self.text is None:

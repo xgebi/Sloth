@@ -480,40 +480,7 @@ class PostGenerator:
     ):
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 
-        # post type, post format, language
-        if os.path.isfile(os.path.join(self.theme_path,
-                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")
-        # post type, post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}.html")
-        # post format, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}-{language['short_name']}.html")
-        # post type, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{language['short_name']}.html")
-        # post type
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}.html")
-        # language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{language['short_name']}.html")
-        # post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.html")):
-            post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}.html")
-        else:
-            post_template_path = Path(self.theme_path, "post.html")
-
-        with open(post_template_path, 'r', encoding="utf-8") as f:
-            template = f.read()
+        template = self.get_post_template(post_type=post_type, post=post, language=language)
 
         if not os.path.exists(post_path_dir):
             os.makedirs(post_path_dir)
@@ -574,6 +541,43 @@ class PostGenerator:
                             multiple=multiple
                         )
                         break
+
+    def get_post_template(self, *args, post_type, post, language, **kwargs) -> str:
+        # post type, post format, language
+        if os.path.isfile(os.path.join(self.theme_path,
+                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")
+        # post type, post format
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{post['format_slug']}.html")
+        # post format, language
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post['format_slug']}-{language['short_name']}.html")
+        # post type, language
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}-{language['short_name']}.html")
+        # post type
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post_type['slug']}.html")
+        # language
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{language['short_name']}.html")
+        # post format
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.html")):
+            post_template_path = os.path.join(self.theme_path,
+                                              f"post-{post['format_slug']}.html")
+        else:
+            post_template_path = Path(self.theme_path, "post.html")
+
+        with open(post_template_path, 'r', encoding="utf-8") as f:
+            return f.read()
+        return None
 
     def get_translation_links(self, *args, translations, post_type, post, **kwargs):
         # {'uuid': '48ab80ef-b83b-40f7-9dab-c3343bae7d0e', 'long_name': 'English', 'short_name': 'en', 'post': 'fb2e1b26-3361-4239-9b97-aedcde0f57cf'}
