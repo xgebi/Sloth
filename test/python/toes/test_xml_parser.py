@@ -24,8 +24,28 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(node.children[0].children), 0)
 
     def test_importer(self):
-        xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "toe_fragment_xml_undeclared.toe.html"))
-        xp.parse_file()
+        xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "importer.toe.html"))
+        node: RootNode = xp.parse_file()
+
+        self.assertEqual(len(node.children), 1)
+        self.assertEqual(node.children[0].get_name(), 'toe:fragment')
+        self.assertEqual(len(node.children[0].children), 1)
+        self.assertEqual(node.children[0].children[0].get_name(), 'toe:import')
+        self.assertEqual(node.children[0].children[0].attributes["file"], 'importee.toe.html')
+
+    def test_image(self):
+        xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "toe_image.toe.html"))
+        node: RootNode = xp.parse_file()
+
+        self.assertEqual(len(node.children), 1)
+        self.assertEqual(node.children[0].get_name(), 'toe:fragment')
+        self.assertEqual(node.children[0].children[0].paired_tag, False)
+        self.assertEqual(node.children[0].children[0].get_name(), "img")
+        self.assertEqual(node.children[0].children[0].attributes["toe:src"], "linkToImage")
+        self.assertEqual(node.children[0].children[0].attributes["toe:alt"], "descriptionText")
+        self.assertEqual(node.children[0].children[0].attributes["src"], "image.png")
+        self.assertEqual(node.children[0].children[0].attributes["alt"], "this is alt")
+        self.assertEqual(len(node.children[0].children[0].children), 0)
 
 
 if __name__ == '__main__':
