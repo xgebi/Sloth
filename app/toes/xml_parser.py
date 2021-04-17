@@ -64,7 +64,10 @@ class XMLParser:
                 parsing_info.move_index(len("<?xml"))
                 parsing_info.state = STATES.looking_for_attribute
             elif text[parsing_info.i:].find("<!DOCTYPE") == 0:
-                pass
+                parsing_info.current_node.html = True
+                parsing_info.current_node.attributes["doctype"] = text[len("<!DOCTYPE "):text.find(">")]
+                parsing_info.state = STATES.looking_for_child_nodes
+                parsing_info.move_index(text.find(">"))
             else:
                 parsing_info = self.create_new_node(text, parsing_info)
                 parsing_info.state = STATES.read_node_name

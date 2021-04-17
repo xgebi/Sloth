@@ -17,9 +17,11 @@ class MyTestCase(unittest.TestCase):
 
     def test_parser_works_without_initial_xml_tag(self):
         xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "toe_fragment_xml_undeclared.toe.html"))
-        xp.parse_file()
+        node: RootNode = xp.parse_file()
 
-        self.assertEqual(True, True)
+        self.assertEqual(len(node.children), 1)
+        self.assertEqual(node.children[0].get_name(), 'toe:fragment')
+        self.assertEqual(len(node.children[0].children), 0)
 
     def test_importer(self):
         xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "toe_fragment_xml_undeclared.toe.html"))
