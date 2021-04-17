@@ -102,19 +102,34 @@ class PostGenerator:
         t.start()
         return True
 
-    def generate_all(self):
+    def refresh_assets(self):
         if Path(self.config["OUTPUT_PATH"], "assets").is_dir():
             shutil.rmtree(Path(self.config["OUTPUT_PATH"], "assets"))
         if Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets").is_dir():
             shutil.copytree(Path(self.config["THEMES_PATH"], self.settings['active_theme']['settings_value'], "assets"),
                             Path(self.config["OUTPUT_PATH"], "assets"))
 
+    def generate_all(self):
+        self.refresh_assets()
         # get post types
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
         # generate posts for languages
         for language in self.languages:
             self.generate_posts_for_language(language=language, post_types=post_types)
+        # remove lock
+        os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
+    # Not sure what to think about this yet but I will deal with this later during refactoring
+    def generate_post_type(self, post_type_id: str):
+        self.refresh_assets()
+
+        # get post types
+        post_types_object = PostTypes()
+        post_type = [post_types_object.get_post_type(self.connection, post_type_id=post_type_id)]
+        # generate posts for languages
+        for language in self.languages:
+            self.generate_posts_for_language(language=language, post_types=post_type)
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
