@@ -102,18 +102,6 @@ class XMLParser:
             parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             return parsing_info
-        elif text[parsing_info.i:].find("<![CDATA[") == 0:
-            parsing_info.move_index(len("<![CDATA["))
-            text_node = TextNode(
-                parent=parsing_info.current_node,
-                cdata=True,
-                text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
-            )
-            parsing_info.current_node.add_child(
-                text_node
-            )
-            parsing_info.move_index(len(text_node.text) + len("]]>"))
-            return parsing_info
         elif text[parsing_info.i + 1] == "!":
             parsing_info.move_index(2)
             n = DirectiveNode(parent=parsing_info.current_node)
@@ -126,12 +114,14 @@ class XMLParser:
             parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             parsing_info.current_node.children = [] # there was some weirdness, TODO investigate later
+            parsing_info.state = STATES.read_node_name
             return parsing_info
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.looking_for_attribute:
-            if text[parsing_info.i - 1] == "/" or not parsing_info.current_node.__paired_tag:
-                parsing_info.current_node.__paired_tag = False
+            if (text[parsing_info.i - 1] == "/" or not parsing_info.current_node.paired_tag) \
+                    and type(parsing_info.current_node) is not RootNode:
+                parsing_info.current_node.paired_tag = False
                 parsing_info.current_node = parsing_info.current_node.parent
 
             parsing_info.state = STATES.looking_for_child_nodes

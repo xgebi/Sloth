@@ -35,7 +35,7 @@ class Node:
             self.attributes = attributes
         if paired_tag:
             self.children = children
-        self._paired_tag = paired_tag
+        self.paired_tag = paired_tag
         if parent:
             self.parent = parent
 
@@ -45,15 +45,15 @@ class Node:
     def set_name(self, name):
         self._name = name
         if name in self.UNPAIRED_TAGS:
-            self._paired_tag = False
+            self.paired_tag = False
         if name in self.ALWAYS_PAIRED:
-            self._paired_tag = True
+            self.paired_tag = True
 
     def set_paired(self, paired: bool):
         if self._name in self.UNPAIRED_TAGS:
-            self._paired_tag = False
+            self.paired_tag = False
         if self._name in self.ALWAYS_PAIRED:
-            self._paired_tag = True
+            self.paired_tag = True
 
     def set_attribute(self, name: str, value: str = ""):
         self.attributes[name] = value
@@ -65,7 +65,7 @@ class Node:
         del self.attributes[name]
 
     def add_child(self, child: 'Node'):
-        if self._paired_tag:
+        if self.paired_tag:
             child.html = self.html
             self.children.append(child)
 
@@ -73,14 +73,14 @@ class Node:
         self.children = [replacer if item == replacee else item for item in self.children]
 
     def remove_child(self, child):
-        if self._paired_tag and child in self.children:
+        if self.paired_tag and child in self.children:
             self.children.remove(child)
 
     def to_html_string(self) -> str:
         tag = f"<{self._name} "
         for key in self.attributes.keys():
             tag += f"{key}=\"{self.attributes[key]}\" "
-        if self._paired_tag:
+        if self.paired_tag:
             tag = tag.strip() + ">"
             for child in self.children:
                 tag += child.to_html_string()

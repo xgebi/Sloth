@@ -23,6 +23,10 @@ class RootNode(ProcessingNode):
         self.type = ProcessingNode.ROOT
         self.children = []
 
+    def add_child(self, child: 'Node'):
+        child.html = self.html
+        self.children.append(child)
+
     def to_html_string(self) -> str:
         tag = f"<!DOCTYPE {self.doctype}>"
         for child in self.children:
