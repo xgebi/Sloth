@@ -47,6 +47,19 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(node.children[0].children[0].attributes["alt"], "this is alt")
         self.assertEqual(len(node.children[0].children[0].children), 0)
 
+    def test_link(self):
+        xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "toe_link.toe.html"))
+        node: RootNode = xp.parse_file()
+
+        self.assertEqual(len(node.children), 1)
+        self.assertEqual(node.children[0].get_name(), 'toe:fragment')
+        self.assertEqual(node.children[0].children[0].paired_tag, True)
+        self.assertEqual(node.children[0].children[0].get_name(), "a")
+        self.assertEqual(node.children[0].children[0].attributes["toe:href"], "'I override'")
+        self.assertEqual(node.children[0].children[0].attributes["href"], "/link-to-nowhere")
+        self.assertEqual(len(node.children[0].children[0].children), 1)
+        self.assertEqual(node.children[0].children[0].children[0].content, "Link")
+
 
 if __name__ == '__main__':
     unittest.main()

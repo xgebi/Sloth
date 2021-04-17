@@ -117,6 +117,7 @@ class XMLParser:
             parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
             parsing_info.current_node.children = [] # there was some weirdness, TODO investigate later
+            parsing_info.current_node.attributes = {}
             parsing_info.state = STATES.read_node_name
             return parsing_info
 
@@ -163,6 +164,13 @@ class XMLParser:
                 parsing_info.current_node.attributes[name] = attribute_value
             else:
                 parsing_info.move_index()
+        elif parsing_info.state == STATES.looking_for_child_nodes:
+            text_end_raw = text[parsing_info.i:].find("<")
+            if text_end_raw == -1:
+                raise XMLParsingException("Not properly closed tag")
+            text_end = parsing_info.i + text_end_raw
+            parsing_info.current_node.add_child(TextNode(content=text[parsing_info.i: text_end]))
+            parsing_info.move_index(len(text[parsing_info.i: text_end]))
         else:
             parsing_info.move_index()
         return text, parsing_info
