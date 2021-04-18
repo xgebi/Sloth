@@ -111,7 +111,17 @@ class Toe:
             )
         )
 
-        # Here deal with attributes
+        for attribute in attributes:
+            if not attribute.startswith('toe:'):
+                new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
+            elif attribute.startswith('toe:text'):
+                pass
+            elif attribute.startswith('toe:content'):
+                pass
+            elif attribute.startswith('toe:inline-js'):
+                pass
+            else:
+                new_tree_node.set_attribute(attribute[attribute.find(":") + 1:], )
 
         for template_child in template_tree_node.children:
             self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
@@ -120,25 +130,33 @@ class Toe:
 
     def process_toe_tag(self, parent_element: Node, element: Node):
 
-        if element.get_attribute('toe:if') and len(element.get_attribute('toe:if')) > 0:
-            if not self.process_condition(element.get_attribute('toe:if'))["value"]:
-                return None
-
         if element.get_name().startswith("toe:fragment"):
             for template_node in element.children:
                 self.process_subtree(new_tree_parent=parent_element, template_tree_node=template_node)
 
-        if element.get_name().find('import') > -1:
+        if element.get_name() == "toe:import":
             return self.process_toe_import_tag(parent_element, element)
 
-        if element.get_name().find('assign') > -1:
+        if element.get_name() == 'toe:assign':
             return self.process_assign_tag(element)
 
-        if element.get_name().find('create') > -1:
+        if element.get_name() == 'toe:create':
             return self.process_create_tag(element)
 
-        if element.get_name().find('modify') > -1:
+        if element.get_name() == 'toe:modify':
             return self.process_modify_tag(element)
+
+        if element.get_name() == 'toe:head':
+            return self.process_head_hook()
+
+        if element.get_name() == 'toe:footer':
+            return self.process_footer_hook()
+
+    def process_head_hook(self):
+        pass
+
+    def process_footer_hook(self):
+        pass
 
     def process_toe_import_tag(self, parent_element, element):
         file_name = element.get_attribute('file')
@@ -192,41 +210,6 @@ class Toe:
                         result += resolved_value if resolved_value is not None else ""
 
                 new_node.set_attribute("value", result)
-
-    # toe:attr-[attribute name]="value"
-    def process_toe_attr_attribute(self, tree, new_node, key):
-        new_key = key[key.find("-") + 1:]
-        value = tree.get_attribute(key)
-
-        try:
-            value_int = int(value)
-            value_float = float(value)
-
-            if value_int == value_float:
-                new_node.set_attribute(new_key, value_int)
-            else:
-                new_node.set_attribute(new_key, value_float)
-        except ValueError:
-            if re.search(r"[ ]?\+[ ]?", value) is None:
-                if type(value) == str and value[0] == "'":
-                    new_node.set_attribute(new_key, value[1: len(value) - 1])
-                else:
-                    resolved_value = self.current_scope.find_variable(value)
-                    if resolved_value is not None:
-                        new_node.set_attribute(new_key, resolved_value)
-            else:
-                var_arr = re.split(r"[ ]?\+[ ]?", value)
-                if var_arr is None:
-                    return
-                result = ""
-                for item in var_arr:
-                    if item[0] == "'":
-                        result += item[1: len(item) - 1]
-                    else:
-                        resolved_value = self.current_scope.find_variable(item)
-                        result += resolved_value if resolved_value is not None else ""
-
-                new_node.set_attribute(new_key, result)
 
     # toe:content="value"
     def process_toe_content_attribute(self, tree, new_node):
@@ -475,14 +458,8 @@ class Toe:
             return resolved[0] == resolved[1]
         return False
 
-    # Adapted from https://stackoverflow.com/a/16919069/6588356
-    def remove_blanks(self, node):
-        for x in node.childNodes:
-            if x.type == Node.TEXT:
-                if x.nodeValue:
-                    x.nodeValue = x.nodeValue.strip()
-            elif x.type == Node.NODE:
-                self.remove_blanks(x)
+    def resolve_strings(self, s: str) -> str:
+        return ""
 
 
 class VariableScope:
