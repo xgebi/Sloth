@@ -2,6 +2,7 @@ import enum
 from app.toes.node import Node
 from app.toes.text_node import TextNode
 from app.toes.root_node import RootNode
+from app.toes.comment_node import CommentNode
 from app.toes.processing_node import ProcessingNode
 from app.toes.directive_node import DirectiveNode
 from app.toes.toes_exceptions import XMLParsingException
@@ -82,6 +83,13 @@ class XMLParser:
                     )
                 )
                 parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
+            elif text[parsing_info.i:].find("<!--") == 0:
+                comment_end_raw = text[parsing_info.i:].find("-->")
+                if comment_end_raw == -1:
+                    raise XMLParsingException("Not properly closed tag")
+                comment_end = parsing_info.i + comment_end_raw
+                parsing_info.current_node.add_child(CommentNode(content=text[parsing_info.i + 4: comment_end].strip()))
+                parsing_info.move_index(len(f"{text[parsing_info.i: comment_end]}-->"))
             elif text[parsing_info.i + 1] == "/":
                 name = text[parsing_info.i + 2: parsing_info.i + 2 + text[parsing_info.i + 2:].find(">")]
                 if parsing_info.current_node.get_name() == name:
