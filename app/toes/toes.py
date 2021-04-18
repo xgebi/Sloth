@@ -89,19 +89,18 @@ class Toe:
         if template_tree_node.type == Node.TEXT:
             return new_tree_parent.add_child(TextNode(content=template_tree_node.content.strip()))
 
+        # check for toe attributes
+        attributes = template_tree_node.attributes.keys()
+        if 'toe:if' in attributes:
+            return self.process_if_attribute(new_tree_parent, template_tree_node)
+        if 'toe:for' in attributes:
+            return self.process_for_attribute(new_tree_parent, template_tree_node)
+        if 'toe:while' in attributes:
+            return self.process_while_attribute(new_tree_parent, template_tree_node)
+
         # check for toe tags
         if template_tree_node.get_name().startswith('toe:'):
             return self.process_toe_tag(new_tree_parent, template_tree_node)
-
-        # check for toe attributes
-        attributes = template_tree_node.attributes.keys()
-        for attribute in attributes:
-            if attribute == 'toe:if':
-                return self.process_if_attribute(new_tree_parent, template_tree_node)
-            if attribute == 'toe:for':
-                return self.process_for_attribute(new_tree_parent, template_tree_node)
-            if attribute == 'toe:while':
-                return self.process_while_attribute(new_tree_parent, template_tree_node)
 
         # append regular element to parent element
         new_tree_node = new_tree_parent.add_child(
