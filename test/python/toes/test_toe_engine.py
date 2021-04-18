@@ -6,6 +6,7 @@ from app.toes.toes import render_toe_from_path
 
 class MyTestCase(unittest.TestCase):
     """ Test Checklist
+            toe:fragment
             import file
             toe:if
             toe:for
@@ -17,14 +18,22 @@ class MyTestCase(unittest.TestCase):
             toe hooks - toe:head, toe:footer
             import file with toe code
     """
-    def test_something(self):
+    def test_fragment_from_path(self):
         self.toe = render_toe_from_path(
             path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
-            template="toe_fragment_xml_declared.toe.html",
-            data={"num": 3, "items": [1, 2, 3, 4]}
+            template="doctyped_toe_fragment_div.toe.html",
+            data={}
         )
         self.assertEqual(True, False)
 
+    def test_fragment_from_string(self):
+        # self.toe = render_toe_from_path(
+        #     path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+        #     template="doctyped_toe_fragment_div.toe.html",
+        #     data={}
+        # )
+        # self.assertEqual(True, False)
+        pass
 
 
 if __name__ == '__main__':

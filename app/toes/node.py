@@ -64,10 +64,11 @@ class Node:
     def remove_attribute(self, name: str):
         del self.attributes[name]
 
-    def add_child(self, child: 'Node'):
+    def add_child(self, child: 'Node') -> 'Node':
         if self.paired_tag:
             child.html = self.html
             self.children.append(child)
+        return child
 
     def replace_child(self, replacee, replacer):
         self.children = [replacer if item == replacee else item for item in self.children]

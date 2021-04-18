@@ -9,7 +9,7 @@ from app.toes.toes_exceptions import ToeProcessingException
 from app.toes.xml_parser import XMLParser
 
 
-def render_toe_from_path(*args, template, path_to_templates, data=None, **kwargs):
+def render_toe_from_path(*args, template, path_to_templates, data: Dict = {}, **kwargs):
     if path_to_templates is None and template is None:
         return None
 
@@ -17,7 +17,7 @@ def render_toe_from_path(*args, template, path_to_templates, data=None, **kwargs
     return toe_engine.process_tree()
 
 
-def render_toe_from_string(*args, template: str, data: Dict = None, **kwargs):
+def render_toe_from_string(*args, template: str, data: Dict = {}, **kwargs):
     if template is None:
         return None
 
@@ -33,31 +33,38 @@ class Toe:
     variables = None
     current_scope = None
 
-    def __init__(self, path_to_templates=None, template_name=None, data=None, template_string: str = None, **kwargs):
+    def __init__(self, path_to_templates=None, template_name=None, data: Dict={}, template_string: str = None, **kwargs):
+        self.current_new_tree_node = None
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
-            self.variables = VariableScope(data, None)
-            self.current_scope = self.variables
 
-            self.new_tree = RootNode(html=True)
-            self.new_tree.add_child(
-                Node(
-                    name='html',
-                    parent=self.new_tree
-                )
-            )
-
-            for node in self.new_tree.children:
-                if node.type == Node.NODE:
-                    lang = self.current_scope.find_variable('lang')
-                    node.set_attribute(name='lang', value=lang if lang is not None else 'en')
+            self.initialize_tree(data=data)
 
             xp = XMLParser(path=(os.path.join(path_to_templates, template_name)))
             self.tree = xp.parse_file()
         elif template_string is not None:
-            pass
+            self.initialize_tree(data=data)
+            xp = XMLParser(template=template_string)
+            self.tree = xp.parse_file()
         else:
             raise ToeProcessingException("Template not available")
+
+    def initialize_tree(self, data: Dict):
+        self.variables = VariableScope(data, None)
+        self.current_scope = self.variables
+
+        self.new_tree = RootNode(html=True)
+        node = Node(
+            name='html',
+            parent=self.new_tree
+        )
+        self.current_new_tree_node = node
+        self.new_tree.add_child(node)
+
+        for node in self.new_tree.children:
+            if node.type == Node.NODE:
+                lang = self.current_scope.find_variable('lang')
+                node.set_attribute(name='lang', value=lang if lang is not None else 'en')
 
     def process_tree(self):
         # There can only be one root element
@@ -78,7 +85,7 @@ class Toe:
 			Document or Node object
 		"""
         if tree.type == Node.TEXT:
-            return self.new_tree.createTextNode(tree.wholeText)
+            return self.current_new_tree_node.add_child(TextNode(content=tree.content.strip()))
 
         # check for toe tags
         if tree.get_name().startswith('toe:'):
@@ -95,7 +102,8 @@ class Toe:
                 return self.process_while_attribute(new_tree_parent, tree)
 
         # append regular element to parent element
-        new_tree_node = self.new_tree.add_child(Node(name=tree.get_name()))
+        new_tree_node = self.current_new_tree_node.add_child(Node(name=tree.get_name()))
+        self.current_new_tree_node = new_tree_node
         content_set = False
         if tree.attributes is not None or len(tree.attributes) > 0:
             for key in tree.attributes.keys():
@@ -117,16 +125,16 @@ class Toe:
                         if len(new_tree_node.children) > 0 \
                                 and new_tree_node.children[-1].type == Node.TEXT:
                             # TODO look at replaceWholeText
-                            new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
+                            new_tree_node.children[-1].replaceWholeText(new_tree_node.children[-1].wholeText + " ")
                         new_tree_node.add_child(temp_node)
                 if res is not None:
-                    if len(new_tree_node.childNodes) > 0 and new_tree_node.childNodes[-1].type == Node.TEXT:
-                        new_tree_node.childNodes[-1].replaceWholeText(new_tree_node.childNodes[-1].wholeText + " ")
+                    if len(new_tree_node.children) > 0 and new_tree_node.childre[-1].type == Node.TEXT:
+                        new_tree_node.children[-1].replaceWholeText(new_tree_node.children[-1].wholeText + " ")
                     if type(res) is list:
                         for thing in res:
-                            new_tree_node.appendChild(thing)
+                            new_tree_node.add_child(thing)
                     else:
-                        new_tree_node.appendChild(res)
+                        new_tree_node.add_child(res)
 
         return new_tree_node
 
@@ -260,7 +268,8 @@ class Toe:
                     if resolved_value is not None:
                         new_node.add_child(TextNode(content=resolved_value))
                     else:
-                        new_node.add_child(TextNode(content=str(tree.children[0].text) if tree.children[0].type == Node.TEXT else ""))
+                        new_node.add_child(
+                            TextNode(content=str(tree.children[0].text) if tree.children[0].type == Node.TEXT else ""))
             else:
                 var_arr = re.split(r"[ ]?\+[ ]?", value)
                 if var_arr is None:
