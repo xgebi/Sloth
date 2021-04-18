@@ -165,6 +165,7 @@ class XMLParser:
                         text[parsing_info.i:].find("/>"),
                     )]
                     attribute_value = ""
+                    parsing_info.move_index(len(f"{name}"))
                 else:
                     name = text[parsing_info.i: parsing_info.i + text[parsing_info.i:].find("=")]
                     attribute_value = self.get_attribute_value(text=text, parsing_info=parsing_info)

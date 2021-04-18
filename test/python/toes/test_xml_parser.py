@@ -3,6 +3,7 @@ import os
 
 from app.toes.root_node import RootNode
 from app.toes.comment_node import CommentNode
+from app.toes.text_node import TextNode
 from app.toes.node import Node
 from app.toes.xml_parser import XMLParser
 
@@ -91,6 +92,13 @@ class MyTestCase(unittest.TestCase):
     def test_script(self):
         xp = XMLParser(path=os.path.join(os.getcwd(), "resources", "toes", "script_inline.toe.html"))
         node: RootNode = xp.parse_file()
+
+        self.assertEqual(len(node.children), 1)
+        self.assertEqual(len(node.children[0].children), 1)
+        self.assertEqual(node.children[0].children[0].get_name(), "script")
+        self.assertEqual(node.children[0].children[0].attributes["toe:inline-js"], "")
+        self.assertEqual(type(node.children[0].children[0].children[0]), TextNode)
+        self.assertEqual(node.children[0].children[0].children[0].content.strip(), "const myVar = {{ myVar }};")
 
 
 if __name__ == '__main__':
