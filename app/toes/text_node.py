@@ -23,4 +23,4 @@ class TextNode(Node):
         self.type = Node.CDATA_TEXT if cdata else Node.TEXT
 
     def to_html_string(self) -> str:
-        return self.text
+        return self.content

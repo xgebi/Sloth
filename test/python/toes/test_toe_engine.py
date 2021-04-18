@@ -19,12 +19,12 @@ class MyTestCase(unittest.TestCase):
             import file with toe code
     """
     def test_fragment_from_path(self):
-        self.toe = render_toe_from_path(
+        toe = render_toe_from_path(
             path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
             template="doctyped_toe_fragment_div.toe.html",
             data={}
         )
-        self.assertEqual(True, False)
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
     def test_fragment_from_string(self):
         # self.toe = render_toe_from_path(
