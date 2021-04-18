@@ -76,9 +76,12 @@ class Node:
         if self.paired_tag and child in self.children:
             self.children.remove(child)
 
-    def to_html_string(self) -> str:
+    def to_html_string(self, clean_toes: bool = True) -> str:
         tag = f"<{self._name} "
         for key in self.attributes.keys():
+            # remove toes dtd from result
+            if clean_toes and key == "xmlns:toe":
+                continue
             tag += f"{key}=\"{self.attributes[key]}\" "
         if self.paired_tag:
             tag = tag.strip() + ">"
