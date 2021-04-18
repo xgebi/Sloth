@@ -33,7 +33,8 @@ class Toe:
     variables = None
     current_scope = None
 
-    def __init__(self, path_to_templates=None, template_name=None, data: Dict={}, template_string: str = None, **kwargs):
+    def __init__(self, path_to_templates=None, template_name=None, data: Dict = {}, template_string: str = None,
+                 **kwargs):
         self.current_new_tree_node = None
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
@@ -72,7 +73,7 @@ class Toe:
             return None
 
         for node in self.tree.children[0].children:
-            res = self.process_subtree(self.new_tree.children[0], node)
+            res = self.process_subtree(self.current_new_tree_node, node)
 
         return self.new_tree.to_html_string()
 
@@ -84,8 +85,9 @@ class Toe:
 		Returns
 			Document or Node object
 		"""
+
         if tree.type == Node.TEXT:
-            return self.current_new_tree_node.add_child(TextNode(content=tree.content.strip()))
+            return new_tree_parent.add_child(TextNode(content=tree.content.strip()))
 
         # check for toe tags
         if tree.get_name().startswith('toe:'):
@@ -102,8 +104,7 @@ class Toe:
                 return self.process_while_attribute(new_tree_parent, tree)
 
         # append regular element to parent element
-        new_tree_node = self.current_new_tree_node.add_child(Node(name=tree.get_name()))
-        self.current_new_tree_node = new_tree_node
+        new_tree_node = new_tree_parent.add_child(Node(name=tree.get_name()))
         content_set = False
         if tree.attributes is not None or len(tree.attributes) > 0:
             for key in tree.attributes.keys():
@@ -124,12 +125,11 @@ class Toe:
                     for temp_node in res:
                         if len(new_tree_node.children) > 0 \
                                 and new_tree_node.children[-1].type == Node.TEXT:
-                            # TODO look at replaceWholeText
-                            new_tree_node.children[-1].replaceWholeText(new_tree_node.children[-1].wholeText + " ")
+                            new_tree_node.children[-1].content = new_tree_node.children[-1].content + " "
                         new_tree_node.add_child(temp_node)
                 if res is not None:
-                    if len(new_tree_node.children) > 0 and new_tree_node.childre[-1].type == Node.TEXT:
-                        new_tree_node.children[-1].replaceWholeText(new_tree_node.children[-1].wholeText + " ")
+                    if len(new_tree_node.children) > 0 and new_tree_node.children[-1].type == Node.TEXT:
+                        new_tree_node.children[-1].content = new_tree_node.children[-1].content + " "
                     if type(res) is list:
                         for thing in res:
                             new_tree_node.add_child(thing)
