@@ -111,38 +111,10 @@ class Toe:
             )
         )
 
+        # Here deal with attributes
+
         for template_child in template_tree_node.children:
             self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
-        # content_set = False
-        # if template_tree_node.attributes is not None or len(template_tree_node.attributes) > 0:
-        #     for key in template_tree_node.attributes.keys():
-        #         if key == 'toe:value':
-        #             self.process_toe_value_attribute(template_tree_node, new_tree_node)
-        #         elif key.startswith('toe:attr'):
-        #             self.process_toe_attr_attribute(template_tree_node, new_tree_node, key)
-        #         elif key == 'toe:content':
-        #             content_set = True
-        #             self.process_toe_content_attribute(template_tree_node, new_tree_node)
-        #         else:
-        #             new_tree_node.set_attribute(key, tree.get_attribute(key))
-        # if not content_set:
-        #     for node in tree.children:
-        #         res = self.process_subtree(new_tree_node, node)
-        #
-        #         if type(res) is list:
-        #             for temp_node in res:
-        #                 if len(new_tree_node.children) > 0 \
-        #                         and new_tree_node.children[-1].type == Node.TEXT:
-        #                     new_tree_node.children[-1].content = new_tree_node.children[-1].content + " "
-        #                 new_tree_node.add_child(temp_node)
-        #         if res is not None:
-        #             if len(new_tree_node.children) > 0 and new_tree_node.children[-1].type == Node.TEXT:
-        #                 new_tree_node.children[-1].content = new_tree_node.children[-1].content + " "
-        #             if type(res) is list:
-        #                 for thing in res:
-        #                     new_tree_node.add_child(thing)
-        #             else:
-        #                 new_tree_node.add_child(res)
 
         return new_tree_node
 
