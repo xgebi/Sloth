@@ -6,17 +6,19 @@ from app.toes.toes import render_toe_from_path, render_toe_from_string
 
 class MyTestCase(unittest.TestCase):
     """ Test Checklist
-            toe:fragment
-            import file
-            toe:if
+            toe:fragment ✔
+            import file ✔
+            toe:if ✔
             toe:for
             script toe:inline-js
-            toe image
+            toe image ✔
             toe link
             toe:content
             toe:text
             toe hooks - toe:head, toe:footer
             import file with toe code
+            conditions
+            strings
     """
     def test_fragment_from_path(self):
         toe = render_toe_from_path(
@@ -66,12 +68,12 @@ class MyTestCase(unittest.TestCase):
     def test_importing_link(self):
         toe = render_toe_from_path(
             path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
-            template="importer_if.toe.html",
+            template="toe_link.toe.html",
             data={
                 "thisTrue": True
             }
         )
-        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><a href="/#">Link</a></html>')
 
 
 if __name__ == '__main__':
