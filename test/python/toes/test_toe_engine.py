@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from app.toes.toes import render_toe_from_path
+from app.toes.toes import render_toe_from_path, render_toe_from_string
 
 
 class MyTestCase(unittest.TestCase):
@@ -27,13 +27,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
     def test_fragment_from_string(self):
-        # self.toe = render_toe_from_path(
-        #     path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
-        #     template="doctyped_toe_fragment_div.toe.html",
-        #     data={}
-        # )
-        # self.assertEqual(True, False)
-        pass
+        with open(os.path.join(os.getcwd(), "resources", "toes", "doctyped_toe_fragment_div.toe.html"), 'r') as f:
+            toe = render_toe_from_string(
+                template=f.read(),
+                data={}
+            )
+            self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
 
 if __name__ == '__main__':
