@@ -34,6 +34,13 @@ class MyTestCase(unittest.TestCase):
             )
             self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
+    def test_importing_file(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="importer.toe.html",
+            data={}
+        )
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
 if __name__ == '__main__':
     unittest.main()

@@ -158,24 +158,16 @@ class Toe:
     def process_footer_hook(self):
         pass
 
-    def process_toe_import_tag(self, parent_element, element):
+    def process_toe_import_tag(self, generated_tree, element):
         file_name = element.get_attribute('file')
-
-        imported_tree = {}
 
         if file_name.endswith(".toe.html") or file_name.endswith(".toe.xml"):
             xp = XMLParser(path=os.path.join(self.path_to_templates, file_name))
             imported_tree = xp.parse_file()
-            # TODO continue here
-            top_node: Node = self.new_tree.add_child(imported_tree.children[0].children[0].name)
-            for child_node in imported_tree.children[0].children[0].children:
-                new_node = self.process_subtree(top_node, child_node)
-                if len(top_node.children) >= 1 and top_node.children[-1].type == Node.TEXT:
-                    top_node.children[-1].replaceWholeText(top_node.children[-1].wholeText + " ")
-                if new_node is not None:
-                    top_node.appendChild(new_node)
-            return top_node
-        return None
+            res = []
+            for child in imported_tree.children:
+                res.append(self.process_subtree(generated_tree, child))
+            return res
 
     # toe:value="value"
     def process_toe_value_attribute(self, tree: Node, new_node: Node):
