@@ -1,6 +1,7 @@
 import os
 import re
 from typing import Dict
+import html
 
 from app.toes.node import Node
 from app.toes.root_node import RootNode
@@ -116,13 +117,20 @@ class Toe:
                 del template_tree_node.attributes[attribute[len("toe:"):]]
 
         attributes = template_tree_node.attributes.keys()
+        ignore_children = False
         for attribute in attributes:
             if not attribute.startswith('toe:'):
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
-                pass
+                ignore_children = True
+                new_tree_parent.add_child(TextNode(
+                    content=html.escape(self.process_toe_value(template_tree_node.get_attribute(attribute)))
+                ))
             elif attribute.startswith('toe:content'):
-                pass
+                ignore_children = True
+                new_tree_parent.add_child(TextNode(
+                    content=self.process_toe_value(template_tree_node.get_attribute(attribute))
+                ))
             elif attribute.startswith('toe:inline-js'):
                 pass
             else:
@@ -131,7 +139,7 @@ class Toe:
                     self.process_toe_value(template_tree_node.get_attribute(attribute))
                 )
 
-        if template_tree_node.is_paired():
+        if template_tree_node.is_paired() and not ignore_children:
             for template_child in template_tree_node.children:
                 self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
 
