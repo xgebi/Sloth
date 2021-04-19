@@ -62,7 +62,8 @@ class Node:
         return self.attributes[name] if name in self.attributes else None
 
     def remove_attribute(self, name: str):
-        del self.attributes[name]
+        if name in self.attributes:
+            del self.attributes[name]
 
     def add_child(self, child: 'Node') -> 'Node':
         if self.paired_tag:

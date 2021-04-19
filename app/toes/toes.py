@@ -164,10 +164,9 @@ class Toe:
         if file_name.endswith(".toe.html") or file_name.endswith(".toe.xml"):
             xp = XMLParser(path=os.path.join(self.path_to_templates, file_name))
             imported_tree = xp.parse_file()
-            res = []
+
             for child in imported_tree.children:
-                res.append(self.process_subtree(generated_tree, child))
-            return res
+                self.process_subtree(generated_tree, child)
 
     # toe:value="value"
     def process_toe_value_attribute(self, tree: Node, new_node: Node):
@@ -327,7 +326,7 @@ class Toe:
     def process_if_attribute(self, parent_element, element):
         if not self.process_condition(element.get_attribute('toe:if')):
             return None
-        element.removeAttribute('toe:if')
+        element.remove_attribute('toe:if')
         return self.process_subtree(parent_element, element)
 
     def process_for_attribute(self, parent_element, element):
