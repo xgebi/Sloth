@@ -90,7 +90,7 @@ class Toe:
             return new_tree_parent.add_child(TextNode(content=template_tree_node.content.strip()))
 
         # check for toe attributes
-        attributes = template_tree_node.attributes.keys()
+        attributes = list(template_tree_node.attributes.keys())
         if 'toe:if' in attributes:
             return self.process_if_attribute(new_tree_parent, template_tree_node)
         if 'toe:for' in attributes:
@@ -112,6 +112,11 @@ class Toe:
         )
 
         for attribute in attributes:
+            if attribute.startswith("toe:") and attribute[len("toe:"):] in attributes:
+                del template_tree_node.attributes[attribute[len("toe:"):]]
+
+        attributes = template_tree_node.attributes.keys()
+        for attribute in attributes:
             if not attribute.startswith('toe:'):
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
@@ -121,10 +126,14 @@ class Toe:
             elif attribute.startswith('toe:inline-js'):
                 pass
             else:
-                new_tree_node.set_attribute(attribute[attribute.find(":") + 1:], )
+                new_tree_node.set_attribute(
+                    attribute[attribute.find(":") + 1:],
+                    self.process_toe_value(template_tree_node.get_attribute(attribute))
+                )
 
-        for template_child in template_tree_node.children:
-            self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
+        if template_tree_node.is_paired():
+            for template_child in template_tree_node.children:
+                self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
 
         return new_tree_node
 
@@ -134,22 +143,22 @@ class Toe:
             for template_node in element.children:
                 self.process_subtree(new_tree_parent=parent_element, template_tree_node=template_node)
 
-        if element.get_name() == "toe:import":
+        elif element.get_name() == "toe:import":
             return self.process_toe_import_tag(parent_element, element)
 
-        if element.get_name() == 'toe:assign':
+        elif element.get_name() == 'toe:assign':
             return self.process_assign_tag(element)
 
-        if element.get_name() == 'toe:create':
+        elif element.get_name() == 'toe:create':
             return self.process_create_tag(element)
 
-        if element.get_name() == 'toe:modify':
+        elif element.get_name() == 'toe:modify':
             return self.process_modify_tag(element)
 
-        if element.get_name() == 'toe:head':
+        elif element.get_name() == 'toe:head':
             return self.process_head_hook()
 
-        if element.get_name() == 'toe:footer':
+        elif element.get_name() == 'toe:footer':
             return self.process_footer_hook()
 
     def process_head_hook(self):
@@ -168,28 +177,26 @@ class Toe:
             for child in imported_tree.children:
                 self.process_subtree(generated_tree, child)
 
-    # toe:value="value"
-    def process_toe_value_attribute(self, tree: Node, new_node: Node):
-        value = tree.get_attribute("toe:value")
+    def process_toe_value(self, attribute_value: str) -> str:
 
         try:
-            value_int = int(value)
-            value_float = float(value)
+            value_int = int(attribute_value)
+            value_float = float(attribute_value)
 
             if value_int == value_float:
-                new_node.set_attribute("value", value_int)
-            else:
-                new_node.set_attribute("value", value_float)
+                return value_int
+            return value_float
         except ValueError:
-            if re.search(r"[ ]?\+[ ]?", value) is None:
-                if type(value) == str and value[0] == "'":
-                    new_node.set_attribute("value", value[1: len(value) - 1])
+            if re.search(r"[ ]?\+[ ]?", attribute_value) is None:
+                # TODO find out what this regex does
+                if type(attribute_value) == str and attribute_value[0] == "'":
+                    return attribute_value[1: len(attribute_value) - 1]
                 else:
-                    resolved_value = self.current_scope.find_variable(value)
+                    resolved_value = self.current_scope.find_variable(attribute_value)
                     if resolved_value is not None:
-                        new_node.set_attribute("value", resolved_value)
+                        return resolved_value
             else:
-                var_arr = re.split(r"[ ]?\+[ ]?", value)
+                var_arr = re.split(r"[ ]?\+[ ]?", attribute_value)
                 if var_arr is None:
                     return
                 result = ""
@@ -200,7 +207,7 @@ class Toe:
                         resolved_value = self.current_scope.find_variable(item)
                         result += resolved_value if resolved_value is not None else ""
 
-                new_node.set_attribute("value", result)
+                return result
 
     # toe:content="value"
     def process_toe_content_attribute(self, tree, new_node):

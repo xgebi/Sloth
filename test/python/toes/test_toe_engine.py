@@ -52,5 +52,27 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
+    def test_image(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="toe_image.toe.html",
+            data={
+                "linkToImage": "/image.svg",
+                "descriptionText": "Description from toes"
+            }
+        )
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><img src="/image.svg" alt="Description from toes" /></html>')
+
+    def test_importing_link(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="importer_if.toe.html",
+            data={
+                "thisTrue": True
+            }
+        )
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
+
+
 if __name__ == '__main__':
     unittest.main()

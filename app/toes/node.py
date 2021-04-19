@@ -44,11 +44,11 @@ class Node:
 
     def set_name(self, name):
         self._name = name
-        if name in self.UNPAIRED_TAGS:
-            self.paired_tag = False
-        if name in self.ALWAYS_PAIRED:
-            self.paired_tag = True
 
+    def is_paired(self):
+        if self._name not in self.ALWAYS_PAIRED:
+            return self._name not in self.UNPAIRED_TAGS
+        return True
     def set_paired(self, paired: bool):
         if self._name in self.UNPAIRED_TAGS:
             self.paired_tag = False
@@ -85,7 +85,7 @@ class Node:
             if clean_toes and key == "xmlns:toe":
                 continue
             tag += f"{key}=\"{self.attributes[key]}\" "
-        if self.paired_tag:
+        if self.is_paired():
             tag = tag.strip() + ">"
             for child in self.children:
                 tag += child.to_html_string()
