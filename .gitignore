@@ -44,3 +44,5 @@ rss.lock
 schedule.lock
 
 /src/toes/target
+/src/toes-py/target
+/src/toes-wasm/target
