@@ -11,7 +11,7 @@ class MyTestCase(unittest.TestCase):
             toe:if ✔
             toe:for
             toe:while
-            script toe:inline-js
+            script toe:inline-js ✔
             toe image ✔
             toe link ✔
             toe:content ✔
@@ -123,6 +123,17 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(toe, """<!DOCTYPE html><html lang="en"><script>
         const myVar = "Hello";
    </script></html>""")
+
+    def test_for(self):
+        # As it is now, head and footer have same implementation. When they diverge second test needs to be added
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="toe_for.toe.html",
+            data={
+                "numbers": [1, 2, 3]
+            }
+        )
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>1</div><div>2</div><div>3</div></html>')
 
 
 if __name__ == '__main__':

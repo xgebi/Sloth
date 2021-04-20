@@ -143,12 +143,12 @@ class Toe:
             elif attribute.startswith('toe:text'):
                 ignore_children = True
                 new_tree_node.add_child(TextNode(
-                    content=html.escape(self.process_toe_value(template_tree_node.get_attribute(attribute)))
+                    content=html.escape(str(self.process_toe_value(template_tree_node.get_attribute(attribute))))
                 ))
             elif attribute.startswith('toe:content'):
                 ignore_children = True
                 new_tree_node.add_child(TextNode(
-                    content=self.process_toe_value(template_tree_node.get_attribute(attribute))
+                    content=str(self.process_toe_value(template_tree_node.get_attribute(attribute)))
                 ))
             elif attribute.startswith('toe:inline-js'):
                 ignore_children = True
@@ -352,7 +352,7 @@ class Toe:
         if iterable_item is None:
             return None
 
-        element.removeAttribute('toe:for')
+        element.remove_attribute('toe:for')
 
         for thing in iterable_item:
             # local scope creation
@@ -364,12 +364,11 @@ class Toe:
             # process subtree
             result_node = self.process_subtree(parent_element, element)
             if result_node is not None:
-                result_nodes.append(result_node)
+                # parent_element.add_child(result_node)
+                pass
 
             # local scope destruction
             self.current_scope = self.current_scope.parent_scope
-            local_scope = None
-        return result_nodes
 
     def process_while_attribute(self, parent_element, element):
         result_nodes = []

@@ -202,8 +202,19 @@ class XMLParser:
     def get_attribute_value(self, text: str, parsing_info: XmlParsingInfo) -> (str):
         attribute_value_start = text[parsing_info.i:].find("=") + 1 + parsing_info.i
         j = attribute_value_start + 1
-        while j < len(text):
-            if (text[j] == "\"" or text[j] == "\'") and text[j-1] != "\\":
-                return text[attribute_value_start + 1: j]
-            j += 1
+        if text[attribute_value_start: attribute_value_start+2] == "\"'":
+            while j < len(text):
+                if text[j] == "\"" and text[j - 1] != "\\":
+                    return text[attribute_value_start + 1: j]
+                j += 1
+        elif text[attribute_value_start: attribute_value_start+2] == "'\"":
+            while j < len(text):
+                if text[j] == "\'" and text[j - 1] != "\\":
+                    return text[attribute_value_start + 1: j]
+                j += 1
+        else:
+            while j < len(text):
+                if (text[j] == "\"" or text[j] == "\'") and text[j-1] != "\\":
+                    return text[attribute_value_start + 1: j]
+                j += 1
         raise XMLParsingException("Attribute not ended")
