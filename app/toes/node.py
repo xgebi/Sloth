@@ -7,6 +7,7 @@ class Node:
     PROCESSING = 'processing'
     DIRECTIVE = 'directive'
     TEXT = 'text'
+    COMMENT = 'comment'
     CDATA_TEXT = 'cdata'
 
     type: str = NODE

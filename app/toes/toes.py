@@ -1,28 +1,36 @@
 import os
 import re
-from typing import Dict
+from typing import Dict, List
 import html
 
 from app.toes.node import Node
 from app.toes.root_node import RootNode
 from app.toes.text_node import TextNode
+from app.toes.comment_node import CommentNode
 from app.toes.toes_exceptions import ToeProcessingException
 from app.toes.xml_parser import XMLParser
 
 
-def render_toe_from_path(*args, template, path_to_templates, data: Dict = {}, **kwargs):
+def render_toe_from_path(
+        *args,
+        template,
+        path_to_templates,
+        data: Dict = {},
+        hooks: Dict = {},
+        **kwargs):
     if path_to_templates is None and template is None:
         return None
 
-    toe_engine = Toe(path_to_templates, template, data=data, **kwargs)
+    toe_engine = Toe(path_to_templates, template, data=data, hooks=hooks, **kwargs)
     return toe_engine.process_tree()
 
 
-def render_toe_from_string(*args, template: str, data: Dict = {}, **kwargs):
+def render_toe_from_string(
+        *args, template: str, data: Dict = {}, hooks: Dict = {},**kwargs):
     if template is None:
         return None
 
-    toe_engine = Toe(template_string=template, data=data, **kwargs)
+    toe_engine = Toe(template_string=template, data=data, hooks=hooks, **kwargs)
     return toe_engine.process_tree()
 
 
@@ -34,26 +42,34 @@ class Toe:
     variables = None
     current_scope = None
 
-    def __init__(self, path_to_templates=None, template_name=None, data: Dict = {}, template_string: str = None,
-                 **kwargs):
+    def __init__(
+            self,
+            path_to_templates=None,
+            template_name=None,
+            data: Dict = {},
+            template_string: str = None,
+            hooks: Dict = {},
+            **kwargs
+    ):
         self.current_new_tree_node = None
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
 
-            self.initialize_tree(data=data)
+            self.initialize_tree(data=data, hooks=hooks)
 
             xp = XMLParser(path=(os.path.join(path_to_templates, template_name)))
             self.tree = xp.parse_file()
         elif template_string is not None:
-            self.initialize_tree(data=data)
+            self.initialize_tree(data=data, hooks=hooks)
             xp = XMLParser(template=template_string)
             self.tree = xp.parse_file()
         else:
             raise ToeProcessingException("Template not available")
 
-    def initialize_tree(self, data: Dict):
+    def initialize_tree(self, data: Dict, hooks: Dict):
         self.variables = VariableScope(data, None)
         self.current_scope = self.variables
+        self.hooks = hooks
 
         self.new_tree = RootNode(html=True)
         node = Node(
@@ -90,6 +106,9 @@ class Toe:
         if template_tree_node.type == Node.TEXT:
             return new_tree_parent.add_child(TextNode(content=template_tree_node.content.strip()))
 
+        if template_tree_node.type == Node.COMMENT:
+            return new_tree_parent.add_child(CommentNode(content=template_tree_node.content.strip()))
+
         # check for toe attributes
         attributes = list(template_tree_node.attributes.keys())
         if 'toe:if' in attributes:
@@ -123,16 +142,17 @@ class Toe:
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
                 ignore_children = True
-                new_tree_parent.add_child(TextNode(
+                new_tree_node.add_child(TextNode(
                     content=html.escape(self.process_toe_value(template_tree_node.get_attribute(attribute)))
                 ))
             elif attribute.startswith('toe:content'):
                 ignore_children = True
-                new_tree_parent.add_child(TextNode(
+                new_tree_node.add_child(TextNode(
                     content=self.process_toe_value(template_tree_node.get_attribute(attribute))
                 ))
             elif attribute.startswith('toe:inline-js'):
-                pass
+                ignore_children = True
+                self.process_inline_js(new_tree_node, template_tree_node.children)
             else:
                 new_tree_node.set_attribute(
                     attribute[attribute.find(":") + 1:],
@@ -144,6 +164,17 @@ class Toe:
                 self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
 
         return new_tree_node
+
+    def process_inline_js(self, new_tree, nodes: List[TextNode]):
+        for node in nodes:
+            while node.content.count("<(") > 0:
+                start = node.content.rfind("<(")
+                end = node.content.rfind(")>")
+                resolved = self.process_toe_value(node.content[start + 2: end].strip())
+                node.content = f"{node.content[:start]}{resolved}{node.content[end + 2:]}"
+            new_tree.add_child(
+                TextNode(content=node.content)
+            )
 
     def process_toe_tag(self, parent_element: Node, element: Node):
 
@@ -164,16 +195,26 @@ class Toe:
             return self.process_modify_tag(element)
 
         elif element.get_name() == 'toe:head':
-            return self.process_head_hook()
+            return self.process_head_hook(parent_node=parent_element)
 
         elif element.get_name() == 'toe:footer':
-            return self.process_footer_hook()
+            return self.process_footer_hook(parent_node=parent_element)
 
-    def process_head_hook(self):
-        pass
+    def process_head_hook(self, parent_node: Node):
+        if "head" in self.hooks.keys():
+            for child in self.hooks["head"]:
+                xp = XMLParser(template=child)
+                children = xp.parse_file().children
+                for child_node in children:
+                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
-    def process_footer_hook(self):
-        pass
+    def process_footer_hook(self, parent_node: Node):
+        if "footer" in self.hooks.keys():
+            for child in self.hooks["footer"]:
+                xp = XMLParser(template=child)
+                children = xp.parse_file().children
+                for child_node in children:
+                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
     def process_toe_import_tag(self, generated_tree, element):
         file_name = element.get_attribute('file')
@@ -185,73 +226,28 @@ class Toe:
             for child in imported_tree.children:
                 self.process_subtree(generated_tree, child)
 
-    def process_toe_value(self, attribute_value: str) -> str:
-
-        try:
-            value_int = int(attribute_value)
-            value_float = float(attribute_value)
-
-            if value_int == value_float:
-                return value_int
-            return value_float
-        except ValueError:
-            if re.search(r"[ ]?\+[ ]?", attribute_value) is None:
-                # TODO find out what this regex does
-                if type(attribute_value) == str and attribute_value[0] == "'":
-                    return attribute_value[1: len(attribute_value) - 1]
+    def process_toe_value(self, attribute_value: str) -> (str or None):
+        if re.search(r"[ ]?\+[ ]?", attribute_value) is None:
+            # r"[ ]?\+[ ]?" detects + so string like 'aaa' + variable can be processed
+            if type(attribute_value) == str and attribute_value[0] == "'":
+                return attribute_value[1: len(attribute_value) - 1]
+            else:
+                resolved_value = self.current_scope.find_variable(attribute_value)
+                if resolved_value is not None:
+                    return resolved_value
+        else:
+            var_arr = re.split(r"[ ]?\+[ ]?", attribute_value)
+            if var_arr is None:
+                return
+            result = ""
+            for item in var_arr:
+                if item[0] == "'":
+                    result += item[1: len(item) - 1]
                 else:
-                    resolved_value = self.current_scope.find_variable(attribute_value)
-                    if resolved_value is not None:
-                        return resolved_value
-            else:
-                var_arr = re.split(r"[ ]?\+[ ]?", attribute_value)
-                if var_arr is None:
-                    return
-                result = ""
-                for item in var_arr:
-                    if item[0] == "'":
-                        result += item[1: len(item) - 1]
-                    else:
-                        resolved_value = self.current_scope.find_variable(item)
-                        result += resolved_value if resolved_value is not None else ""
+                    resolved_value = self.current_scope.find_variable(item)
+                    result += resolved_value if resolved_value is not None else ""
 
-                return result
-
-    # toe:content="value"
-    def process_toe_content_attribute(self, tree, new_node):
-        value = tree.get_attribute("toe:content")
-
-        try:
-            value_int = int(value)
-            value_float = float(value)
-
-            if value_int == value_float:
-                new_node.add_child(TextNode(content=str(value_int)))
-            else:
-                new_node.add_child(TextNode(content=str(value_float)))
-        except ValueError:
-            if re.search(r"[ ]?\+[ ]?", value) is None:
-                if type(value) == str and value[0] == "'":
-                    new_node.add_child(TextNode(content=value[1: len(value) - 1]))
-                else:
-                    resolved_value = self.current_scope.find_variable(value)
-                    if resolved_value is not None:
-                        new_node.add_child(TextNode(content=resolved_value))
-                    else:
-                        new_node.add_child(
-                            TextNode(content=str(tree.children[0].text) if tree.children[0].type == Node.TEXT else ""))
-            else:
-                var_arr = re.split(r"[ ]?\+[ ]?", value)
-                if var_arr is None:
-                    return
-                result = ""
-                for item in var_arr:
-                    if item[0] == "'":
-                        result += item[1: len(item) - 1]
-                    else:
-                        resolved_value = self.current_scope.find_variable(item)
-                        result += resolved_value if resolved_value is not None else ""
-                new_node.add_child(TextNode(content=result))
+            return result
 
     def process_assign_tag(self, element):
         var_name = element.get_attribute('var')
@@ -262,7 +258,7 @@ class Toe:
 
         variable = self.current_scope.find_variable(var_name)
         if variable is None:
-            raise ValueError('Variable doesn\'t exist')
+            raise ValueError("Variable doesn't exist")
 
         self.current_scope.assign_variable(var_name, var_value)
         return None
@@ -280,7 +276,7 @@ class Toe:
         self.current_scope.variables[var_name] = var_value
         return None
 
-    def process_modify_tag(self, element):
+    def process_modify_tag(self, element) -> None:
         var_name = element.get_attribute('var')
         var_value = element.get_attribute('value')
 
@@ -289,7 +285,7 @@ class Toe:
 
         variable = self.current_scope.find_variable(var_name)
         if variable is None:
-            raise ValueError('Variable doesn\'t exist')
+            raise ValueError("Variable doesn't exist")
 
         if element.hasAttribute('toe:inc'):
             if type(variable) == int or type(variable) == float:
@@ -463,9 +459,6 @@ class Toe:
         if " eq " in condition["value"]:
             return resolved[0] == resolved[1]
         return False
-
-    def resolve_strings(self, s: str) -> str:
-        return ""
 
 
 class VariableScope:

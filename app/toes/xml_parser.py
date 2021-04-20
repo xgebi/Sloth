@@ -15,6 +15,7 @@ class STATES(enum.Enum):
     read_node_name = 8
     looking_for_attribute = 9
     looking_for_child_nodes = 18
+    inside_script = 19
 
 
 class XmlParsingInfo:
@@ -51,6 +52,7 @@ class XMLParser:
             elif result[parsing_info.i] == ">":
                 result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i].isspace():
+
                 parsing_info.move_index()
             else:
                 result, parsing_info = self.parse_character(text=result, parsing_info=parsing_info)
@@ -137,7 +139,20 @@ class XMLParser:
                 parsing_info.current_node = parsing_info.current_node.parent
 
             parsing_info.state = STATES.looking_for_child_nodes
-            parsing_info.move_index()
+
+            if parsing_info.current_node.get_name().lower() != 'script':
+                parsing_info.move_index()
+            else:
+                end_script = parsing_info.i + text[parsing_info.i + 1:].find("</script>")
+                if end_script < parsing_info.i:
+                    raise XMLParsingException("Attribute not ended")
+                parsing_info.current_node.add_child(
+                    TextNode(
+                        content=text[parsing_info.i + 1:end_script]
+                    )
+                )
+                parsing_info.move_index(len(f"{text[parsing_info.i:end_script]}</script>") + 1)
+                parsing_info.current_node = parsing_info.current_node.parent
         else:
             parsing_info.move_index()
         return text, parsing_info
@@ -158,7 +173,7 @@ class XMLParser:
                 tag_end = text[parsing_info.i:].find(">")
                 if tag_end == -1:
                     raise XMLParsingException("Not properly closed tag")
-                if attr_divider > tag_end >= 0:
+                if (attr_divider > tag_end) and (tag_end >= 0):
                     name = text[parsing_info.i: parsing_info.i + positive_min(
                         text[parsing_info.i:].find(">"),
                         text[parsing_info.i:].find(" "),
@@ -188,7 +203,7 @@ class XMLParser:
         attribute_value_start = text[parsing_info.i:].find("=") + 1 + parsing_info.i
         j = attribute_value_start + 1
         while j < len(text):
-            if text[j] == "\"" and text[j-1] != "\\":
+            if (text[j] == "\"" or text[j] == "\'") and text[j-1] != "\\":
                 return text[attribute_value_start + 1: j]
             j += 1
         raise XMLParsingException("Attribute not ended")
