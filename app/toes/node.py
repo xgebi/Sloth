@@ -62,6 +62,9 @@ class Node:
     def get_attribute(self, name):
         return self.attributes[name] if name in self.attributes else None
 
+    def has_attribute(self, name):
+        return name in self.attributes
+
     def remove_attribute(self, name: str):
         if name in self.attributes:
             del self.attributes[name]

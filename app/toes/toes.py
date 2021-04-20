@@ -287,50 +287,71 @@ class Toe:
         if variable is None:
             raise ValueError("Variable doesn't exist")
 
-        if element.hasAttribute('toe:inc'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable + 1)
-                return None
+        if element.has_attribute('toe:inc'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, int(variable) + 1)
+                else:
+                    self.current_scope.assign_variable(var_name, float(variable) + 1)
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:dec'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable - 1)
-                return None
+        if element.has_attribute('toe:dec'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, int(variable) - 1)
+                else:
+                    self.current_scope.assign_variable(var_name, float(variable) - 1)
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:add'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable + float(element.get_attribute('toe:add')))
-                return None
+        if element.has_attribute('toe:add'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, float(variable) + float(element.get_attribute('toe:add')))
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:sub'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable - float(element.get_attribute('toe:sub')))
-                return None
+        if element.has_attribute('toe:sub'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, float(variable) - float(element.get_attribute('toe:sub')))
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:mul'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable * float(element.get_attribute('toe:mul')))
-                return None
+        if element.has_attribute('toe:mul'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, float(variable) * float(element.get_attribute('toe:mul')))
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:div'):
-            if type(variable) == int or type(variable) == float:
-                if float(element.get_attribute('toe:div')) != 0:
-                    self.current_scope.assign_variable(var_name, variable / float(element.get_attribute('toe:div')))
-                    return None
-                raise ZeroDivisionError()
+        if element.has_attribute('toe:div'):
+            try:
+                if int(variable) == float(variable):
+                    if float(element.get_attribute('toe:div')) != 0:
+                        self.current_scope.assign_variable(var_name, float(variable) / float(element.get_attribute('toe:div')))
+                        return
+                    raise ZeroDivisionError()
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:mod'):
-            if type(variable) == int or type(variable) == float:
-                if float(element.get_attribute('toe:mod')) != 0:
-                    if float(element.get_attribute('toe:mod')) != 0:
-                        self.current_scope.assign_variable(var_name, variable % float(element.get_attribute('toe:mod')))
-                    return None
-                raise ZeroDivisionError()
+        if element.has_attribute('toe:mod'):
+            try:
+                if int(variable) == float(variable):
+                    if float(element.get_attribute('toe:div')) != 0:
+                        self.current_scope.assign_variable(var_name, float(variable) % float(element.get_attribute('toe:mod')))
+                        return
+                    raise ZeroDivisionError()
+            except ValueError as ve:
+                raise ve
 
-        if element.hasAttribute('toe:pow'):
-            if type(variable) == int or type(variable) == float:
-                self.current_scope.assign_variable(var_name, variable ** float(element.get_attribute('toe:pow')))
-                return None
+        if element.has_attribute('toe:pow'):
+            try:
+                if int(variable) == float(variable):
+                    self.current_scope.assign_variable(var_name, float(variable) ** float(element.get_attribute('toe:pow')))
+            except ValueError as ve:
+                raise ve
 
         return None
 
@@ -371,7 +392,6 @@ class Toe:
             self.current_scope = self.current_scope.parent_scope
 
     def process_while_attribute(self, parent_element, element):
-        result_nodes = []
         # get toe:for attribute
         iterable_cond = element.get_attribute('toe:while')
 
@@ -384,7 +404,7 @@ class Toe:
         if not contains_condition:
             return None
 
-        element.removeAttribute('toe:while')
+        element.remove_attribute('toe:while')
 
         while self.process_condition(iterable_cond):
             # local scope creation
@@ -393,14 +413,9 @@ class Toe:
 
             # process subtree
             result_node = self.process_subtree(parent_element, element)
-            if result_node is not None:
-                result_nodes.append(result_node)
 
             # local scope destruction
             self.current_scope = self.current_scope.parent_scope
-            local_scope = None
-
-        return result_nodes
 
     def process_condition(self, condition):
         if type(condition) == str:
@@ -446,13 +461,13 @@ class Toe:
                         return False
 
         if " gte " in condition["value"]:
-            return resolved[0] >= resolved[1]
+            return float(resolved[0]) >= float(resolved[1])
         if " gt " in condition["value"]:
-            return resolved[0] > resolved[1]
+            return float(resolved[0]) > float(resolved[1])
         if " lte " in condition["value"]:
-            return resolved[0] <= resolved[1]
+            return float(resolved[0]) <= float(resolved[1])
         if " lt " in condition["value"]:
-            return resolved[0] < resolved[1]
+            return float(resolved[0]) < float(resolved[1])
         if " neq " in condition["value"]:
             return resolved[0] != resolved[1]
         if " eq " in condition["value"]:

@@ -173,7 +173,7 @@ class XMLParser:
                 tag_end = text[parsing_info.i:].find(">")
                 if tag_end == -1:
                     raise XMLParsingException("Not properly closed tag")
-                if (attr_divider > tag_end) and (tag_end >= 0):
+                if ((attr_divider > tag_end) and (tag_end >= 0)) or (attr_divider < 0):
                     name = text[parsing_info.i: parsing_info.i + positive_min(
                         text[parsing_info.i:].find(">"),
                         text[parsing_info.i:].find(" "),
