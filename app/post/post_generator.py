@@ -529,7 +529,8 @@ class PostGenerator:
                     "menus": self.menus,
                     "translations": translations
                 },
-                hooks=self.hooks
+                hooks=self.hooks,
+                base_path=self.theme_path
             )
             f.write(rendered)
 

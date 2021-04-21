@@ -1,4 +1,6 @@
 import enum
+import os.path
+
 from app.toes.node import Node
 from app.toes.text_node import TextNode
 from app.toes.root_node import RootNode
@@ -31,8 +33,10 @@ class XmlParsingInfo:
 
 class XMLParser:
 
-    def __init__(self, *args, path=None, template=None, **kwargs):
+    def __init__(self, *args, path=None, template=None, base_path=None, **kwargs):
         if path is not None:
+            if base_path is not None:
+                path = os.path.join(base_path, path)
             with open(path, mode="r", encoding="utf-8") as text_file:
                 self.text = text_file.read()
         elif template is not None:
@@ -98,6 +102,7 @@ class XMLParser:
                     parsing_info.current_node = parsing_info.current_node.parent
                     parsing_info.move_index(len(f"</{name}>"))
                 else:
+                    print(text[parsing_info.i + 1:])
                     raise XMLParsingException()
             else:
                 parsing_info.state = STATES.read_node_name
@@ -133,7 +138,7 @@ class XMLParser:
 
     def parse_ending_tag_character(self, text: str, parsing_info: XmlParsingInfo) -> (str, XmlParsingInfo):
         if parsing_info.state == STATES.looking_for_attribute:
-            if (text[parsing_info.i - 1] == "/" or not parsing_info.current_node.paired_tag) \
+            if (text[parsing_info.i - 1] == "/" or not parsing_info.current_node.is_paired()) \
                     and type(parsing_info.current_node) is not RootNode:
                 parsing_info.current_node.paired_tag = False
                 parsing_info.current_node = parsing_info.current_node.parent

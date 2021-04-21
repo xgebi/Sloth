@@ -18,20 +18,21 @@ def render_toe_from_path(
         path_to_templates,
         data: Dict = {},
         hooks: Hooks = {},
+        base_path,
         **kwargs):
     if path_to_templates is None and template is None:
         return None
 
-    toe_engine = Toe(path_to_templates, template, data=data, hooks=hooks, **kwargs)
+    toe_engine = Toe(path_to_templates, template, data=data, hooks=hooks, base_path=base_path, **kwargs)
     return toe_engine.process_tree()
 
 
 def render_toe_from_string(
-        *args, template: str, data: Dict = {}, hooks: Hooks = {},**kwargs):
+        *args, template: str, data: Dict = {}, hooks: Hooks = {}, base_path, **kwargs):
     if template is None:
         return None
 
-    toe_engine = Toe(template_string=template, data=data, hooks=hooks, **kwargs)
+    toe_engine = Toe(template_string=template, data=data, hooks=hooks, base_path=base_path, **kwargs)
     return toe_engine.process_tree()
 
 
@@ -50,9 +51,11 @@ class Toe:
             data: Dict = {},
             template_string: str = None,
             hooks: Hooks = {},
+            base_path = None,
             **kwargs
     ):
         self.current_new_tree_node = None
+        self.base_path = base_path
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
 
@@ -202,26 +205,24 @@ class Toe:
             return self.process_footer_hook(parent_node=parent_element)
 
     def process_head_hook(self, parent_node: Node):
-        if "head" in self.hooks.keys():
-            for child in self.hooks["head"]:
-                xp = XMLParser(template=child)
-                children = xp.parse_file().children
-                for child_node in children:
-                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
+        for child in self.hooks.head:
+            xp = XMLParser(template=child)
+            children = xp.parse_file().children
+            for child_node in children:
+                self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
     def process_footer_hook(self, parent_node: Node):
-        if "footer" in self.hooks.keys():
-            for child in self.hooks["footer"]:
-                xp = XMLParser(template=child)
-                children = xp.parse_file().children
-                for child_node in children:
-                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
+        for child in self.hooks.footer:
+            xp = XMLParser(template=child)
+            children = xp.parse_file().children
+            for child_node in children:
+                self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
     def process_toe_import_tag(self, generated_tree, element):
         file_name = element.get_attribute('file')
 
         if file_name.endswith(".toe.html") or file_name.endswith(".toe.xml"):
-            xp = XMLParser(path=os.path.join(self.path_to_templates, file_name))
+            xp = XMLParser(path=os.path.join(self.path_to_templates, file_name), base_path=self.base_path)
             imported_tree = xp.parse_file()
 
             for child in imported_tree.children:
