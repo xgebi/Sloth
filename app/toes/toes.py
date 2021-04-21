@@ -18,7 +18,7 @@ def render_toe_from_path(
         path_to_templates,
         data: Dict = {},
         hooks: Hooks = {},
-        base_path,
+        base_path=None,
         **kwargs):
     if path_to_templates is None and template is None:
         return None
@@ -28,7 +28,7 @@ def render_toe_from_path(
 
 
 def render_toe_from_string(
-        *args, template: str, data: Dict = {}, hooks: Hooks = {}, base_path, **kwargs):
+        *args, template: str, data: Dict = {}, hooks: Hooks = {}, base_path=None, **kwargs):
     if template is None:
         return None
 
@@ -444,8 +444,14 @@ class Toe:
         if len(sides) != 2:
             return False
 
-        if not self.current_scope.is_variable(sides[0]) and not self.current_scope.is_variable(sides[1]):
-            return False
+        if sides[0].count("|") > 0 or sides[1].count("|") > 0:
+            if sides[0].count("|") > 0:
+                sides[0] = self.process_pipe(sides[0])
+            if sides[1].count("|") > 0:
+                sides[1] = self.process_pipe(sides[1])
+        else:
+            if not self.current_scope.is_variable(sides[0]) and not self.current_scope.is_variable(sides[1]):
+                return False
 
         # resolve variable
         resolved = []
@@ -475,6 +481,16 @@ class Toe:
         if " eq " in condition["value"]:
             return resolved[0] == resolved[1]
         return False
+
+    def process_pipe(self, side: str):
+        actions = side.split("|")
+        if not self.current_scope.is_variable(actions[0].strip()):
+            return None
+        value = self.current_scope.find_variable(actions[0].strip())
+        for i in range(1, len(actions)):
+            if actions[i].strip() == 'length':
+                value = len(value)
+        return str(value)
 
 
 class VariableScope:
