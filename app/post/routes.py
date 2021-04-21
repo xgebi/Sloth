@@ -982,6 +982,7 @@ def save_post(*args, connection=None, **kwargs):
                 }
             )
     except Exception as e:
+        print(traceback.format_exc())
         return json.dumps({"error": str(e)}), 500
 
     cur.close()

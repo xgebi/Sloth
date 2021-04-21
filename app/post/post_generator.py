@@ -19,7 +19,7 @@ from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
 from app.toes.toes import render_toe_from_path, render_toe_from_string
 from app.post.post_types import PostTypes
-
+from app.toes.hooks import Hooks
 
 class PostGenerator:
     runnable = True
@@ -37,11 +37,13 @@ class PostGenerator:
         self.menus = self.get_menus()
         # get languages
         self.languages = self.get_languages()
+        self.hooks = Hooks()
 
         # setting global options
-        self.set_individual_settings(connection=connection, setting_name='active_theme')
+        self.set_individual_settings(connection=connection, setting_name='active_theme', settings_type='themes')
         self.set_individual_settings(connection=connection, setting_name='main_language')
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
+        self.set_individual_settings(connection=connection, setting_name='sitename')
         self.set_individual_settings(connection=connection, setting_name='api_url', alternate_name='sloth_api_url')
 
         # Set path to the theme
@@ -50,8 +52,6 @@ class PostGenerator:
             self.settings['active_theme']['settings_value']
         )
 
-        self.sloth_footer = ""
-        self.sloth_secret_script = ""
         self.set_footer(connection=connection)
 
     def run(
@@ -93,7 +93,12 @@ class PostGenerator:
                 )
             )
         elif len(post_type) > 0:
-            pass
+            t = threading.Thread(
+                target=self.generate_post_type,
+                kwargs=dict(
+                    post_type_id=post_type
+                )
+            )
         elif everything:
             t = threading.Thread(target=self.generate_all)
         else:
@@ -521,10 +526,10 @@ class PostGenerator:
                     "post": post,
                     "sitename": self.settings["sitename"]["settings_value"],
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
-                    "sloth_footer": self.sloth_footer,
                     "menus": self.menus,
                     "translations": translations
-                }
+                },
+                hooks=self.hooks
             )
             f.write(rendered)
 
@@ -561,35 +566,35 @@ class PostGenerator:
     def get_post_template(self, *args, post_type, post, language, **kwargs) -> str:
         # post type, post format, language
         if os.path.isfile(os.path.join(self.theme_path,
-                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")):
+                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.html")
+                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.toe.html")
         # post type, post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}.html")
+                                              f"post-{post_type['slug']}-{post['format_slug']}.toe.html")
         # post format, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}-{language['short_name']}.html")
+                                              f"post-{post['format_slug']}-{language['short_name']}.toe.html")
         # post type, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{language['short_name']}.html")
+                                              f"post-{post_type['slug']}-{language['short_name']}.toe.html")
         # post type
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}.html")
+                                              f"post-{post_type['slug']}.toe.html")
         # language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{language['short_name']}.html")
+                                              f"post-{language['short_name']}.toe.html")
         # post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}.html")
+                                              f"post-{post['format_slug']}.toe.html")
         else:
-            post_template_path = Path(self.theme_path, "post.html")
+            post_template_path = Path(self.theme_path, "post.toe.html")
 
         with open(post_template_path, 'r', encoding="utf-8") as f:
             return f.read()
@@ -625,17 +630,17 @@ class PostGenerator:
         else:
             archive_path_dir = Path(output_path, post_type["slug"])
 
-        if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.html")):
+        if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.toe.html")):
             archive_template_path = os.path.join(self.theme_path,
-                                                 f"archive-{post_type['slug']}-{language['short_name']}.html")
-        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.html")):
+                                                 f"archive-{post_type['slug']}-{language['short_name']}.toe.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.toe.html")):
             archive_template_path = os.path.join(self.theme_path,
-                                                 f"archive-{post_type['slug']}.html")
-        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{language['short_name']}.html")):
+                                                 f"archive-{post_type['slug']}.toe.html")
+        elif os.path.isfile(os.path.join(self.theme_path, f"archive-{language['short_name']}.toe.html")):
             archive_template_path = os.path.join(self.theme_path,
-                                                 f"archive-{language['short_name']}.html")
+                                                 f"archive-{language['short_name']}.toe.html")
         else:
-            archive_template_path = Path(self.theme_path, "archive.html")
+            archive_template_path = Path(self.theme_path, "archive.toe.html")
 
         with open(archive_template_path, 'r', encoding="utf-8") as f:
             template = Template(f.read())
@@ -716,8 +721,8 @@ class PostGenerator:
             print(e)
             traceback.print_exc()
 
-        if os.path.isfile(os.path.join(self.theme_path, "secret.html")):
-            with open(os.path.join(self.theme_path, "secret.html"), 'r', encoding="utf-8") as f:
+        if os.path.isfile(os.path.join(self.theme_path, "secret.toe.html")):
+            with open(os.path.join(self.theme_path, "secret.toe.html"), 'r', encoding="utf-8") as f:
                 protected_template = Template(f.read())
                 return protected_template.render(post=post)
 
@@ -727,21 +732,18 @@ class PostGenerator:
     def set_footer(self, *args, connection, **kwargs):
         # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
-            footer_template = f.read()
-            self.sloth_footer = render_toe_from_string(template=footer_template, data={"sloth_api_url": self.settings["sloth_api_url"]["settings_value"]})
+            self.hooks.footer.append(f.read())
 
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
-            secret_template = f.read()
-            self.sloth_secret_script = render_toe_from_string(template=secret_template,
-                                                                  data={"sloth_api_url": self.settings["sloth_api_url"]["settings_value"]})
+            self.hooks.footer.append(f.read())
 
-    def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, **kwargs):
+    def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
         cur = connection.cursor()
         try:
             cur.execute(
                 sql.SQL("""SELECT settings_name, settings_value, settings_value_type 
-                                FROM sloth_settings WHERE settings_name = %s OR settings_type = %s"""),
-                [setting_name, 'sloth']
+                                FROM sloth_settings WHERE settings_name = %s AND settings_type = %s"""),
+                [setting_name, settings_type]
             )
             raw_items = cur.fetchall()
         except Exception as e:
@@ -750,7 +752,7 @@ class PostGenerator:
 
         cur.close()
 
-        if alternate_name is not None:
+        if alternate_name is None:
             for item in raw_items:
                 self.settings[str(item[0])] = {
                     "settings_name": item[0],
@@ -859,15 +861,15 @@ class PostGenerator:
             traceback.print_exc()
 
         # get template
-        home_template_path = Path(self.theme_path, f"home-{language['short_name']}.html")
+        home_template_path = Path(self.theme_path, f"home-{language['short_name']}.toe.html")
         if not home_template_path.is_file():
-            home_template_path = Path(self.theme_path, f"home.html")
+            home_template_path = Path(self.theme_path, f"home.toe.html")
 
         with open(home_template_path, 'r', encoding="utf-8") as f:
             template = Template(f.read())
 
         # write file
-        home_path_dir = os.path.join(output_path, "index.html")
+        home_path_dir = os.path.join(output_path, "index.toe.html")
 
         with open(home_path_dir, 'w', encoding="utf-8") as f:
             f.write(template.render(

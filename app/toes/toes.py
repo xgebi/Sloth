@@ -9,6 +9,7 @@ from app.toes.text_node import TextNode
 from app.toes.comment_node import CommentNode
 from app.toes.toes_exceptions import ToeProcessingException
 from app.toes.xml_parser import XMLParser
+from app.toes.hooks import Hooks
 
 
 def render_toe_from_path(
@@ -16,7 +17,7 @@ def render_toe_from_path(
         template,
         path_to_templates,
         data: Dict = {},
-        hooks: Dict = {},
+        hooks: Hooks = {},
         **kwargs):
     if path_to_templates is None and template is None:
         return None
@@ -26,7 +27,7 @@ def render_toe_from_path(
 
 
 def render_toe_from_string(
-        *args, template: str, data: Dict = {}, hooks: Dict = {},**kwargs):
+        *args, template: str, data: Dict = {}, hooks: Hooks = {},**kwargs):
     if template is None:
         return None
 
@@ -48,7 +49,7 @@ class Toe:
             template_name=None,
             data: Dict = {},
             template_string: str = None,
-            hooks: Dict = {},
+            hooks: Hooks = {},
             **kwargs
     ):
         self.current_new_tree_node = None
@@ -66,7 +67,7 @@ class Toe:
         else:
             raise ToeProcessingException("Template not available")
 
-    def initialize_tree(self, data: Dict, hooks: Dict):
+    def initialize_tree(self, data: Dict, hooks: Hooks):
         self.variables = VariableScope(data, None)
         self.current_scope = self.variables
         self.hooks = hooks
