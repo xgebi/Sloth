@@ -1,0 +1,30 @@
+```python
+{
+    "uuid": post[0],
+    "slug": post[1],
+    "author_name": post[2],
+    "author_uuid": post[3],
+    "title": post[4],
+    "content": post[5],
+    "excerpt": post[6],
+    "css": post[7],
+    "js": post[8],
+    "use_theme_css": post[9],
+    "use_theme_js": post[10],
+    "publish_date": post[11],
+    "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+    "updated_date": post[12],
+    "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+    "post_status": post[13],
+    "post_type_slug": post_type_slug,
+    "approved": post[14],
+    "thumbnail": thumbnail,
+    "thumbnail_alt": thumbnail_alt,
+    "language_variants": language_variants,
+    "original_lang_entry_uuid": post[16],
+    "lang": post[17],
+    "format_uuid": post[18],
+    "format_slug": post[19],
+    "format_name": post[20]
+}
+```

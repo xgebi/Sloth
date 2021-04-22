@@ -131,7 +131,7 @@ class XMLParser:
             n = Node(parent=parsing_info.current_node)
             parsing_info.current_node.add_child(n)
             parsing_info.current_node = n
-            parsing_info.current_node.children = [] # there was some weirdness, TODO investigate later
+            parsing_info.current_node.children = []  # there was some weirdness, TODO investigate later
             parsing_info.current_node.attributes = {}
             parsing_info.state = STATES.read_node_name
             return parsing_info
@@ -205,21 +205,12 @@ class XMLParser:
         return text, parsing_info
 
     def get_attribute_value(self, text: str, parsing_info: XmlParsingInfo) -> (str):
-        attribute_value_start = text[parsing_info.i:].find("=") + 1 + parsing_info.i
-        j = attribute_value_start + 1
-        if text[attribute_value_start: attribute_value_start+2] == "\"'":
-            while j < len(text):
-                if text[j] == "\"" and text[j - 1] != "\\":
-                    return text[attribute_value_start + 1: j]
-                j += 1
-        elif text[attribute_value_start: attribute_value_start+2] == "'\"":
-            while j < len(text):
-                if text[j] == "\'" and text[j - 1] != "\\":
-                    return text[attribute_value_start + 1: j]
-                j += 1
-        else:
-            while j < len(text):
-                if (text[j] == "\"" or text[j] == "\'") and text[j-1] != "\\":
-                    return text[attribute_value_start + 1: j]
-                j += 1
-        raise XMLParsingException("Attribute not ended")
+        ending_char = text[parsing_info.i + text[parsing_info.i:].find("=") + 1] if text[parsing_info.i + text[parsing_info.i:].find("=") + 1] in {"\"", "'"} else -1
+        if ending_char == -1:
+            raise XMLParsingException("Attribute not ended")
+        j = text[parsing_info.i:].find("=") + parsing_info.i + len(f"{ending_char}")
+
+        while j < len(text):
+            j += 1
+            if text[j] == ending_char and text[j - 1] != "\\":
+                return text[text[parsing_info.i:].find("=") + parsing_info.i + len(f"{ending_char}") + 1: j]

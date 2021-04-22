@@ -151,6 +151,18 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
+    def test_object_variable(self):
+        self.toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="variable_object.toe.html",
+            data={
+                "arr": {
+                    "key": "This is the key"
+                }
+            }
+        )
+        self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
+
 
 if __name__ == '__main__':
     unittest.main()

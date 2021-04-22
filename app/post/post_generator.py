@@ -188,7 +188,7 @@ class PostGenerator:
             cur.execute(
                 sql.SQL(
                     """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
-                        sp.js, sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
+                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
                         sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name 
                         FROM sloth_post_taxonomies AS spt
                         INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
@@ -219,7 +219,8 @@ class PostGenerator:
         cur = self.connection.cursor()
         try:
             cur.execute(
-                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, sp.js,
+                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
+                         sp.js, sp.use_theme_css, sp.use_theme_js,
                          sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
                          sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name
                                     FROM sloth_posts AS sp 
@@ -298,21 +299,23 @@ class PostGenerator:
                 "excerpt": post[6],
                 "css": post[7],
                 "js": post[8],
-                "publish_date": post[9],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "updated_date": post[10],
-                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[11],
+                "use_theme_css": post[9],
+                "use_theme_js": post[10],
+                "publish_date": post[11],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "updated_date": post[12],
+                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[13],
                 "post_type_slug": post_type_slug,
-                "approved": post[12],
+                "approved": post[14],
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
-                "original_lang_entry_uuid": post[14],
-                "lang": post[15],
-                "format_uuid": post[16],
-                "format_slug": post[17],
-                "format_name": post[18]
+                "original_lang_entry_uuid": post[16],
+                "lang": post[17],
+                "format_uuid": post[18],
+                "format_slug": post[19],
+                "format_name": post[20]
             })
 
         return posts
@@ -884,7 +887,8 @@ class PostGenerator:
         try:
             cur = self.connection.cursor()
             cur.execute(
-                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, A.js,
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, 
+                         A.js, A.use_theme_css, A.use_theme_js,
                     A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                                 INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
@@ -909,12 +913,14 @@ class PostGenerator:
             "excerpt": post[6],
             "css": post[7],
             "js": post[8],
-            "publish_date": post[9],
-            "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
-            "update_date": post[10],
-            "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-            "post_status": post[11],
-            "post_type_slug": post[12]
+            "use_theme_css": post[9],
+            "use_theme_js": post[10],
+            "publish_date": post[11],
+            "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "update_date": post[12],
+            "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "post_status": post[13],
+            "post_type_slug": post[14]
         } for post in raw_posts]
 
     def generate_rss(self, *args, output_path: Path, posts, **kwargs):

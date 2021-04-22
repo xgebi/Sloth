@@ -1,13 +1,15 @@
-<script toe:inline-js>
-	document.addEventListener('DOMContentLoaded', (event) => {
-		fetch('{{api_url}}/api/analytics', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ page: window.location.pathname })
-		}).then(response => {
-			return response.json()
-		});
-	});
-</script>
+<toe:fragment>
+    <script toe:inline-js>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            fetch('{{api_url}}/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ page: window.location.pathname })
+            }).then(response => {
+                return response.json()
+            });
+        });
+    </script>
+</toe:fragment>

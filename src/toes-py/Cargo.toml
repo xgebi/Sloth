@@ -16,6 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 toes = { path = "../toes" }
+slothmark = { path = "../slothmark" }
 
 [dependencies.pyo3]
 version = "0.13.2"
