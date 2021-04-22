@@ -1,8 +1,7 @@
 from flask import current_app
-from psycopg2 import sql, errors
+from psycopg2 import sql
 from pathlib import Path
 import os
-from jinja2 import Template
 import threading
 import shutil
 from typing import Dict, List
@@ -17,7 +16,7 @@ from app.post import get_translations
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
-from app.toes.toes import render_toe_from_path, render_toe_from_string
+from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
 
@@ -652,7 +651,7 @@ class PostGenerator:
             archive_template_path = Path(self.theme_path, "archive.toe.html")
 
         with open(archive_template_path, 'r', encoding="utf-8") as f:
-            template = Template(f.read())
+            template = f.read()
 
         if not os.path.exists(archive_path_dir):
             os.makedirs(archive_path_dir)
@@ -670,16 +669,20 @@ class PostGenerator:
                 upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
                     posts)
 
-                f.write(template.render( # TODO redo this
-                    posts=posts[lower: upper],
-                    sitename=self.settings["sitename"]["settings_value"],
-                    page_name=f"Archive for {post_type['display_name']}",
-                    sloth_api_url=self.settings["sloth_api_url"]["settings_value"],
-                    sloth_footer=self.sloth_footer,
-                    menus=self.menus,
-                    current_page_number=i,
-                    not_last_page=True if math.floor(len(posts) / 10) != i else False
-                ))
+                f.write(
+                    render_toe_from_string(
+                        template=template,
+                        data={
+                            "posts": posts[lower: upper],
+                            "sitename": self.settings["sitename"]["settings_value"],
+                            "page_name": f"Archive for {post_type['display_name']}",
+                            "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
+                            "menus": self.menus,
+                            "current_page_number": i,
+                            "not_last_page": True if math.floor(len(posts) / 10) != i else False
+                        },
+                        hooks=self.hooks
+                    ))
 
     def get_menus(self, *args, **kwargs):
         menus = {}
@@ -732,7 +735,7 @@ class PostGenerator:
 
         if os.path.isfile(os.path.join(self.theme_path, "secret.toe.html")):
             with open(os.path.join(self.theme_path, "secret.toe.html"), 'r', encoding="utf-8") as f:
-                protected_template = Template(f.read())
+                protected_template = f.read()
                 return protected_template.render(post=post) # TODO redo this
 
         else:
