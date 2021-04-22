@@ -19,7 +19,8 @@ from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser
 from app.toes.toes import render_toe_from_path, render_toe_from_string
 from app.post.post_types import PostTypes
-from app.toes.hooks import Hooks
+from app.toes.hooks import Hooks, Hook
+
 
 class PostGenerator:
     runnable = True
@@ -256,7 +257,7 @@ class PostGenerator:
 
             cur = self.connection.cursor()
             try:
-                if post[13] is not None:
+                if post[16] is not None:
                     cur.execute(
                         sql.SQL("""SELECT file_path FROM sloth_media WHERE uuid = %s;"""),
                         (post[13],)
@@ -264,13 +265,13 @@ class PostGenerator:
                     raw_thumbnail = cur.fetchone()
                     thumbnail = raw_thumbnail[0]
 
-                if post[14]:
+                if post[17]:
                     cur.execute(
                         sql.SQL(
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);"""
                         ),
-                        (post[14], post[14], post[0])
+                        (post[17], post[17], post[0])
                     )
                     temp_language_variants = cur.fetchall()
                 else:
@@ -279,7 +280,7 @@ class PostGenerator:
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE original_lang_entry_uuid = %s;"""
                         ),
-                        (post[14],)
+                        (post[17],)
                     )
                     temp_language_variants = cur.fetchall()
             except Exception as e:
@@ -533,7 +534,8 @@ class PostGenerator:
                     "sitename": self.settings["sitename"]["settings_value"],
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "menus": self.menus,
-                    "translations": translations
+                    "translations": translations,
+                    "is_home": False
                 },
                 hooks=self.hooks,
                 base_path=self.theme_path
@@ -668,7 +670,7 @@ class PostGenerator:
                 upper = (10 * i) + 10 if (10 * i) + 10 < len(posts) else len(
                     posts)
 
-                f.write(template.render(
+                f.write(template.render( # TODO redo this
                     posts=posts[lower: upper],
                     sitename=self.settings["sitename"]["settings_value"],
                     page_name=f"Archive for {post_type['display_name']}",
@@ -731,7 +733,7 @@ class PostGenerator:
         if os.path.isfile(os.path.join(self.theme_path, "secret.toe.html")):
             with open(os.path.join(self.theme_path, "secret.toe.html"), 'r', encoding="utf-8") as f:
                 protected_template = Template(f.read())
-                return protected_template.render(post=post)
+                return protected_template.render(post=post) # TODO redo this
 
         else:
             return post
@@ -739,10 +741,10 @@ class PostGenerator:
     def set_footer(self, *args, connection, **kwargs):
         # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
-            self.hooks.footer.append(f.read())
+            self.hooks.footer.append(Hook(content=f.read(), condition=True))
 
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
-            self.hooks.footer.append(f.read())
+            self.hooks.footer.append(Hook(content=f.read(), condition="is_home"))
 
     def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
         cur = connection.cursor()
@@ -873,17 +875,23 @@ class PostGenerator:
             home_template_path = Path(self.theme_path, f"home.toe.html")
 
         with open(home_template_path, 'r', encoding="utf-8") as f:
-            template = Template(f.read())
+            template = f.read()
 
         # write file
         home_path_dir = os.path.join(output_path, "index.toe.html")
 
         with open(home_path_dir, 'w', encoding="utf-8") as f:
-            f.write(template.render(
-                posts=posts, sitename=self.settings["sitename"]["settings_value"],
-                page_name="Home", sloth_api_url=self.settings["sloth_api_url"]["settings_value"],
-                sloth_footer=self.sloth_footer + self.sloth_secret_script,
-                menus=self.menus
+            f.write(render_toe_from_string(
+                template=template,
+                data={
+                    "posts": posts,
+                    "sitename": self.settings["sitename"]["settings_value"],
+                    "page_name": "Home",
+                    "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
+                    "menus": self.menus,
+                    "is_home": True
+                },
+                hooks=self.hooks
             ))
 
     def prepare_rss_home_data(self, *args, language, **kwargs):

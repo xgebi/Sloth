@@ -211,17 +211,19 @@ class Toe:
 
     def process_head_hook(self, parent_node: Node):
         for child in self.hooks.head:
-            xp = XMLParser(template=child)
-            children = xp.parse_file().children
-            for child_node in children:
-                self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
+            if self.process_condition(child.condition):
+                xp = XMLParser(template=child.content)
+                children = xp.parse_file().children
+                for child_node in children:
+                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
     def process_footer_hook(self, parent_node: Node):
         for child in self.hooks.footer:
-            xp = XMLParser(template=child)
-            children = xp.parse_file().children
-            for child_node in children:
-                self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
+            if self.process_condition(child.condition):
+                xp = XMLParser(template=child.content)
+                children = xp.parse_file().children
+                for child_node in children:
+                    self.process_subtree(new_tree_parent=parent_node, template_tree_node=child_node)
 
     def process_toe_import_tag(self, generated_tree, element):
         file_name = element.get_attribute('file')
@@ -425,6 +427,9 @@ class Toe:
             self.current_scope = self.current_scope.parent_scope
 
     def process_condition(self, condition):
+        if type(condition) == bool:
+            return condition
+
         if type(condition) == str:
             condition = {
                 "value": str(condition),
