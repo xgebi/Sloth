@@ -46,6 +46,14 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
 
+    def test_toeless_template(self):
+        self.toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="basic.toe.html",
+            data={}
+        )
+        self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><body><h1>Hello</h1></body></html>')
+
     def test_importing_file_if(self):
         self.toe = render_toe_from_path(
             path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),

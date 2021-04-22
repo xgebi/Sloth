@@ -260,7 +260,7 @@ class PostGenerator:
                 if post[16] is not None:
                     cur.execute(
                         sql.SQL("""SELECT file_path FROM sloth_media WHERE uuid = %s;"""),
-                        (post[13],)
+                        (post[16],)
                     )
                     raw_thumbnail = cur.fetchone()
                     thumbnail = raw_thumbnail[0]

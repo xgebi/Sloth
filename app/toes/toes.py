@@ -54,7 +54,7 @@ class Toe:
             base_path = None,
             **kwargs
     ):
-        self.current_new_tree_node = None
+        self.current_new_tree_node: Node = None
         self.base_path = base_path
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
@@ -94,7 +94,11 @@ class Toe:
             return None
 
         for node in self.tree.children:
-            res = self.process_subtree(self.current_new_tree_node, node)
+            if node.get_name() == "html":
+                for sub_html_node in node.children:
+                    self.process_subtree(self.current_new_tree_node, sub_html_node)
+            else:
+                self.process_subtree(self.current_new_tree_node, node)
 
         return self.new_tree.to_html_string()
 
