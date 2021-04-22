@@ -161,7 +161,7 @@ class MyTestCase(unittest.TestCase):
                 }
             }
         )
-        self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><div>Hello</div></html>')
+        self.assertEqual(self.toe, '<!DOCTYPE html><html lang="en"><div>This is the key</div></html>')
 
 
 if __name__ == '__main__':

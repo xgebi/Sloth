@@ -188,7 +188,8 @@ class PostGenerator:
             cur.execute(
                 sql.SQL(
                     """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
-                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
+                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, sp.imported,
+                        sp.import_approved, sp.thumbnail,
                         sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name 
                         FROM sloth_post_taxonomies AS spt
                         INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
@@ -221,7 +222,7 @@ class PostGenerator:
             cur.execute(
                 sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
                          sp.js, sp.use_theme_css, sp.use_theme_js,
-                         sp.publish_date, sp.update_date, sp.post_status, sp.import_approved, sp.thumbnail,
+                         sp.publish_date, sp.update_date, sp.post_status, sp.imported, sp.import_approved, sp.thumbnail,
                          sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name
                                     FROM sloth_posts AS sp 
                                     INNER JOIN sloth_users AS su ON sp.author = su.uuid
@@ -284,6 +285,7 @@ class PostGenerator:
             except Exception as e:
                 print(e)
                 traceback.print_exc()
+                return
 
             language_variants = [{
                 "lang": temp[0],
@@ -307,7 +309,8 @@ class PostGenerator:
                 "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "post_status": post[13],
                 "post_type_slug": post_type_slug,
-                "approved": post[14],
+                "approved": post[15],
+                "imported": post[14],
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,

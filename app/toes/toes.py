@@ -183,6 +183,11 @@ class Toe:
     def process_toe_tag(self, parent_element: Node, element: Node):
 
         if element.get_name().startswith("toe:fragment"):
+            if element.has_attribute('toe:content'):
+                return parent_element.add_child(TextNode(
+                    content=str(self.process_toe_value(element.get_attribute("toe:content")))
+                ))
+
             for template_node in element.children:
                 self.process_subtree(new_tree_parent=parent_element, template_tree_node=template_node)
 
