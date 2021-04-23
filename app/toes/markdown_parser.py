@@ -1,5 +1,7 @@
+from typing import Dict
 import re
 import math
+import json
 
 
 class ListInfo:
@@ -28,7 +30,9 @@ class ParsingInfo:
 
 
 class MarkdownParser:
-    def __init__(self, *args, path=None, **kwargs):
+    def __init__(self, *args, path=None, forms: Dict = None, **kwargs):
+        if forms is not None:
+            self.forms = forms
         if path:
             with open(path, mode="r", encoding="utf-8") as text_file:
                 self.text = text_file.read()
@@ -68,6 +72,8 @@ class MarkdownParser:
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
                 elif footnote_pattern.match(result[parsing_info.i:]) and not footnote:
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
+                elif result[parsing_info.i + 1] == "[" and hasattr(self, 'forms'):
+                    result, parsing_info = self.parse_forms(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
             elif len(result) > parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
@@ -98,6 +104,21 @@ class MarkdownParser:
             result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
         return result
+
+    def parse_forms(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        end = text[parsing_info.i + 1:].find("]]")
+        keyword_check = text[parsing_info.i + 2].startswith("form ")
+        if end == -1 or keyword_check != 0:
+            parsing_info.move_index(2)
+        else:
+            end += parsing_info.i
+            form_name = text[keyword_check + parsing_info.i + 3: end]  # 3 is there because "[[{name} "
+            if form_name in self.forms:
+                form_data = json.loads(self.forms[form_name])
+            else:
+                parsing_info.move_index()
+
+        return text, parsing_info
 
     def parse_horizontal_line(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         text = f"{text[parsing_info.i - 1:]}<hr />{text[parsing_info.i + 3:]}"

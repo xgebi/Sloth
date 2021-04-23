@@ -76,6 +76,9 @@ class MyTestCase(unittest.TestCase):
 <p>const j = 4;</p>
 </code></pre>""", text)
 
+    def test_custom_forms(self):
+        pass
+
     def test_paragraph_with_code(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "real_text.md"))
         text = mdp.to_html_string()

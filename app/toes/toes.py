@@ -18,12 +18,11 @@ def render_toe_from_path(
         path_to_templates,
         data: Dict = {},
         hooks: Hooks = {},
-        base_path=None,
         **kwargs):
     if path_to_templates is None and template is None:
         return None
 
-    toe_engine = Toe(path_to_templates, template, data=data, hooks=hooks, base_path=base_path, **kwargs)
+    toe_engine = Toe(path_to_templates=path_to_templates, template_name=template, data=data, hooks=hooks, base_path=path_to_templates, **kwargs)
     return toe_engine.process_tree()
 
 

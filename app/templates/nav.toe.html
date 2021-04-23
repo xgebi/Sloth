@@ -1,0 +1,45 @@
+<toe:fragment>
+    <nav>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <!--li>Content
+                <ul>
+                    <li><a href="/messages">Messages</a></li>
+                    <li><a href="/rss">RSS reader</a></li>
+                    <li><a href="/analytics">Analytics</a></li>
+                </ul>
+            </li-->
+            {% for post_type in post_types %}
+                <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
+                    <ul>
+                        <li><a href="/post/{{ post_type['uuid'] }}/new/{{ default_lang['uuid'] }}">Add
+                            New {{ post_type['display_name'] }}</a></li>
+                        <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
+                        <li><a href="/post/{{ post_type['uuid'] }}/formats">Post Formats</a></li>
+                    </ul>
+                </li>
+            {% endfor %}
+            <li><a href="/media">Media</a></li>
+            <li><a href="/mock-endpoints">Mock Endpoints</a></li>
+            <li><a href="/post-types">Post Types</a></li>
+            <li><a href="/lists">Lists</a></li>
+            <li><a href="/settings/my-account">My account</a></li>
+            {% if  permission_level >= 1 %}
+                <li><a href="/settings">Settings</a>
+                    <ul>
+                        <li><a href="/settings/users">Users</a></li>
+                        <li><a href="/settings/themes">Themes</a>
+                            <ul>
+                                <li><a href="/settings/themes/menu">Menu</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="/settings/import">Import data</a></li>
+                        <li><a href="/settings/language">Language settings</a></li>
+                        <li><a href="/settings/integrations">Integrations</a></li>
+                        <li><a href="/settings/dev">Dev Settings</a></li>
+                    </ul>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</toe:fragment>

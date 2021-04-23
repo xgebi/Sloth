@@ -1,5 +1,6 @@
 from flask import abort, render_template, request, flash, url_for, current_app
 from app.authorization.authorize import authorize_web, authorize_rest
+from app.toes.hooks import Hooks
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
 import json
@@ -7,12 +8,12 @@ import re
 from psycopg2 import sql, errors
 import datetime
 import traceback
-
+import os
 import uuid
 from time import time
 
 from app.post.post_types import PostTypes
-
+from app.toes.toes import render_toe_from_path
 from app.dashboard import dashboard
 
 
@@ -112,15 +113,20 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
             "status": msg[3]
         })
 
-    return render_template(
-        "dashboard.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        messages=messages,
-        recent_posts=recent_posts,
-        drafts=drafts,
-        upcoming_posts=upcoming_posts,
-        default_lang=default_language
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="dashboard.toe.html",
+        data={
+            "title": "Dashboard",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "messages": messages,
+            "recent_posts": recent_posts,
+            "drafts": drafts,
+            "upcoming_posts": upcoming_posts,
+            "default_lang": default_language
+        },
+        hooks=Hooks()
     )
 
 
