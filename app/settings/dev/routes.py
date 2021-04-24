@@ -1,16 +1,17 @@
-from flask import request, abort, redirect, render_template, current_app
-from psycopg2 import sql
-import os
 import json
+import os
 from pathlib import Path
 
+from flask import abort, redirect, render_template, current_app
+from psycopg2 import sql
+
+from app.authorization.authorize import authorize_web
+from app.post.post_types import PostTypes
+from app.settings.dev import dev_settings
+from app.toes.hooks import Hooks
+from app.toes.toes import render_toe_from_path
 from app.utilities import get_default_language
 from app.utilities.db_connection import db_connection
-from app.authorization.authorize import authorize_web, authorize_rest
-
-from app.post.post_types import PostTypes
-
-from app.settings.dev import dev_settings
 
 
 @dev_settings.route("/settings/dev")
@@ -27,17 +28,26 @@ def show_dev_settings(*args, permission_level, connection, **kwargs):
     connection.close()
 
     if os.environ["FLASK_ENV"] != "development":
-        return render_template("dev-settings-prod.html",
-                               post_types=post_types_result,
-                               permission_level=permission_level,
-                               default_lang=default_language
-                               )
-
-    return render_template("dev-settings.html",
-                           post_types=post_types_result,
-                           permission_level=permission_level,
-                           default_lang=default_language
-                           )
+        return render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+            template="dev-settings-prod.toe.html",
+            data={
+                "post_types": post_types_result,
+                "permission_level": permission_level,
+                "default_lang": default_language
+            },
+            hooks=Hooks()
+        )
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="dev-settings.toe.html",
+        data={
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_language
+        },
+        hooks=Hooks()
+    )
 
 
 @dev_settings.route("/api/settings/dev/posts", methods=["DELETE"])
