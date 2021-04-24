@@ -98,7 +98,7 @@ class Toe:
                     self.process_subtree(self.current_new_tree_node, sub_html_node)
             else:
                 self.process_subtree(self.current_new_tree_node, node)
-
+        del self.tree
         return self.new_tree.to_html_string()
 
     def process_subtree(self, new_tree_parent: Node, template_tree_node: Node):

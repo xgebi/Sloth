@@ -14,6 +14,8 @@ from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.post.post_generator import PostGenerator
+from app.toes.hooks import Hooks
+from app.toes.toes import render_toe_from_path
 
 from app.post import post, get_translations
 
@@ -527,14 +529,19 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
 
     connection.close()
 
-    return render_template(
-        "formats-list.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        post_formats=post_formats,
-        post_type_uuid=type_id,
-        default_lang=default_language,
-        languages=languages
+    return render_toe_from_path(
+        template="formats-list.toe.html",
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        data={
+            "title": "List of formats",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "post_formats": post_formats,
+            "post_type_uuid": type_id,
+            "default_lang": default_language,
+            "languages": languages
+        },
+        hooks=Hooks()
     )
 
 

@@ -34,6 +34,7 @@ class Node:
                 self.attributes[attr] = ""
         else:
             self.attributes = attributes
+        self.children = []
         if paired_tag:
             self.children = children
         self.paired_tag = paired_tag
@@ -50,6 +51,7 @@ class Node:
         if self._name not in self.ALWAYS_PAIRED:
             return self._name not in self.UNPAIRED_TAGS
         return True
+
     def set_paired(self, paired: bool):
         if self._name in self.UNPAIRED_TAGS:
             self.paired_tag = False

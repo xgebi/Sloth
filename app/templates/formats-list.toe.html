@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>List of formats</h1>
+    Note: Formats aren't separated by languages
+    <div>
+        <button id="create-new-post-format">Create new post format</button>
+    </div>
+    <table toe:if="post_formats | length gt 0">
+        <thead>
+        <tr>
+            <th>Display name</th>
+            <th>Slug</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr toe:for="pt in post_formats">
+            <td class="display-name" toe:text="pt['display_name']"></td>
+            <td class="slug" toe:text="pt['slug']"></td>
+            <td class="action">
+                <button class="edit-button" toe:data-deletable="pt['deletable']" toe:data-uuid="pt['uuid']">Edit
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <template id="format-form">
+        <tr>
+            <td class="display-name"><input type="text"/></td>
+            <td class="slug"><input type="text"/></td>
+            <td class="action">
+                <button class="save-button">Save</button>
+                <button class="cancel-button">Cancel</button>
+                <br/>
+                <button class="delete-button">Delete</button>
+            </td>
+        </tr>
+    </template>
+</main>
+<script toe:inline-js>
+    const postTypeUuid = "<( post_type_uuid )>";
+</script>
+<script src="/static/js/post-formats.js"></script>
+</body>
+</html>

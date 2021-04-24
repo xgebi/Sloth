@@ -32,6 +32,7 @@ def show_dev_settings(*args, permission_level, connection, **kwargs):
             path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
             template="dev-settings-prod.toe.html",
             data={
+                "title": "Dev Settings",
                 "post_types": post_types_result,
                 "permission_level": permission_level,
                 "default_lang": default_language
@@ -42,6 +43,7 @@ def show_dev_settings(*args, permission_level, connection, **kwargs):
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="dev-settings.toe.html",
         data={
+            "title": "Dev Settings",
             "post_types": post_types_result,
             "permission_level": permission_level,
             "default_lang": default_language
