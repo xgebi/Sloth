@@ -19,7 +19,8 @@ def show_import_settings(*args, permission_level, connection, **kwargs):
         template="import-data.toe.html",
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         data={
-            "post_types":post_types_result,
+            "title": "Import posts",
+            "post_types": post_types_result,
             "permission_level": permission_level
         },
         hooks=Hooks()
