@@ -1,39 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
 <toe:import file="head.toe.html"/>
-<body>
+<body class="inner-city">
 <toe:import file="nav.toe.html"/>
-<h1>Dashboard</h1>
-<section>
-    <h2>Recent posts</h2>
-    <article toe:for="post in recent_posts">
-        <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
-        <div toe:text="'Post type: ' + post['post_type']"></div>
-        <div toe:text="'Published: ' + post['publish_date']"></div>
-    </article>
-</section>
-<section>
-    <h2>Upcoming posts</h2>
-    <article toe:for="post in upcoming_posts">
-        <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
-        <div toe:text="'Post type: ' + post['post_type']"></div>
-        <div toe:text="'Published: ' + post['publish_date']"></div>
-    </article>
-</section>
-<section>
-    <h2>Drafts</h2>
-    <article toe:for="post in drafts">
-        <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
-        <div toe:text="'Post type: ' + post['post_type']"></div>
-        <div toe:text="'Published: ' + post['publish_date']"></div>
-    </article>
-</section>
-<section>
-    <h2>Messages</h2>
-    <article toe:for="msg in messages">
-        <h3><a toe:href="'/messages/'+ msg['uuid']" toe:text="'From ' + msg['name']"></a></h3>
-        <div toe:text="'Sent: ' + msg['sent_date']"></div>
-    </article>
-</section>
+<main>
+    <h1>Dashboard</h1>
+    <section>
+        <h2>Recent posts</h2>
+        <article toe:for="post in recent_posts">
+            <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
+            <div toe:text="'Post type: ' + post['post_type']"></div>
+            <div toe:text="'Published: ' + post['publish_date']"></div>
+        </article>
+    </section>
+    <section>
+        <h2>Upcoming posts</h2>
+        <article toe:for="post in upcoming_posts">
+            <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
+            <div toe:text="'Post type: ' + post['post_type']"></div>
+            <div toe:text="'Published: ' + post['publish_date']"></div>
+        </article>
+    </section>
+    <section>
+        <h2>Drafts</h2>
+        <article toe:for="post in drafts">
+            <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
+            <div toe:text="'Post type: ' + post['post_type']"></div>
+            <div toe:text="'Published: ' + post['publish_date']"></div>
+        </article>
+    </section>
+    <section>
+        <h2>Messages</h2>
+        <article toe:for="msg in messages">
+            <h3><a toe:href="'/messages/'+ msg['uuid']" toe:text="'From ' + msg['name']"></a></h3>
+            <div toe:text="'Sent: ' + msg['sent_date']"></div>
+        </article>
+    </section>
+</main>
 </body>
 </html>
