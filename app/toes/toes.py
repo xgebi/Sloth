@@ -58,34 +58,49 @@ class Toe:
         if not (path_to_templates is None and template_name is None):
             self.path_to_templates = path_to_templates
 
-            self.initialize_tree(data=data, hooks=hooks)
+            self.variables = VariableScope(data, None)
+            self.current_scope = self.variables
+            self.hooks = hooks
+            self.new_tree = RootNode(html=True)
+            self.new_tree.children = []  # This is a weird
+            node = Node(
+                name='html',
+                parent=self.new_tree
+            )
+            node.children = []  # This is a weird
+            self.current_new_tree_node = node
+            self.new_tree.add_child(node)
+
+            for node in self.new_tree.children:
+                if node.type == Node.NODE:
+                    lang = self.current_scope.find_variable('lang')
+                    node.set_attribute(name='lang', value=lang if lang is not None else 'en')
 
             xp = XMLParser(path=(os.path.join(path_to_templates, template_name)))
             self.tree = xp.parse_file()
         elif template_string is not None:
-            self.initialize_tree(data=data, hooks=hooks)
+            self.variables = VariableScope(data, None)
+            self.current_scope = self.variables
+            self.hooks = hooks
+            self.new_tree = RootNode(html=True)
+            self.new_tree.children = []  # This is a weird
+            node = Node(
+                name='html',
+                parent=self.new_tree
+            )
+            node.children = []  # This is a weird
+            self.current_new_tree_node = node
+            self.new_tree.add_child(node)
+
+            for node in self.new_tree.children:
+                if node.type == Node.NODE:
+                    lang = self.current_scope.find_variable('lang')
+                    node.set_attribute(name='lang', value=lang if lang is not None else 'en')
             xp = XMLParser(template=template_string)
             self.tree = xp.parse_file()
         else:
             raise ToeProcessingException("Template not available")
 
-    def initialize_tree(self, data: Dict, hooks: Hooks):
-        self.variables = VariableScope(data, None)
-        self.current_scope = self.variables
-        self.hooks = hooks
-
-        self.new_tree = RootNode(html=True)
-        node = Node(
-            name='html',
-            parent=self.new_tree
-        )
-        self.current_new_tree_node = node
-        self.new_tree.add_child(node)
-
-        for node in self.new_tree.children:
-            if node.type == Node.NODE:
-                lang = self.current_scope.find_variable('lang')
-                node.set_attribute(name='lang', value=lang if lang is not None else 'en')
 
     def process_tree(self):
         # There can only be one root element
