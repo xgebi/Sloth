@@ -13,7 +13,7 @@ class Node:
     type: str = NODE
     html: bool = False
 
-    UNPAIRED_TAGS = ["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input"]
+    UNPAIRED_TAGS = ["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input", "link"]
     ALWAYS_PAIRED = ["script"]
 
     def __init__(
