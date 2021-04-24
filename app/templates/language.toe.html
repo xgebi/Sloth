@@ -1,8 +1,9 @@
-{% extends 'layout.html' %}
-
-{% block title %}Languages{% endblock %}
-
-{% block body %}
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
     <h1>Languages</h1>
     <button id="create-new-language">Create new language</button>
     <table id="language-table">
@@ -17,7 +18,7 @@
         </thead>
         <tbody>
         {% for language in languages %}
-            {% if language["default"] %}
+            {% if language["default"] %} <!-- TODO think about conditional classes -->
                 <tr id="language-{{ language['uuid'] }}" class="bold">
                     {% else %}
                 <tr id="language-{{ language['uuid'] }}">
@@ -53,9 +54,7 @@
     <article id="language-wrapper">
 
     </article>
-
-{% endblock %}
-
-{% block scripts %}
-    <script src="/static/js/language.js"></script>
-{% endblock %}
+</main>
+<script src="/static/js/language.js"></script>
+</body>
+</html>

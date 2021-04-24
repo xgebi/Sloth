@@ -463,7 +463,7 @@ class Toe:
                 raise ValueError('Condition not allowed')
             return self.current_scope.find_variable(condition["value"])
 
-        if condition["value"].count("and") > 0 or condition["value"].count("or") > 0:
+        if condition["value"].count(" and ") > 0 or condition["value"].count(" or ") > 0:
             return False
 
         # split condition["value"] by " xxx? "

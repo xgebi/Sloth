@@ -1,10 +1,10 @@
 from flask import render_template
-
+import os
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
-
+from app.toes.hooks import Hooks
 from app.post.post_types import PostTypes
-
+from app.toes.toes import render_toe_from_path
 from app.settings.content import content
 
 
@@ -14,5 +14,13 @@ from app.settings.content import content
 def show_import_settings(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
-
-    return render_template("import-data.html", post_types=post_types_result, permission_level=permission_level)
+    # Import posts
+    return render_toe_from_path(
+        template="import-data.toe.html",
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        data={
+            "post_types":post_types_result,
+            "permission_level": permission_level
+        },
+        hooks=Hooks()
+    )

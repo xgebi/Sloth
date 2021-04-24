@@ -53,8 +53,8 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
             "long_name": lang[2],
             "default": lang[0] == default_language
         })
-
-    return render_template("language.html", post_types=post_types_result, permission_level=permission_level,
+    # Languages
+    return render_template("language.toe.html", post_types=post_types_result, permission_level=permission_level,
                            languages=languages, default_lang=default_lang)
 
 

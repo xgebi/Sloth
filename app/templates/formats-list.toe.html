@@ -9,7 +9,7 @@
     <div>
         <button id="create-new-post-format">Create new post format</button>
     </div>
-    <table toe:if="post_formats | length gt 0">
+    <table>
         <thead>
         <tr>
             <th>Display name</th>
@@ -18,14 +18,16 @@
         </tr>
         </thead>
         <tbody>
-        <tr toe:for="pt in post_formats">
-            <td class="display-name" toe:text="pt['display_name']"></td>
-            <td class="slug" toe:text="pt['slug']"></td>
-            <td class="action">
-                <button class="edit-button" toe:data-deletable="pt['deletable']" toe:data-uuid="pt['uuid']">Edit
-                </button>
-            </td>
-        </tr>
+        <toe:fragment toe:if="post_formats | length gt 0">
+            <tr toe:for="pt in post_formats">
+                <td class="display-name" toe:text="pt['display_name']"></td>
+                <td class="slug" toe:text="pt['slug']"></td>
+                <td class="action">
+                    <button class="edit-button" toe:data-deletable="pt['deletable']" toe:data-uuid="pt['uuid']">Edit
+                    </button>
+                </td>
+            </tr>
+        </toe:fragment>
         </tbody>
     </table>
 

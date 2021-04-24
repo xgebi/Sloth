@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Integrations settings</h1>
+
+    <h1 toe:if="error">Database error</h1>
+    <form method="post" action="/settings/integrations/larder/connect">
+        <label for="client-id">Client ID:</label>
+        <input type="text" name="client-id" id="client-id" />
+        <input type="submit" value="Connect to Larder">
+    </form>
+</main>
+</body>
+</html>
