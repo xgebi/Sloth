@@ -10,6 +10,8 @@ from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language, get_languages
 from app.post.post_types import PostTypes
+from app.toes.hooks import Hooks
+from app.toes.toes import render_toe_from_path
 
 from app.media import media
 
@@ -29,35 +31,18 @@ def show_media_list(*args, permission_level, connection, **kwargs):
     languages = get_languages(connection=connection)
     connection.close()
 
-    return render_template(
-        "media.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        media=media_data,
-        default_lang=default_lang,
-        languages=languages
-    )
-
-@media.route("/media/<image>")
-@authorize_web(0)
-@db_connection
-def show_media(*args, permission_level, connection, image, **kwargs):
-    if connection is None:
-        return redirect("/database-error")
-
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-
-    media_data = get_media(connection=connection)
-    default_lang = get_default_language(connection=connection)
-    connection.close()
-
-    return render_template(
-        "media.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        media=media_data,
-        default_lang=default_lang
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="media.toe.html",
+        data={
+            "title": "List of media",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "media": media_data,
+            "default_lang": default_lang,
+            "languages": languages
+        },
+        hooks=Hooks()
     )
 
 

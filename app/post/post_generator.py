@@ -676,6 +676,7 @@ class PostGenerator:
                             "posts": posts[lower: upper],
                             "sitename": self.settings["sitename"]["settings_value"],
                             "page_name": f"Archive for {post_type['display_name']}",
+                            "post_type": post_type,
                             "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                             "menus": self.menus,
                             "current_page_number": i,

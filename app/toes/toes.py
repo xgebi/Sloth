@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from typing import Dict, List
@@ -124,7 +125,6 @@ class Toe:
 		Returns
 			Document or Node object
 		"""
-
         if template_tree_node.type == Node.TEXT:
             return new_tree_parent.add_child(TextNode(content=template_tree_node.content.strip()))
 
@@ -291,6 +291,8 @@ class Toe:
             if type(attribute_value) == str and attribute_value[0] == "'":
                 return attribute_value[1: len(attribute_value) - 1]
             else:
+                if attribute_value.find(" | ") >= 0:
+                    return self.process_pipe(attribute_value)
                 resolved_value = self.current_scope.find_variable(attribute_value)
                 if resolved_value is not None:
                     return resolved_value
@@ -550,6 +552,8 @@ class Toe:
         for i in range(1, len(actions)):
             if actions[i].strip() == 'length':
                 value = len(value)
+            elif actions[i].strip() == 'json':
+                value = json.dumps(value)
         return str(value)
 
 

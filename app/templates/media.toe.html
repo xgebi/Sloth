@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>List of media</h1>
+    <button id="open-modal">Upload file</button>
+    <section class="media-gallery" id="media-gallery">
+        <article toe:for="medium in media">
+            <img toe:src="medium['file_url']" toe:alt="medium['alt']"/>
+            <p toe:text="'Alt: ' + medium['alt']">
+            </p>
+            <button toe:data-uuid="medium['uuid']" toe:data-file-path="medium['file_url']"
+                    class="delete-button">Delete
+            </button>
+        </article>
+
+    </section>
+    <dialog id="modal"></dialog>
+</main>
+<script toe:inline-js>
+    const languages = JSON.parse('<( languages | json )>');
+</script>
+<script src="/static/js/media.js"></script>
+</body>
+</html>
