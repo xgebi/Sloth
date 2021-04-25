@@ -38,7 +38,6 @@ def get_languages(*args, connection, lang_id: str = "", **kwargs) \
 
 def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:
     cur = connection.cursor()
-    main_language = []
     try:
         cur.execute(
             sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings 

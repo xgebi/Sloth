@@ -35,7 +35,6 @@ class XMLParser:
 
     def __init__(self, *args, path=None, template=None, base_path=None, **kwargs):
         if path is not None:
-            print(path)
             if base_path is not None:
                 path = os.path.join(base_path, path)
             with open(path, mode="r", encoding="utf-8") as text_file:

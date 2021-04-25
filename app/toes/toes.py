@@ -498,7 +498,7 @@ class Toe:
             return self.current_scope.find_variable(condition["value"])
 
         if condition["value"].count(" and ") > 0 or condition["value"].count(" or ") > 0:
-            return False
+            return self.process_compound_condition(condition["value"])
 
         if condition["value"].startswith("not "):
             return not self.process_condition(condition["value"].split(" ")[1])
@@ -545,6 +545,10 @@ class Toe:
             return resolved[0] != resolved[1]
         if " eq " in condition["value"]:
             return resolved[0] == resolved[1]
+        return False
+
+    def process_compound_condition(self, condition) -> bool:
+        # TODO this
         return False
 
     def process_pipe(self, side: str):
