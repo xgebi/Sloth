@@ -44,6 +44,8 @@ class PostGenerator:
         self.set_individual_settings(connection=connection, setting_name='main_language')
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
         self.set_individual_settings(connection=connection, setting_name='sitename')
+        self.set_individual_settings(connection=connection, setting_name='site_url')
+        self.set_individual_settings(connection=connection, setting_name='site_description')
         self.set_individual_settings(connection=connection, setting_name='api_url', alternate_name='sloth_api_url')
 
         # Set path to the theme
@@ -671,6 +673,7 @@ class PostGenerator:
 
                 f.write(
                     render_toe_from_string(
+                        base_path=self.theme_path,
                         template=template,
                         data={
                             "posts": posts[lower: upper],
@@ -680,7 +683,8 @@ class PostGenerator:
                             "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                             "menus": self.menus,
                             "current_page_number": i,
-                            "not_last_page": True if math.floor(len(posts) / 10) != i else False
+                            "not_last_page": True if math.floor(len(posts) / 10) != i else False,
+                            "is_non_post": True
                         },
                         hooks=self.hooks
                     ))
@@ -886,6 +890,7 @@ class PostGenerator:
 
         with open(home_path_dir, 'w', encoding="utf-8") as f:
             f.write(render_toe_from_string(
+                base_path=self.theme_path,
                 template=template,
                 data={
                     "posts": posts,
@@ -893,7 +898,8 @@ class PostGenerator:
                     "page_name": "Home",
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "menus": self.menus,
-                    "is_home": True
+                    "is_home": True,
+                    "is_non_post": True
                 },
                 hooks=self.hooks
             ))

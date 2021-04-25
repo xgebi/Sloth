@@ -35,6 +35,7 @@ class XMLParser:
 
     def __init__(self, *args, path=None, template=None, base_path=None, **kwargs):
         if path is not None:
+            print(path)
             if base_path is not None:
                 path = os.path.join(base_path, path)
             with open(path, mode="r", encoding="utf-8") as text_file:
@@ -102,7 +103,7 @@ class XMLParser:
                     parsing_info.current_node = parsing_info.current_node.parent
                     parsing_info.move_index(len(f"</{name}>"))
                 else:
-                    print(text[parsing_info.i + 1:])
+                    print(text)
                     raise XMLParsingException()
             else:
                 parsing_info.state = STATES.read_node_name

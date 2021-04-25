@@ -334,7 +334,7 @@ class Toe:
         if self.current_scope.is_variable_in_current_scope(var_name):
             raise ValueError('Variable cannot be created twice')
 
-        self.current_scope.variables[var_name] = var_value
+        self.current_scope.variables[var_name] = self.process_toe_value(var_value)
         return None
 
     def process_modify_tag(self, element) -> None:
@@ -499,6 +499,9 @@ class Toe:
 
         if condition["value"].count(" and ") > 0 or condition["value"].count(" or ") > 0:
             return False
+
+        if condition["value"].startswith("not "):
+            return not self.process_condition(condition["value"].split(" ")[1])
 
         # split condition["value"] by " xxx? "
         sides = re.split(" [a-z][a-z][a-z]? ", condition["value"])
