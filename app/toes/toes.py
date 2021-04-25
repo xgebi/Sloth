@@ -569,7 +569,7 @@ class VariableScope:
 
         if self.variables.get(variable_name) is not None:
             if len(names) > 0:
-                res = self.variables[names[0]]
+                res = self.variables.get(variable_name)
                 for nidx in range(len(names) - 1):
                     if names[nidx + 1][-1] == "]":
                         names[nidx + 1] = names[nidx + 1][:-2]

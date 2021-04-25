@@ -1,16 +1,14 @@
-from flask import request, flash, url_for, current_app, abort, render_template
-import app
-import os
-from pathlib import Path
-import psycopg2
+from flask import request, abort, render_template
 from psycopg2 import sql
-import bcrypt
 import json
 import uuid
+import os
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities import get_default_language
 from app.utilities.db_connection import db_connection
+from app.toes.toes import render_toe_from_path
+from app.toes.hooks import Hooks
 
 from app.settings.language_settings import language_settings
 
@@ -53,9 +51,19 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
             "long_name": lang[2],
             "default": lang[0] == default_language
         })
-    # Languages
-    return render_template("language.toe.html", post_types=post_types_result, permission_level=permission_level,
-                           languages=languages, default_lang=default_lang)
+
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="language.toe.html",
+        data={
+            "title": "Languages",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_lang,
+            "languages": languages
+        },
+        hooks=Hooks()
+    )
 
 
 @language_settings.route("/api/settings/language/<lang_id>/save", methods=["POST", "PUT"])
