@@ -61,8 +61,8 @@ class Node:
     def set_attribute(self, name: str, value: str = ""):
         self.attributes[name] = value
 
-    def get_attribute(self, name):
-        return self.attributes[name] if name in self.attributes else None
+    def get_attribute(self, name) -> str:
+        return str(self.attributes[name]) if name in self.attributes else None
 
     def has_attribute(self, name):
         return name in self.attributes

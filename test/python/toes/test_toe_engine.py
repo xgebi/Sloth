@@ -171,6 +171,17 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>This is the key</div></html>')
 
+    def test_conditional_css_classes(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="toe_conditional_css_classes.toe.html",
+            data={
+                "myCond": True,
+                "anotherCond": False
+            }
+        )
+        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div class="basic extended">Hello</div><div class="basic">Hello</div></html>')
+
 
 if __name__ == '__main__':
     unittest.main()

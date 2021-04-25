@@ -154,13 +154,20 @@ class Toe:
         )
 
         for attribute in attributes:
-            if attribute.startswith("toe:") and attribute[len("toe:"):] in attributes:
+            if attribute != "toe:class" and attribute.startswith("toe:") and attribute[len("toe:"):] in attributes:
                 del template_tree_node.attributes[attribute[len("toe:"):]]
 
         attributes = template_tree_node.attributes.keys()
         ignore_children = False
         for attribute in attributes:
-            if not attribute.startswith('toe:'):
+            if attribute.startswith('class'):
+                if new_tree_node.has_attribute('class'):
+                    new_tree_node.set_attribute(
+                        f"{new_tree_node.get_attribute('class').strip()} {template_tree_node.get_attribute(attribute)}"
+                    )
+                else:
+                    new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
+            elif not attribute.startswith('toe:'):
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
                 ignore_children = True
@@ -175,6 +182,8 @@ class Toe:
             elif attribute.startswith('toe:inline-js'):
                 ignore_children = True
                 self.process_inline_js(new_tree_node, template_tree_node.children)
+            elif attribute.startswith('toe:class'):
+                self.process_conditional_css_classes(new_tree_node, template_tree_node.get_attribute(attribute))
             else:
                 new_tree_node.set_attribute(
                     attribute[attribute.find(":") + 1:],
@@ -186,6 +195,29 @@ class Toe:
                 self.process_subtree(new_tree_parent=new_tree_node, template_tree_node=template_child)
 
         return new_tree_node
+
+    def process_conditional_css_classes(self, new_tree_node: Node, cond_attr: str):
+        classes = ""
+        if new_tree_node.has_attribute('class'):
+            classes = new_tree_node.get_attribute('class').strip()
+        if cond_attr[0] == "'" or cond_attr[0] == '"':
+            processed_class = self.process_css_class_condition(condition=cond_attr)
+            classes += processed_class if processed_class is not None else ""
+        elif cond_attr[0] == "{" and cond_attr[-1] == "}":
+            conditions = cond_attr[1:-1].split(",")
+            for condition in conditions:
+                processed_class = self.process_css_class_condition(condition=condition.strip())
+                classes += f" {processed_class}" if processed_class is not None else ""
+        new_tree_node.set_attribute('class', classes)
+
+    def process_css_class_condition(self, condition: str) -> str or None:
+        quote_mark = condition[0]
+        sides = condition.split(":")
+        if sides[0].strip()[-1] != quote_mark:
+            raise ValueError('Condition value not finished')
+        if self.process_condition(sides[1].strip()):
+            return sides[0].strip()[1: -1]
+        return None
 
     def process_inline_js(self, new_tree, nodes: List[TextNode]):
         for node in nodes:
