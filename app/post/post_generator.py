@@ -346,16 +346,6 @@ class PostGenerator:
 
         return posts
 
-    def generate_post_type(self, *args, posts, output_path, post_type, language, **kwargs):
-        for post in posts:
-            self.generate_post(
-                post=post,
-                output_path=output_path,
-                post_type=post_type,
-                language=language,
-                multiple=True
-            )
-
     def prepare_single_post(self, *args, post, regenerate_taxonomies, **kwargs):
         self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
         post_types_object = PostTypes()
