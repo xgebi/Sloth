@@ -90,6 +90,12 @@ class MyTestCase(unittest.TestCase):
 
         print(text)
 
+    def test_link_in_footnote(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "link_in_footnote.md"))
+        text = mdp.to_html_string()
+
+        self.assertEqual(text, "<p>Give a flying flamingo<sup><a href='#footnote-3' id='footnote-link-3'>3.</a></sup> is the third resource.</p><h2>Footnotes</h2><ol><li id='footnote-3'>Thanks to <a href=\"https://en.wikipedia.org/wiki/John_Bercow\">John Bercow</a> for giving us PG alternatives to swear words<a href='#footnote-link-3'>🔼3</a></li></ol>")
+
     # TODO figure out how to test better lists
     def test_nested_numeric_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_numeric_list.md"))

@@ -66,9 +66,9 @@ class MarkdownParser:
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
-                footnote_pattern = re.compile("\[\d+\. .+?\]")
+                footnote_pattern = re.compile("\[\d+\. .+?\][ \.\?\!\:\;$]")
                 link_pattern = re.compile("\[(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
-                if link_pattern.match(result[parsing_info.i:]):
+                if link_pattern.match(result[parsing_info.i:]) and not footnote_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
                 elif footnote_pattern.match(result[parsing_info.i:]) and not footnote:
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
@@ -339,7 +339,7 @@ class MarkdownParser:
         return text, parsing_info
 
     def parse_footnote(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
-        end = pattern.match(text[parsing_info.i:]).span()[1]
+        end = pattern.match(text[parsing_info.i:]).span()[1] - 1
         raw_footnote = text[parsing_info.i + 1: parsing_info.i + end - 1]
         index = raw_footnote[:raw_footnote.find(". ")]
         footnote_content = raw_footnote[raw_footnote.find(". ")+2:]
