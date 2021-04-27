@@ -907,7 +907,7 @@ class PostGenerator:
             template = f.read()
 
         # write file
-        home_path_dir = os.path.join(output_path, "index.toe.html")
+        home_path_dir = os.path.join(output_path, "index.html")
 
         with open(home_path_dir, 'w', encoding="utf-8") as f:
             f.write(render_toe_from_string(
