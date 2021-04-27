@@ -127,18 +127,54 @@ class PostGenerator:
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
-    # Not sure what to think about this yet but I will deal with this later during refactoring
-    def generate_post_type(self, post_type_id: str):
+    def generate_from_post_type_id(self, post_type_id: str, language: Dict[str, str]):
+        if language["uuid"] == self.settings["main_language"]['settings_value']:
+            # path for main language
+            output_path = Path(self.config["OUTPUT_PATH"])
+        else:
+            # path for other languages
+            output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+            if not output_path.is_dir():
+                os.makedirs(output_path)
+
         self.refresh_assets()
 
-        # get post types
+        # get post type
         post_types_object = PostTypes()
-        post_type = [post_types_object.get_post_type(self.connection, post_type_id=post_type_id)]
-        # generate posts for languages
-        for language in self.languages:
-            self.generate_posts_for_language(language=language, post_types=post_type)
+        post_type = post_types_object.get_post_type(self.connection, post_type_id=post_type_id)
+
+        self.generate_post_type(post_type, language)
+
+        posts = self.get_posts_from_post_type_language(
+            post_type_uuid=post_type['uuid'],
+            post_type_slug=post_type['slug'],
+            language_uuid=language['uuid']
+        )
+        self.delete_post_type_post_files(post_type=post_type, language=language)
+        self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type, language=language)
+
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
+
+    def generate_post_type(self, posts, output_path, post_type, language):
+        # generate posts
+        for post in posts:
+            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path)
+        # generate archive and RSS if enabled
+        if post_type["archive_enabled"]:
+            self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
+            self.generate_rss(output_path=output_path, posts=posts)
+
+        if post_type["categories_enabled"] or post_type["tags_enabled"]:
+            categories, tags = self.prepare_categories_tags_post_type(post_type=post_type, language=language)
+
+        if post_type["categories_enabled"]:
+            self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
+                                   post_type=post_type)
+
+        if post_type["tags_enabled"]:
+            self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
+                                   post_type=post_type)
 
     def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
@@ -158,21 +194,6 @@ class PostGenerator:
             )
             self.delete_post_type_post_files(post_type=post_type, language=language)
             self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type, language=language)
-            # generate archive and RSS if enabled
-            if post_type["archive_enabled"]:
-                self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-                self.generate_rss(output_path=output_path, posts=posts)
-
-            if post_type["categories_enabled"] or post_type["tags_enabled"]:
-                categories, tags = self.prepare_categories_tags_post_type(post_type=post_type, language=language)
-
-            if post_type["categories_enabled"]:
-                self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
-                                       post_type=post_type)
-
-            if post_type["tags_enabled"]:
-                self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
-                                       post_type=post_type)
 
         # generate home
         self.generate_home(output_path=output_path, post_types=post_types, language=language)
