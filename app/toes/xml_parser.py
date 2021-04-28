@@ -103,6 +103,7 @@ class XMLParser:
                     parsing_info.move_index(len(f"</{name}>"))
                 else:
                     print(text)
+                    print(text[parsing_info.i:])
                     raise XMLParsingException()
             else:
                 parsing_info.state = STATES.read_node_name

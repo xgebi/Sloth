@@ -71,7 +71,8 @@ class MarkdownParser:
                 if link_pattern.match(result[parsing_info.i:]) and not footnote_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
                 elif footnote_pattern.match(result[parsing_info.i:]) and not footnote:
-                    result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info, pattern=footnote_pattern)
+                    result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info,
+                                                               pattern=footnote_pattern)
                 elif result[parsing_info.i + 1] == "[" and hasattr(self, 'forms'):
                     result, parsing_info = self.parse_forms(text=result, parsing_info=parsing_info)
                 else:
@@ -81,7 +82,7 @@ class MarkdownParser:
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == "#":
                 # parse list
-                if parsing_info.i == 0 or result[parsing_info.i - 1] != "\\":
+                if parsing_info.i == 0 or (result[parsing_info.i - 1] != "\\" and result[parsing_info.i - 1] == "\n"):
                     result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
@@ -309,16 +310,16 @@ class MarkdownParser:
         return text, parsing_info
 
     def parse_code_block(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
-        if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == "\n") \
-                and text[parsing_info.i + 1] != "`":
+        if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == ">"
+            or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] != "`":
             j = text[parsing_info.i + 1:].find("`") + (parsing_info.i + 1)
-            if text[j + 1] != "`":
+            if (j+1 < len(text) and text[j + 1] != "`") or (j + 1 == len(text)):
                 replacement = f"<span class='code'>{text[parsing_info.i + 1:j]}</span>"
                 if parsing_info.i == 0:
                     text = replacement + text[j + 1:]
                 else:
                     text = text[:parsing_info.i] + replacement + text[j + 1:]
-                parsing_info.i += (len(replacement) - 2)
+                parsing_info.move_index(len(replacement) - 2)
             else:
                 parsing_info.move_index()
         elif (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] == "`" and text[
@@ -342,7 +343,7 @@ class MarkdownParser:
         end = pattern.match(text[parsing_info.i:]).span()[1] - 1
         raw_footnote = text[parsing_info.i + 1: parsing_info.i + end - 1]
         index = raw_footnote[:raw_footnote.find(". ")]
-        footnote_content = raw_footnote[raw_footnote.find(". ")+2:]
+        footnote_content = raw_footnote[raw_footnote.find(". ") + 2:]
         footnote_code = f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>"
         text = f"{text[:parsing_info.i]}{footnote_code}{text[parsing_info.i + end:]}"
 
@@ -359,7 +360,8 @@ class MarkdownParser:
             for footnote in parsing_info.footnotes:
                 footnote_parser = MarkdownParser()
                 parsed_footnote = footnote_parser.to_html_string(footnote.footnote, footnote=True)
-                footnotes.append(f"<li id='footnote-{footnote.index}'>{parsed_footnote}<a href='#footnote-link-{footnote.index}'>🔼{footnote.index}</a></li>")
+                footnotes.append(
+                    f"<li id='footnote-{footnote.index}'>{parsed_footnote}<a href='#footnote-link-{footnote.index}'>🔼{footnote.index}</a></li>")
             footnotes_str = "\n".join(footnotes)
             text = f"{text}<h2>Footnotes</h2><ol>{footnotes_str}</ol>"
         return text, parsing_info

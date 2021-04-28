@@ -96,7 +96,6 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(text, "<p>Give a flying flamingo<sup><a href='#footnote-3' id='footnote-link-3'>3.</a></sup> is the third resource.</p><h2>Footnotes</h2><ol><li id='footnote-3'>Thanks to <a href=\"https://en.wikipedia.org/wiki/John_Bercow\">John Bercow</a> for giving us PG alternatives to swear words<a href='#footnote-link-3'>🔼3</a></li></ol>")
 
-    # TODO figure out how to test better lists
     def test_nested_numeric_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_numeric_list.md"))
         text = bl.to_html_string()
@@ -126,6 +125,26 @@ class MyTestCase(unittest.TestCase):
         text = bl.to_html_string()
 
         print(text)
+
+    def test_list_with_inline_code(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "list_with_inline_code.md"))
+        text = bl.to_html_string()
+
+        self.assertEqual(text, """<ul>
+<li><span class='code'>aaa</span>
+</li><li><span class='code'>bbb</span>
+<ol><li><span class='code'>ccc</span>
+</li><li><span class='code'>ddd</span>
+<ul><li><span class='code'>eee</span>
+</li></ul></li></ol></li><li><span class='code'>fff</span></li>
+</ul>
+""")
+
+    def test_html_link(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "html.md"))
+        text = bl.to_html_string()
+
+        self.assertEqual(text, '<div id="aaa"><a href="#aaa">aaa</a></div>')
 
 
 if __name__ == '__main__':

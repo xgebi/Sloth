@@ -163,7 +163,7 @@ class PostGenerator:
         # generate archive and RSS if enabled
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-            self.generate_rss(output_path=output_path, posts=posts)
+            self.generate_rss(output_path=output_path, posts=posts, post_markdown=True)
 
         if post_type["categories_enabled"] or post_type["tags_enabled"]:
             categories, tags = self.prepare_categories_tags_post_type(post_type=post_type, language=language)
@@ -173,7 +173,7 @@ class PostGenerator:
                                    post_type=post_type)
 
         if post_type["tags_enabled"]:
-            self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
+            self.generate_taxonomy(taxonomy=tags, language=language, output_path=output_path,
                                    post_type=post_type)
 
     def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
@@ -955,7 +955,7 @@ class PostGenerator:
             "post_type_slug": post[14]
         } for post in raw_posts]
 
-    def generate_rss(self, *args, output_path: Path, posts, **kwargs):
+    def generate_rss(self, *args, output_path: Path, posts, post_markdown: bool = False, **kwargs):
         doc = minidom.Document()
         root_node = doc.createElement('rss')
 
@@ -1057,15 +1057,17 @@ class PostGenerator:
             post_item.appendChild(description)
 
             content = doc.createElement('content:encoded')
-
-            md_parser = MarkdownParser()
-            if len(post["excerpt"]) == 0:
-                post["content"] = md_parser.to_html_string(post["content"])
-                content_text = doc.createCDATASection(post['content'])
+            if not post_markdown:
+                md_parser = MarkdownParser()
+                if len(post["excerpt"]) == 0:
+                    post["content"] = md_parser.to_html_string(post["content"])
+                    content_text = doc.createCDATASection(post['content'])
+                else:
+                    post["excerpt"] = md_parser.to_html_string(post["excerpt"])
+                    post["content"] = md_parser.to_html_string(post["content"])
+                    content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
             else:
-                post["excerpt"] = md_parser.to_html_string(post["excerpt"])
-                post["content"] = md_parser.to_html_string(post["content"])
-                content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
+                content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}".strip())
             content.appendChild(content_text)
             post_item.appendChild(content)
             channel.appendChild(post_item)
