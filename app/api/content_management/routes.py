@@ -1,9 +1,6 @@
-from flask import request, flash, url_for, current_app, make_response, abort
-import psycopg2
+from flask import request, current_app, make_response, abort
 from psycopg2 import sql
-import bcrypt
 import json
-import http.client
 import os
 import re
 from xml.dom import minidom
@@ -37,12 +34,17 @@ def show_content(*args, connection=None, **kwargs):
     raw_items = []
     try:
         cur.execute(
-            "SELECT settings_name, display_name, settings_value, settings_value_type FROM sloth_settings WHERE settings_type = 'sloth'"
+            """SELECT settings_name, display_name, settings_value, settings_value_type 
+            FROM sloth_settings WHERE settings_type = 'sloth'"""
         )
         raw_items = cur.fetchall()
     except Exception as e:
         print("db error a")
-        abort(500)
+        response = make_response(json.dumps({}))
+        response.headers['Content-Type'] = 'application/json'
+        code = 500
+
+        return response, code
 
     cur.close()
     connection.close()
@@ -56,7 +58,11 @@ def show_content(*args, connection=None, **kwargs):
             "settingsValueType": item[3]
         })
 
-    return json.dumps({"post_types": post_types_result, "settings": items})
+    response = make_response(json.dumps({"post_types": post_types_result, "settings": items}))
+    response.headers['Content-Type'] = 'application/json'
+    code = 200
+
+    return response, code
 
 
 @content_management.route("/api/content/import/wordpress", methods=["PUT", "POST"])
@@ -121,14 +127,24 @@ def import_wordpress_content(*args, connection=None, **kwargs):
             if post_type == 'post' or post_type == 'page':
                 posts.append(item)
 
-        process_attachments(attachments, connection, import_count)
-        rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
-        generator = PostGenerator()
-        generator.run(everything=True)
-    return json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.get("filename")})
+        processed_state = process_attachments(attachments, connection, import_count)
+        if processed_state == 1:
+            rewrite_rules = process_posts(posts, connection, base_import_link, import_count)
+            generator = PostGenerator()
+            generator.run(everything=True)
+
+    if processed_state == 1:
+        response = make_response(json.dumps({"rules": rewrite_rules, "media_uploaded": uploads.get("filename")}))
+        code = 200
+    else:
+        response = make_response(json.dumps({"error": "processing attachments"}))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
-def process_attachments(items, connection, import_count):
+def process_attachments(items, connection, import_count) -> int:
     for item in items:
 
         meta_infos = item.getElementsByTagName('wp:postmeta')
@@ -153,9 +169,10 @@ def process_attachments(items, connection, import_count):
         except Exception as e:
             print("100")
             print(traceback.format_exc())
-            abort(500)
+            return -1
 
         cur.close()
+        return 1
 
 
 def process_posts(items, connection, base_import_link, import_count):
@@ -169,7 +186,6 @@ def process_posts(items, connection, base_import_link, import_count):
             sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
         )
         site_url = cur.fetchone()[0]
-        now = datetime.now()
         post_types = {}
         existing_categories = {}
         existing_tags = {}
@@ -182,7 +198,6 @@ def process_posts(items, connection, base_import_link, import_count):
             existing_tags[post_type[1]] = taxonomies["tags"]
 
         for item in items:
-            rule = "rewrite "
             # title
             title = item.getElementsByTagName('title')[0].firstChild.wholeText
             # wp:post_type (attachment, nav_menu_item, illustration, page, post)
@@ -217,8 +232,6 @@ def process_posts(items, connection, base_import_link, import_count):
             pub_date = dateutil.parser.parse(
                 item.getElementsByTagName('pubDate')[0].firstChild.wholeText
             ).timestamp() * 1000 if item.getElementsByTagName('pubDate')[0].firstChild is not None else None
-            # dc:creator (CDATA)
-            creator = item.getElementsByTagName('dc:creator')[0].firstChild.wholeText
             # content:encoded (CDATA)
             content = item.getElementsByTagName('content:encoded')[0].firstChild.wholeText if \
                 item.getElementsByTagName('content:encoded')[0].firstChild is not None else ""
@@ -388,9 +401,14 @@ def clear_content(*args, connection=None, **kwargs):
         cur.execute("DELETE FROM sloth_taxonomy;")
         cur.execute("DELETE FROM sloth_analytics;")
         connection.commit()
-    except Exception as e:
-        abort(500)
 
-    cur.close()
-    connection.close()
-    return json.dumps({"cleaned": True}), 204
+        cur.close()
+        connection.close()
+        response = make_response(json.dumps({"cleaned": True}))
+        code = 204
+    except Exception as e:
+        response = make_response(json.dumps({"cleaned": False}))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code

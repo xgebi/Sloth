@@ -1,4 +1,4 @@
-from flask import request, abort
+from flask import request, abort, make_response
 from flask_cors import cross_origin
 import json
 from psycopg2 import sql
@@ -24,15 +24,19 @@ def update_analytics(*args, connection, **kwargs):
 			[str(uuid.uuid4()), analytics_data["page"], time()*1000]
 		)
 		connection.commit()
+		cur.close()
+		connection.close()
+
+		response = make_response(json.dumps({"page_recorded": "ok"}))
+		code = 200
 	except Exception as e:
 		print("100")
 		print(traceback.format_exc())
-		abort(500)
-	
-	cur.close()
-	connection.close()
+		response = make_response(json.dumps({"page_recorded": "not ok"}))
+		code = 500
 
-	return json.dumps({"page_recorded": "ok"})
+	response.headers['Content-Type'] = 'application/json'
+	return response, code
 
 
 @site.route("/api/messages", methods=["POST"])
@@ -47,11 +51,15 @@ def send_message(*args, connection, **kwargs):
 			[str(uuid.uuid4()), message_data["name"], message_data["email"], message_data["body"], time()*1000, 'unread']
 		)
 		connection.commit()
+		cur.close()
+		connection.close()
+		response = make_response(json.dumps({"page_recorded": "ok"}))
+		code = 200
 	except Exception as e:
 		print("100")
 		print(traceback.format_exc())
-		abort(500)
-	
-	cur.close()
-	connection.close()
-	return json.dumps({"sent": "ok"})
+		response = make_response(json.dumps({"page_recorded": "not ok"}))
+		code = 500
+
+	response.headers['Content-Type'] = 'application/json'
+	return response, code

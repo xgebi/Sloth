@@ -1,4 +1,4 @@
-from flask import request, abort, render_template
+from flask import request, abort, make_response
 from psycopg2 import sql
 import json
 import uuid
@@ -107,7 +107,11 @@ def save_language_info(*args, connection=None, lang_id: str, **kwargs):
         result["new"] = True
         result["oldUuid"] = lang_id
 
-    return json.dumps(result)
+    response = make_response(json.dumps(result))
+    response.headers['Content-Type'] = 'application/json'
+    code = 200
+
+    return response, code
 
 
 @language_settings.route("/api/settings/language/<lang_id>/delete", methods=["DELETE"])

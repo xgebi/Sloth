@@ -1,8 +1,6 @@
-from flask import request, flash, url_for, current_app, abort
+from flask import request, abort, make_response
 import json
-import psycopg2
-from psycopg2 import sql, errors
-import uuid
+from psycopg2 import sql
 
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
@@ -26,8 +24,12 @@ def delete_message(*args, connection, **kwargs):
             sql.SQL("DELETE FROM sloth_messages WHERE uuid = %s"), [filled["message_uuid"]]
         )
         connection.commit()
+        response = make_response(json.dumps({"cleaned": False}))
+        code = 204
     except Exception as e:
         print(e)
-        abort(500)
+        response = make_response(json.dumps({"cleaned": False}))
+        code = 500
 
-    return json.dumps({"message": "deleted"}), 204
+    response.headers['Content-Type'] = 'application/json'
+    return response, code

@@ -1,14 +1,8 @@
-from flask import request, flash, url_for, current_app, abort
+from flask import request, make_response, abort
 import json
-import psycopg2
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import uuid
-from time import time
-import os
-import traceback
 
-from app.utilities.db_connection import db_connection
-from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
@@ -23,9 +17,6 @@ def create_category(*args, connection, **kwargs):
         abort(500)
     filled = json.loads(request.data)
     cur = connection.cursor()
-
-    raw_all_categories = []
-    raw_post_categories = []
 
     try:
         cur.execute(
@@ -56,7 +47,11 @@ def create_category(*args, connection, **kwargs):
         )
         raw_post_categories = cur.fetchall()
     except Exception as e:
-        abort(500)
+        response = make_response(json.dumps({"error": True}))
+        response.headers['Content-Type'] = 'application/json'
+        code = 500
+
+        return response, code
 
     post_categories = [cat_uuid for cat in raw_post_categories for cat_uuid in cat]
 
@@ -71,4 +66,8 @@ def create_category(*args, connection, **kwargs):
             "selected": selected
         })
 
-    return json.dumps(all_categories)
+    response = make_response(json.dumps(all_categories))
+    response.headers['Content-Type'] = 'application/json'
+    code = 200
+
+    return response, code

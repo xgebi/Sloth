@@ -289,6 +289,10 @@ function savePost(values) {
         .then(data => {
             if (window.location.pathname.indexOf("/new/") >= 0) {
                 window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
+            } else if (values["createTranslation"]) {
+                window.location.replace(
+                `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${values['uuid']}`
+            );
             } else {
                 regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, metadataButtons)
             }

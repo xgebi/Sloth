@@ -1,4 +1,4 @@
-from flask import request, abort, redirect, render_template
+from flask import request, abort, redirect, render_template, make_response
 from psycopg2 import sql
 import os
 import json
@@ -93,4 +93,9 @@ def save_settings(*args, permission_level, connection, **kwargs):
 def clear_content(*args, **kwargs):
     if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
-    return json.dumps({"post_generation": "unlocked"}), 204
+
+    response = make_response(json.dumps({"post_generation": "unlocked"}))
+    response.headers['Content-Type'] = 'application/json'
+    code = 204
+
+    return response, code

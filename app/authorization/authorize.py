@@ -1,4 +1,4 @@
-from flask import request, redirect
+from flask import request, redirect, make_response
 from functools import wraps
 import json
 
@@ -16,7 +16,12 @@ def authorize_rest(permission_level):
 
             if pass_token:
                 return fn(*args, permission_level=pass_token[1], **kwargs)
-            return json.dumps({"Unauthorized": True}), 403
+
+            response = make_response(json.dumps({"Unauthorized": True}))
+            response.headers['Content-Type'] = 'application/json'
+            code = 403
+
+            return response, code
 
         return wrapper
 

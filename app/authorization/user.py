@@ -1,9 +1,9 @@
-from flask import current_app
+from flask import current_app, make_response
 import psycopg2
 from psycopg2 import sql
 import bcrypt
 from time import time
-import random
+import json
 import uuid
 
 from app.utilities.db_connection import db_connection
@@ -138,10 +138,18 @@ class User:
 
 			item = cur.fetchone()
 			if (item[1] < time()):
-				return json.dumps({ "error": "Authorization timeout" }), 403
+				response = make_response(json.dumps({"error": "Authorization timeout"}))
+				response.headers['Content-Type'] = 'application/json'
+				code = 403
+
+				return response, code
 			
 			if (item[0] != self.token):
-				return json.dumps({ "error": "Unauthorized" }), 403
+				response = make_response(json.dumps({"Unauthorized": True}))
+				response.headers['Content-Type'] = 'application/json'
+				code = 403
+
+				return response, code
 
 			expiry_time = time() + 1800 # 30 minutes
 
