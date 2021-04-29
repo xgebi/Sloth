@@ -128,14 +128,21 @@ def delete_language(*args, connection=None, lang_id: str, **kwargs):
             [lang_id]
         )
         connection.commit()
+        cur.close()
+        connection.close()
+
+        response = make_response(json.dumps({
+            "uuid": lang_id,
+            "deleted": True
+        }))
+        code = 200
     except Exception as e:
         print(e)
-        abort(500)
+        response = make_response(json.dumps({
+            "uuid": lang_id,
+            "deleted": False
+        }))
+        code = 200
 
-    cur.close()
-    connection.close()
-
-    return json.dumps({
-        "uuid": lang_id,
-        "deleted": True
-    })
+    response.headers['Content-Type'] = 'application/json'
+    return response, code

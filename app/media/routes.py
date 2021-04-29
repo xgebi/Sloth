@@ -1,4 +1,4 @@
-from flask import request, current_app, abort, redirect, render_template
+from flask import request, current_app, redirect, make_response
 import json
 from psycopg2 import sql
 import uuid
@@ -51,9 +51,18 @@ def show_media_list(*args, permission_level, connection, **kwargs):
 @db_connection
 def get_media_data(*args, connection, **kwargs):
     if connection is None:
-        abort(500)
+        response = make_response(json.dumps({
+            "error": True
+        }))
+        code = 500
+    else:
+        response = make_response(json.dumps(
+            {"media": get_media(connection=connection)}
+        ))
+        code = 500
 
-    return json.dumps({"media": get_media(connection=connection)})
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 @media.route("/api/media/upload-file", methods=['POST'])
@@ -62,7 +71,7 @@ def get_media_data(*args, connection, **kwargs):
 def upload_item(*args, connection=None, **kwargs):
     image = request.files["image"]
     alt = request.form["alt"]
-
+    code = -1
     try:
         cur = connection.cursor()
         cur.execute(
@@ -73,10 +82,17 @@ def upload_item(*args, connection=None, **kwargs):
         ext = image.filename[image.filename.rfind(".")+1:].lower()
         mime_ext = image.mimetype[image.mimetype.rfind("/")+1:].lower()
         if not (ext in allowed_exts or mime_ext in allowed_exts):
-            abort(500)
+            response = make_response(json.dumps(
+                {"media": []}
+            ))
+            code = 500
     except Exception as e:
         print(e)
-        abort(500)
+        print(traceback.format_exc())
+        response = make_response(json.dumps(
+            {"media": []}
+        ))
+        code = 500
     now = datetime.now()
     filename = image.filename
     index = 1
@@ -91,8 +107,6 @@ def upload_item(*args, connection=None, **kwargs):
     with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename), 'wb') as f:
         image.save(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))
 
-    file = {}
-
     try:
         cur = connection.cursor()
 
@@ -105,9 +119,21 @@ def upload_item(*args, connection=None, **kwargs):
         cur.close()
     except Exception as e:
         print(traceback.format_exc())
+        response = make_response(json.dumps(
+            {"media": []}
+        ))
+        code = 500
+    finally:
         connection.close()
-        abort(500)
-    return json.dumps({"media": get_media(connection=connection)}), 201
+
+    if code != 500:
+        response = make_response(json.dumps(
+            {"media": get_media(connection=connection)}
+        ))
+        code = 201
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 @media.route("/api/media/delete-file", methods=['POST', 'DELETE'])
@@ -127,7 +153,10 @@ def delete_item(*args, connection=None, **kwargs):
             if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0])):
                 os.remove(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0]))
         else:
-            abort(500)
+            response = make_response(json.dumps(
+                {"media": []}
+            ))
+            code = 500
         cur.execute(
             sql.SQL("UPDATE sloth_posts SET thumbnail = %s WHERE thumbnail = %s;"),
             [None, file_data["uuid"]]
@@ -138,11 +167,20 @@ def delete_item(*args, connection=None, **kwargs):
         )
         connection.commit()
         cur.close()
+        response = make_response(json.dumps({
+            "media": get_media(connection=connection)
+        }))
+        code = 201
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
-        abort(500)
-    return json.dumps({"media": get_media(connection=connection)}), 201
+        response = make_response(json.dumps({
+            "deleted": False
+        }))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 def get_media(*args, connection, all_langs=False, **kwargs):
@@ -155,7 +193,7 @@ def get_media(*args, connection, all_langs=False, **kwargs):
         )
         temp_site_url = cur.fetchone()
         if len(temp_site_url) != 1:
-            abort(500)
+            return []
         site_url = temp_site_url[0]
         if not all_langs:
             cur.execute(
@@ -170,7 +208,7 @@ def get_media(*args, connection, all_langs=False, **kwargs):
         raw_media = cur.fetchall()
     except Exception as e:
         print("db error")
-        abort(500)
+        return []
 
     cur.close()
 

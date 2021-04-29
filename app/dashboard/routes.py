@@ -1,11 +1,11 @@
-from flask import abort, render_template, request, flash, url_for, current_app
+from flask import abort, make_response, request
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.hooks import Hooks
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
 import json
 import re
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import datetime
 import traceback
 import os
@@ -137,13 +137,10 @@ def dashboard_information(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)
 
-    postTypes = PostTypes()
-    postTypesResult = postTypes.get_post_type_list(connection)
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
 
     cur = connection.cursor()
-    raw_recent_posts = []
-    raw_upcoming_posts = []
-    raw_drafts = []
 
     try:
         cur.execute(
@@ -163,18 +160,27 @@ def dashboard_information(*args, connection=None, **kwargs):
             ['draft']
         )
         raw_drafts = cur.fetchall()
+        cur.close()
+        connection.close()
 
+        response = make_response(json.dumps({
+            "post_types": post_types_result,
+            "recentPosts": format_post_data(raw_recent_posts),
+            "upcomingPosts": format_post_data(raw_upcoming_posts),
+            "drafts": format_post_data(raw_drafts)
+        }))
+        code = 200
     except Exception as e:
         print(traceback.format_exc())
-        abort(500)
+        connection.close()
 
-    connection.close()
-    return json.dumps({
-        "postTypes": postTypesResult,
-        "recentPosts": format_post_data(raw_recent_posts),
-        "upcomingPosts": format_post_data(raw_upcoming_posts),
-        "drafts": format_post_data(raw_drafts)
-    })
+        response = make_response(json.dumps({
+            "error": True
+        }))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 @dashboard.route("/api/dashboard-information/create-draft", methods=["POST"])
@@ -203,21 +209,26 @@ def create_draft(*args, connection=None, **kwargs):
             ['draft']
         )
         raw_drafts = cur.fetchall()
+        cur.close()
+        connection.close()
+        response = make_response(json.dumps({
+            "drafts": format_post_data(raw_drafts)
+        }))
+        code = 200
     except Exception as e:
         print(traceback.format_exc())
-        return json.dumps({"error": "Database error"}), 500
+        response = make_response(json.dumps({
+            "error": True
+        }))
+        code = 500
 
-    cur.close()
-    connection.close()
-
-    return json.dumps({
-        "drafts": format_post_data(raw_drafts)
-    })
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
-def format_post_data(postArr):
-    posts = [];
-    for post in postArr:
+def format_post_data(post_arr):
+    posts = []
+    for post in post_arr:
         posts.append({
             "uuid": post[0],
             "title": post[1],
