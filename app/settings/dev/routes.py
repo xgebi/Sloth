@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from flask import abort, redirect, render_template, current_app
+from flask import abort, redirect, make_response, current_app
 from psycopg2 import sql
 
 from app.authorization.authorize import authorize_web
@@ -69,39 +69,62 @@ def delete_posts(*args, permission_level, connection, **kwargs):
             )
         )
         connection.commit()
+        cur.close()
+        connection.close()
+
+        response = make_response(json.dumps(
+            {"postsDeleted": True}
+        ))
+        code = 200
     except Exception as e:
         print(e)
-        abort(500)
-    cur.close()
-    connection.close()
+        response = make_response(json.dumps(
+            {"postsDeleted": False}
+        ))
+        code = 500
 
-    return json.dumps({"postsDeleted": True})
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 @dev_settings.route("/api/settings/dev/taxonomy", methods=["DELETE"])
 @authorize_web(1)
 @db_connection
 def delete_taxonomy(*args, permission_level, connection, **kwargs):
+    code = -1
     if os.environ["FLASK_ENV"] != "development":
-        abort(403)
+        response = make_response(json.dumps(
+            {"taxonomyDeleted": False}
+        ))
+        code = 403
     if connection is None:
         return redirect("/database-error")
 
-    cur = connection.cursor()
-    try:
-        cur.execute(
-            sql.SQL(
-                """DELETE FROM sloth_taxonomy;"""
+    if code == -1:
+        cur = connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL(
+                    """DELETE FROM sloth_taxonomy;"""
+                )
             )
-        )
-        connection.commit()
-    except Exception as e:
-        print(e)
-        abort(500)
-    cur.close()
-    connection.close()
+            connection.commit()
+            cur.close()
+            connection.close()
 
-    return json.dumps({"taxonomyDeleted": True})
+            response = make_response(json.dumps(
+                {"taxonomyDeleted": True}
+            ))
+            code = 200
+        except Exception as e:
+            print(e)
+            response = make_response(json.dumps(
+                {"taxonomyDeleted": False}
+            ))
+            code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
 
 
 @dev_settings.route("/api/settings/dev/health-check", methods=["GET"])
@@ -109,52 +132,63 @@ def delete_taxonomy(*args, permission_level, connection, **kwargs):
 @db_connection
 def check_posts_health(*args, permission_level, connection, **kwargs):
     if connection is None:
-        abort(500)
-
-    cur = connection.cursor()
-    try:
-        # from settings get default language
-        cur.execute(
-            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-        )
-        lang_id = cur.fetchone()[0]
-
-        # from language_settings get short_name
-        cur.execute(
-            sql.SQL("""SELECT uuid, short_name FROM sloth_language_settings""")
-        )
-        raw_languages = cur.fetchall()
-        languages = {lang[0]:lang[1] for lang in raw_languages}
-        # from post_types get slugs
-        cur.execute(
-            sql.SQL("""SELECT uuid, slug FROM sloth_post_types""")
-        )
-        raw_post_types = cur.fetchall()
-        post_types = {pt[0]: pt[1] for pt in raw_post_types}
-        # from posts get slugs, post_type, language
-        cur.execute(
-            sql.SQL("""SELECT slug, post_type, lang FROM sloth_posts WHERE post_status = 'published'""")
-        )
-        posts = cur.fetchall()
-        urls = [
-            Path(os.path.join(
-                current_app.config["OUTPUT_PATH"],
-                languages[post[2]] if post[2] != lang_id else "",
-                post_types[post[1]],
-                post[0],
-                "index.html"
-            ))
-            for post in posts
-        ]
-    except Exception as e:
-        print(e)
-        abort(500)
-
-    cur.close()
-    connection.close()
-
-    if urls:
-        urls_to_check = [str(url) for url in urls if not url.is_file()]
-        return json.dumps({"urls": urls_to_check})
+        response = make_response(json.dumps(
+            {"urls": []}
+        ))
+        code = 500
     else:
-        abort(500)
+        cur = connection.cursor()
+        try:
+            # from settings get default language
+            cur.execute(
+                sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+            )
+            lang_id = cur.fetchone()[0]
+
+            # from language_settings get short_name
+            cur.execute(
+                sql.SQL("""SELECT uuid, short_name FROM sloth_language_settings""")
+            )
+            raw_languages = cur.fetchall()
+            languages = {lang[0]:lang[1] for lang in raw_languages}
+            # from post_types get slugs
+            cur.execute(
+                sql.SQL("""SELECT uuid, slug FROM sloth_post_types""")
+            )
+            raw_post_types = cur.fetchall()
+            post_types = {pt[0]: pt[1] for pt in raw_post_types}
+            # from posts get slugs, post_type, language
+            cur.execute(
+                sql.SQL("""SELECT slug, post_type, lang FROM sloth_posts WHERE post_status = 'published'""")
+            )
+            posts = cur.fetchall()
+            urls = [
+                Path(os.path.join(
+                    current_app.config["OUTPUT_PATH"],
+                    languages[post[2]] if post[2] != lang_id else "",
+                    post_types[post[1]],
+                    post[0],
+                    "index.html"
+                ))
+                for post in posts
+            ]
+        except Exception as e:
+            print(e)
+
+        cur.close()
+        connection.close()
+
+        if urls:
+            urls_to_check = [str(url) for url in urls if not url.is_file()]
+            response = make_response(json.dumps(
+                {"urls": urls_to_check}
+            ))
+            code = 200
+        else:
+            response = make_response(json.dumps(
+                {"urls": []}
+            ))
+            code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
