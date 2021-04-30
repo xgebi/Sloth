@@ -691,6 +691,7 @@ class PostGenerator:
                             "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                             "menus": self.menus,
                             "current_page_number": i,
+                            "number_of_pages": math.ceil(len(posts) / 10),
                             "not_last_page": True if math.floor(len(posts) / 10) != i else False,
                             "is_non_post": True
                         },
