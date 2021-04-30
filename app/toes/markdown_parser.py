@@ -286,7 +286,7 @@ class MarkdownParser:
                 text = f"{text[:line_start]}<p>{line}</p>{text[line_end:]}"
                 parsing_info.move_index(len("<p>"))
                 break
-            elif "`#-*".find(text[alt_line_end + 1]) >= 0:
+            elif alt_line_end + 1 < len(text) and "`#-*".find(text[alt_line_end + 1]) >= 0:
                 line = text[line_start: alt_line_end]
                 text = f"{text[:line_start]}<p>{line}</p>{text[alt_line_end:]}"
                 parsing_info.move_index(len("<p>"))
