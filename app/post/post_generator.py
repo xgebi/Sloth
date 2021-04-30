@@ -211,8 +211,8 @@ class PostGenerator:
             cur.execute(
                 sql.SQL(
                     """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
-                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, sp.imported,
-                        sp.import_approved, sp.thumbnail,
+                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
+                        sp.imported, sp.import_approved, sp.thumbnail,
                         sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name 
                         FROM sloth_post_taxonomies AS spt
                         INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
@@ -281,11 +281,15 @@ class PostGenerator:
             try:
                 if post[16] is not None:
                     cur.execute(
-                        sql.SQL("""SELECT file_path FROM sloth_media WHERE uuid = %s;"""),
-                        (post[16],)
+                        sql.SQL("""SELECT sm.file_path, sma.alt 
+                        FROM sloth_media as sm 
+                        INNER JOIN sloth_media_alts sma on sma.media = sm.uuid
+                        WHERE sm.uuid = %s AND sma.lang = %s;"""),
+                        (post[16], post[18])
                     )
                     raw_thumbnail = cur.fetchone()
                     thumbnail = raw_thumbnail[0]
+                    thumbnail_alt = raw_thumbnail[1]
 
                 if post[17]:
                     cur.execute(
@@ -297,14 +301,7 @@ class PostGenerator:
                     )
                     temp_language_variants = cur.fetchall()
                 else:
-                    cur.execute(
-                        sql.SQL(
-                            """SELECT lang, slug FROM sloth_posts 
-                            WHERE original_lang_entry_uuid = %s;"""
-                        ),
-                        (post[17],)
-                    )
-                    temp_language_variants = cur.fetchall()
+                    temp_language_variants = []
             except Exception as e:
                 print(e)
                 traceback.print_exc()
@@ -337,11 +334,11 @@ class PostGenerator:
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
-                "original_lang_entry_uuid": post[16],
-                "lang": post[17],
-                "format_uuid": post[18],
-                "format_slug": post[19],
-                "format_name": post[20]
+                "original_lang_entry_uuid": post[17],
+                "lang": post[18],
+                "format_uuid": post[19],
+                "format_slug": post[20],
+                "format_name": post[21]
             })
 
         return posts

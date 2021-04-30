@@ -306,7 +306,7 @@ class Toe:
                     result += item[1: len(item) - 1]
                 else:
                     resolved_value = self.current_scope.find_variable(item)
-                    result += resolved_value if resolved_value is not None else ""
+                    result += str(resolved_value) if resolved_value is not None else ""
 
             return result
 
