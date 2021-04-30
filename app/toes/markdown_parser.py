@@ -304,6 +304,11 @@ class MarkdownParser:
                     text = f"{text[:line_start]}<p>{text[line_start]}:</p>"
                     parsing_info.move_index(len("<p>"))
                     break
+            elif line_end == len(text):
+                line = text[line_start: line_end]
+                text = f"{text[:line_start]}<p>{line.strip()}</p>"
+                parsing_info.move_index(len("<p>"))
+                break
             else:
                 j += (alt_line_end - j) + 1
 

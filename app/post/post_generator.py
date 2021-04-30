@@ -159,7 +159,7 @@ class PostGenerator:
     def generate_post_type(self, posts, output_path, post_type, language):
         # generate posts
         for post in posts:
-            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path)
+            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path, multiple=True)
         # generate archive and RSS if enabled
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
