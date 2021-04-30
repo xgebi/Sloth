@@ -291,7 +291,7 @@ class MarkdownParser:
                 text = f"{text[:line_start]}<p>{line}</p>{text[alt_line_end:]}"
                 parsing_info.move_index(len("<p>"))
                 break
-            elif text[alt_line_end + 1].isdigit():
+            elif alt_line_end + 1 < len(text) and text[alt_line_end + 1].isdigit():
                 j = alt_line_end + 2
                 while j < len(text) and text[j].isdigit():
                     j += 1
