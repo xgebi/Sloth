@@ -1,2 +1,7 @@
 [
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "034_meta_information_posts.sql"
+  }
 ]

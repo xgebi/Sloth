@@ -544,7 +544,8 @@ class PostGenerator:
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "menus": self.menus,
                     "translations": translations,
-                    "is_home": False
+                    "is_home": False,
+                    "is_post": True
                 },
                 hooks=self.hooks,
                 base_path=self.theme_path
@@ -693,7 +694,8 @@ class PostGenerator:
                             "current_page_number": i,
                             "number_of_pages": math.ceil(len(posts) / 10),
                             "not_last_page": True if math.floor(len(posts) / 10) != i else False,
-                            "is_non_post": True
+                            "is_home": False,
+                            "is_post": False
                         },
                         hooks=self.hooks
                     ))
@@ -908,7 +910,7 @@ class PostGenerator:
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "menus": self.menus,
                     "is_home": True,
-                    "is_non_post": True
+                    "is_post": False
                 },
                 hooks=self.hooks
             ))

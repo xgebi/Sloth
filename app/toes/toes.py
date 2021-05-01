@@ -1,16 +1,17 @@
+import enum
+import html
 import json
 import os
 import re
 from typing import Dict, List
-import html
 
+from app.toes.comment_node import CommentNode
+from app.toes.hooks import Hooks
 from app.toes.node import Node
 from app.toes.root_node import RootNode
 from app.toes.text_node import TextNode
-from app.toes.comment_node import CommentNode
 from app.toes.toes_exceptions import ToeProcessingException
 from app.toes.xml_parser import XMLParser
-from app.toes.hooks import Hooks
 
 
 def render_toe_from_path(
@@ -23,7 +24,8 @@ def render_toe_from_path(
     if path_to_templates is None and template is None:
         return None
 
-    toe_engine = Toe(path_to_templates=path_to_templates, template_name=template, data=data, hooks=hooks, base_path=path_to_templates, **kwargs)
+    toe_engine = Toe(path_to_templates=path_to_templates, template_name=template, data=data, hooks=hooks,
+                     base_path=path_to_templates, **kwargs)
     return toe_engine.process_tree()
 
 
@@ -51,7 +53,7 @@ class Toe:
             data: Dict = {},
             template_string: str = None,
             hooks: Hooks = {},
-            base_path = None,
+            base_path=None,
             **kwargs
     ):
         self.current_new_tree_node: Node = None
@@ -101,7 +103,6 @@ class Toe:
             self.tree = xp.parse_file()
         else:
             raise ToeProcessingException("Template not available")
-
 
     def process_tree(self):
         # There can only be one root element
@@ -183,7 +184,16 @@ class Toe:
                 ignore_children = True
                 self.process_inline_js(new_tree_node, template_tree_node.children)
             elif attribute.startswith('toe:class'):
-                self.process_conditional_css_classes(new_tree_node, template_tree_node.get_attribute(attribute))
+                self.process_conditional_css_classes(
+                    new_tree_node=new_tree_node,
+                    cond_attr=template_tree_node.get_attribute(attribute)
+                )
+            elif attribute.startswith("toe:checked") or attribute.startswith("toe:selected"):
+                self.process_conditional_attributes(
+                    new_tree_node=new_tree_node,
+                    cond_attr=template_tree_node.get_attribute(attribute),
+                    attr_name=attribute[attribute.find(":") + 1:]
+                )
             else:
                 new_tree_node.set_attribute(
                     attribute[attribute.find(":") + 1:],
@@ -209,6 +219,10 @@ class Toe:
                 processed_class = self.process_css_class_condition(condition=condition.strip())
                 classes += f" {processed_class}" if processed_class is not None else ""
         new_tree_node.set_attribute('class', classes)
+
+    def process_conditional_attributes(self, new_tree_node: Node, cond_attr: str, attr_name: str):
+        if self.process_condition(condition=cond_attr):
+            new_tree_node.set_attribute(attr_name, "")
 
     def process_css_class_condition(self, condition: str) -> str or None:
         quote_mark = condition[0]
@@ -369,21 +383,24 @@ class Toe:
         if element.has_attribute('toe:add'):
             try:
                 if int(variable) == float(variable):
-                    self.current_scope.assign_variable(var_name, float(variable) + float(element.get_attribute('toe:add')))
+                    self.current_scope.assign_variable(var_name,
+                                                       float(variable) + float(element.get_attribute('toe:add')))
             except ValueError as ve:
                 raise ve
 
         if element.has_attribute('toe:sub'):
             try:
                 if int(variable) == float(variable):
-                    self.current_scope.assign_variable(var_name, float(variable) - float(element.get_attribute('toe:sub')))
+                    self.current_scope.assign_variable(var_name,
+                                                       float(variable) - float(element.get_attribute('toe:sub')))
             except ValueError as ve:
                 raise ve
 
         if element.has_attribute('toe:mul'):
             try:
                 if int(variable) == float(variable):
-                    self.current_scope.assign_variable(var_name, float(variable) * float(element.get_attribute('toe:mul')))
+                    self.current_scope.assign_variable(var_name,
+                                                       float(variable) * float(element.get_attribute('toe:mul')))
             except ValueError as ve:
                 raise ve
 
@@ -391,7 +408,8 @@ class Toe:
             try:
                 if int(variable) == float(variable):
                     if float(element.get_attribute('toe:div')) != 0:
-                        self.current_scope.assign_variable(var_name, float(variable) / float(element.get_attribute('toe:div')))
+                        self.current_scope.assign_variable(var_name,
+                                                           float(variable) / float(element.get_attribute('toe:div')))
                         return
                     raise ZeroDivisionError()
             except ValueError as ve:
@@ -401,7 +419,8 @@ class Toe:
             try:
                 if int(variable) == float(variable):
                     if float(element.get_attribute('toe:div')) != 0:
-                        self.current_scope.assign_variable(var_name, float(variable) % float(element.get_attribute('toe:mod')))
+                        self.current_scope.assign_variable(var_name,
+                                                           float(variable) % float(element.get_attribute('toe:mod')))
                         return
                     raise ZeroDivisionError()
             except ValueError as ve:
@@ -410,7 +429,8 @@ class Toe:
         if element.has_attribute('toe:pow'):
             try:
                 if int(variable) == float(variable):
-                    self.current_scope.assign_variable(var_name, float(variable) ** float(element.get_attribute('toe:pow')))
+                    self.current_scope.assign_variable(var_name,
+                                                       float(variable) ** float(element.get_attribute('toe:pow')))
             except ValueError as ve:
                 raise ve
 
@@ -548,7 +568,36 @@ class Toe:
         return False
 
     def process_compound_condition(self, condition) -> bool:
-        # TODO this
+        compound_condition_parsing_info = CompoundConditionParsingInfo()
+        while compound_condition_parsing_info.i < len(condition):
+            # first two conditions deal with parenthesis
+            if condition[compound_condition_parsing_info.i] == "(" and not compound_condition_parsing_info.in_string:
+                compound_condition_parsing_info.current_depth += 1
+                compound_condition_parsing_info.i += 1
+            elif condition[compound_condition_parsing_info.i] == ")" and not compound_condition_parsing_info.in_string:
+                compound_condition_parsing_info.current_depth -= 1
+                compound_condition_parsing_info.i += 1
+            # This condition deals with strings, so and, or, ( and ) are ignored in strings
+            elif condition[compound_condition_parsing_info.i] == "\"" or condition[
+                compound_condition_parsing_info.i] == "'":
+                if condition[compound_condition_parsing_info.i - 1] != "\\":
+                    compound_condition_parsing_info.in_string = not compound_condition_parsing_info.in_string
+                if compound_condition_parsing_info.in_string and compound_condition_parsing_info.string_quote == \
+                        condition[
+                            compound_condition_parsing_info.i] and condition[
+                    compound_condition_parsing_info.i - 1] != "\\":
+                    compound_condition_parsing_info.string_quote = condition[compound_condition_parsing_info.i]
+            # Next two conditions are dealing with and and or but only on 0 depth
+            elif condition[compound_condition_parsing_info.i] == "a" and compound_condition_parsing_info.current_depth == 0:
+                if condition[compound_condition_parsing_info.i - 1: compound_condition_parsing_info.i + len(
+                        "and ") + 1] == " and ":
+                    pass
+            elif condition[compound_condition_parsing_info.i] == "o" and compound_condition_parsing_info.current_depth == 0:
+                if condition[
+                   compound_condition_parsing_info.i - 1: compound_condition_parsing_info.i + len("or ") + 1] == " or ":
+                    pass
+            else:
+                compound_condition_parsing_info.i += 1
         return False
 
     def process_pipe(self, side: str):
@@ -562,6 +611,32 @@ class Toe:
             elif actions[i].strip() == 'json':
                 value = json.dumps(value)
         return str(value)
+
+
+class ConditionTree:
+    def __init__(self):
+        self.parts = []
+        self.junction: CONDITION_JUNCTION = CONDITION_JUNCTION.junction_none
+
+    def process_tree(self):
+        pass
+
+
+class CompoundConditionParsingInfo:
+    def __init__(self):
+        self.top_tree: ConditionTree = ConditionTree()
+        self.current_tree = self.top_tree
+        self.i = 0
+        self.current_depth = 0
+        self.in_string = False
+        self.string_quote = ""
+        self.condition_start = 0
+
+
+class CONDITION_JUNCTION(enum.Enum):
+    junction_none = -1
+    junction_or = 0
+    junction_and = 1
 
 
 class VariableScope:

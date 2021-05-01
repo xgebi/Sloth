@@ -1,23 +1,23 @@
-from flask import request, current_app, abort, redirect, render_template
+import datetime
 import json
-from psycopg2 import sql
-import uuid
-from time import time
 import os
 import traceback
+import uuid
 from pathlib import Path
-import datetime
+from time import time
 from typing import List, Dict
 
-from app.post.post_types import PostTypes
+from flask import request, current_app, abort, redirect, render_template
+from psycopg2 import sql
+
 from app.authorization.authorize import authorize_rest, authorize_web
-from app.utilities.db_connection import db_connection
-from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
+from app.post import post, get_translations
 from app.post.post_generator import PostGenerator
+from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks
 from app.toes.toes import render_toe_from_path
-
-from app.post import post, get_translations
+from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
+from app.utilities.db_connection import db_connection
 
 reserved_folder_names = ('tag', 'category')
 
@@ -276,21 +276,25 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "format_slug": raw_post[20],
         "format_name": raw_post[21]
     }
-
-    return render_template(
-        "post-edit.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        token=token,
-        post_type_name=post_type_name,
-        data=data,
-        media=media,
-        post_statuses=[item for sublist in temp_post_statuses for item in sublist],
-        default_lang=default_lang,
-        languages=translatable,
-        translations=translated_languages,
-        current_lang_id=data["lang"],
-        post_formats=post_formats
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="post-edit.toe.html",
+        hooks=Hooks(),
+        data={
+            "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "token": token,
+            "post_type_name": post_type_name,
+            "data": data,
+            "media": media,
+            "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
+            "default_lang": default_lang,
+            "languages": translatable,
+            "translations": translated_languages,
+            "current_lang_id": data["lang"],
+            "post_formats": post_formats
+        }
     )
 
 
@@ -411,20 +415,26 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "format_uuid": default_format
     }
 
-    return render_template(
-        "post-edit.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        media=media,
-        post_type_name=post_type_name,
-        post_statuses=post_statuses,
-        data=data,
-        all_categories=all_categories,
-        default_lang=default_lang,
-        current_lang_id=lang_id,
-        languages=translatable_languages,
-        translations=translations,
-        post_formats=post_formats
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="post-edit.toe.html",
+        hooks=Hooks(),
+        data={
+            "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            # "token": token,
+            "post_type_name": post_type_name,
+            "data": data,
+            "media": media,
+            "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
+            "default_lang": default_lang,
+            "languages": translatable_languages,
+            "translations": translations,
+            "current_lang_id": data["lang"],
+            "post_formats": post_formats,
+            "all_categories": all_categories
+        }
     )
 
 
@@ -556,7 +566,7 @@ def save_post_format(*args, permission_level, connection, **kwargs):
         if filled['uuid'] != 'new':
             cur.execute(
                 sql.SQL("""SELECT slug FROM sloth_post_formats WHERE uuid = %s;"""),
-                (filled["uuid"], )
+                (filled["uuid"],)
             )
             old_slug = cur.fetchone()[0]
             if filled['slug'] != old_slug:
@@ -627,7 +637,7 @@ def delete_post_format(*args, permission_level, connection, **kwargs):
                 """SELECT uuid FROM sloth_post_formats
                  WHERE uuid = %s"""
             ),
-            (filled["uuid"], )
+            (filled["uuid"],)
         )
         if len(cur.fetchall()) > 0:
             cur.close()
@@ -956,7 +966,7 @@ def save_post(*args, connection=None, **kwargs):
                                 FROM sloth_posts as A 
                                 INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
                                 WHERE A.uuid = %s;"""),
-            (filled["uuid"], )
+            (filled["uuid"],)
         )
         generatable_post = parse_raw_post(cur.fetchone())
         generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)

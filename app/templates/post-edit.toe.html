@@ -1,37 +1,44 @@
-{% extends 'layout.html' %}
-
-{% block title %}{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit {{ post_type_name }}
-{% endif %}{% endblock %}
-
-{% block body %}
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
     <article class="post-edit">
-        <h1 class="full-width">{% if data["new"] %}Add new {{ post_type_name }}{% else %}Edit
-            {{ post_type_name }}{% endif %}</h1>
-        {% if data["original_post"] %}
-            <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
-                  data-posttype-uuid="{{ data["post_type"] }}" data-original-post="{{ data["original_post"] }}"></span>
-        {% else %}
-            <span id="uuid" class="hidden" data-new="{{ data["new"] }}" data-uuid="{{ data["uuid"] }}"
-                  data-posttype-uuid="{{ data["post_type"] }}"></span>
-        {% endif %}
+        <h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
+        <h1 class="full-width" toe:if="not data['new']" toe:text="'Edit ' + post_type_name"></h1>
+        <span
+                toe:if="data['original_post']"
+                id="uuid"
+                class="hidden"
+                toe:data-new="data['new']"
+                toe:data-uuid="data['uuid']"
+                toe:data-posttype-uuid="data['post_type']"
+                toe:data-original-post="data['original_post']"></span>
+        <span
+                toe:if="not data['original_post']"
+                id="uuid"
+                class="hidden"
+                toe:data-new="data['new']"
+                toe:data-uuid="data['uuid']"
+                toe:data-posttype-uuid="data['post_type']"></span>
         <div class="first-column">
             <label for="title">Title (may not be empty)</label>
-            <input id="title" value="{{ data["title"] }}" required/>
+            <input id="title" toe:value="data['title']" required/>
         </div>
         <div class="first-column">
             <label for="slug">Slug</label>
-            <input id="slug" value="{{ data["slug"] }}"/>
+            <input id="slug" toe:value="data['slug']"/>
         </div>
 
-        {% if translations | length > 0 %}
-            <div class="first-column">
-                Translations
-                {% for translation in translations %}
-                    <a href="/post/{{ translation['uuid'] }}/edit">{{ translation['long_name'] }}</a>
-
-                {% endfor %}
-            </div>
-        {% endif %}
+        <div toe:if="translations | length gt 0" class="first-column">
+            Translations
+            <a
+                    toe:for="translation in translations"
+                    toe:href="'/post/' + translation['uuid'] + '/edit'"
+                    toe:text="translation['long_name']"
+            ></a>
+        </div>
         <div class="first-column">
             <button id="gallery-opener">Open gallery</button>
             <dialog id="modal" class="gallery"></dialog>
@@ -39,79 +46,59 @@
         <div class="first-column">
             <label for="excerpt">Excerpt:</label>
             <br/>
-            <textarea id="excerpt">{{ data["excerpt"] }}</textarea>
+            <textarea id="excerpt" toe:content="data['excerpt']"></textarea>
         </div>
         <div class="first-column">
             <label for="content">Post:</label>
             <br/>
-            <textarea id="content">{{ data["content"] }}</textarea>
+            <textarea id="content" toe:content="data['content']"></textarea>
         </div>
         <div class="first-column">
             <label for="css">Custom CSS:</label>
             <br/>
-            <textarea id="css">{{ data["css"] }}</textarea>
-            {% if data["use_theme_css"] %}
-                <input type="checkbox" id="use_theme_css" name="use_theme_css" checked/>
-            {% else %}
-                <input type="checkbox" id="use_theme_css" name="use_theme_css"/>
-            {% endif %}
+            <textarea id="css" toe:content="data['css']"></textarea>
+            <input type="checkbox" id="use_theme_css" name="use_theme_css" toe:checked="data['use_theme_css']"/>
             <label for="use_theme_css">Use theme's CSS</label>
         </div>
         <div class="first-column">
             <label for="js">Custom JavaScript:</label>
             <br/>
-            <textarea id="js">{{ data["js"] }}</textarea>
-            {% if data["use_theme_js"] %}
-                <input type="checkbox" id="use_theme_js" name="use_theme_js" checked/>
-            {% else %}
-                <input type="checkbox" id="use_theme_js" name="use_theme_js"/>
-            {% endif %}
+            <textarea id="js" toe:content="data['js']"></textarea>
+            <input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']" />
             <label for="use_theme_js">Use theme's JS</label>
         </div>
         <!-- TODO figure out something better than input -->
         <div class="second-column thumbnail">
             <label for="thumbnail">Thumbnail</label>
             <figure id="thumbnail-wrapper">
-                {% if data["thumbnail_uuid"] %}
-                    <img src="{{ data["thumbnail_path"] }}" alt="{{ data["thumbnail_alt"] }}"/>
-                {% endif %}
+                <img toe:if="data['thumbnail_uuid']" toe:src="data['thumbnail_path']" toe:alt="data['thumbnail_alt']"/>
             </figure>
             <button id="pick-thumbnail">Pick thumbnail</button>
-            <input id="thumbnail" class="hidden" value="{{ data["thumbnail_uuid"] }}"/>
+            <input id="thumbnail" class="hidden" toe:value="data['thumbnail_uuid']"/>
         </div>
         <div class="metadata second-column">
             <label for="publish_date">Publish date</label>
-            <input id="publish_date" type="date" value="{{ data["publish_date"] }}"/>
+            <input id="publish_date" type="date" toe:value="data['publish_date']"/>
             <label for="publish_time">Publish time</label>
-            <input id="publish_time" type="time" value="{{ data["publish_time"] }}"/>
+            <input id="publish_time" type="time" toe:value="data['publish_time']"/>
             <label for="post_status">Status</label>
             <select name="post_status" id="post_status">
-                {% for status in post_statuses %}
-                    {% if status == data["status"] %}
-                        <option value="{{ status }}" selected>{{ status }}</option>
-                    {% else %}
-                        <option value="{{ status }}">{{ status }}</option>
-                    {% endif %}
-                {% endfor %}
+                <option toe:for="status in post_statuses" toe:value="status" toe:text="status" toe:selected="status eq data['status']"></option>
             </select>
-            {% if data["status"] != 'protected' %}
+            <toe:fragment toe:if="data['status'] neq 'protected'">
                 <label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
                 <input id="password_protection" type="text" class="hidden"/>
                 <!-- In this case type password is unnecessary, may change -->
-            {% endif %}
-            {% if data["status"] == 'protected' %}
+            </toe:fragment>
+            <toe:fragment toe:if="data['status'] eq 'protected'">
                 <label for="password_protection" id="password_protection_label">Password:</label>
-                <input id="password_protection" type="text" value="{{ data["password"] }}"/>
-                <!-- In this case type password is unnecessary, may change -->
-            {% endif %}
-            {% if data["imported"] %}
+                <input id="password_protection" type="text" toe:value="data['password']"/>
+                <!-- In this case type password is necessary, may change -->
+            </toe:fragment>
+            <toe:fragment toe:if="data['imported']">
                 <label for="import_approved">Imported post approved:</label>
-                {% if data["approved"] %}
-                    <input type="checkbox" id="import_approved" checked/>
-                {% else %}
-                    <input type="checkbox" id="import_approved"/>
-                {% endif %}
-            {% endif %}
+                <input type="checkbox" id="import_approved" toe:checked="data['approved']"/>
+            </toe:fragment>
             {% if data["status"] == 'draft' %}
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
@@ -182,23 +169,20 @@
                 <legend>Post format</legend>
                 {% for pf in post_formats %}
                     {% if data['format_uuid'] == pf['uuid'] %}
-                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked name="post-format">
+                        <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked name="post-format">
                     {% else %}
-                    <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" name="post-format">
+                        <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" name="post-format">
                     {% endif %}
                     <label for="{{ pf['slug'] }}">{{ pf['display_name'] }}</label><br/>
                 {% endfor %}
             </fieldset>
         </div>
     </article>
-    <!--div class="sloth-editor"></div-->
-{% endblock %}
-
-{% block scripts %}
-    <script>
-        const currentLanguage = `{{ current_lang_id }}`;
-    </script>
-    <script src="/static/js/utilities.js"></script>
-    <script src="/static/js/post-edit.js"></script>
-    <!--script src="/static/js/editor.js"></script-->
-{% endblock %}
+</main>
+<script toe:inline-js>
+    const currentLanguage = `<( current_lang_id )>`;
+</script>
+<script src="/static/js/utilities.js"></script>
+<script src="/static/js/post-edit.js"></script>
+</body>
+</html>

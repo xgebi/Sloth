@@ -25,3 +25,22 @@ def show_import_settings(*args, permission_level, connection, **kwargs):
         },
         hooks=Hooks()
     )
+
+
+@content.route("/settings/export")
+@authorize_web(1)
+@db_connection
+def show_export_settings(*args, permission_level, connection, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list(connection)
+    # Import posts
+    return render_toe_from_path(
+        template="export-data.toe.html",
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        data={
+            "title": "Import posts",
+            "post_types": post_types_result,
+            "permission_level": permission_level
+        },
+        hooks=Hooks()
+    )

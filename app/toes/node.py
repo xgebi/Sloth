@@ -90,7 +90,10 @@ class Node:
             # remove toes dtd from result
             if clean_toes and key == "xmlns:toe":
                 continue
-            tag += f"{key}=\"{self.attributes[key]}\" "
+            if len(self.get_attribute(key)) > 0:
+                tag += f"{key}=\"{self.get_attribute(key)}\" "
+            else:
+                tag += f"{key} "
         if self.is_paired():
             tag = tag.strip() + ">"
             for child in self.children:
