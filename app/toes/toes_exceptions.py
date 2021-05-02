@@ -4,3 +4,7 @@ class XMLParsingException(Exception):
 
 class ToeProcessingException(Exception):
     pass
+
+
+class ToeInvalidConditionException(Exception):
+    pass

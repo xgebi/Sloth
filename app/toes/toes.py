@@ -10,7 +10,7 @@ from app.toes.hooks import Hooks
 from app.toes.node import Node
 from app.toes.root_node import RootNode
 from app.toes.text_node import TextNode
-from app.toes.toes_exceptions import ToeProcessingException
+from app.toes.toes_exceptions import ToeProcessingException, ToeInvalidConditionException
 from app.toes.xml_parser import XMLParser
 
 
@@ -568,7 +568,7 @@ class Toe:
         return False
 
     def process_compound_condition(self, condition) -> bool:
-        compound_condition_parsing_info = CompoundConditionParsingInfo()
+        compound_condition_parsing_info = CompoundConditionParsingInfo(toe=self)
         while compound_condition_parsing_info.i < len(condition):
             # first two conditions deal with parenthesis
             if condition[compound_condition_parsing_info.i] == "(" and not compound_condition_parsing_info.in_string:
@@ -588,17 +588,95 @@ class Toe:
                     compound_condition_parsing_info.i - 1] != "\\":
                     compound_condition_parsing_info.string_quote = condition[compound_condition_parsing_info.i]
             # Next two conditions are dealing with and and or but only on 0 depth
-            elif condition[compound_condition_parsing_info.i] == "a" and compound_condition_parsing_info.current_depth == 0:
+            elif condition[
+                compound_condition_parsing_info.i] == "a" and compound_condition_parsing_info.current_depth == 0:
                 if condition[compound_condition_parsing_info.i - 1: compound_condition_parsing_info.i + len(
-                        "and ") + 1] == " and ":
-                    pass
-            elif condition[compound_condition_parsing_info.i] == "o" and compound_condition_parsing_info.current_depth == 0:
+                        "and ")] == " and ":
+                    if compound_condition_parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_and:
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"and ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                    elif compound_condition_parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_none:
+                        # set junction
+                        compound_condition_parsing_info.current_tree.junction = CONDITION_JUNCTION.junction_and
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"and ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                    else:
+                        # create new tree
+                        new_tree = ConditionTree(toe=self)
+                        # set junction
+                        new_tree.junction = CONDITION_JUNCTION.junction_and
+                        compound_condition_parsing_info.current_tree.parts.append(new_tree)
+                        compound_condition_parsing_info.current_tree = new_tree
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"and ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                else:
+                    compound_condition_parsing_info.i += 1
+            elif condition[
+                compound_condition_parsing_info.i] == "o" and compound_condition_parsing_info.current_depth == 0:
                 if condition[
-                   compound_condition_parsing_info.i - 1: compound_condition_parsing_info.i + len("or ") + 1] == " or ":
-                    pass
+                   compound_condition_parsing_info.i - 1: compound_condition_parsing_info.i + len("or ")] == " or ":
+                    if compound_condition_parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_or:
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"or ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                    elif compound_condition_parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_none:
+                        # set junction
+                        compound_condition_parsing_info.current_tree.junction = CONDITION_JUNCTION.junction_or
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"or ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                    else:
+                        # create new tree
+                        new_tree = ConditionTree(toe=self)
+                        # set junction
+                        new_tree.junction = CONDITION_JUNCTION.junction_or
+                        compound_condition_parsing_info.current_tree.parts.append(new_tree)
+                        compound_condition_parsing_info.current_tree = new_tree
+                        # add part to tree
+                        compound_condition_parsing_info.current_tree.parts.append(
+                            condition[compound_condition_parsing_info.condition_start:compound_condition_parsing_info.i]
+                                .strip()
+                        )
+                        # move index
+                        compound_condition_parsing_info.i += len(f"or ")
+                        compound_condition_parsing_info.condition_start = compound_condition_parsing_info.i
+                else:
+                    compound_condition_parsing_info.i += 1
             else:
                 compound_condition_parsing_info.i += 1
-        return False
+        compound_condition_parsing_info.current_tree.parts.append(
+            condition[compound_condition_parsing_info.condition_start:].strip()
+        )
+
+        return compound_condition_parsing_info.top_tree.process_tree()
 
     def process_pipe(self, side: str):
         actions = side.split("|")
@@ -614,17 +692,39 @@ class Toe:
 
 
 class ConditionTree:
-    def __init__(self):
+    def __init__(self, toe: 'Toe'):
         self.parts = []
         self.junction: CONDITION_JUNCTION = CONDITION_JUNCTION.junction_none
+        self.toe = toe
 
     def process_tree(self):
-        pass
+        if self.junction == CONDITION_JUNCTION.junction_and:
+            return self.process_and_tree()
+        elif self.junction == CONDITION_JUNCTION.junction_or:
+            return self.process_or_tree()
+        else:
+            raise ToeInvalidConditionException()
+
+    def process_and_tree(self):
+        result = True
+        for part in self.parts:
+            if not self.toe.process_condition(part):
+                result = False
+                break
+        return result
+
+    def process_or_tree(self):
+        result = False
+        for part in self.parts:
+            if self.toe.process_condition(part):
+                result = True
+                break
+        return result
 
 
 class CompoundConditionParsingInfo:
-    def __init__(self):
-        self.top_tree: ConditionTree = ConditionTree()
+    def __init__(self, toe: 'Toe'):
+        self.top_tree: ConditionTree = ConditionTree(toe=toe)
         self.current_tree = self.top_tree
         self.i = 0
         self.current_depth = 0
