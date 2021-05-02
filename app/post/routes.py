@@ -281,7 +281,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         template="post-edit.toe.html",
         hooks=Hooks(),
         data={
-            "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
+            "title": f"Add new {post_type_name}" if "new" in data else f"Edit {post_type_name}",
             "post_types": post_types_result,
             "permission_level": permission_level,
             "token": token,

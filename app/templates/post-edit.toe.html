@@ -64,7 +64,7 @@
             <label for="js">Custom JavaScript:</label>
             <br/>
             <textarea id="js" toe:content="data['js']"></textarea>
-            <input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']" />
+            <input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']"/>
             <label for="use_theme_js">Use theme's JS</label>
         </div>
         <!-- TODO figure out something better than input -->
@@ -83,7 +83,8 @@
             <input id="publish_time" type="time" toe:value="data['publish_time']"/>
             <label for="post_status">Status</label>
             <select name="post_status" id="post_status">
-                <option toe:for="status in post_statuses" toe:value="status" toe:text="status" toe:selected="status eq data['status']"></option>
+                <option toe:for="status in post_statuses" toe:value="status" toe:text="status"
+                        toe:selected="status eq data['status']"></option>
             </select>
             <toe:fragment toe:if="data['status'] neq 'protected'">
                 <label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
@@ -99,33 +100,30 @@
                 <label for="import_approved">Imported post approved:</label>
                 <input type="checkbox" id="import_approved" toe:checked="data['approved']"/>
             </toe:fragment>
-            {% if data["status"] == 'draft' %}
+            <toe:fragment toe:if="data['status'] eq 'draft'">
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
-                {% if languages | length > 0 %}
+                <toe:fragment toe:if="languages | length gt 0">
                     <label for="create-lang">For language:</label>
                     <select id="create-lang">
                         <option value="" selected>---</option>
-                        {% for language in languages %}
-                            <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
-                        {% endfor %}
+                        <option toe:for="language in languages" toe:value="language['uuid']"
+                                toe:text="language['long_name']"></option>
                     </select>
                     <button id="save-create">Save and Create translation</button>
                     <button id="publish-create">Publish and Create translation</button>
-                {% endif %}
-            {% endif %}
-            {% if data["status"] == 'published' or data["status"] == 'scheduled' or data["status"] == 'protected' %}
+                </toe:fragment>
+            </toe:fragment>
+            <toe:fragment
+                    toe:if="data['status'] eq 'published' or data['status'] eq 'scheduled' or data['status'] eq 'protected'">
                 <button id="update-button">Update post</button>
-                {% if languages | length > 0 %}
-                    <select id="create-lang">
-                        <option value="" selected>---</option>
-                        {% for language in languages %}
-                            <option value="{{ language['uuid'] }}">{{ language["long_name"] }}</option>
-                        {% endfor %}
-                    </select>
-                    <button id="update-create">Update and Create translation</button>
-                {% endif %}
-            {% endif %}
+                <select id="create-lang" toe:if="languages | length eq 0">
+                    <option value="" selected>---</option>
+                    <option toe:for="language in languages" toe:value="language['uuid']"
+                            toe:text="language['long_name']"></option>
+                </select>
+                <button id="update-create">Update and Create translation</button>
+            </toe:fragment>
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
         </div>
@@ -134,29 +132,26 @@
             <input id="tags-input"/>
             <button id="add-tags">Add</button>
             <div id="tags-div">
-                {% for tag in data["tags"] %}
-                    {% if tag["selected"] %}
-                        <span
-                                data-uuid="{{ tag['uuid'] }}"
-                                data-slug="{{ tag['slug'] }}"
-                                data-display-name="{{ tag['display_name'] }}"
-                        >{{ tag["display_name"] }}
-                            <button class="delete-tag">🚮</button>
-                        </span>
-                    {% endif %}
-                {% endfor %}
+                <toe:fragment toe:for="tag in data['tags']">
+                    <span
+                            toe:if="tag['selected']"
+                            toe:data-uuid="tag['uuid']"
+                            toe:data-slug="tag['slug']"
+                            toe:data-display-name="tag['display_name']"
+                            toe:content="tag['display_name'] + '<button class='delete-tag'>🚮</button>'"
+                    >
+                    </span>
+                </toe:fragment>
             </div>
         </div>
         <div class="second-column categories">
             <label for="categories">Categories</label>
             <select id="categories" multiple="multiple">
-                {% for category in data["categories"] %}
-                    {% if category["selected"] %}
-                        <option value="{{ category['uuid'] }}" selected>{{ category['display_name'] }}</option>
-                    {% else %}
-                        <option value="{{ category['uuid'] }}">{{ category['display_name'] }}</option>
-                    {% endif %}
-                {% endfor %}
+                <option toe:for="category in data['categories']"
+                        toe:value="category['uuid']"
+                        toe:selected="category['selected']"
+                        toe:text="category['display_name']"
+                ></option>
             </select>
             <div>
                 <label for="new-category">New category name:</label>
@@ -167,14 +162,14 @@
         <div class="second-column post-formats">
             <fieldset id="post-formats">
                 <legend>Post format</legend>
-                {% for pf in post_formats %}
-                    {% if data['format_uuid'] == pf['uuid'] %}
-                        <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" checked name="post-format">
-                    {% else %}
-                        <input type="radio" id="{{ pf['slug'] }}" value="{{ pf['uuid'] }}" name="post-format">
-                    {% endif %}
-                    <label for="{{ pf['slug'] }}">{{ pf['display_name'] }}</label><br/>
-                {% endfor %}
+                <toe:fragment toe:for="pf in post_formats">
+                    <input type="radio"
+                           toe:id="pf['slug']"
+                           toe:value="pf['uuid']"
+                           toe:checked="data['format_uuid'] eq pf['uuid']"
+                           name="post-format"/>
+                    <label toe:label-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
+                </toe:fragment>
             </fieldset>
         </div>
     </article>
