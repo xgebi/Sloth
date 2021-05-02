@@ -1,30 +1,60 @@
-```python
-{
-    "uuid": post[0],
-    "slug": post[1],
-    "author_name": post[2],
-    "author_uuid": post[3],
-    "title": post[4],
-    "content": post[5],
-    "excerpt": post[6],
-    "css": post[7],
-    "js": post[8],
-    "use_theme_css": post[9],
-    "use_theme_js": post[10],
-    "publish_date": post[11],
-    "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-    "updated_date": post[12],
-    "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-    "post_status": post[13],
-    "post_type_slug": post_type_slug,
-    "approved": post[14],
-    "thumbnail": thumbnail,
-    "thumbnail_alt": thumbnail_alt,
-    "language_variants": language_variants,
-    "original_lang_entry_uuid": post[16],
-    "lang": post[17],
-    "format_uuid": post[18],
-    "format_slug": post[19],
-    "format_name": post[20]
-}
-```
+# Theme API
+
+## `post` object
+
+* `uuid`
+    * post unique identifier
+* `slug`
+    * name without spaces and special characters used in links &c.
+* `author_name`
+    * name of the article's author
+* `author_uuid`
+    * unique identifier of the article's author
+* `title`
+    * article's title
+* `content`
+    * main content of the article
+* `excerpt`
+    * article's excerpt
+* `css`
+    * post styles, they don't need to be inlined in a theme as if this field is not empty a style file is generated
+* `js`
+    * post's scripts, they don't need to be inlined in a theme as if this field is not empty a script file is generated
+* `use_theme_cs`
+    * for writer this is an indicator that theme's styles should/shouldn't be used
+* `use_theme_js`
+    * for writer this is an indicator that theme's styles should/shouldn't be used
+* `publish_date`
+    * timestamp of publishing date
+* `publish_date_formatted`
+    * formatted publishing date
+* `updated_date`
+    * timestamp of update date
+* `update_date_formatted`
+    * formatter update date
+* `post_status`
+    * post status
+* `post_type_slug`
+    * slug of post's post type
+* `approved`
+    * indicator if imported post has been approved
+* `thumbnail`
+    * link to thumbnail
+* `thumbnail_alt`
+    * alternative text for thumbnail
+* `language_variants`
+    * list of language variants
+* `original_lang_entry_uuid`
+    * unique identifier of original post (not translation)
+* `lang`
+    * language of the post
+* `format_uuid`
+    * post format's unique identifier
+* `format_slug`
+    * post format's slug
+* `format_name`
+    * post format's name
+* `meta_description`
+    * description that goes to `<meta name="description" />`
+* `social_description`
+    * description for social media, similar to `meta_description'

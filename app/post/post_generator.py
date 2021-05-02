@@ -212,8 +212,8 @@ class PostGenerator:
                 sql.SQL(
                     """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
                         sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
-                        sp.imported, sp.import_approved, sp.thumbnail,
-                        sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name 
+                        sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
+                        spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
                         FROM sloth_post_taxonomies AS spt
                         INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
                         INNER JOIN sloth_users AS su ON sp.author = su.uuid
@@ -244,9 +244,9 @@ class PostGenerator:
         try:
             cur.execute(
                 sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
-                         sp.js, sp.use_theme_css, sp.use_theme_js,
-                         sp.publish_date, sp.update_date, sp.post_status, sp.imported, sp.import_approved, sp.thumbnail,
-                         sp.original_lang_entry_uuid, sp.lang, spf.uuid, spf.slug, spf.display_name
+                         sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
+                         sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
+                         spf.slug, spf.display_name, sp.meta_description, sp.twitter_description
                                     FROM sloth_posts AS sp 
                                     INNER JOIN sloth_users AS su ON sp.author = su.uuid
                                     INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
@@ -338,7 +338,9 @@ class PostGenerator:
                 "lang": post[18],
                 "format_uuid": post[19],
                 "format_slug": post[20],
-                "format_name": post[21]
+                "format_name": post[21],
+                "meta_description": post[22] if post[22] is not None else "",
+                "social_description": post[23] if post[23] is not None else ""
             })
 
         return posts
@@ -727,7 +729,7 @@ class PostGenerator:
             cur = self.connection.cursor()
             # This is a rudimentary version
             cur.execute(
-                sql.SQL("""SELECT title, excerpt, content, thumbnail 
+                sql.SQL("""SELECT title, excerpt, content, thumbnail, lang 
                 FROM sloth_posts WHERE uuid = %s;"""),
                 [uuid]
             )
@@ -738,9 +740,11 @@ class PostGenerator:
             post["content"] = md_parser.to_html_string(raw_post[2])
             if raw_post[3] is not None:
                 cur.execute(
-                    sql.SQL("""SELECT file_path, alt 
-                                FROM sloth_media WHERE uuid = %s;"""),
-                    [raw_post[3]]
+                    sql.SQL("""SELECT sm.file_path, sma.alt 
+                                FROM sloth_media AS sm
+                                 INNER JOIN sloth_media_alts sma on sm.uuid = sma.uuid
+                                 WHERE sm.uuid = %s and sma.lang = %s;"""),
+                    (raw_post[3], raw_post[4])
                 )
                 raw_thumbnail = cur.fetchone()
                 post["thumbnail"] = raw_thumbnail[0]

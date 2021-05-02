@@ -10,6 +10,10 @@ const gallery = {
     }
 };
 
+// not ideal but it'll do for now
+const META_DESC = 160;
+const SOCIAL_DESC = 200;
+
 document.addEventListener('DOMContentLoaded', (event) => {
     // 1. get gallery
     fetch(`/api/post/media/${currentLanguage}`, {
@@ -81,7 +85,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelectorAll(".delete-tag").forEach(button => {
         button.addEventListener('click', deleteTag)
     });
+
+    document.querySelector("#meta-description").addEventListener('input', calculateLengthEvent);
+    calculateLength(META_DESC, "#meta-description");
+    document.querySelector("#social-description").addEventListener('input', calculateLengthEvent)
+    calculateLength(SOCIAL_DESC, "#social-description");
 });
+
+function calculateLengthEvent(event) {
+    if (event.target.id === "meta-description") {
+        calculateLength(META_DESC, `#${event.target.id}`)
+    } else if (event.target.id === "social-description") {
+        calculateLength(SOCIAL_DESC, `#${event.target.id}`)
+    }
+}
+
+function calculateLength(length, elementIdName) {
+    const textAreaLength = document.querySelector(elementIdName).value.length
+    const counter = document.querySelector(`${elementIdName}-counter`)
+    counter.textContent = `${textAreaLength} / ${length}`
+}
 
 function openGalleryDialog(data, type) {
     const dialog = document.querySelector("#modal");
@@ -261,6 +284,8 @@ function collectValues() {
             post["post_format"] = input.value;
         }
     });
+    post["meta_description"] = document.querySelector("#meta-description").value;
+    post["social_description"] = document.querySelector("#social-description").value;
     return post;
 }
 

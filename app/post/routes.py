@@ -144,13 +144,14 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         media = cur.fetchall()
 
         cur.execute(
-            sql.SQL("""SELECT A.title, A.slug, A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js,
-             A.thumbnail, A.publish_date, A.update_date, A.post_status, B.display_name, A.post_type, A.imported, 
-             A.import_approved, A.password, A.lang, A.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name
-                    FROM sloth_posts AS A 
-                    INNER JOIN sloth_users AS B ON A.author = B.uuid 
-                    INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
-                    WHERE A.uuid = %s"""),
+            sql.SQL("""SELECT sp.title, sp.slug, sp.content, sp.excerpt, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
+             sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
+             sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
+             sp.meta_description, sp.twitter_description
+                    FROM sloth_posts AS sp 
+                    INNER JOIN sloth_users AS B ON sp.author = B.uuid 
+                    INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                    WHERE sp.uuid = %s"""),
             [post_id]
         )
         raw_post = cur.fetchone()
@@ -274,7 +275,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "tags": tags,
         "format_uuid": raw_post[19],
         "format_slug": raw_post[20],
-        "format_name": raw_post[21]
+        "format_name": raw_post[21],
+        "meta_description": raw_post[22],
+        "social_description": raw_post[23]
     }
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -415,6 +418,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "format_uuid": default_format
     }
 
+    token = request.cookies.get('sloth_session')
+
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="post-edit.toe.html",
@@ -423,7 +428,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
             "post_types": post_types_result,
             "permission_level": permission_level,
-            # "token": token,
+            "token": token,
             "post_type_name": post_type_name,
             "data": data,
             "media": media,
@@ -828,8 +833,8 @@ def upload_image(*args, file_name, connection=None, **kwargs):
     try:
 
         cur.execute(
-            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
-            [str(uuid.uuid4()), os.path.join("sloth-content", file_name), "", ""]
+            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s) RETURNING uuid, file_path"),
+            [str(uuid.uuid4()), os.path.join("sloth-content", file_name), ""]
         )
         file = cur.fetchone()
         cur.close()
@@ -911,7 +916,7 @@ def save_post(*args, connection=None, **kwargs):
         elif filled['post_status'] == 'draft':
             publish_date = None
         # save post
-        if filled["new"]:
+        if filled["new"] and str(filled["new"]).lower() != 'none':
             unique_post = False
             while filled["new"] and not unique_post:
                 cur.execute(
@@ -934,38 +939,42 @@ def save_post(*args, connection=None, **kwargs):
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, content, excerpt, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
-                original_lang_entry_uuid, post_format) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
+                original_lang_entry_uuid, post_format, meta_description, twitter_description) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
                 (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"], filled["content"],
                  filled["excerpt"], filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
-                 filled["original_post"] if "original_post" in filled else "", filled["post_format"])
+                 filled["original_post"] if "original_post" in filled else "", filled["post_format"],
+                 filled["meta_description"], filled["social_description"])
             )
             connection.commit()
             taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
             result["uuid"] = filled["uuid"]
         else:
+            # when editting this don't forget that last item needs to be uuid
             cur.execute(
                 sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, content = %s, excerpt = %s, css = %s, js = %s,
                  thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
-                 password = %s, post_format = %s WHERE uuid = %s;"""),
+                 password = %s, post_format = %s, meta_description = %s, twitter_description = %s WHERE uuid = %s;"""),
                 (filled["slug"], filled["title"], filled["content"], filled["excerpt"], filled["css"], filled["js"],
                  filled["thumbnail"] if filled["thumbnail"] != "None" else None,
                  filled["publish_date"] if filled["publish_date"] is not None else publish_date,
                  str(time() * 1000), filled["post_status"], filled["approved"],
-                 filled["password"] if "password" in filled else None, filled["post_format"], filled["uuid"])
+                 filled["password"] if "password" in filled else None, filled["post_format"],
+                 filled["meta_description"], filled["social_description"], filled["uuid"])
             )
             connection.commit()
             taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
         connection.commit()
 
         cur.execute(
-            sql.SQL("""SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, A.content, 
-                                A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, A.update_date, 
-                                A.post_status, A.imported, A.import_approved, spf.uuid, spf.slug, spf.display_name
-                                FROM sloth_posts as A 
-                                INNER JOIN sloth_post_formats spf on spf.uuid = A.post_format
-                                WHERE A.uuid = %s;"""),
+            sql.SQL("""SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, sp.content, 
+                                sp.excerpt, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
+                                sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
+                                sp.twitter_description, spf.uuid, spf.slug, spf.display_name
+                                FROM sloth_posts as sp 
+                                INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                                WHERE sp.uuid = %s;"""),
             (filled["uuid"],)
         )
         generatable_post = parse_raw_post(cur.fetchone())

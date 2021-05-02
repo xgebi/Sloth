@@ -67,6 +67,19 @@
             <input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']"/>
             <label for="use_theme_js">Use theme's JS</label>
         </div>
+        <div class="first-column">
+            <h3>SEO</h3>
+            <div>
+                <label for="meta-description">Meta description</label><br/>
+                <textarea toe:text="post['meta_description']" id="meta-description"></textarea>
+                <p id="meta-description-counter"></p>
+            </div>
+            <div>
+                <label for="social-description">Social description</label><br/>
+                <textarea toe:text="post['social_description']" id="social-description"></textarea>
+                <p id="social-description-counter"></p>
+            </div>
+        </div>
         <!-- TODO figure out something better than input -->
         <div class="second-column thumbnail">
             <label for="thumbnail">Thumbnail</label>
@@ -168,7 +181,7 @@
                            toe:value="pf['uuid']"
                            toe:checked="data['format_uuid'] eq pf['uuid']"
                            name="post-format"/>
-                    <label toe:label-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
+                    <label toe:attr-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
                 </toe:fragment>
             </fieldset>
         </div>

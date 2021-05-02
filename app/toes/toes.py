@@ -172,9 +172,9 @@ class Toe:
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
                 ignore_children = True
+                value = self.process_toe_value(template_tree_node.get_attribute(attribute))
                 new_tree_node.add_child(TextNode(
-                    content=html.escape(str(self.process_toe_value(template_tree_node.get_attribute(attribute))))
-                ))
+                    content=html.escape(str(value if value is not None else ""))))
             elif attribute.startswith('toe:content'):
                 ignore_children = True
                 new_tree_node.add_child(TextNode(
@@ -194,10 +194,9 @@ class Toe:
                     cond_attr=template_tree_node.get_attribute(attribute),
                     attr_name=attribute[attribute.find(":") + 1:]
                 )
-            # special case for toe:label-for
-            elif attribute.startswith('toe:label-for'):
+            elif attribute.startswith('toe:attr-'):
                 new_tree_node.set_attribute(
-                    "for",
+                    attribute[len('toe:attr-'):],
                     self.process_toe_value(template_tree_node.get_attribute(attribute))
                 )
             else:
@@ -584,18 +583,15 @@ class Toe:
                 parsing_info.current_depth -= 1
                 parsing_info.i += 1
             # This condition deals with strings, so and, or, ( and ) are ignored in strings
-            elif condition[parsing_info.i] == "\"" or condition[
-                parsing_info.i] == "'":
+            elif condition[parsing_info.i] == "\"" or condition[parsing_info.i] == "'":
                 if condition[parsing_info.i - 1] != "\\":
                     parsing_info.in_string = not parsing_info.in_string
                 if parsing_info.in_string and parsing_info.string_quote == condition[parsing_info.i] and condition[parsing_info.i - 1] != "\\":
                     parsing_info.string_quote = condition[parsing_info.i]
                 parsing_info.i += 1
             # Next two conditions are dealing with and and or but only on 0 depth
-            elif condition[
-                parsing_info.i] == "a" and parsing_info.current_depth == 0:
-                if condition[parsing_info.i - 1: parsing_info.i + len(
-                        "and ")] == " and ":
+            elif condition[parsing_info.i] == "a" and parsing_info.current_depth == 0:
+                if condition[parsing_info.i - 1: parsing_info.i + len("and ")] == " and ":
                     if parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_and:
                         # add part to tree
                         parsing_info.current_tree.parts.append(
@@ -610,8 +606,7 @@ class Toe:
                         parsing_info.current_tree.junction = CONDITION_JUNCTION.junction_and
                         # add part to tree
                         parsing_info.current_tree.parts.append(
-                            condition[parsing_info.condition_start:parsing_info.i]
-                                .strip()
+                            condition[parsing_info.condition_start:parsing_info.i].strip()
                         )
                         # move index
                         parsing_info.i += len(f"and ")
@@ -625,8 +620,7 @@ class Toe:
                         parsing_info.current_tree = new_tree
                         # add part to tree
                         parsing_info.current_tree.parts.append(
-                            condition[parsing_info.condition_start:parsing_info.i]
-                                .strip()
+                            condition[parsing_info.condition_start:parsing_info.i].strip()
                         )
                         # move index
                         parsing_info.i += len(f"and ")
@@ -634,13 +628,11 @@ class Toe:
                 else:
                     parsing_info.i += 1
             elif condition[parsing_info.i] == "o" and parsing_info.current_depth == 0:
-                if condition[
-                   parsing_info.i - 1: parsing_info.i + len("or ")] == " or ":
+                if condition[parsing_info.i - 1: parsing_info.i + len("or ")] == " or ":
                     if parsing_info.current_tree.junction == CONDITION_JUNCTION.junction_or:
                         # add part to tree
                         parsing_info.current_tree.parts.append(
-                            condition[parsing_info.condition_start:parsing_info.i]
-                                .strip()
+                            condition[parsing_info.condition_start:parsing_info.i].strip()
                         )
                         # move index
                         parsing_info.i += len(f"or ")
@@ -665,8 +657,7 @@ class Toe:
                         parsing_info.current_tree = new_tree
                         # add part to tree
                         parsing_info.current_tree.parts.append(
-                            condition[parsing_info.condition_start:parsing_info.i]
-                                .strip()
+                            condition[parsing_info.condition_start:parsing_info.i].strip()
                         )
                         # move index
                         parsing_info.i += len(f"or ")
