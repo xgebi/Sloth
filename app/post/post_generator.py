@@ -339,8 +339,8 @@ class PostGenerator:
                 "format_uuid": post[19],
                 "format_slug": post[20],
                 "format_name": post[21],
-                "meta_description": post[22] if post[22] is not None else "",
-                "social_description": post[23] if post[23] is not None else ""
+                "meta_description": post[22] if len(post) >= 23 and post[22] is not None and len(post[22]) > 0 else post[6][:161 if len(post[6] ) > 161 else len(post[6])],
+                "social_description": post[23] if len(post) >= 24 and post[23] is not None and len(post[23]) > 0 else post[6][:201 if len(post[6]) > 201 else len(post[6])]
             })
 
         return posts
@@ -544,6 +544,7 @@ class PostGenerator:
                     "post": post,
                     "sitename": self.settings["sitename"]["settings_value"],
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
+                    "site_url": self.settings["site_url"]["settings_value"],
                     "menus": self.menus,
                     "translations": translations,
                     "is_home": False,
@@ -689,6 +690,7 @@ class PostGenerator:
                         data={
                             "posts": posts[lower: upper],
                             "sitename": self.settings["sitename"]["settings_value"],
+                            "site_url": self.settings["site_url"]["settings_value"],
                             "page_name": f"Archive for {post_type['display_name']}",
                             "post_type": post_type,
                             "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
@@ -912,6 +914,7 @@ class PostGenerator:
                     "sitename": self.settings["sitename"]["settings_value"],
                     "page_name": "Home",
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
+                    "site_url": self.settings["site_url"]["settings_value"],
                     "menus": self.menus,
                     "is_home": True,
                     "is_post": False

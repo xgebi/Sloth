@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Settings</h1>
+    <h1 toe:if="error">Database error</h1>
+    <form action="/settings/save" method="POST" id="settings-options">
+        <section toe:for="setting in settings">
+            <label toe:attr-for="setting['settings_name']" toe:text="setting['display_name'] + ':'"></label>
+
+            <input type="text"
+                   toe:if="setting['settings_value_type'] eq 'text'"
+                   toe:name="setting['settings_name']"
+                   toe:id="setting['settings_name']"
+                   toe:value="setting['settings_value']"/>
+
+            <select toe:if="setting['settings_value_type'] eq 'select'"
+                    toe:name="setting['settings_name']"
+                    toe:id="setting['settings_name']">
+                <option toe:for="item in setting['possible_values']"
+                        toe:value="item['uuid']"
+                        toe:text="item['long_name']"
+                        toe:selected="item['uuid'] eq setting['settings_value']"></option>
+            </select>
+        </section>
+        <input type="submit" value="save"/>
+    </form>
+    <section>
+        <h2>Dangerous stuff</h2>
+        <section>
+            <label for="delete-button">Delete content from database:</label>
+            <button id="delete-button">DELETE</button>
+        </section>
+        <section>
+            <label for="unlock-generation-button">Unlock generation:</label>
+            <button id="unlock-generation-button">Unlock</button>
+        </section>
+    </section>
+</main>
+<script src="/static/js/settings.js"></script>
+</body>
+</html>

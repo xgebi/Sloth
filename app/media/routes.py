@@ -3,6 +3,7 @@ import json
 from psycopg2 import sql
 import uuid
 from datetime import datetime
+import time
 import os
 import traceback
 
@@ -70,7 +71,7 @@ def get_media_data(*args, connection, **kwargs):
 @db_connection
 def upload_item(*args, connection=None, **kwargs):
     image = request.files["image"]
-    alt = request.form["alt"]
+    alts = json.loads(request.form["alt"])
     code = -1
     try:
         cur = connection.cursor()
@@ -96,6 +97,10 @@ def upload_item(*args, connection=None, **kwargs):
     now = datetime.now()
     filename = image.filename
     index = 1
+    if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year))):
+        os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year)))
+    if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month))):
+        os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month)))
     while os.path.exists(
             os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)):
         if filename[:filename.rfind('.')].endswith(f"-{index - 1}"):
@@ -111,10 +116,17 @@ def upload_item(*args, connection=None, **kwargs):
         cur = connection.cursor()
 
         cur.execute(
-            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path, alt"),
-            [str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename), alt, None]
+            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path"),
+            (str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename), None,
+             time.time())
         )
         file = cur.fetchone()
+        connection.commit()
+        for alt in alts:
+            cur.execute(
+                sql.SQL("INSERT INTO sloth_media_alts VALUES (%s, %s, %s, %s)"),
+                (str(uuid.uuid4()), file[0], alt["lang_uuid"], alt["text"])
+            )
         connection.commit()
         cur.close()
     except Exception as e:
@@ -123,7 +135,6 @@ def upload_item(*args, connection=None, **kwargs):
             {"media": []}
         ))
         code = 500
-    finally:
         connection.close()
 
     if code != 500:
@@ -131,6 +142,7 @@ def upload_item(*args, connection=None, **kwargs):
             {"media": get_media(connection=connection)}
         ))
         code = 201
+        connection.close()
 
     response.headers['Content-Type'] = 'application/json'
     return response, code
@@ -183,10 +195,8 @@ def delete_item(*args, connection=None, **kwargs):
     return response, code
 
 
-def get_media(*args, connection, all_langs=False, **kwargs):
+def get_media(*args, connection, **kwargs):
     cur = connection.cursor()
-    raw_media = []
-    site_url = -1
     try:
         cur.execute(
             sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'""")
@@ -195,30 +205,41 @@ def get_media(*args, connection, all_langs=False, **kwargs):
         if len(temp_site_url) != 1:
             return []
         site_url = temp_site_url[0]
-        if not all_langs:
-            cur.execute(
-                sql.SQL("SELECT uuid, file_path FROM sloth_media")
-            )
-        else:
-            cur.execute(
-                sql.SQL("""SELECT uuid, file_path FROM sloth_media""")
-            )
-        # Get desired language
-        # get alts in desired language
+        cur.execute(
+            sql.SQL("""SELECT uuid, file_path FROM sloth_media ORDER BY added_date DESC""")
+        )
         raw_media = cur.fetchall()
+        media_data = {}
+        for medium in raw_media:
+            path_fragment = '/'.join(medium[1].split('\\'))
+            media_data[medium[0]] = {
+                "uuid": medium[0],
+                "file_url": f"{site_url}/{path_fragment}",
+                "file_path": f"{current_app.config['OUTPUT_PATH']}/{path_fragment}",
+                "alts": []
+            }
+
+        cur.execute(
+            sql.SQL("""SELECT sma.media, sma.lang, sma.alt, sls.long_name 
+                        FROM sloth_media_alts AS sma
+                        INNER JOIN sloth_language_settings as sls
+                        ON sma.lang = sls.uuid;""")
+        )
+        raw_alts = cur.fetchall()
+        for alt in raw_alts:
+            if alt[0] in media_data:
+                media_data[alt[0]]["alts"].append({
+                    "lang_uuid": alt[1],
+                    "alt": alt[2],
+                    "lang": alt[3]
+                })
+
     except Exception as e:
+        print(traceback.format_exc())
         print("db error")
         return []
 
     cur.close()
 
-    media_data = []
-    for medium in raw_media:
-        path_fragment = '/'.join(medium[1].split('\\'))
-        media_data.append({
-            "uuid": medium[0],
-            "file_url": f"{site_url}/{path_fragment}",
-            "file_path": f"{current_app.config['OUTPUT_PATH']}/{path_fragment}",
-        })
     return media_data
 

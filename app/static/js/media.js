@@ -31,14 +31,18 @@ function openModal() {
     dialog.appendChild(h2)
 
     languages.forEach(lang => {
+        console.log(lang);
         const altLabel = document.createElement('label');
-        altLabel.setAttribute('for', 'alt');
-        altLabel.textContent = "Alternative text";
+        altLabel.setAttribute('for', `alt-${lang["long_name"].toLowerCase()}`);
+        altLabel.textContent = `Alternative text (${lang["long_name"]})`;
         dialog.appendChild(altLabel);
 
         const altInput = document.createElement('input');
-        altInput.setAttribute('id', 'alt');
+        altInput.setAttribute('id', `alt-${lang["long_name"].toLowerCase()}`);
+        altInput.setAttribute("class", "alt-input");
         altInput.setAttribute("type", "text");
+        altInput.setAttribute("data-lang", lang["uuid"]);
+
         dialog.appendChild(altInput);
     })
 
@@ -92,9 +96,17 @@ function renderImages(media) {
 function uploadFile() {
     const formData = new FormData();
     const fileField = document.querySelector('#file-upload');
-    const altField = document.querySelector("#alt")
+    const altFields = document.querySelectorAll(".alt-input");
 
-    formData.append('alt', altField.value);
+    const alts = [];
+    altFields.forEach(alt => {
+        alts.push({
+            lang_uuid: alt.dataset["lang"],
+            text: alt.value
+        })
+    });
+
+    formData.append('alt', JSON.stringify(alts));
     formData.append('image', fileField.files[0]);
 
     fetch('/api/media/upload-file', {

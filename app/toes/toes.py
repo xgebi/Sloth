@@ -4,6 +4,7 @@ import json
 import os
 import re
 from typing import Dict, List
+import copy
 
 from app.toes.comment_node import CommentNode
 from app.toes.hooks import Hooks
@@ -444,8 +445,9 @@ class Toe:
     def process_if_attribute(self, parent_element, element):
         if not self.process_condition(element.get_attribute('toe:if')):
             return None
-        element.remove_attribute('toe:if')
-        return self.process_subtree(parent_element, element)
+        new_element = copy.deepcopy(element)
+        new_element.remove_attribute('toe:if')
+        return self.process_subtree(parent_element, new_element)
 
     def process_for_attribute(self, parent_element, element):
         result_nodes = []
@@ -466,7 +468,10 @@ class Toe:
             local_scope = VariableScope({}, self.current_scope)
             self.current_scope = local_scope
 
-            self.current_scope.variables[items[0]] = thing
+            if type(iterable_item) == dict:
+                self.current_scope.variables[items[0]] = iterable_item[thing]
+            else:
+                self.current_scope.variables[items[0]] = thing
 
             # process subtree
             result_node = self.process_subtree(parent_element, element)

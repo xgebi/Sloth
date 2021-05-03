@@ -8,8 +8,8 @@
     <button id="open-modal">Upload file</button>
     <section class="media-gallery" id="media-gallery">
         <article toe:for="medium in media">
-            <img toe:src="medium['file_url']" toe:alt="medium['alt']"/>
-            <p toe:text="'Alt: ' + medium['alt']">
+            <img toe:src="medium['file_url']" />
+            <p toe:for="alt in medium['alts']" toe:text="'Alt (' + alt['lang'] + '): ' + alt['alt']">
             </p>
             <button toe:data-uuid="medium['uuid']" toe:data-file-path="medium['file_url']"
                     class="delete-button">Delete

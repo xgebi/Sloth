@@ -3,5 +3,15 @@
     "type": "sql",
     "folder": "setup",
     "file": "034_meta_information_posts.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "035_change_main_language_setting_to_select.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "036_add_sloth_media_added_date.sql"
   }
 ]

@@ -7,11 +7,13 @@ from pathlib import Path
 from app.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
+from app.toes.toes import render_toe_from_path
+from app.toes.hooks import Hooks
 
 from app.post.post_types import PostTypes
 
 from app.settings import settings
-from app.utilities import get_default_language
+from app.utilities import get_default_language, get_languages
 
 
 @settings.route("/settings")
@@ -20,7 +22,6 @@ from app.utilities import get_default_language
 def show_settings(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
-    settings = {}
 
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -40,23 +41,34 @@ def show_settings(*args, permission_level, connection, **kwargs):
 
     cur.close()
     default_language = get_default_language(connection=connection)
+    languages = get_languages(connection=connection)
     connection.close()
 
     items = []
     for item in raw_items:
-        items.append({
+        formatted_item = {
             "settings_name": item[0],
             "display_name": item[1],
             "settings_value": item[2],
-            "settings_value_type": item[3]
-        })
+            "settings_value_type": item[3],
+            "possible_values": []
+        }
+        if item[0] == 'main_language':
+            formatted_item["possible_values"] = languages
+        items.append(formatted_item)
 
-    return render_template("settings.html",
-                           post_types=post_types_result,
-                           permission_level=permission_level,
-                           settings=items,
-                           default_lang=default_language
-                           )
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="settings.toe.html",
+        data={
+            "title": "Settings",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_language,
+            "settings": items
+        },
+        hooks=Hooks()
+    )
 
 
 @settings.route("/settings/save", methods=["POST"])
