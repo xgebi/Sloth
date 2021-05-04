@@ -1,4 +1,7 @@
+from flask import abort
 import os
+import traceback
+from psycopg2 import sql
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
@@ -18,15 +21,35 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
     post_types_result = post_types.get_post_type_list(connection)
     default_lang = get_default_language(connection=connection)
     languages = get_languages(connection=connection)
-    # get home desc, name
+    try:
+        cur = connection.cursor()
+        cur.execute(
+            sql.SQL(
+                """SELECT name FROM sloth_localizable_strings;"""),
+        )
+        localizable_strings = cur.fetchall()
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, name, content, lang, post_type FROM sloth_localized_strings;"""),
+        )
+        localizable_strings = cur.fetchall()
+    except Exception as e:
+        print(traceback.format_exc())
+        connection.close()
+        abort(500)
+
+    temp_items = {}
+
+
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="localized-settings.toe.html",
+        template="localization.toe.html",
         data={
-            "title": "Dashboard",
+            "title": "Localization",
             "post_types": post_types_result,
             "permission_level": permission_level,
-            "default_lang": default_lang
+            "default_lang": default_lang,
+            "languages": languages
         },
         hooks=Hooks()
     )

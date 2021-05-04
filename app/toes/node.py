@@ -98,8 +98,8 @@ class Node:
             tag = tag.strip() + ">"
             for child in self.children:
                 tag += child.to_html_string()
-            tag += f"</{self._name}>"
+            tag += f"</{self._name}>\n"
         else:
-            tag += "/>"
+            tag += "/>\n"
 
         return tag

@@ -24,4 +24,4 @@ class CommentNode(TextNode):
         self.type = TextNode.COMMENT
 
     def to_html_string(self) -> str:
-        return f"<!-- {self.content} -->"
+        return f"<!-- {self.content} -->\n"

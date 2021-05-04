@@ -2,19 +2,31 @@ from flask import request, redirect, make_response, render_template
 
 from app.authorization.authorize import authorize_rest
 from app.authorization.user import User
+from app.toes.toes import render_toe_from_path
+from app.toes.hooks import Hooks
 import json
+import os
 
 from app.login import login
 
 
 @login.route("/login")
 def show_login():
-    return render_template("login.html", status={"empty": True}, redirect=request.args.get("redirect"))
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="login.toe.html",
+        data={
+            "title": "Log in",
+            "status": {"empty": True},
+            "redirect": request.args.get("redirect"),
+        },
+        hooks=Hooks()
+    )
 
 
 @login.route("/login/error")
 def show_login_error():
-    return render_template("login.html", status={"error": True})
+    return render_template("login.toe.html", status={"error": True})
 
 
 @login.route('/login/process', methods=["POST"])

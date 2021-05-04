@@ -13,5 +13,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "036_add_sloth_media_added_date.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "037_localized_strings.sql"
   }
 ]
