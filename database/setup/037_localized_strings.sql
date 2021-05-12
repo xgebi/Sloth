@@ -14,7 +14,10 @@ VALUES ('sitename'),
        ('description'),
        ('sub_headline'),
        ('archive'),
-       ('post_type_display_name');
+       ('post_type_display_name'),
+       ('post_type_archive_title'),
+       ('post_type_category_title'),
+       ('post_type_tag_title');
 
 CREATE TABLE sloth_localized_strings
 (

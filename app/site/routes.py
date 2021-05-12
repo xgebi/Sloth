@@ -16,6 +16,14 @@ from app.site import site
 @db_connection
 def update_analytics(*args, connection, **kwargs):	
 	analytics_data = request.get_json()
+	headers = request.headers.get("User-Agent")
+	"""
+	user_agent.platform: windows
+	user_agent.browser: chrome
+	user_agent.version: 45.0.2454.101
+	user_agent.language: None
+	user_agent.string: 
+	"""
 
 	try:
 		cur = connection.cursor()

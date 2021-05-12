@@ -178,8 +178,9 @@ class Toe:
                     content=html.escape(str(value if value is not None else ""))))
             elif attribute.startswith('toe:content'):
                 ignore_children = True
+                value = self.process_toe_value(template_tree_node.get_attribute(attribute))
                 new_tree_node.add_child(TextNode(
-                    content=str(self.process_toe_value(template_tree_node.get_attribute(attribute)))
+                    content=str(value if value is not None else "")
                 ))
             elif attribute.startswith('toe:inline-js'):
                 ignore_children = True
@@ -314,8 +315,8 @@ class Toe:
                 if attribute_value.find(" | ") >= 0:
                     return self.process_pipe(attribute_value)
                 resolved_value = self.current_scope.find_variable(attribute_value)
-                if resolved_value is not None:
-                    return resolved_value
+
+                return resolved_value if resolved_value is not None else ""
         else:
             var_arr = re.split(r"[ ]?\+[ ]?", attribute_value)
             if var_arr is None:

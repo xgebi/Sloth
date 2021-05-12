@@ -17,7 +17,7 @@ def show_login():
         template="login.toe.html",
         data={
             "title": "Log in",
-            "status": {"empty": True},
+            "status": {},
             "redirect": request.args.get("redirect"),
         },
         hooks=Hooks()
@@ -26,7 +26,18 @@ def show_login():
 
 @login.route("/login/error")
 def show_login_error():
-    return render_template("login.toe.html", status={"error": True})
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="login.toe.html",
+        data={
+            "title": "Log in",
+            "status": {
+                "error": True
+            },
+            "redirect": request.args.get("redirect")
+        },
+        hooks=Hooks()
+    )
 
 
 @login.route('/login/process', methods=["POST"])

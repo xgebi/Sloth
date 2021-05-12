@@ -45,7 +45,6 @@ class PostGenerator:
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
         self.set_individual_settings(connection=connection, setting_name='sitename')
         self.set_individual_settings(connection=connection, setting_name='site_url')
-        self.set_individual_settings(connection=connection, setting_name='site_description')
         self.set_individual_settings(connection=connection, setting_name='api_url', alternate_name='sloth_api_url')
 
         # Set path to the theme
@@ -770,6 +769,10 @@ class PostGenerator:
 
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read(), condition="is_home"))
+
+    def set_translatable_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None,
+                                settings_type: str = 'sloth', **kwargs):
+        pass
 
     def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
         cur = connection.cursor()

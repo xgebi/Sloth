@@ -16,6 +16,7 @@ authlib = "*"
 psycopg2 = "*"
 requests = "*"
 jasmine = "*"
+flask-apscheduler = "*"
 
 [requires]
 python_version = "3.8"

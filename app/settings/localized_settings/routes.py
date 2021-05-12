@@ -30,16 +30,19 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
         localizable_strings = cur.fetchall()
         cur.execute(
             sql.SQL(
-                """SELECT uuid, name, content, lang, post_type FROM sloth_localized_strings;"""),
+                """SELECT sls.uuid, sls.name, sls.content, sls.lang, sls.post_type, spt.display_name
+                FROM sloth_localized_strings AS sls 
+                INNER JOIN sloth_post_types spt on spt.uuid = sls.post_type;"""),
         )
-        localizable_strings = cur.fetchall()
+        localized_strings = cur.fetchall()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
         abort(500)
 
-    temp_items = {}
-
+    temp_items = {name[0]: {} for name in localizable_strings}
+    for string in localized_strings:
+        pass
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -58,7 +61,7 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
 @localized_settings.route("/settings/localized-settings/save", methods=["POST"])
 @authorize_web(1)
 @db_connection
-def show_localized_settings(*args, permission_level, connection, **kwargs):
+def change_localized_settings(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_lang = get_default_language(connection=connection)

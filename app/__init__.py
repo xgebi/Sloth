@@ -4,8 +4,10 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
-from app.utilities.job_runner import JobRunner
 from uuid import uuid4
+from flask_apscheduler import APScheduler
+
+from app.post.scheduled_posts_job import scheduled_posts_job
 
 bcrypt = Bcrypt()
 
@@ -25,6 +27,16 @@ def create_app():  # dev, test, or prod
     app.config['CORS_HEADERS'] = 'Content-Type'
 
     bcrypt.init_app(app)
+
+    if not Path(os.path.join(os.getcwd(), 'schedule.lock')).is_file():
+        with open(os.path.join(os.getcwd(), 'schedule.lock'), 'w') as f:
+            f.write(str(app.config["THREAD_ID"]))
+
+            scheduler = APScheduler()
+            scheduler.init_app(app)
+            scheduler.start()
+
+            app.apscheduler.add_job(func=scheduled_posts_job, trigger='interval', seconds=60, id=str(uuid4()))
 
     @app.before_request
     def before_first_request():
@@ -96,6 +108,9 @@ def create_app():  # dev, test, or prod
     from app.settings.language_settings import language_settings
     app.register_blueprint(language_settings)
 
+    from app.settings.localized_settings import localized_settings
+    app.register_blueprint(localized_settings)
+
     from app.settings.dev import dev_settings
     app.register_blueprint(dev_settings)
 
@@ -104,8 +119,5 @@ def create_app():  # dev, test, or prod
 
     from app.lists import lists
     app.register_blueprint(lists)
-
-    #job_runner = JobRunner(config=app.config)
-    #job_runner.run()
 
     return app
