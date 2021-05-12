@@ -162,6 +162,8 @@ class Toe:
         attributes = template_tree_node.attributes.keys()
         ignore_children = False
         for attribute in attributes:
+            if attribute.startswith('toe:value'):
+                print("value")
             if attribute.startswith('class'):
                 if new_tree_node.has_attribute('class'):
                     new_tree_node.set_attribute(
@@ -750,7 +752,29 @@ class VariableScope:
     def find_variable(self, variable_name, passed_names=None):
         names = [] if passed_names is None else passed_names
         if passed_names is None and variable_name.find("['") > -1:
-            names = variable_name.split("['")
+            j = variable_name.find("[")
+            names = [variable_name[:j], ]
+            j += 1
+            level = 1
+            temp = ""
+            while j < len(variable_name):
+                if variable_name[j] == "[":
+                    if level == 0:
+                        names.append(temp)
+                        temp = ""
+                    else:
+                        temp += variable_name[j]
+                    level += 1
+                elif variable_name[j] == "]":
+                    if level > 1:
+                        temp += variable_name[j]
+                    level -= 1
+                else:
+                    temp += variable_name[j]
+                j += 1
+                if j < len(variable_name) and level == -1:
+                    raise ToeProcessingException()
+            names.append(temp)
             variable_name = names[0]
 
         if self.variables.get(variable_name) is not None:
@@ -759,7 +783,10 @@ class VariableScope:
                 for nidx in range(len(names) - 1):
                     if names[nidx + 1][-1] == "]":
                         names[nidx + 1] = names[nidx + 1][:-2]
-                    res = res.get(names[nidx + 1])
+                    if res is not None:
+                        res = res.get(names[nidx + 1]) if names[nidx + 1] in res else None
+                    else:
+                        res = None
                 return res
             else:
                 return self.variables[variable_name]

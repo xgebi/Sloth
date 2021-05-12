@@ -43,9 +43,16 @@ class PostGenerator:
         self.set_individual_settings(connection=connection, setting_name='active_theme', settings_type='themes')
         self.set_individual_settings(connection=connection, setting_name='main_language')
         self.set_individual_settings(connection=connection, setting_name='number_rss_posts')
-        self.set_individual_settings(connection=connection, setting_name='sitename')
         self.set_individual_settings(connection=connection, setting_name='site_url')
         self.set_individual_settings(connection=connection, setting_name='api_url', alternate_name='sloth_api_url')
+
+        self.set_translatable_individual_settings_by_name(connection=connection, name='sitename')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='description')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='sub_headline')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='archive_title')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='category_title')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='tag_title')
+
 
         # Set path to the theme
         self.theme_path = Path(
@@ -156,6 +163,7 @@ class PostGenerator:
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
     def generate_post_type(self, posts, output_path, post_type, language):
+        self.set_translatable_individual_settings_by_post_type(connection=self.connection, post_type=post_type["uuid"])
         # generate posts
         for post in posts:
             self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path, multiple=True)
@@ -541,7 +549,7 @@ class PostGenerator:
                 template=template,
                 data={
                     "post": post,
-                    "sitename": self.settings["sitename"]["settings_value"],
+                    "sitename": self.settings["sitename"][language["uuid"]]["content"],
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "site_url": self.settings["site_url"]["settings_value"],
                     "menus": self.menus,
@@ -770,9 +778,73 @@ class PostGenerator:
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read(), condition="is_home"))
 
-    def set_translatable_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None,
-                                settings_type: str = 'sloth', **kwargs):
-        pass
+    def set_translatable_individual_settings_by_name(
+            self,
+            *args,
+            connection,
+            name: str,
+            **kwargs):
+        cur = connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, name, content, lang 
+                FROM sloth_localized_strings WHERE name = %s;"""),
+                [name]
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+        cur.close()
+
+        for item in raw_items:
+            if name not in self.settings:
+                self.settings[name] = {
+                    item[3]: {
+                        "uuid": item[0],
+                        "content": item[2]
+                    }
+                }
+            else:
+                self.settings[name][item[3]] = {
+                    "uuid": item[0],
+                    "content": item[2]
+                }
+
+    def set_translatable_individual_settings_by_post_type(
+            self,
+            *args,
+            connection,
+            post_type: str,
+            **kwargs):
+        cur = connection.cursor()
+        try:
+            cur.execute(
+                sql.SQL("""SELECT uuid, name, content, lang, post_type 
+                FROM sloth_localized_strings WHERE post_type = %s;"""),
+                [post_type]
+            )
+            raw_items = cur.fetchall()
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+        cur.close()
+
+        for item in raw_items:
+            if post_type not in self.settings:
+                self.settings[post_type] = {
+                    item[3]: {
+                        "uuid": item[0],
+                        "content": item[2]
+                    }
+                }
+            else:
+                self.settings[post_type][item[3]] = {
+                    "uuid": item[0],
+                    "content": item[2]
+                }
 
     def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
         cur = connection.cursor()

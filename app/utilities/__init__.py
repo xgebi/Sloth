@@ -12,7 +12,7 @@ def get_languages(*args, connection, lang_id: str = "", **kwargs) \
     temp_languages = []
     try:
         cur.execute(
-            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings""")
+            sql.SQL("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
         )
         temp_languages = cur.fetchall()
     except Exception as e:
@@ -22,17 +22,20 @@ def get_languages(*args, connection, lang_id: str = "", **kwargs) \
     if len(lang_id) != 0:
         languages = [{
             "uuid": lang[0],
-            "long_name": lang[1]
+            "long_name": lang[1],
+            "short_name": lang[2]
         } for lang in temp_languages if lang[0] != lang_id]
         current_lang = [{
             "uuid": lang[0],
-            "long_name": lang[1]
+            "long_name": lang[1],
+            "short_name": lang[2]
         } for lang in temp_languages if lang[0] == lang_id][0]
 
         return current_lang, languages
     return [{
         "uuid": lang[0],
-        "long_name": lang[1]
+        "long_name": lang[1],
+        "short_name": lang[2]
     } for lang in temp_languages]
 
 

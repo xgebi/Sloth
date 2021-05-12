@@ -5,7 +5,14 @@
 <toe:import file="nav.toe.html"/>
 <main>
     <h1>Localization</h1>
-    <!-- -->
+    <section>
+        <h2>Sitename</h2>
+        <section toe:for="lang in languages">
+            <h3 toe:text="lang['long_name']"></h3>
+            <input type="text" toe:value="standalone_strings['sitename'][lang['short_name']]" />
+        </section>
+
+    </section>
 </main>
 </body>
 </html>

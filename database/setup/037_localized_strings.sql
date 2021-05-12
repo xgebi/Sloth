@@ -5,19 +5,30 @@ WHERE settings_name = 'sitename';
 CREATE TABLE sloth_localizable_strings
 (
     name text NOT NULL,
+    standalone bool,
+
+    PRIMARY KEY (name)
+);
+
+CREATE TABLE sloth_localizable_strings
+(
+    name text NOT NULL,
+    standalone bool,
 
     PRIMARY KEY (name)
 );
 
 INSERT INTO sloth_localizable_strings
-VALUES ('sitename'),
-       ('description'),
-       ('sub_headline'),
-       ('archive'),
-       ('post_type_display_name'),
-       ('post_type_archive_title'),
-       ('post_type_category_title'),
-       ('post_type_tag_title');
+VALUES ('sitename', TRUE),
+       ('description', TRUE),
+       ('sub_headline', TRUE),
+       ('archive_title', TRUE),
+       ('category_title', TRUE),
+       ('tag_title', TRUE),
+       ('post_type_display_name', FALSE),
+       ('post_type_archive_title', FALSE),
+       ('post_type_category_title', FALSE),
+       ('post_type_tag_title', FALSE);
 
 CREATE TABLE sloth_localized_strings
 (

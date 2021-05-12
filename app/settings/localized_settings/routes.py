@@ -25,14 +25,11 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
         cur = connection.cursor()
         cur.execute(
             sql.SQL(
-                """SELECT name FROM sloth_localizable_strings;"""),
-        )
-        localizable_strings = cur.fetchall()
-        cur.execute(
-            sql.SQL(
-                """SELECT sls.uuid, sls.name, sls.content, sls.lang, sls.post_type, spt.display_name
+                """SELECT sls.uuid, sls.name, s.standalone, sls.content, sls.lang, sls.post_type, spt.display_name, sls2.short_name
                 FROM sloth_localized_strings AS sls 
-                INNER JOIN sloth_post_types spt on spt.uuid = sls.post_type;"""),
+                INNER JOIN sloth_post_types spt on spt.uuid = sls.post_type
+                INNER JOIN sloth_localizable_strings s on s.name = sls.name
+                INNER JOIN sloth_language_settings sls2 on sls2.uuid = sls.lang;"""),
         )
         localized_strings = cur.fetchall()
     except Exception as e:
@@ -40,9 +37,19 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
         connection.close()
         abort(500)
 
-    temp_items = {name[0]: {} for name in localizable_strings}
-    for string in localized_strings:
-        pass
+    standalone_strings = {}
+    post_type_strings = {}
+    for item in localized_strings:
+        if item[2]:
+            if item[1] not in standalone_strings:
+                standalone_strings[item[1]] = {}
+            standalone_strings[item[1]][item[7]] = item[3]
+        else:
+            if item[5] not in post_type_strings:
+                post_type_strings[item[5]] = {}
+            if item[1] not in post_type_strings:
+                post_type_strings[item[1]] = {}
+            post_type_strings[item[5]][item[1]][item[7]] = item[3]
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -52,7 +59,9 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
             "post_types": post_types_result,
             "permission_level": permission_level,
             "default_lang": default_lang,
-            "languages": languages
+            "languages": languages,
+            "standalone_strings": standalone_strings,
+            "post_type_strings": post_type_strings
         },
         hooks=Hooks()
     )
