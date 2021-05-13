@@ -750,32 +750,7 @@ class VariableScope:
         self.parent_scope = parent_scope
 
     def find_variable(self, variable_name, passed_names=None):
-        names = [] if passed_names is None else passed_names
-        if passed_names is None and variable_name.find("['") > -1:
-            j = variable_name.find("[")
-            names = [variable_name[:j], ]
-            j += 1
-            level = 1
-            temp = ""
-            while j < len(variable_name):
-                if variable_name[j] == "[":
-                    if level == 0:
-                        names.append(temp)
-                        temp = ""
-                    else:
-                        temp += variable_name[j]
-                    level += 1
-                elif variable_name[j] == "]":
-                    if level > 1:
-                        temp += variable_name[j]
-                    level -= 1
-                else:
-                    temp += variable_name[j]
-                j += 1
-                if j < len(variable_name) and level == -1:
-                    raise ToeVariableNotFoundException()
-            names.append(temp)
-            variable_name = names[0]
+        names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
         if self.variables.get(variable_name) is not None:
             if len(names) > 0:
@@ -808,28 +783,59 @@ class VariableScope:
             raise ValueError("Variable already exists")
         self.variables[name] = value
 
-    def is_variable(self, variable_name):
-        names = []
-        if variable_name.find("['") > -1:
-            names = variable_name.split("['")
-            variable_name = names[0]
+    def is_variable(self, variable_name, passed_names=None):
+        names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
         if self.variables.get(variable_name) is not None:
             if len(names) > 0:
-                res = self.variables[names[0]]
-                for nidx in range(len(names) - 1):
-                    if names[nidx + 1][-1] == "]":
-                        names[nidx + 1] = names[nidx + 1][:-2]
-                    res = res.get(names[nidx + 1])
+                res = self.variables.get(variable_name)
+                for i in range(1, len(names)):
+                    if (names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\""):
+                        resolved_name = names[i][1: -1]
+                    else:
+                        resolved_name = self.find_variable(names[i])
+                    if resolved_name in res:
+                        res = res[resolved_name]
+                    else:
+                        raise ToeVariableNotFoundException()
                 return res is not None
             else:
                 return True
 
         if self.parent_scope is None:
             return False
-        if self.parent_scope.is_variable(variable_name):
+        if self.parent_scope.is_variable(variable_name, names):
             return True
         return False
+
+    def get_names(self, variable_name, passed_names):
+        names = [] if passed_names is None else passed_names
+        if passed_names is None and variable_name.find("['") > -1:
+            j = variable_name.find("[")
+            names = [variable_name[:j], ]
+            j += 1
+            level = 1
+            temp = ""
+            while j < len(variable_name):
+                if variable_name[j] == "[":
+                    if level == 0:
+                        names.append(temp)
+                        temp = ""
+                    else:
+                        temp += variable_name[j]
+                    level += 1
+                elif variable_name[j] == "]":
+                    if level > 1:
+                        temp += variable_name[j]
+                    level -= 1
+                else:
+                    temp += variable_name[j]
+                j += 1
+                if j < len(variable_name) and level == -1:
+                    raise ToeVariableNotFoundException()
+            names.append(temp)
+            variable_name = names[0]
+        return names
 
     def is_variable_in_current_scope(self, variable_name):
         return self.variables.get(variable_name) is not None
