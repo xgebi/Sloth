@@ -64,6 +64,12 @@ class MarkdownParser:
             elif result[parsing_info.i].isdigit():
                 # parse ordered list
                 result, parsing_info = self.parse_ordered_list(result, parsing_info)
+            elif result[parsing_info.i] == ">":
+                if result[parsing_info.i - 2: parsing_info.i + 2] == "\n\n> " or \
+                        parsing_info.i == 0:
+                    self.parse_bloquote(result, parsing_info)
+                else:
+                    parsing_info.move_index()
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
                 footnote_pattern = re.compile("\[\d+\. .+?\][ \.\?\!\:\;$]")
@@ -105,6 +111,19 @@ class MarkdownParser:
             result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
         return result
+
+    def parse_bloquote(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        # Very Work In Progress
+        j = parsing_info.i + 1 + text[parsing_info.i + 1:].find("\n")
+        quote = ""
+        text[:parsing_info.i]
+        parsing_info.i + text[parsing_info.i + 1:].find("\n")
+        text[parsing_info.i + 1 + text[parsing_info.i + 1:].find("\n"):]
+        text = text[:parsing_info.i] + quote + text[j:]
+        parsing_info.move_index()
+
+        return text, parsing_info
+
 
     def parse_forms(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         end = text[parsing_info.i + 1:].find("]]")
