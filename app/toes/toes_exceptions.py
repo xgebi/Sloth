@@ -8,3 +8,6 @@ class ToeProcessingException(Exception):
 
 class ToeInvalidConditionException(Exception):
     pass
+
+class ToeVariableNotFoundException(Exception):
+    pass

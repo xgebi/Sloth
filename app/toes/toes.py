@@ -11,7 +11,7 @@ from app.toes.hooks import Hooks
 from app.toes.node import Node
 from app.toes.root_node import RootNode
 from app.toes.text_node import TextNode
-from app.toes.toes_exceptions import ToeProcessingException, ToeInvalidConditionException
+from app.toes.toes_exceptions import ToeProcessingException, ToeInvalidConditionException, ToeVariableNotFoundException
 from app.toes.xml_parser import XMLParser
 
 
@@ -773,20 +773,22 @@ class VariableScope:
                     temp += variable_name[j]
                 j += 1
                 if j < len(variable_name) and level == -1:
-                    raise ToeProcessingException()
+                    raise ToeVariableNotFoundException()
             names.append(temp)
             variable_name = names[0]
 
         if self.variables.get(variable_name) is not None:
             if len(names) > 0:
                 res = self.variables.get(variable_name)
-                for nidx in range(len(names) - 1):
-                    if names[nidx + 1][-1] == "]":
-                        names[nidx + 1] = names[nidx + 1][:-2]
-                    if res is not None:
-                        res = res.get(names[nidx + 1]) if names[nidx + 1] in res else None
+                for i in range(1, len(names)):
+                    if (names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\""):
+                        resolved_name = names[i][1: -1]
                     else:
-                        res = None
+                        resolved_name = self.find_variable(names[i])
+                    if resolved_name in res:
+                        res = res[resolved_name]
+                    else:
+                        raise ToeVariableNotFoundException()
                 return res
             else:
                 return self.variables[variable_name]

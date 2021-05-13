@@ -204,6 +204,38 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div><div>Second hello</div></html>')
 
+    def test_object_in_object(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="object_in_object.toe.html",
+            data={
+                "obj1": {
+                    "bar": "baz"
+                },
+                "obj2": {
+                    "foo": "bar"
+                }
+            }
+        )
+        self.assertGreater(toe.find("baz"), -1)
+
+    def test_object_in_object_in_object(self):
+        toe = render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), "resources", "toes"),
+            template="object_in_object_in_object.toe.html",
+            data={
+                "obj1": {
+                    "bar": {
+                        "baz": "gaz"
+                    }
+                },
+                "obj2": {
+                    "foo": "bar"
+                }
+            }
+        )
+        self.assertGreater(toe.find("gaz"), -1)
+
 
 if __name__ == '__main__':
     unittest.main()
