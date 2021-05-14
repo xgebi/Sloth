@@ -2,6 +2,7 @@ from typing import Dict
 import re
 import math
 import json
+from app.toes.hooks import Hooks
 
 
 class ListInfo:
@@ -38,6 +39,7 @@ class MarkdownParser:
                 self.text = text_file.read()
         else:
             self.text = ""
+        self.hooks = Hooks()
 
     def to_html_string(self, text: str = "", footnote: bool = False) -> str:
         # refactoring candidate

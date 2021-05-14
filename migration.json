@@ -18,5 +18,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "037_localized_strings.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "038_sloth_libraries.sql"
   }
 ]
