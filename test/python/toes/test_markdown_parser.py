@@ -69,6 +69,11 @@ class MyTestCase(unittest.TestCase):
         text = mdp.to_html_string()
         print(text)
 
+    def test_block_quotes_with_paragraphs(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "blockquotes_paragrahps.md"))
+        text = mdp.to_html_string()
+        print(text)
+
 
     def test_paragraph_with_code(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_code.md"))

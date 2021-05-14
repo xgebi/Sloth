@@ -67,7 +67,7 @@ class MarkdownParser:
             elif result[parsing_info.i] == ">":
                 if result[parsing_info.i - 2: parsing_info.i + 2] == "\n\n> " or \
                         parsing_info.i == 0:
-                    self.parse_bloquote(result, parsing_info)
+                    result, parsing_info = self.parse_bloquote(result, parsing_info)
                 else:
                     parsing_info.move_index()
             elif result[parsing_info.i] == "[":
@@ -114,13 +114,41 @@ class MarkdownParser:
 
     def parse_bloquote(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         # Very Work In Progress
-        j = parsing_info.i + 1 + text[parsing_info.i + 1:].find("\n")
+        j = parsing_info.i + 1
         quote = ""
-        text[:parsing_info.i]
-        parsing_info.i + text[parsing_info.i + 1:].find("\n")
-        text[parsing_info.i + 1 + text[parsing_info.i + 1:].find("\n"):]
-        text = text[:parsing_info.i] + quote + text[j:]
-        parsing_info.move_index()
+
+        end = text[j:].find("\n")
+        alt_end = text[j:].find("\n>")
+        if alt_end != -1 and end < alt_end:
+            text = f"{text[:parsing_info.i]}<blockquote>{text[parsing_info.i + 1: end + parsing_info.i + 1].strip()}</blockquote>{text[end + parsing_info.i + 1: ]}"
+            parsing_info.move_index(len("<blockquote>"))
+
+        elif end == alt_end:
+            line = ""
+            while j < len(text):
+                end = text[j:].find("\n\n")
+                alt_end = text[j:].find("\n>") + j if text[j:].find("\n>") != -1 else len(text)
+                line_end = text[j:].find("\n") + j if text[j:].find("\n") != -1 else len(text)
+
+                line += text[j + 1: alt_end if alt_end <= line_end else line_end]
+                j = (alt_end if alt_end <= line_end else line_end) + 2
+                if line[::-1].startswith("  "):
+                    line = f"{line[:-2]}<br />"
+
+                if line_end > len(text):
+                    text = f"{text[:parsing_info.i]}<blockquote>{line.strip()}</blockquote>"
+                    parsing_info.move_index(len("<blockquote>"))
+                    break
+                if line_end == len(text):
+                    line += text[j: ]
+                    text = f"{text[:parsing_info.i]}<blockquote>{line.strip()}</blockquote>"
+                    parsing_info.move_index(len("<blockquote>"))
+                    break
+                if text[line_end + 1] == "\n":
+                    text = f"{text[:parsing_info.i]}<blockquote>{line.strip()}</blockquote>{text[line_end + 1:]}"
+                    parsing_info.move_index(len("<blockquote>"))
+                    break
+
 
         return text, parsing_info
 
