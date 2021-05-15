@@ -233,6 +233,18 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "slug": pf[1],
             "display_name": pf[2]
         } for pf in cur.fetchall()]
+
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, name, version, location 
+                FROM sloth_libraries;""")
+        )
+        libs = [{
+            "uuid": lib[0],
+            "name": lib[1],
+            "version": lib[2],
+            "location": lib[3]
+        } for lib in cur.fetchall()]
     except Exception as e:
         print("db error B")
         print(e)
@@ -296,7 +308,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "languages": translatable,
             "translations": translated_languages,
             "current_lang_id": data["lang"],
-            "post_formats": post_formats
+            "post_formats": post_formats,
+            "libs": libs
         }
     )
 
