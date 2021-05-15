@@ -5,14 +5,121 @@
 <toe:import file="nav.toe.html"/>
 <main>
     <h1>Localization</h1>
-    <section>
-        <h2>Sitename</h2>
-        <section toe:for="lang in languages">
-            <h3 toe:text="lang['long_name']"></h3>
-            <input type="text" toe:value="standalone_strings['sitename'][lang['short_name']]" />
+    <form method="post" action="/settings/localized-settings/save">
+        <section class="sitename">
+            <h2>Sitename</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'sitename_' + lang['short_name']"></label>
+                <br/>
+                <input type="text"
+                       toe:value="standalone_strings['sitename'][lang['short_name']]"
+                       toe:name="'sitename_' + lang['short_name']"
+                       toe:id="'sitename_' + lang['short_name']"/>
+            </section>
         </section>
 
-    </section>
+        <section>
+            <h2>Headline</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'headline_' + lang['short_name']"></label>
+                <br/>
+                <input type="text"
+                       toe:value="standalone_strings['headline'][lang['short_name']]"
+                       toe:name="'headline_' + lang['short_name']"
+                       toe:id="'headline_' + lang['short_name']"/>
+            </section>
+        </section>
+
+        <section>
+            <h2>Archive</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'archive-title_' + lang['short_name']"></label>
+                <br/>
+                <input type="text"
+                       toe:value="standalone_strings['archive-title'][lang['short_name']]"
+                       toe:name="'archive_' + lang['short_name']"
+                       toe:id="'archive_' + lang['short_name']"/>
+            </section>
+        </section>
+
+
+        <section>
+            <h2>Category</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'category-title_' + lang['short_name']"></label>
+                <br/>
+                <input type="text"
+                       toe:value="standalone_strings['category-title'][lang['short_name']]"
+                       toe:name="'category_' + lang['short_name']"
+                       toe:id="'category_' + lang['short_name']"/>
+            </section>
+        </section>
+
+        <section>
+            <h2>Tag</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'tag-title_' + lang['short_name']"></label>
+                <br/>
+                <input type="text"
+                       toe:value="standalone_strings['tag-title'][lang['short_name']]"
+                       toe:name="'tag_' + lang['short_name']"
+                       toe:id="'tag_' + lang['short_name']"/>
+            </section>
+        </section>
+
+        <section class="post-type">
+            <h2>Post type settings</h2>
+            <section toe:for="post_type in post_types" class="post-type-inner">
+                <h3 toe:text="post_type['display_name']"></h3>
+                <h4>Display Name</h4>
+                <section toe:for="lang in languages" class="post-type-languages">
+                    <label toe:text="lang['long_name']"
+                           toe:attr-for="'post-type-display-name_' + post_type['uuid'] + '_' + lang['short_name']"></label>
+                    <br/>
+                    <input type="text"
+                           toe:value="post_type_strings[post_type['uuid']]['post-type-display_name'][lang['short_name']]"
+                           toe:name="'post-type-display-name_' + post_type['uuid'] + '_' + lang['short_name']"
+                           toe:id="'post-type-display-name_' + post_type['uuid'] + '_' + lang['short_name']"/>
+                </section>
+
+                <h4>Archive title</h4>
+                <section toe:for="lang in languages" class="post-type-languages">
+                    <label toe:text="lang['long_name']"
+                           toe:attr-for="'post-type-archive-title_' + post_type['uuid'] + '_' + lang['short_name']"></label>
+                    <br/>
+                    <input type="text"
+                           toe:value="post_type_strings[post_type['uuid']]['post-type-archive-title'][lang['short_name']]"
+                           toe:name="'post-type-archive-title_' + post_type['uuid'] + '_' + lang['short_name']"
+                           toe:id="'post-type-archive-title_' + post_type['uuid'] + '_' + lang['short_name']"/>
+                </section>
+
+                <h4>Category title</h4>
+                <section toe:for="lang in languages" class="post-type-languages">
+                    <label toe:text="lang['long_name']"
+                           toe:attr-for="'post-type-category-title_' + post_type['uuid'] + '_' + lang['short_name']"></label>
+                    <br/>
+                    <input type="text"
+                           toe:value="post_type_strings[post_type['uuid']]['post-type-category-title'][lang['short_name']]"
+                           toe:name="'post-type-category-title_' + post_type['uuid'] + '_' + lang['short_name']"
+                           toe:id="'post-type-category-title_' + post_type['uuid'] + '_' + lang['short_name']"/>
+                </section>
+
+                <h4>Tag title</h4>
+                <section toe:for="lang in languages" class="post-type-languages">
+                    <label toe:text="lang['long_name']"
+                           toe:attr-for="'post-type-tag-title_' + post_type['uuid'] + '_' + lang['short_name']"></label>
+                    <br/>
+                    <input type="text"
+                           toe:value="post_type_strings[post_type['uuid']]['post-type-tag-title'][lang['short_name']]"
+                           toe:name="'post-type-tag-title_' + post_type['uuid'] + '_' + lang['short_name']"
+                           toe:id="'post-type-tag-title_' + post_type['uuid'] + '_' + lang['short_name']"/>
+                </section>
+
+            </section>
+        </section>
+
+        <input type="submit" value="Save"/>
+    </form>
 </main>
 </body>
 </html>

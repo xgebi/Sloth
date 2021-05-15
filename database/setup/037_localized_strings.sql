@@ -21,14 +21,14 @@ CREATE TABLE sloth_localizable_strings
 INSERT INTO sloth_localizable_strings
 VALUES ('sitename', TRUE),
        ('description', TRUE),
-       ('sub_headline', TRUE),
-       ('archive_title', TRUE),
-       ('category_title', TRUE),
-       ('tag_title', TRUE),
-       ('post_type_display_name', FALSE),
-       ('post_type_archive_title', FALSE),
-       ('post_type_category_title', FALSE),
-       ('post_type_tag_title', FALSE);
+       ('headline', TRUE),
+       ('archive-title', TRUE),
+       ('category-title', TRUE),
+       ('tag-title', TRUE),
+       ('post-type-display-name', FALSE),
+       ('post-type-archive-title', FALSE),
+       ('post-type-category-title', FALSE),
+       ('post-type-tag-title', FALSE);
 
 CREATE TABLE sloth_localized_strings
 (

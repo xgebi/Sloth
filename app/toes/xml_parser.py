@@ -168,6 +168,7 @@ class XMLParser:
             name_end = positive_min(
                 text[parsing_info.i:].find(" "),
                 text[parsing_info.i:].find(">"),
+                text[parsing_info.i:].find("/>"),
                 text[parsing_info.i:].find("\n")
             ) + parsing_info.i
             parsing_info.current_node.set_name(text[parsing_info.i: name_end])

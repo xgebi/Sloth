@@ -1,4 +1,4 @@
-from flask import abort
+from flask import abort, redirect, request
 import os
 import traceback
 from psycopg2 import sql
@@ -71,17 +71,27 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
 @authorize_web(1)
 @db_connection
 def change_localized_settings(*args, permission_level, connection, **kwargs):
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-    default_lang = get_default_language(connection=connection)
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="localized-settings.toe.html",
-        data={
-            "title": "Dashboard",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "default_lang": default_lang
-        },
-        hooks=Hooks()
-    )
+    data = request.form
+    # for item in data:
+    #     print(f"{item}: {data[item]}")
+    try:
+        cur = connection.cursor()
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, post_type, name, lang, content FROM sloth_localized_strings;"""),
+        )
+
+        cur.execute(
+            sql.SQL(
+                """INSERT INTO sloth_localized_strings (uuid, name, content, lang, post_type)
+                        VALUES ('sitename', TRUE)
+                        ON CONFLICT (name) 
+                        DO 
+                           UPDATE SET standalone = TRUE WHERE sloth_localizable_strings.name = 'sitename';"""),
+            (, )
+        )
+    except Exception as e:
+        print(traceback.format_exc())
+        connection.close()
+        abort(500)
+    return redirect('/settings/localized-settings')

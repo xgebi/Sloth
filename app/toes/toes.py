@@ -162,8 +162,6 @@ class Toe:
         attributes = template_tree_node.attributes.keys()
         ignore_children = False
         for attribute in attributes:
-            if attribute.startswith('toe:value'):
-                print("value")
             if attribute.startswith('class'):
                 if new_tree_node.has_attribute('class'):
                     new_tree_node.set_attribute(
@@ -463,8 +461,8 @@ class Toe:
         iterable_item = self.current_scope.find_variable(items[1])
         if iterable_item is None:
             return None
-
-        element.remove_attribute('toe:for')
+        new_element = copy.deepcopy(element)
+        new_element.remove_attribute('toe:for')
 
         for thing in iterable_item:
             # local scope creation
@@ -477,7 +475,7 @@ class Toe:
                 self.current_scope.variables[items[0]] = thing
 
             # process subtree
-            result_node = self.process_subtree(parent_element, element)
+            result_node = self.process_subtree(parent_element, new_element)
             if result_node is not None:
                 # parent_element.add_child(result_node)
                 pass
@@ -498,7 +496,8 @@ class Toe:
         if not contains_condition:
             return None
 
-        element.remove_attribute('toe:while')
+        new_element = copy.deepcopy(element)
+        new_element.remove_attribute('toe:while')
 
         while self.process_condition(iterable_cond):
             # local scope creation
@@ -506,7 +505,7 @@ class Toe:
             self.current_scope = local_scope
 
             # process subtree
-            result_node = self.process_subtree(parent_element, element)
+            result_node = self.process_subtree(parent_element, new_element)
 
             # local scope destruction
             self.current_scope = self.current_scope.parent_scope
