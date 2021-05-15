@@ -2,6 +2,7 @@ from flask import abort, redirect, request
 import os
 import traceback
 from psycopg2 import sql
+from uuid import uuid4
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
@@ -72,24 +73,54 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
 @db_connection
 def change_localized_settings(*args, permission_level, connection, **kwargs):
     data = request.form
-    # for item in data:
-    #     print(f"{item}: {data[item]}")
+    languages = get_languages(connection=connection)
     try:
         cur = connection.cursor()
         cur.execute(
             sql.SQL(
-                """SELECT uuid, post_type, name, lang, content FROM sloth_localized_strings;"""),
+                """SELECT name, standalone FROM sloth_localizable_strings;"""),
         )
-
+        localizable = [{"name": item[0], "standalone": item[1]} for item in cur.fetchall()]
         cur.execute(
             sql.SQL(
-                """INSERT INTO sloth_localized_strings (uuid, name, content, lang, post_type)
-                        VALUES ('sitename', TRUE)
-                        ON CONFLICT (name) 
-                        DO 
-                           UPDATE SET standalone = TRUE WHERE sloth_localizable_strings.name = 'sitename';"""),
-            (, )
+                """SELECT uuid, post_type, name, lang, content FROM sloth_localized_strings;"""),
         )
+        localized = {f"{item[2]}_{item[1]}_{item[3]}": {
+            "uuid": item[0],
+            "post_type": item[1],
+            "name": item[2],
+            "lang": item[3],
+            "content": item[4]
+        } for item in cur.fetchall()}
+        to_update = []
+        to_insert = []
+        for item in data:
+            identifiers = item.split("_")
+            updated = {
+                "post_type": identifiers[1] if len(identifiers) == 3 else None,
+                "name": identifiers[0],
+                "lang": identifiers[2] if len(identifiers) == 3 else identifiers[1],
+                "content": data[item]
+            }
+            # 'post-type-tag-title_' + post_type['uuid'] + '_' + lang['uuid']
+            if item in localized:
+                updated["uuid"] = localized[item]["uuid"]
+                to_update.append(updated)
+                cur.execute(
+                    sql.SQL(
+                        """UPDATE sloth_localized_strings SET content = %s WHERE uuid = %s;"""),
+                    (updated["content"], updated["uuid"])
+                )
+            else:
+                updated["uuid"] = str(uuid4())
+                to_insert.append(updated)
+                cur.execute(
+                    sql.SQL(
+                        """INSERT INTO sloth_localized_strings (uuid, post_type, name, lang, content) VALUES 
+                        (%s, %s, %s, %s, %s);"""),
+                    (updated["uuid"], updated["post_type"], updated["name"], updated["lang"], updated["content"])
+                )
+        connection.commit()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
