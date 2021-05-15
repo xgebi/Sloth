@@ -32,7 +32,16 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
                 INNER JOIN sloth_localizable_strings s on s.name = sls.name
                 INNER JOIN sloth_language_settings sls2 on sls2.uuid = sls.lang;"""),
         )
-        localized_strings = cur.fetchall()
+        raw_post_type_strings = cur.fetchall()
+        cur.execute(
+            sql.SQL(
+                """SELECT sls.uuid, sls.name, s.standalone, sls.content, sls.lang, sls.post_type, sls2.short_name
+                FROM sloth_localized_strings AS sls 
+                INNER JOIN sloth_localizable_strings s on s.name = sls.name
+                INNER JOIN sloth_language_settings sls2 on sls2.uuid = sls.lang
+                WHERE s.standalone = TRUE;"""),
+        )
+        raw_standalone_strings = cur.fetchall()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
@@ -40,18 +49,17 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
 
     standalone_strings = {}
     post_type_strings = {}
-    for item in localized_strings:
-        if item[2]:
-            if item[1] not in standalone_strings:
-                standalone_strings[item[1]] = {}
-            standalone_strings[item[1]][item[7]] = item[3]
-        else:
-            if item[5] not in post_type_strings:
-                post_type_strings[item[5]] = {}
-            if item[1] not in post_type_strings:
-                post_type_strings[item[1]] = {}
-            post_type_strings[item[5]][item[1]][item[7]] = item[3]
-
+    for item in raw_standalone_strings:
+        if item[1] not in standalone_strings:
+            standalone_strings[item[1]] = {}
+        standalone_strings[item[1]][item[4]] = item[3]
+    for item in raw_post_type_strings:
+        if item[5] not in post_type_strings:
+            post_type_strings[item[5]] = {}
+        if item[1] not in post_type_strings[item[5]]:
+            post_type_strings[item[5]][item[1]] = {}
+        post_type_strings[item[5]][item[1]][item[4]] = item[3]
+    print(standalone_strings)
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="localization.toe.html",

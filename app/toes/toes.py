@@ -161,6 +161,7 @@ class Toe:
 
         attributes = template_tree_node.attributes.keys()
         ignore_children = False
+
         for attribute in attributes:
             if attribute.startswith('class'):
                 if new_tree_node.has_attribute('class'):
@@ -739,6 +740,10 @@ class CONDITION_JUNCTION(enum.Enum):
     junction_or = 0
     junction_and = 1
 
+class ReturnToChildScope:
+    def __init__(self, name):
+        self.name = name
+
 
 class VariableScope:
     variables = {}
@@ -748,31 +753,36 @@ class VariableScope:
         self.variables = variable_dict if variable_dict is not None else {}
         self.parent_scope = parent_scope
 
-    def find_variable(self, variable_name, passed_names=None):
+    def find_variable(self, variable_name, passed_names=None, original_scope: 'VariableScope'=None):
         if passed_names is not None:
             names = passed_names
         else:
             names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
-        if len(names) > 0 and self.variables.get(names[0]) is not None:
+        if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope):
             if len(names) > 0:
-                res = self.variables.get(names[0])
+                if names[0] in self.variables:
+                    res = self.variables.get(names[0])
+                elif self.parent_scope is not None:
+                    res = self.parent_scope.find_variable(names[0], names, self if original_scope is None else original_scope)
+                else:
+                    return None
                 for i in range(1, len(names)):
                     if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
                             and names[i].find("+") == -1:
                         resolved_name = names[i][1: -1]
                     else:
-                        resolved_name = self.find_variable(names[i])
+                        resolved_name = self.find_variable(names[i], original_scope=original_scope)
                     if resolved_name in res:
                         res = res[resolved_name]
+                    elif original_scope is not None:
+                        return original_scope.find_variable(variable_name=variable_name)
                     else:
                         return None
                 return res
             else:
                 return self.variables[names[0]]
 
-        if self.parent_scope is not None:
-            return self.parent_scope.find_variable(names[0], names)
         return None
 
     def assign_variable(self, name, value):
@@ -786,7 +796,7 @@ class VariableScope:
             raise ValueError("Variable already exists")
         self.variables[name] = value
 
-    def is_variable(self, variable_name, passed_names=None):
+    def is_variable(self, variable_name, passed_names=None, original_scope=None):
         names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
         if self.variables.get(names[0]) is not None:
@@ -798,10 +808,13 @@ class VariableScope:
                         resolved_name = names[i][1: -1]
                     else:
                         resolved_name = self.find_variable(names[i])
+
                     if resolved_name in res:
                         res = res[resolved_name]
+                    elif original_scope is not None:
+                        return original_scope.find_variable(variable_name=variable_name)
                     else:
-                        return False
+                        return None
                 return res is not None
             else:
                 return True
@@ -836,7 +849,7 @@ class VariableScope:
                     temp += variable_name[j]
                 j += 1
                 if j < len(variable_name) and level == -1:
-                    raise ToeVariableNotFoundException()
+                    return None
             names.append(temp)
         else:
             return [variable_name]
