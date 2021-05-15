@@ -114,7 +114,7 @@ def create_app():  # dev, test, or prod
     from app.settings.dev import dev_settings
     app.register_blueprint(dev_settings)
 
-    from app.settings.libraries import libraries
+    from app.libraries import libraries
     app.register_blueprint(libraries)
 
     from app.rss import rss
