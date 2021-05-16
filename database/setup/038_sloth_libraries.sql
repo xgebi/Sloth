@@ -13,6 +13,7 @@ CREATE TABLE sloth_post_libraries
     uuid    varchar(200),
     post    varchar(200),
     library varchar(200),
+    hook_name varchar(200) NOT NULL,
 
     PRIMARY KEY (uuid),
     CONSTRAINT post_fkey FOREIGN KEY (post)

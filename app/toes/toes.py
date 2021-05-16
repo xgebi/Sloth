@@ -5,6 +5,7 @@ import os
 import re
 from typing import Dict, List
 import copy
+from functools import lru_cache
 
 from app.toes.comment_node import CommentNode
 from app.toes.hooks import Hooks
@@ -682,7 +683,7 @@ class Toe:
 
     def process_pipe(self, side: str):
         actions = side.split("|")
-        if not self.current_scope.is_variable(actions[0].strip()):
+        if self.current_scope.is_variable(actions[0].strip()) is None:
             return None
         value = self.current_scope.find_variable(actions[0].strip())
         for i in range(1, len(actions)):
@@ -759,7 +760,7 @@ class VariableScope:
         else:
             names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
-        if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope):
+        if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope) is not None:
             if len(names) > 0:
                 if names[0] in self.variables:
                     res = self.variables.get(names[0])
@@ -767,18 +768,19 @@ class VariableScope:
                     res = self.parent_scope.find_variable(names[0], names, self if original_scope is None else original_scope)
                 else:
                     return None
-                for i in range(1, len(names)):
-                    if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
-                            and names[i].find("+") == -1:
-                        resolved_name = names[i][1: -1]
-                    else:
-                        resolved_name = self.find_variable(names[i], original_scope=original_scope)
-                    if resolved_name in res:
-                        res = res[resolved_name]
-                    elif original_scope is not None:
-                        return original_scope.find_variable(variable_name=variable_name)
-                    else:
-                        return None
+                if (type(res) is list and len(res) > 0) or type(res) is dict:
+                    for i in range(1, len(names)):
+                        if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
+                                and names[i].find("+") == -1:
+                            resolved_name = names[i][1: -1]
+                        else:
+                            resolved_name = self.find_variable(names[i], original_scope=original_scope)
+                        if resolved_name in res:
+                            res = res[resolved_name]
+                        elif original_scope is not None:
+                            return original_scope.find_variable(variable_name=variable_name)
+                        else:
+                            return None
                 return res
             else:
                 return self.variables[names[0]]
@@ -801,21 +803,26 @@ class VariableScope:
 
         if self.variables.get(names[0]) is not None:
             if len(names) > 0:
-                res = self.variables.get(variable_name)
-                for i in range(1, len(names)):
-                    if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
-                            and names[i].find("+") == -1:
-                        resolved_name = names[i][1: -1]
-                    else:
-                        resolved_name = self.find_variable(names[i])
-
-                    if resolved_name in res:
-                        res = res[resolved_name]
-                    elif original_scope is not None:
-                        return original_scope.find_variable(variable_name=variable_name)
-                    else:
-                        return None
-                return res is not None
+                if names[0] in self.variables:
+                    res = self.variables.get(names[0])
+                elif self.parent_scope is not None:
+                    res = self.parent_scope.is_variable(names[0], names, self if original_scope is None else original_scope)
+                else:
+                    return None
+                if type(res) is list or type(res) is dict:
+                    for i in range(1, len(names)):
+                        if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
+                                and names[i].find("+") == -1:
+                            resolved_name = names[i][1: -1]
+                        else:
+                            return self.is_variable(names[i], original_scope=original_scope)
+                        if resolved_name in res:
+                            return True
+                        elif original_scope is not None:
+                            return original_scope.is_variable(variable_name=variable_name)
+                        else:
+                            return None
+                return res
             else:
                 return True
 

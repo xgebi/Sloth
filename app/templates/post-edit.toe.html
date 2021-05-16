@@ -61,6 +61,17 @@
             <label for="use_theme_css">Use theme's CSS</label>
         </div>
         <div class="first-column">
+            <label for="js">Libraries:</label>
+            <br/>
+            <select id="library-select">
+                <option toe:for="lib in libs"></option>
+            </select>
+            <button id="add-library">Add</button>
+            <div id="library-list">
+                <span toe:for="lib in data['libraries']" toe:text="lib['name']" toe:data-lib-id="lib['uuid']"></span>
+            </div>
+        </div>
+        <div class="first-column">
             <label for="js">Custom JavaScript:</label>
             <br/>
             <textarea id="js" toe:content="data['js']"></textarea>

@@ -245,6 +245,20 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "version": lib[2],
             "location": lib[3]
         } for lib in cur.fetchall()]
+        cur.execute(
+            sql.SQL(
+                """SELECT sl.uuid, sl.name, sl.version
+                FROM sloth_post_libraries AS spl
+                INNER JOIN sloth_libraries sl on spl.library = sl.uuid
+                WHERE spl.post = %s;"""
+            ),
+            (post_id, )
+        )
+        post_libs = [{
+            "uuid": lib[0],
+            "name": lib[1],
+            "version": lib[2]
+        } for lib in cur.fetchall()]
     except Exception as e:
         print("db error B")
         print(e)
@@ -289,7 +303,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "format_slug": raw_post[20],
         "format_name": raw_post[21],
         "meta_description": raw_post[22],
-        "social_description": raw_post[23]
+        "social_description": raw_post[23],
+        "libraries": post_libs
     }
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
