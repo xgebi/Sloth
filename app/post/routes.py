@@ -14,7 +14,7 @@ from app.authorization.authorize import authorize_rest, authorize_web
 from app.post import post, get_translations
 from app.post.post_generator import PostGenerator
 from app.post.post_types import PostTypes
-from app.toes.hooks import Hooks
+from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.utilities.db_connection import db_connection
@@ -324,7 +324,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "translations": translated_languages,
             "current_lang_id": data["lang"],
             "post_formats": post_formats,
-            "libs": libs
+            "libs": libs,
+            "hook_list": HooksList.list()
         }
     )
 
@@ -416,6 +417,19 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             (post_type, False)
         )
         default_format = cur.fetchone()[0]
+
+        cur.execute(
+            sql.SQL(
+                """SELECT uuid, name, version, location 
+                FROM sloth_libraries;""")
+        )
+        libs = [{
+            "uuid": lib[0],
+            "name": lib[1],
+            "version": lib[2],
+            "location": lib[3]
+        } for lib in cur.fetchall()]
+        post_libs = []
     except Exception as e:
         print("db error A")
         abort(500)
@@ -443,7 +457,8 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "post_type": post_type,
         "lang": lang_id,
         "original_post": original_post,
-        "format_uuid": default_format
+        "format_uuid": default_format,
+        "libraries": post_libs
     }
 
     token = request.cookies.get('sloth_session')
@@ -466,7 +481,9 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             "translations": translations,
             "current_lang_id": data["lang"],
             "post_formats": post_formats,
-            "all_categories": all_categories
+            "all_categories": all_categories,
+            "libs": libs,
+            "hook_list": HooksList.list()
         }
     )
 
@@ -993,6 +1010,17 @@ def save_post(*args, connection=None, **kwargs):
             )
             connection.commit()
             taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
+
+        # save libraries
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_post_libraries WHERE post = %s;"""),
+            (filled["uuid"], )
+        )
+        for lib in filled["libs"]:
+            cur.execute(
+                sql.SQL("""INSERT INTO sloth_post_libraries (uuid, post, library, hook_name)  VALUES (%s, %s, %s, %s)"""),
+                (str(uuid.uuid4()), filled["uuid"], lib["libId"], lib["hook"])
+            )
         connection.commit()
 
         cur.execute(

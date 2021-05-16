@@ -90,6 +90,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     calculateLength(META_DESC, "#meta-description");
     document.querySelector("#social-description").addEventListener('input', calculateLengthEvent)
     calculateLength(SOCIAL_DESC, "#social-description");
+
+    document.querySelector("#add-library").addEventListener('click', addLibrary)
 });
 
 function calculateLengthEvent(event) {
@@ -286,6 +288,16 @@ function collectValues() {
     });
     post["meta_description"] = document.querySelector("#meta-description").value;
     post["social_description"] = document.querySelector("#social-description").value;
+    const libraryList = document.querySelector("#library-list");
+    const libs = [];
+    for (let lib of libraryList.children) {
+        libs.push({
+            libId: lib.dataset["libId"],
+            hook: lib.dataset["hook"]
+        });
+    }
+    debugger;
+    post["libs"] = libs;
     return post;
 }
 
@@ -514,6 +526,36 @@ function getSelectionHtml() {
         }
     }
     alert(html);
+}
+
+function addLibrary(event) {
+    const select = document.querySelector("#library-select");
+    const libraryList = document.querySelector("#library-list");
+    if (select.value.length > 0) {
+        for (let option of select.options) {
+            if (option.value === select.value) {
+                for (let libs of libraryList.children) {
+                    if (libs.dataset["libId"] === option.value) {
+                        return;
+                    }
+                }
+                const span = document.createElement('span');
+                span.textContent = option.textContent;
+                span.setAttribute("data-lib-id", option.value);
+                span.setAttribute("data-hook", document.querySelector("#hook-select").value)
+                const button = document.createElement('button');
+                button.textContent = "Remove";
+                button.addEventListener('click', removeLibraryFromList);
+                span.appendChild(button);
+                libraryList.appendChild(span);
+            }
+        }
+    }
+}
+
+function removeLibraryFromList(event) {
+    console.log(event.target.parentNode)
+    event.target.parentNode.parentNode.removeChild(event.target.parentNode);
 }
 
 function replaceSelectionWithHtml(html) {

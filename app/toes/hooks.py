@@ -1,4 +1,5 @@
 from typing import List
+import enum
 
 
 class Hook:
@@ -8,6 +9,15 @@ class Hook:
                  ) -> None:
         self.content = content
         self.condition = condition
+
+
+class HooksList(enum.Enum):
+    footer = 'footer'
+    head = 'head'
+
+    @staticmethod
+    def list():
+        return list(map(lambda c: c.value, HooksList))
 
 
 class Hooks:

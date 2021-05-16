@@ -61,14 +61,22 @@
             <label for="use_theme_css">Use theme's CSS</label>
         </div>
         <div class="first-column">
-            <label for="js">Libraries:</label>
+            <label for="library-select">Libraries:</label>
             <br/>
             <select id="library-select">
-                <option toe:for="lib in libs"></option>
+                <option value="" selected>---</option>
+                <option toe:for="lib in libs" toe:value="lib['uuid']" toe:text="lib['name'] + '@' + lib['version']"></option>
+            </select>
+            <label for="hook-select">Hook used:</label>
+            <br/>
+            <select id="hook-select">
+                <option toe:for="hook in hook_list" toe:value="hook" toe:text="hook"></option>
             </select>
             <button id="add-library">Add</button>
             <div id="library-list">
-                <span toe:for="lib in data['libraries']" toe:text="lib['name']" toe:data-lib-id="lib['uuid']"></span>
+                <span toe:for="lib in data['libraries']" toe:text="lib['name'] + '@' + lib['version']" toe:data-lib-id="lib['uuid']">
+                    <button>Remove</button>
+                </span>
             </div>
         </div>
         <div class="first-column">
