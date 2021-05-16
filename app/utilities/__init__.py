@@ -79,8 +79,23 @@ def get_related_posts(*args, post, connection, **kwargs):
             (post["uuid"],)
         )
     related_posts_raw = cur.fetchall()
+    posts = [parse_raw_post(related_post) for related_post in related_posts_raw]
+    for post in posts:
+        cur.execute(
+            sql.SQL(
+                """SELECT sl.location, spl.hook_name
+                FROM sloth_post_libraries AS spl
+                INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+                WHERE spl.post = %s;"""
+            ),
+            (post["uuid"],)
+        )
+        post["libraries"] = [{
+            "location": lib[0],
+            "hook_name": lib[1]
+        } for lib in cur.fetchall()]
     cur.close()
-    return [parse_raw_post(related_post) for related_post in related_posts_raw]
+    return posts
 
 
 def parse_raw_post(raw_post) -> Dict[str, str] or Any:

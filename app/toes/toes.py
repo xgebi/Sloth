@@ -174,7 +174,9 @@ class Toe:
             elif not attribute.startswith('toe:'):
                 new_tree_node.set_attribute(attribute, template_tree_node.get_attribute(attribute))
             elif attribute.startswith('toe:text'):
-                ignore_children = True
+                for child in template_tree_node.children:
+                    if type(child) is TextNode:
+                        ignore_children = True
                 value = self.process_toe_value(template_tree_node.get_attribute(attribute))
                 new_tree_node.add_child(TextNode(
                     content=html.escape(str(value if value is not None else ""))))
@@ -528,7 +530,7 @@ class Toe:
         condition["value"] = condition["value"].strip()
         if condition["value"].find(" ") == -1:
             if condition["value"].lower() == "true" or condition["value"].lower() == "false":
-                raise ValueError('Condition not allowed')
+                return condition["value"].lower() == "true"
             return self.current_scope.find_variable(condition["value"])
 
         if condition["value"].count(" and ") > 0 or condition["value"].count(" or ") > 0:

@@ -247,7 +247,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         } for lib in cur.fetchall()]
         cur.execute(
             sql.SQL(
-                """SELECT sl.uuid, sl.name, sl.version
+                """SELECT sl.uuid, sl.name, sl.version, spl.hook_name
                 FROM sloth_post_libraries AS spl
                 INNER JOIN sloth_libraries sl on spl.library = sl.uuid
                 WHERE spl.post = %s;"""
@@ -257,7 +257,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         post_libs = [{
             "uuid": lib[0],
             "name": lib[1],
-            "version": lib[2]
+            "version": lib[2],
+            "hook": lib[3]
         } for lib in cur.fetchall()]
     except Exception as e:
         print("db error B")
@@ -1034,6 +1035,19 @@ def save_post(*args, connection=None, **kwargs):
             (filled["uuid"],)
         )
         generatable_post = parse_raw_post(cur.fetchone())
+        cur.execute(
+            sql.SQL(
+                """SELECT sl.location, spl.hook_name
+                FROM sloth_post_libraries AS spl
+                INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+                WHERE spl.post = %s;"""
+            ),
+            (filled["uuid"],)
+        )
+        generatable_post["libraries"] = [{
+            "location": lib[0],
+            "hook_name": lib[1]
+        } for lib in cur.fetchall()]
         generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
         # get post
         if filled["post_status"] == 'published':

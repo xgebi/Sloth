@@ -32,6 +32,17 @@
         </section>
 
         <section>
+            <h2>Description</h2>
+            <section toe:for="lang in languages">
+                <label toe:text="lang['long_name']" toe:attr-for="'description_' + lang['uuid']"></label>
+                <br/>
+                <textarea toe:content="standalone_strings['description'][lang['uuid']]"
+                          toe:name="'description_' + lang['uuid']"
+                          toe:id="'description_' + lang['uuid']"></textarea>
+            </section>
+        </section>
+
+        <section>
             <h2>Archive</h2>
             <section toe:for="lang in languages">
                 <label toe:text="lang['long_name']" toe:attr-for="'archive-title_' + lang['uuid']"></label>

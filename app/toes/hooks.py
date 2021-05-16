@@ -5,7 +5,7 @@ import enum
 class Hook:
     def __init__(self,
                  content: str,
-                 condition: str
+                 condition: str = "True"
                  ) -> None:
         self.content = content
         self.condition = condition

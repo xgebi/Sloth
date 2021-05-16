@@ -74,7 +74,10 @@
             </select>
             <button id="add-library">Add</button>
             <div id="library-list">
-                <span toe:for="lib in data['libraries']" toe:text="lib['name'] + '@' + lib['version']" toe:data-lib-id="lib['uuid']">
+                <span toe:for="lib in data['libraries']"
+                      toe:text="lib['name'] + '@' + lib['version']"
+                      toe:data-lib-id="lib['uuid']"
+                      toe:data-hook="lib['hook']">
                     <button>Remove</button>
                 </span>
             </div>

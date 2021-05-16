@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     calculateLength(SOCIAL_DESC, "#social-description");
 
     document.querySelector("#add-library").addEventListener('click', addLibrary)
+    document.querySelectorAll("#library-list button").forEach(button => button.addEventListener('click', removeLibraryFromList));
 });
 
 function calculateLengthEvent(event) {
@@ -296,7 +297,6 @@ function collectValues() {
             hook: lib.dataset["hook"]
         });
     }
-    debugger;
     post["libs"] = libs;
     return post;
 }
@@ -554,7 +554,6 @@ function addLibrary(event) {
 }
 
 function removeLibraryFromList(event) {
-    console.log(event.target.parentNode)
     event.target.parentNode.parentNode.removeChild(event.target.parentNode);
 }
 

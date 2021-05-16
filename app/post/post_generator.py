@@ -49,10 +49,9 @@ class PostGenerator:
         self.set_translatable_individual_settings_by_name(connection=connection, name='sitename')
         self.set_translatable_individual_settings_by_name(connection=connection, name='description')
         self.set_translatable_individual_settings_by_name(connection=connection, name='sub_headline')
-        self.set_translatable_individual_settings_by_name(connection=connection, name='archive_title')
-        self.set_translatable_individual_settings_by_name(connection=connection, name='category_title')
-        self.set_translatable_individual_settings_by_name(connection=connection, name='tag_title')
-
+        self.set_translatable_individual_settings_by_name(connection=connection, name='archive-title')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='category-title')
+        self.set_translatable_individual_settings_by_name(connection=connection, name='tag-title')
 
         # Set path to the theme
         self.theme_path = Path(
@@ -170,18 +169,18 @@ class PostGenerator:
         # generate archive and RSS if enabled
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-            self.generate_rss(output_path=output_path, posts=posts, post_markdown=True)
+            self.generate_rss(output_path=output_path, posts=posts, post_markdown=True, language=language)
 
         if post_type["categories_enabled"] or post_type["tags_enabled"]:
             categories, tags = self.prepare_categories_tags_post_type(post_type=post_type, language=language)
 
         if post_type["categories_enabled"]:
             self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
-                                   post_type=post_type)
+                                   post_type=post_type, title=self.settings["category-title"][language["uuid"]]["content"])
 
         if post_type["tags_enabled"]:
             self.generate_taxonomy(taxonomy=tags, language=language, output_path=output_path,
-                                   post_type=post_type)
+                                   post_type=post_type, title=self.settings["tag-title"][language["uuid"]]["content"])
 
     def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
@@ -262,13 +261,28 @@ class PostGenerator:
                 (post_type_uuid, language_uuid)
             )
             raw_items = cur.fetchall()
+            posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
+            for post in posts:
+                cur.execute(
+                    sql.SQL(
+                        """SELECT sl.location, spl.hook_name
+                        FROM sloth_post_libraries AS spl
+                        INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+                        WHERE spl.post = %s;"""
+                    ),
+                    (post['uuid'], )
+                )
+                post["libraries"] = [{
+                    "location": lib[0],
+                    "hook_name": lib[1]
+                } for lib in cur.fetchall()]
         except Exception as e:
             print(e)
             traceback.print_exc()
             return []
 
         cur.close()
-        return self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
+        return posts
 
     def process_posts(
             self,
@@ -387,17 +401,29 @@ class PostGenerator:
             categories, tags = self.prepare_categories_tags(post=post, language=language)
 
         if post_type["categories_enabled"]:
-            self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path, post_type=post_type)
+            self.generate_taxonomy(
+                taxonomy=categories,
+                language=language,
+                output_path=output_path,
+                post_type=post_type,
+                title=self.settings["category-title"][language["uuid"]]["content"]
+            )
 
         if post_type["tags_enabled"]:
-            self.generate_taxonomy(taxonomy=tags, language=language, output_path=output_path, post_type=post_type)
+            self.generate_taxonomy(
+                taxonomy=tags,
+                language=language,
+                output_path=output_path,
+                post_type=post_type,
+                title=self.settings["tag-title"][language["uuid"]]["content"]
+            )
 
         self.generate_home(output_path=output_path, post_types=post_types, language=language)
 
         if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
             os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
-    def generate_taxonomy(self, *args, taxonomy, language, output_path, post_type, **kwargs):
+    def generate_taxonomy(self, *args, taxonomy, language, output_path, post_type, title, **kwargs):
         for item in taxonomy:
             posts = self.get_posts_for_taxonomy(
                 post_type_uuid=post_type["uuid"],
@@ -406,10 +432,12 @@ class PostGenerator:
             )
             if len(posts) > 0:
                 self.generate_archive(
-                    posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item
+                    posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item, title=title
                 )
                 self.generate_rss(
-                    output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]), posts=posts
+                    output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]),
+                    posts=posts,
+                    language=language
                 )
 
     def clean_taxonomy(self, *args, taxonomies_for_cleanup, **kwargs):
@@ -444,11 +472,18 @@ class PostGenerator:
                 if os.path.exists(posts_path_dir):
                     shutil.rmtree(posts_path_dir)
 
+                if taxonomy["type"] == "tag":
+                    title = self.settings["tag-title"][language["uuid"]]["content"]
+                elif taxonomy["type"] == "category":
+                    title = self.settings["category-title"][language["uuid"]]["content"]
+                else:
+                    title = self.settings["archive-title"][language["uuid"]]["content"]
                 self.generate_taxonomy(
                     taxonomy=(taxonomy,),
                     language=language,
                     output_path=output_path,
                     post_type=post_type,
+                    title=title
                 )
         except Exception as e:
             print(e)
@@ -489,7 +524,7 @@ class PostGenerator:
             print(e)
             traceback.print_exc()
         cur.close()
-        return self.process_categories_tags(taxonomies=taxonomies)
+        return self.process_categories_tags(taxonomies=taxonomies) if taxonomies is not None else []
 
     def process_categories_tags(self, *args, taxonomies, **kwargs):
         categories = []
@@ -524,6 +559,13 @@ class PostGenerator:
             multiple: bool = False,
             **kwargs
     ):
+        for lib in post["libraries"]:
+            script = f"<script src=\"{lib['location']}\" async></script>"
+            if lib["hook_name"] == "head":
+                self.hooks.head.append(Hook(content=script))
+            elif lib["hook_name"] == "footer":
+                self.hooks.footer.append(Hook(content=script))
+
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 
         template = self.get_post_template(post_type=post_type, post=post, language=language)
@@ -650,7 +692,7 @@ class PostGenerator:
                     })
         return result
 
-    def generate_archive(self, *args, posts, output_path, post_type, language, taxonomy=None, **kwargs):
+    def generate_archive(self, *args, posts, output_path, post_type, language, taxonomy=None, title = "", **kwargs):
         if len(posts) == 0:
             return
 
@@ -696,7 +738,8 @@ class PostGenerator:
                         template=template,
                         data={
                             "posts": posts[lower: upper],
-                            "sitename": self.settings["sitename"]["settings_value"],
+                            "sitename": self.settings["sitename"][language["uuid"]]["content"],
+                            "title": self.settings["archive-title"][language["uuid"]]["content"] if len(title) == 0 else title,
                             "site_url": self.settings["site_url"]["settings_value"],
                             "page_name": f"Archive for {post_type['display_name']}",
                             "post_type": post_type,
@@ -773,7 +816,7 @@ class PostGenerator:
     def set_footer(self, *args, connection, **kwargs):
         # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
-            self.hooks.footer.append(Hook(content=f.read(), condition=True))
+            self.hooks.footer.append(Hook(content=f.read()))
 
         with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read(), condition="is_home"))
@@ -826,25 +869,24 @@ class PostGenerator:
                 [post_type]
             )
             raw_items = cur.fetchall()
+            for item in raw_items:
+                if post_type not in self.settings:
+                    self.settings[post_type] = {
+                        item[3]: {
+                            "uuid": item[0],
+                            "content": item[2]
+                        }
+                    }
+                else:
+                    self.settings[post_type][item[3]] = {
+                        "uuid": item[0],
+                        "content": item[2]
+                    }
         except Exception as e:
             print(e)
             traceback.print_exc()
 
         cur.close()
-
-        for item in raw_items:
-            if post_type not in self.settings:
-                self.settings[post_type] = {
-                    item[3]: {
-                        "uuid": item[0],
-                        "content": item[2]
-                    }
-                }
-            else:
-                self.settings[post_type][item[3]] = {
-                    "uuid": item[0],
-                    "content": item[2]
-                }
 
     def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
         cur = connection.cursor()
@@ -937,7 +979,7 @@ class PostGenerator:
             language,
             **kwargs
     ):
-        self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path)
+        self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path, language=language)
         posts = {}
         try:
             cur = self.connection.cursor()
@@ -986,7 +1028,8 @@ class PostGenerator:
                 template=template,
                 data={
                     "posts": posts,
-                    "sitename": self.settings["sitename"]["settings_value"],
+                    "sitename": self.settings["sitename"][language["uuid"]]["content"],
+                    "description": self.settings["description"][language["uuid"]]["content"],
                     "page_name": "Home",
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "site_url": self.settings["site_url"]["settings_value"],
@@ -1037,7 +1080,7 @@ class PostGenerator:
             "post_type_slug": post[14]
         } for post in raw_posts]
 
-    def generate_rss(self, *args, output_path: Path, posts, post_markdown: bool = False, **kwargs):
+    def generate_rss(self, *args, output_path: Path, posts, language, post_markdown: bool = False, **kwargs):
         doc = minidom.Document()
         root_node = doc.createElement('rss')
 
@@ -1053,7 +1096,7 @@ class PostGenerator:
         channel = doc.createElement("channel")
 
         title = doc.createElement("title")
-        title_text = doc.createTextNode(self.settings["sitename"]["settings_value"])
+        title_text = doc.createTextNode(self.settings["sitename"][language["uuid"]]["content"])
         title.appendChild(title_text)
         channel.appendChild(title)
 
@@ -1070,7 +1113,7 @@ class PostGenerator:
 
         description = doc.createElement('description')
 
-        description_text = doc.createTextNode(self.settings["site_description"]["settings_value"])
+        description_text = doc.createTextNode( self.settings["description"][language["uuid"]]["content"])
         description.appendChild(description_text)
         channel.appendChild(description)
         # <lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>
