@@ -5,7 +5,6 @@ import os
 import re
 from typing import Dict, List
 import copy
-from functools import lru_cache
 
 from app.toes.comment_node import CommentNode
 from app.toes.hooks import Hooks
@@ -824,7 +823,7 @@ class VariableScope:
                             return original_scope.is_variable(variable_name=variable_name)
                         else:
                             return None
-                return res
+                return res is not None
             else:
                 return True
 

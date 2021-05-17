@@ -562,9 +562,9 @@ class PostGenerator:
         for lib in post["libraries"]:
             script = f"<script src=\"{lib['location']}\" async></script>"
             if lib["hook_name"] == "head":
-                self.hooks.head.append(Hook(content=script))
+                self.hooks.head.append(Hook(content=script, condition=f"post['uuid'] eq '{post['uuid']}'"))
             elif lib["hook_name"] == "footer":
-                self.hooks.footer.append(Hook(content=script))
+                self.hooks.footer.append(Hook(content=script, condition=f"post['uuid'] eq '{post['uuid']}'"))
 
         post_path_dir = Path(output_path, post_type["slug"], post["slug"])
 

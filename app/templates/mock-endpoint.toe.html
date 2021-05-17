@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Mock Endpoint</h1>
+    <section class="endpoint-detail">
+        <form method="post" toe:action="'/mock-endpoints/' + endpoint['uuid'] + '/save'">
+            <input name="new" class="hidden" toe:value="endpoint['new']"/>
+            <label for="path">Path:</label>
+            <input id="path" name="path" toe:value="endpoint['path']"/>
+            <label for="data">Data</label>
+            <textarea id="data" name="data" toe:content="endpoint['data']"></textarea>
+            <input type="submit" value="Save"/>
+        </form>
+        <button id="delete-button" toe:data-uuid="endpoint['uuid']">Delete endpoint</button>
+    </section>
+</main>
+<script src="/static/js/mock-endpoints.js"></script>
+</body>
+</html>

@@ -3,10 +3,14 @@ from flask_cors import cross_origin
 from psycopg2 import sql
 import json
 import uuid
+import os
 from app.post.post_types import PostTypes
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
-from app.authorization.authorize import authorize_web, authorize_rest
+from app.authorization.authorize import authorize_web
+from app.toes.toes import render_toe_from_path
+from app.toes.hooks import Hooks
+from app.utilities import get_languages
 
 from app.mock_endpoints import mock_endpoints
 
@@ -58,6 +62,8 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
         abort(500)
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
+    default_lang = get_default_language(connection=connection)
+    languages = get_languages(connection=connection)
 
     cur = connection.cursor()
     temp_endpoint_result = {}
@@ -81,12 +87,23 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
         "new": False
     }
 
-    return render_template(
-        "mock-endpoint.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        endpoint=endpoint_result
-                           )
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="mock-endpoint.toe.html",
+        data={
+            "title": "List of media",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_lang,
+            "languages": languages,
+            "endpoint": {
+                "uuid": str(uuid.uuid4()),
+                "new": True
+            },
+            "endpoint": endpoint_result
+        },
+        hooks=Hooks()
+    )
 
 
 @mock_endpoints.route("/api/mock-endpoints/<endpoint>/delete", methods=["DELETE"])
@@ -121,13 +138,25 @@ def show_new_endpoint(*args, permission_level, connection, **kwargs):
         abort(500)
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
+    default_lang = get_default_language(connection=connection)
+    languages = get_languages(connection=connection)
 
-    return render_template(
-        "mock-endpoint.html",
-        post_types=post_types_result,
-        permission_level=permission_level,
-        endpoint={"uuid": str(uuid.uuid4()), "new": True}
-                           )
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="mock-endpoint.toe.html",
+        data={
+            "title": "List of media",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_lang,
+            "languages": languages,
+            "endpoint": {
+                "uuid": str(uuid.uuid4()),
+                "new": True
+            }
+        },
+        hooks=Hooks()
+    )
 
 
 @mock_endpoints.route("/mock-endpoints/<endpoint_id>/save", methods=["POST", "PUT"])
