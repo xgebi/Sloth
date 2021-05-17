@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
    const deleteButton = document.querySelector("#delete-button"); // .dataset["posttypeUuid"]
     deleteButton.addEventListener('click', () => {
-        fetch(`${apiUrl}/api/mock-endpoints/${deleteButton.dataset["uuid"]}/delete`, {
+        fetch(`/api/mock-endpoints/${deleteButton.dataset["uuid"]}/delete`, {
             method: 'DELETE',
             headers: {
                 'authorization': document.cookie

@@ -197,7 +197,7 @@ def save_endpoint(*args, permission_level, connection, endpoint_id, **kwargs):
 @cross_origin()
 @db_connection
 def get_endpoint(*args, connection, path, **kwargs):
-    if request.host not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
+    if request.origin[request.origin.find("//") + 2: ] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
         abort(500)
     if connection is None:
         abort(500)
