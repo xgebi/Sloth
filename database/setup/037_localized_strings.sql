@@ -10,14 +10,6 @@ CREATE TABLE sloth_localizable_strings
     PRIMARY KEY (name)
 );
 
-CREATE TABLE sloth_localizable_strings
-(
-    name text NOT NULL,
-    standalone bool,
-
-    PRIMARY KEY (name)
-);
-
 INSERT INTO sloth_localizable_strings
 VALUES ('sitename', TRUE),
        ('description', TRUE),
