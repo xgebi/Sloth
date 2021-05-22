@@ -1,14 +1,13 @@
 <toe:fragment xmlns:toe="https://xgebi.github.io/Sloth/">
     <nav>
         <ul>
-            <li><a href="/dashboard">Dashboard</a></li>
-            <!--li>Content
+            <li><a href="/dashboard">Dashboard</a>
                 <ul>
-                    <li><a href="/messages">Messages</a></li>
-                    <li><a href="/rss">RSS reader</a></li>
-                    <li><a href="/analytics">Analytics</a></li>
+                    <!--li><a href="/messages">Messages</a></li>
+                    <li><a href="/rss">RSS reader</a></li-->
+                    <li><a href="/dashboard/analytics">Analytics</a></li>
                 </ul>
-            </li-->
+            </li>
             <li toe:for="post_type in post_types">
                 <a toe:href="'/post/' + post_type['uuid']" toe:text="post_type['display_name']"></a>
                 <ul>

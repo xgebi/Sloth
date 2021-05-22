@@ -63,6 +63,9 @@ def create_app():  # dev, test, or prod
     from app.dashboard import dashboard
     app.register_blueprint(dashboard)
 
+    from app.dashboard.analytics import analytics
+    app.register_blueprint(analytics)
+
     from app.settings import settings
     app.register_blueprint(settings)
 
