@@ -61,6 +61,13 @@ class PostGenerator:
 
         self.set_footer(connection=connection)
 
+        for language in self.languages:
+            if language['uuid'] == self.settings["main_language"]['settings_value']:
+                rss_link = F"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/feed.xml\" />"
+            else:
+                rss_link = F"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/{language['short_name']}/feed.xml\" />"
+            self.hooks.head.append(Hook(content=rss_link, condition=f"language['uuid'] eq '{language['uuid']}'"))
+
     def run(
             self,
             *args, post: Dict = {},
@@ -597,7 +604,8 @@ class PostGenerator:
                     "menus": self.menus,
                     "translations": translations,
                     "is_home": False,
-                    "is_post": True
+                    "is_post": True,
+                    "language": language["uuid"]
                 },
                 hooks=self.hooks,
                 base_path=self.theme_path
@@ -749,7 +757,8 @@ class PostGenerator:
                             "number_of_pages": math.ceil(len(posts) / 10),
                             "not_last_page": True if math.floor(len(posts) / 10) != i else False,
                             "is_home": False,
-                            "is_post": False
+                            "is_post": False,
+                            "language": language["uuid"]
                         },
                         hooks=self.hooks
                     ))
@@ -1035,7 +1044,8 @@ class PostGenerator:
                     "site_url": self.settings["site_url"]["settings_value"],
                     "menus": self.menus,
                     "is_home": True,
-                    "is_post": False
+                    "is_post": False,
+                    "language": language["uuid"]
                 },
                 hooks=self.hooks
             ))
