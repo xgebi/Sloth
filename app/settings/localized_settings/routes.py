@@ -59,7 +59,6 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
         if item[1] not in post_type_strings[item[5]]:
             post_type_strings[item[5]][item[1]] = {}
         post_type_strings[item[5]][item[1]][item[4]] = item[3]
-    print(standalone_strings)
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="localization.toe.html",
