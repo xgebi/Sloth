@@ -2,6 +2,7 @@ import os
 import json
 import psycopg2
 import importlib
+from pathlib import Path
 
 
 def execute_sql_scripts(conn, migration_sql):
@@ -43,11 +44,27 @@ if os.path.isfile("migration.json"):
             if answer.lower() != 'y':
                 continue
 
+        if os.environ['FLASK_ENV'] == "production":
+            migrated_path = os.path.join(os.getcwd(), "migrated")
+            if not Path(migrated_path).is_file():
+                with open(migrated_path, 'w') as f:
+                    f.write('')
+            with open(migrated_path) as f:
+                content = f.readlines()
+            content = [x.strip() for x in content]
+            if migration['file'] in content:
+                continue
+
         if migration["type"] == "sql":
             execute_sql_scripts(con, migration)
         if migration["type"] == "py":
             execute_python_scripts(con, migration)
         print(f"Processed {migration['file']}")
+
+        if os.environ['FLASK_ENV'] == "production":
+            migrated_path = os.path.join(os.getcwd(), "migrated")
+            with open(migrated_path, 'a') as f:
+                f.write(migration['file'])
 
     con.close()
     if os.environ["FLASK_ENV"] != "development":

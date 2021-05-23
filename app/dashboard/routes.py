@@ -53,7 +53,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
             sql.SQL(
                 """SELECT A.uuid, A.title, A.update_date, B.display_name 
                 FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
-                WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;"""),
+                WHERE post_status = %s ORDER BY A.update_date DESC LIMIT 10;"""),
             ['draft']
         )
         raw_drafts = cur.fetchall()
