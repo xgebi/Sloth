@@ -63,9 +63,9 @@ class PostGenerator:
 
         for language in self.languages:
             if language['uuid'] == self.settings["main_language"]['settings_value']:
-                rss_link = F"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/feed.xml\" />"
+                rss_link = f"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/feed.xml\" />"
             else:
-                rss_link = F"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/{language['short_name']}/feed.xml\" />"
+                rss_link = f"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{self.settings['sitename'][language['uuid']]['content']} Feed\" href=\"{self.settings['site_url']['settings_value']}/{language['short_name']}/feed.xml\" />"
             self.hooks.head.append(Hook(content=rss_link, condition=f"language['uuid'] eq '{language['uuid']}'"))
 
     def run(
