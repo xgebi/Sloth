@@ -152,12 +152,12 @@
             <toe:fragment
                     toe:if="data['status'] eq 'published' or data['status'] eq 'scheduled' or data['status'] eq 'protected'">
                 <button id="update-button">Update post</button>
-                <select id="create-lang" toe:if="languages | length eq 0">
+                <select id="create-lang" toe:if="languages | length neq 0">
                     <option value="" selected>---</option>
                     <option toe:for="language in languages" toe:value="language['uuid']"
                             toe:text="language['long_name']"></option>
                 </select>
-                <button id="update-create">Update and Create translation</button>
+                <button toe:if="languages | length neq 0" id="update-create">Update and Create translation</button>
             </toe:fragment>
             <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
             <button id="delete-button">Delete post</button>
