@@ -4,8 +4,14 @@ killall gunicorn
 git fetch
 git pull
 
-rm generation.lock
-rm schedule.lock
+FILE=generation.lock
+if test -f "$FILE"; then
+    rm generation.lock
+fi
+FILE=schedule.lock
+if test -f "$FILE"; then
+    rm schedule.lock
+fi
 
 pipenv shell
 python migration_script.py
