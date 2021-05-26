@@ -6,7 +6,7 @@ import sys
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
-def get_languages(*args, connection, lang_id: str = "", **kwargs) \
+def get_languages(*args, connection, lang_id: str = "", as_list: True, **kwargs) \
         -> Tuple[Dict[str, Any], List[Dict[str, Any]]] or List[Dict[str, Any]]:
     cur = connection.cursor()
     temp_languages = []
@@ -32,11 +32,17 @@ def get_languages(*args, connection, lang_id: str = "", **kwargs) \
         } for lang in temp_languages if lang[0] == lang_id][0]
 
         return current_lang, languages
-    return [{
+    if as_list:
+        return [{
+            "uuid": lang[0],
+            "long_name": lang[1],
+            "short_name": lang[2]
+        } for lang in temp_languages]
+    return {lang[0]: {
         "uuid": lang[0],
         "long_name": lang[1],
         "short_name": lang[2]
-    } for lang in temp_languages]
+    } for lang in temp_languages}
 
 
 def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:

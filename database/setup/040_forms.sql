@@ -17,6 +17,7 @@ CREATE TABLE sloth_form_fields
     uuid varchar(200) NOT NULL,
     name text         NOT NULL,
     form varchar(200),
+    position integer,
 
     PRIMARY KEY (uuid),
     CONSTRAINT form_fkey FOREIGN KEY (form)

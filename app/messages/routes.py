@@ -1,9 +1,10 @@
-from flask import abort, redirect, render_template, make_response, request
+from flask import abort, redirect, render_template, make_response, request,current_app
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
 from psycopg2 import sql
+from uuid import uuid4
 import datetime
 import json
 
@@ -113,6 +114,35 @@ def delete_message(*args, connection, **kwargs):
     except Exception as e:
         print(e)
         response = make_response(json.dumps({"cleaned": False}))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code
+
+
+@messages.route("/api/messages/send", methods=["POST"])
+@authorize_rest(0)
+@db_connection
+def receive_message(*args, connection, **kwargs):
+    if request.origin[request.origin.find("//") + 2: ] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
+        abort(500)
+    if connection is None:
+        abort(500)
+
+    filled = json.loads(request.data)
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""INSERT INTO sloth_messages (uuid, name, email, body, sent_date, status) 
+            VALUES (%s, %s, %s, %s, %s, %s) """),
+            (str(uuid4()), filled["name"], filled["email"], filled["body"], datetime.now(), "unread")
+        )
+        connection.commit()
+        response = make_response(json.dumps({"messageSaved": True}))
+        code = 201
+    except Exception as e:
+        print(e)
+        response = make_response(json.dumps({"messageSaved": False}))
         code = 500
 
     response.headers['Content-Type'] = 'application/json'

@@ -96,8 +96,8 @@ def create_app():  # dev, test, or prod
     from app.post_type import post_type
     app.register_blueprint(post_type)
 
-    from app.api.messages import messages as messages_api
-    app.register_blueprint(messages_api)
+    from app.forms import forms
+    app.register_blueprint(forms)
 
     from app.api.taxonomy import taxonomy as taxonomy_api
     app.register_blueprint(taxonomy_api)
