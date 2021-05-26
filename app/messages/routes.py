@@ -1,10 +1,11 @@
-from flask import abort, redirect, render_template
+from flask import abort, redirect, render_template, make_response, request
 from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
-from app.authorization.authorize import authorize_web
+from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
 from psycopg2 import sql
 import datetime
+import json
 
 from app.messages import messages
 
@@ -91,3 +92,28 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
     }
 
     return render_template("message.html", post_types=post_types_result, permission_level=permission_level, message=message)
+
+
+@messages.route("/api/messages/delete", methods=["POST", "PUT", "DELETE"])
+@authorize_rest(0)
+@db_connection
+def delete_message(*args, connection, **kwargs):
+    if connection is None:
+        abort(500)
+
+    filled = json.loads(request.data)
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("DELETE FROM sloth_messages WHERE uuid = %s"), [filled["message_uuid"]]
+        )
+        connection.commit()
+        response = make_response(json.dumps({"cleaned": False}))
+        code = 204
+    except Exception as e:
+        print(e)
+        response = make_response(json.dumps({"cleaned": False}))
+        code = 500
+
+    response.headers['Content-Type'] = 'application/json'
+    return response, code

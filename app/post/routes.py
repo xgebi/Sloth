@@ -195,8 +195,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
         translatable = []
         if raw_post[18] is not None:
-            # Get original
-            # Get translations except current one
+            # TODO rework this!
             cur.execute(
                 sql.SQL("""SELECT uuid, lang FROM sloth_posts 
                 WHERE (original_lang_entry_uuid=%s AND uuid != %s) OR (uuid = %s)"""),
@@ -212,15 +211,12 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
         translated_languages = []
         for language in languages:
-            addable = True
-            for translation in temp_translations:
-                if translation[1] == language['uuid']:
-                    addable = False
-                    translated_languages.append({
-                        'uuid': translation[0],
-                        'long_name': language['long_name']
-                    })
-            if addable:
+            if language['uuid'] in temp_translations[0]:
+                translated_languages.append({
+                    'uuid': language["uuid"],
+                    'long_name': language['long_name']
+                })
+            else:
                 translatable.append(language)
         cur.execute(
             sql.SQL(
