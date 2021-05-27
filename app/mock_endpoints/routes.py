@@ -63,7 +63,7 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_lang = get_default_language(connection=connection)
-    languages = get_languages(connection=connection)
+    languages = get_languages(connection=connection, as_list=True)
 
     cur = connection.cursor()
     temp_endpoint_result = {}

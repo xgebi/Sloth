@@ -6,7 +6,7 @@ import sys
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
-def get_languages(*args, connection, lang_id: str = "", as_list: True, **kwargs) \
+def get_languages(*args, connection, lang_id: str = "", as_list = True, **kwargs) \
         -> Tuple[Dict[str, Any], List[Dict[str, Any]]] or List[Dict[str, Any]]:
     cur = connection.cursor()
     temp_languages = []
