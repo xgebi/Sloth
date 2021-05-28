@@ -3,5 +3,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "039_alter_analytics_browser_data.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "040_forms.sql"
   }
 ]

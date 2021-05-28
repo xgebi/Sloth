@@ -243,7 +243,6 @@ function updatePostCreate() {
 }
 
 function collectValues() {
-    debugger;
     const post = {};
     post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
     post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
