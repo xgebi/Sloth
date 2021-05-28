@@ -194,30 +194,17 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             temp_thumbnail_info = cur.fetchone()
         current_lang, languages = get_languages(connection=connection, lang_id=raw_post[17])
         translatable = []
-        if raw_post[18] is not None:
-            # TODO rework this!
-            cur.execute(
-                sql.SQL("""SELECT uuid, lang FROM sloth_posts 
-                WHERE (original_lang_entry_uuid=%s AND uuid != %s) OR (uuid = %s)"""),
-                (post_id, post_id, raw_post[18])
-            )
-            temp_translations = cur.fetchall()
-        else:
-            cur.execute(
-                sql.SQL("""SELECT uuid, lang FROM sloth_posts WHERE original_lang_entry_uuid=%s"""),
-                (post_id,)
-            )
-            temp_translations = cur.fetchall()
 
-        translated_languages = []
-        for language in languages:
-            if language['uuid'] in temp_translations[0]:
-                translated_languages.append({
-                    'uuid': language["uuid"],
-                    'long_name': language['long_name']
-                })
-            else:
-                translatable.append(language)
+        if raw_post[18]:
+            translations, translatable = get_translations(
+                connection=connection,
+                post_uuid="",
+                original_entry_uuid=raw_post[18],
+                languages=languages
+            )
+        else:
+            translatable = languages
+            translations = []
         cur.execute(
             sql.SQL(
                 """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
@@ -301,7 +288,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "format_name": raw_post[21],
         "meta_description": raw_post[22],
         "social_description": raw_post[23],
-        "libraries": post_libs
+        "libraries": post_libs,
+        "original_post": raw_post[18]
     }
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -318,7 +306,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
             "default_lang": default_lang,
             "languages": translatable,
-            "translations": translated_languages,
+            "translations": translations,
             "current_lang_id": data["lang"],
             "post_formats": post_formats,
             "libs": libs,

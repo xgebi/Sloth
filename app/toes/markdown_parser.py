@@ -382,7 +382,7 @@ class MarkdownParser:
             first_line_end = text[parsing_info.i + 3:].find("\n") + (parsing_info.i + 3)
             lang = text[parsing_info.i + 3: first_line_end]
             if j != -1:
-                replacement = f"<pre class='language-{lang}'><code class='language-{lang}'>{text[first_line_end + 1:j]}</code></pre>"
+                replacement = f"<pre><code class='language-{lang.lower()}'>{text[first_line_end + 1:j]}</code></pre>"
                 if parsing_info.i == 0:
                     text = replacement + text[j + 3:]
                 else:
