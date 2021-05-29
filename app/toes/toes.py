@@ -688,6 +688,8 @@ class Toe:
             return None
         value = self.current_scope.find_variable(actions[0].strip())
         for i in range(1, len(actions)):
+            if value is None:
+                return ""
             if actions[i].strip() == 'length':
                 value = len(value)
             elif actions[i].strip() == 'json':

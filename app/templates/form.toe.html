@@ -6,28 +6,33 @@
 <main>
     <h1>Form</h1>
     <div>
-        <a toe:href="'/forms/' + new">Create new form</a>
+        <label for="form-name">Name:</label>
+        <input id="form-name" name="form-name">
     </div>
-    <table>
-        <thead>
-        <tr>
-            <th>Name</th>
-            <th>Language</th>
-        </tr>
-        </thead>
-        <tbody>
-        <toe:fragment toe:if="forms | length gt 0">
-            <tr toe:for="form in forms">
-                <td class="display-name" toe:text="form['name']"></td>
-                <td class="slug" toe:text="form['lang_name']"></td>
-                <td class="action">
-                    <button class="edit-button"  toe:data-uuid="form['uuid']">Edit
-                    </button>
-                </td>
-            </tr>
-        </toe:fragment>
-        </tbody>
-    </table>
+
+    <template id="form-item">
+        <label data-for="item-type"></label>
+        <select data-id="item-type">
+            <option value="text">One line text</option>
+            <option value="textarea">Text</option>
+            <option value="tel">Phone</option>
+            <option value="time">Time</option>
+            <option value="date">Date</option>
+            <option value="email">Email</option>
+            <option value="select">Select</option>
+            <option value="note">Note</option>
+            <option value="submit">Submit</option>
+        </select>
+        <label data-for="is-required">Is required <input type="checkbox" name="is-required" data-id="is-required" /></label>
+    </template>
+
+    <template id="option-item">
+
+    </template>
 </main>
+<script toe:inline-js>
+    const formFields = JSON.parse('<( form_fields )>');
+</script>
+<script src="/static/js/forms.js"></script>
 </body>
 </html>

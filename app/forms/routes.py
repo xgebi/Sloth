@@ -76,6 +76,22 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
 
         cur.execute(
             sql.SQL(
+                """SELECT uuid, name, slug, lang
+                FROM sloth_forms WHERE uuid = %s;"""),
+            (form_id,)
+        )
+        raw_form = cur.fetchone()
+        if len(raw_form) == 0:
+            is_new = True
+            form_language = ""
+            form_name = ""
+        else:
+            is_new = False
+            form_language = raw_form[3]
+            form_name = raw_form[1]
+
+        cur.execute(
+            sql.SQL(
                 """SELECT uuid, name, position
                 FROM sloth_form_fields WHERE form = %s;"""),
             (form_id, )
@@ -105,7 +121,10 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
             "permission_level": permission_level,
             "default_lang": default_language,
             "form_id": form_id,
-            "fields": fields
+            "fields": fields,
+            "form_name": form_name,
+            "form_language": form_language,
+            "new": is_new
         },
         hooks=Hooks()
     )
