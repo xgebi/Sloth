@@ -175,6 +175,12 @@ p.dangerzone {
     font-weight: 700;
 }
 
+.form-fields {
+    margin: 1rem;
+    padding: 1rem;
+    border: 1px solid black;
+}
+
 /* Sloth Editor */
 .sloth-editor {
     width: 80ch;

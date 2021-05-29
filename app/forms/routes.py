@@ -70,7 +70,7 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
-
+    languages = get_languages(connection=connection)
     try:
         cur = connection.cursor()
 
@@ -81,7 +81,7 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
             (form_id,)
         )
         raw_form = cur.fetchone()
-        if len(raw_form) == 0:
+        if raw_form is None:
             is_new = True
             form_language = ""
             form_name = ""
@@ -116,7 +116,7 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="form.toe.html",
         data={
-            "title": "Libraries",
+            "title": "Create form" if is_new else "Edit form",
             "post_types": post_types_result,
             "permission_level": permission_level,
             "default_lang": default_language,
@@ -124,7 +124,8 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
             "fields": fields,
             "form_name": form_name,
             "form_language": form_language,
-            "new": is_new
+            "new": is_new,
+            "languages": languages
         },
         hooks=Hooks()
     )
