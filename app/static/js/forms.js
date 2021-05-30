@@ -9,62 +9,87 @@ function addFormItem(formField) {
     if (typeof(formField.preventDefault)) {
         formField = {
             selectValue: "",
-            isRequired: false
+            isRequired: false,
+            label: "",
+            value: "",
+            options: []
         };
     }
     const wrapper = document.querySelector("#form-fields");
-    wrapper.setAttribute("class", wrapper.getAttribute("id"));
-    wrapper.removeAttribute("id");
     const fieldTemplate = document.querySelector("#form-item");
 
     const fieldClone = fieldTemplate.content.cloneNode(true);
     const select = fieldClone.querySelector("select");
     const selectLabel = fieldClone.querySelector("#item-type-label");
-    const selectId = Math.random().toString(16).slice(2);
+    const fieldId = Math.random().toString(16).slice(2);
 
-    selectLabel.setAttribute('for', `item-type-${selectId}`);
-    selectLabel.setAttribute('id', `item-type-label-${selectId}`);
-    select.setAttribute("id", `item-type-${selectId}`);
-    select.addEventListener('change', typeSelected);
+    selectLabel.setAttribute('for', `item-type-${fieldId}`);
+    selectLabel.setAttribute('id', `item-type-label-${fieldId}`);
+    select.setAttribute("id", `item-type-${fieldId}`);
+    function processSelect(event) {
+        const settingsWrapper = event.target.parentNode.parentNode.querySelector(".form-item-settings");
+        while (settingsWrapper.lastChild) {
+            settingsWrapper.removeChild(settingsWrapper.lastChild);
+        }
+        console.log(settingsWrapper);
+
+        const settingsTemplate = document.querySelector("#general-setting");
+        const settingsClone = settingsTemplate.content.cloneNode(true);
+
+        const labelLabel = settingsClone.querySelector(".label label");
+        labelLabel.setAttribute("for", `label-input-${fieldId}`);
+        const labelInput = settingsClone.querySelector(".label input");
+        labelInput.setAttribute("name", `label-input-${fieldId}`);
+        labelInput.setAttribute("id", `label-input-${fieldId}`);
+
+        const inputLabel = settingsClone.querySelector(".input label");
+        inputLabel.setAttribute("name", `label-input-${fieldId}`);
+        const inputInput = settingsClone.querySelector(".input input");
+        inputInput.setAttribute("name", `label-input-${fieldId}`);
+        inputInput.setAttribute("id", `label-input-${fieldId}`);
+        debugger;
+        if (event.target.value === "select") {
+            settingsClone.querySelector(".add-option").classList.remove("hidden");
+            settingsClone.querySelector(".options-wrapper").classList.remove("hidden");
+        } else {
+            settingsClone.querySelector(".add-option").classList.add("hidden");
+            settingsClone.querySelector(".options-wrapper").classList.add("hidden");
+        }
+
+        settingsWrapper.appendChild(settingsClone);
+        debugger;
+    };
+    select.addEventListener('change', processSelect);
 
     for (const child of select.childNodes) {
         if (child.value === formField.selectValue) {
             child.setAttribute("selected","");
         }
     }
-    const isRequiredId = Math.random().toString(16).slice(2);
+    if (formField.selectValue === "select") {
+        for (const option in formField?.options) {
+
+        }
+    }
     const isRequired = fieldClone.querySelector("#is-required");
     const isRequiredLabel = fieldClone.querySelector("#is-required-label");
     if (formField.isRequired) {
         isRequired.setAttribute("checked","");
     }
-    isRequiredLabel.setAttribute('for', `is-required-${isRequiredId}`);
+    isRequiredLabel.setAttribute('for', `is-required-${fieldId}`);
     isRequiredLabel.removeAttribute('id');
-    isRequired.setAttribute("id", `is-required-${isRequiredId}`);
-    isRequired.setAttribute("name", `is-required-${isRequiredId}`);
+    isRequired.setAttribute("id", `is-required-${fieldId}`);
+    isRequired.setAttribute("name", `is-required-${fieldId}`);
+
+    const deleteButton = fieldClone.querySelector("button.delete");
+    deleteButton.addEventListener('click', (event) => {
+        event.target.parentNode.parentNode.removeChild(event.target.parentNode);
+    })
 
     wrapper.appendChild(fieldClone);
 }
 
-function typeSelected(event) {
-    const settingsWrapper = event.target.parentNode.parentNode.querySelector(".form-item-settings");
-    console.log(settingsWrapper);
-}
-
 /*
-    <template id="general-setting">
-        <div>
-            <div>
-                <label for="label"></label>
-                <input type="text" data-name="label" id="label" />
-            </div>
-            <div>
-                <label for="name"></label>
-                <input type="text" data-name="name" id="name" />
-            </div>
-        </div>
-    </template>
-
     <template id="option-item">
         <div>
             <label data-for="option"></label>

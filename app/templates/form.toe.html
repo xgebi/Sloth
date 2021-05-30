@@ -26,44 +26,55 @@
     </div>
 
     <template id="form-item">
-        <div>
-            <label id="item-type-label" data-for="item-type">Type:</label>
-            <select data-id="item-type">
-                <option value="">---</option>
-                <option value="text">One line text</option>
-                <option value="textarea">Text</option>
-                <option value="tel">Phone</option>
-                <option value="time">Time</option>
-                <option value="date">Date</option>
-                <option value="email">Email</option>
-                <option value="select">Select</option>
-                <option value="note">Note</option>
-                <option value="submit">Submit</option>
-            </select>
+        <div class="form-field">
+            <div>
+                <label id="item-type-label">Type:</label>
+                <select data-id="item-type">
+                    <option value="">---</option>
+                    <option value="text">One line text</option>
+                    <option value="textarea">Text</option>
+                    <option value="tel">Phone</option>
+                    <option value="time">Time</option>
+                    <option value="date">Date</option>
+                    <option value="email">Email</option>
+                    <option value="select">Select</option>
+                    <option value="note">Note</option>
+                    <option value="submit">Submit</option>
+                </select>
+            </div>
+            <div>
+                <label id="is-required-label">Is required <input type="checkbox" name="is-required" id="is-required" /></label>
+            </div>
+            <div class="form-item-settings"></div>
+            <button class="delete">Delete</button>
         </div>
-        <div>
-            <label id="is-required-label" data-for="is-required">Is required <input type="checkbox" name="is-required" id="is-required" /></label>
-        </div>
-        <div class="form-item-settings"></div>
     </template>
 
     <template id="general-setting">
         <div>
-            <div>
-                <label for="label"></label>
+            <div class="label">
+                <label for="label">Label:</label>
                 <input type="text" data-name="label" id="label" />
             </div>
-            <div>
-                <label for="name"></label>
+            <div class="input">
+                <label for="name">Name:</label>
                 <input type="text" data-name="name" id="name" />
             </div>
+            <button class="add-option hidden">Add option</button>
+            <div class="options-wrapper hidden"></div>
         </div>
     </template>
 
     <template id="option-item">
         <div>
-            <label data-for="option"></label>
-            <input type="text" data-id="option" data-name="option">
+            <div class="option-text">
+                <label>Option text</label>
+                <input type="text">
+            </div>
+            <div class="option-value">
+                <label>Option value</label>
+                <input type="text">
+            </div>
         </div>
     </template>
 </main>
