@@ -8,5 +8,20 @@
     "type": "sql",
     "folder": "setup",
     "file": "040_forms.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "041_additional_form_settings.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "042_more_sloth_forms_settings.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "043_sloth_messages_upgrade.sql"
   }
 ]
