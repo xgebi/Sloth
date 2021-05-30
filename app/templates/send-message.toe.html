@@ -10,6 +10,7 @@
         function submitForm(event) {
             event.preventDefault();
             const message = {}
+            message["formName"] = event.target.dataset["form"];
             if (event.target.querySelector(".spam-catcher").value.length !== 0) {
                     return;
                 }

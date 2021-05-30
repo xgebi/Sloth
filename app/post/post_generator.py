@@ -1001,21 +1001,24 @@ class PostGenerator:
         for form_name in form_names:
             form_key = form_name[len("<(form"):-2].strip()
             # build form
-            form_text = "<form class='sloth-form'>"
+            form_text = f"<form class='sloth-form' data-form=\"{name[len('<(form'):-2].strip()}\">"
             for field in forms[form_key]:
                 form_text += f"<div><label for=\"{field['name']}\">"
+                is_required = ""
+                if field['is_required']:
+                    is_required = "required"
                 if field['type'] == "submit":
                     form_text += f"<input type='submit' value='{field['label']}' />"
                 elif field['type'] == "checkbox":
-                    form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' /> {field['label']}</label>"
+                    form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' {is_required} /> {field['label']}</label>"
                 else:
                     form_text += f"{field['label']}</label><br />"
                     if field['type'] == 'textarea':
-                        form_text += f"<textarea name='{field['name']}' id='{field['name']}'></textarea>"
+                        form_text += f"<textarea name='{field['name']}' id='{field['name']}' {is_required}></textarea>"
                     elif field['type'] == 'select':
-                        form_text += f"<select name='{field['name']}' id='{field['name']}'></select>"
+                        form_text += f"<select name='{field['name']}' id='{field['name']}' {is_required}></select>"
                     else:
-                        form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' />"
+                        form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' {is_required} />"
                 form_text += "</div>"
             form_text += f"<input type='text' style='display: none' name='spam-catcher' class='spam-catcher' />"
             form_text += "</form>"

@@ -163,6 +163,14 @@ def receive_message(*args, connection, **kwargs):
             VALUES (%s, %s, %s);"""),
             (msg_id, time() * 1000, "unread")
         )
+        cur.execute(
+            sql.SQL("""SELECT sff.name FROM sloth_form_fields AS sff 
+            INNER JOIN sloth_forms sf on sf.uuid = sff.form WHERE sf.name = %s AND sff.is_required = TRUE;"""),
+            (filled["formName"], )
+        )
+        for required in cur.fetchall():
+            if required in filled and len(filled[required]) == 0:
+                raise Exception("missing required fields")
         for key in filled.keys():
             cur.execute(
                 sql.SQL("""INSERT INTO sloth_message_fields (uuid, message, name, value) 

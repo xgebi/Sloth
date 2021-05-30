@@ -21,8 +21,7 @@
                 <td class="display-name" toe:text="form['name']"></td>
                 <td class="slug" toe:text="form['lang_name']"></td>
                 <td class="action">
-                    <button class="edit-button"  toe:data-uuid="form['uuid']">Edit
-                    </button>
+                    <a toe:href="'/forms/' + form['uuid']">Edit</a>
                 </td>
             </tr>
         </toe:fragment>
