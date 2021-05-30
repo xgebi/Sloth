@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     document.querySelector("#add-field").addEventListener('click', addFormItem);
     for (const formField of formFields) {
         addFormItem(formField)
@@ -68,7 +68,7 @@ function addFormItem(formField) {
         }
 
         settingsWrapper.appendChild(settingsClone);
-    };
+    }
     select.addEventListener('change', processSelectEvent);
 
     for (const child of select.options) {
@@ -147,7 +147,7 @@ function saveForm() {
             return response.json()
         }
         throw `${response.status} ${response.statusText}`;
-    }).then(data => {
+    }).then(() => {
 
     }).catch(err => {
         console.log(err)

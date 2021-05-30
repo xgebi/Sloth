@@ -780,13 +780,13 @@ class PostGenerator:
             cur.execute(
                 sql.SQL("""SELECT name, uuid FROM sloth_menus""")
             )
-            menus = {menu[0]: {"items": [], "uuid": menu[1], "name": [0]} for menu in cur.fetchall()}
+            menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
             for menu in menus.keys():
                 cur.execute(
                     sql.SQL("""SELECT title, url FROM sloth_menu_items WHERE menu = %s"""),
                     [menus[menu]["uuid"]]
                 )
-                menus[menu]["items"] = cur.fetchall()
+                menus[menu]["items"] = [{ "title": item[0], "url": item[1]} for item in cur.fetchall()]
         except Exception as e:
             print(f"PostGenerator.get_menus {e}")
             traceback.print_exc()

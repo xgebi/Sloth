@@ -464,10 +464,10 @@ class Toe:
         iterable_item = self.current_scope.find_variable(items[1])
         if iterable_item is None:
             return None
-        new_element = copy.deepcopy(element)
-        new_element.remove_attribute('toe:for')
 
         for thing in iterable_item:
+            new_element = copy.deepcopy(element)
+            new_element.remove_attribute('toe:for')
             # local scope creation
             local_scope = VariableScope({}, self.current_scope)
             self.current_scope = local_scope
@@ -763,7 +763,7 @@ class VariableScope:
         else:
             names = self.get_names(variable_name=variable_name, passed_names=passed_names)
 
-        if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope) is not None:
+        if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope):
             if len(names) > 0:
                 if names[0] in self.variables:
                     res = self.variables.get(names[0])

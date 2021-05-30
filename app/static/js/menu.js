@@ -155,7 +155,7 @@ function saveMenu() {
         });
     }
 
-    fetch("/settings/themes/menu/save", {
+    fetch("/api/settings/themes/menu/save", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
