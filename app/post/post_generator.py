@@ -1004,7 +1004,9 @@ class PostGenerator:
             form_text = "<form class='sloth-form'>"
             for field in forms[form_key]:
                 form_text += f"<div><label for=\"{field['name']}\">"
-                if field['type'] == "checkbox":
+                if field['type'] == "submit":
+                    form_text += f"<input type='submit' value='{field['label']}' />"
+                elif field['type'] == "checkbox":
                     form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' /> {field['label']}</label>"
                 else:
                     form_text += f"{field['label']}</label><br />"
@@ -1015,6 +1017,7 @@ class PostGenerator:
                     else:
                         form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' />"
                 form_text += "</div>"
+            form_text += f"<input type='text' style='display: none' name='spam-catcher' class='spam-catcher' />"
             form_text += "</form>"
             # add form to the text
             text = f"{text[:text.find(form_name)]} {form_text} {text[text.find(form_name) + len(form_name):]}"
