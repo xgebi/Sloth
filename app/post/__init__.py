@@ -32,6 +32,7 @@ def get_translations(*args, connection, post_uuid, original_entry_uuid, language
                     'lang_uuid': language['uuid'],
                     'post_uuid': translations[language["uuid"]]["uuid"],
                     'long_name': language['long_name'],
+                    'short_name': language['short_name'],
                     'slug': translations[language["uuid"]]["slug"]
                 })
             else:

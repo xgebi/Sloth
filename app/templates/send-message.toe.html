@@ -1,0 +1,46 @@
+<toe:fragment>
+    <script toe:inline-js>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const forms = document.querySelectorAll("form.sloth-form");
+            for (const form of forms) {
+                form.addEventListener('submit', submitForm);
+            }
+        });
+
+        function submitForm(event) {
+            event.preventDefault();
+            const message = {}
+            for (const child of event.target.children) {
+                for (const formChild of child.children) {
+                    if (formChild.tagName.toLowerCase() === "checkbox") {
+                        message[formChild.getAttribute("name")] = formChild.checked;
+                    } else if ((formChild.tagName.toLowerCase() === "input") || (formChild.tagName.toLowerCase() === "textarea")
+                        || (formChild.tagName.toLowerCase() === "select")) {
+                        message[formChild.getAttribute("name")] = formChild.value;
+                    }
+                }
+            }
+            fetch('<(sloth_api_url)>/api/messages/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            }).then(response => {
+                return response.json()
+            }).then(data => {
+                const parent = event.target.parentNode;
+                if (data.messageSaved) {
+                    parent.removeChild(event.target)
+                    const p = document.createElement('p');
+                    p.textContent = "Yaay!";
+                    parent.append(p);
+                } else {
+                    const p = document.createElement('p');
+                    p.textContent = "Nooooo!";
+                    parent.append(p);
+                }
+            })
+        }
+    </script>
+</toe:fragment>

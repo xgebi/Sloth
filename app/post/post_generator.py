@@ -11,6 +11,8 @@ from xml.dom import minidom
 import time
 import math
 import traceback
+import re
+import copy
 
 from app.post import get_translations
 from app.utilities import get_related_posts
@@ -590,9 +592,17 @@ class PostGenerator:
         translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
+            excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(copy.deepcopy(post["excerpt"]))
+            content_with_forms, add_content_form_hooks = self.get_forms_from_text(copy.deepcopy(post["content"]))
+            if add_excerpt_form_hooks or add_content_form_hooks:
+                post["has_form"] = True
+                with open(Path(__file__).parent / "../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
+                    self.hooks.footer.append(Hook(content=fi.read(), condition="post['has_form']"))
+            else:
+                post["has_form"] = False
             md_parser = MarkdownParser()
-            post["excerpt"] = md_parser.to_html_string(post["excerpt"])
-            post["content"] = md_parser.to_html_string(post["content"])
+            post["excerpt"] = md_parser.to_html_string(excerpt_with_forms)
+            post["content"] = md_parser.to_html_string(content_with_forms)
 
             rendered = render_toe_from_string(
                 template=template,
@@ -687,8 +697,8 @@ class PostGenerator:
             return result
 
         for translation in translations:
-            if post['lang'] != translation['uuid']:
-                if translation["uuid"] != self.settings["main_language"]['settings_value']:
+            if post['lang'] != translation['lang_uuid']:
+                if translation["lang_uuid"] != self.settings["main_language"]['settings_value']:
                     result.append({
                         "language": translation['long_name'],
                         "link": f"/{translation['short_name']}/{post_type['slug']}/{translation['slug']}"
@@ -796,9 +806,11 @@ class PostGenerator:
             )
             raw_post = cur.fetchone()
             post["title"] = raw_post[0]
+            excerpt_forms = self.get_forms_from_text(copy.deepcopy(raw_post[1]))
+            content_forms = self.get_forms_from_text(copy.deepcopy(raw_post[2]))
             md_parser = MarkdownParser()
-            post["excerpt"] = md_parser.to_html_string(raw_post[1])
-            post["content"] = md_parser.to_html_string(raw_post[2])
+            post["excerpt"] = md_parser.to_html_string(post["excerpt"], hooks=self.hooks, forms=excerpt_forms)
+            post["content"] = md_parser.to_html_string(post["content"], hooks=self.hooks, forms=content_forms)
             if raw_post[3] is not None:
                 cur.execute(
                     sql.SQL("""SELECT sm.file_path, sma.alt 
@@ -950,6 +962,64 @@ class PostGenerator:
 
         return languages
 
+    def remove_form_code(self, text: str) -> str:
+        form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
+        for name in form_names:
+            text = text[:text.find(name)] + text[text.find(name) + len(name):]
+        return text
+
+    def get_forms_from_text(self, text: str, remove_only: bool = False) -> str:
+        form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
+        # get forms
+        forms = {}
+        try:
+            cur = self.connection.cursor()
+            for name in form_names:
+                forms[name[len("<(form"):-2].strip()] = []
+                cur.execute(
+                    sql.SQL("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
+                    sff.is_required, sff.label FROM sloth_form_fields AS sff
+                    INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
+                    WHERE sf.name = %s ORDER BY sff.position ASC;"""),
+                    (name[len("<(form"):-2].strip(), )
+                )
+                raw_rows = cur.fetchall()
+                for row in raw_rows:
+                    forms[name[len("<(form"):-2].strip()].append({
+                        "uuid": row[0],
+                        "name": row[1],
+                        "position": row[2],
+                        "is_childless": row[3],
+                        "type": row[4],
+                        "is_required": row[5],
+                        "label": row[6],
+                    })
+        except Exception as e:
+            print(traceback.format_exc())
+            return
+
+        for form_name in form_names:
+            form_key = form_name[len("<(form"):-2].strip()
+            # build form
+            form_text = "<form class='sloth-form'>"
+            for field in forms[form_key]:
+                form_text += f"<div><label for=\"{field['name']}\">"
+                if field['type'] == "checkbox":
+                    form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' /> {field['label']}</label>"
+                else:
+                    form_text += f"{field['label']}</label><br />"
+                    if field['type'] == 'textarea':
+                        form_text += f"<textarea name='{field['name']}' id='{field['name']}></textarea>"
+                    elif field['type'] == 'select':
+                        form_text += f"<select name='{field['name']}' id='{field['name']}></select>"
+                    else:
+                        form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' />"
+                form_text += "</div>"
+            form_text += "</form>"
+            # add form to the text
+            text = f"{text[:text.find(form_name)]} {form_text} {text[text.find(form_name) + len(form_name):]}"
+        return text, len(form_names) > 0
+
     # delete post files
     def delete_post_files(self, *args, post_type, post, language, **kwargs):
         post_type_slug = post_type
@@ -1004,16 +1074,20 @@ class PostGenerator:
                 )
                 raw_items = cur.fetchall()
                 md_parser = MarkdownParser()
-                posts[post_type['slug']] = [{
-                    "uuid": item[0],
-                    "title": item[1],
-                    "slug": item[2],
-                    "excerpt": md_parser.to_html_string(item[3]),
-                    "publish_date": item[4],
-                    "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
-                        "%Y-%m-%d %H:%M"),
-                    "post_type_slug": post_type['slug']
-                } for item in raw_items]
+                posts[post_type['slug']] = []
+
+                for item in raw_items:
+                    excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
+                    posts[post_type['slug']].append({
+                        "uuid": item[0],
+                        "title": item[1],
+                        "slug": item[2],
+                        "excerpt": md_parser.to_html_string(excerpt),
+                        "publish_date": item[4],
+                        "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
+                            "%Y-%m-%d %H:%M"),
+                        "post_type_slug": post_type['slug']
+                    })
             cur.close()
         except Exception as e:
             print(390)

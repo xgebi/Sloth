@@ -76,7 +76,7 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
 
         cur.execute(
             sql.SQL(
-                """SELECT uuid, name, slug, lang
+                """SELECT uuid, name, lang
                 FROM sloth_forms WHERE uuid = %s;"""),
             (form_id,)
         )
@@ -87,12 +87,12 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
             form_name = ""
         else:
             is_new = False
-            form_language = raw_form[3]
+            form_language = raw_form[2]
             form_name = raw_form[1]
 
         cur.execute(
             sql.SQL(
-                """SELECT uuid, name, position
+                """SELECT uuid, name, position, is_childless, type, is_required, label
                 FROM sloth_form_fields WHERE form = %s;"""),
             (form_id, )
         )
@@ -101,6 +101,9 @@ def show_form(*args, permission_level, connection, form_id: str, **kwargs):
             "uuid": field[0],
             "name": field[1],
             "position": field[2],
+            "type": field[4],
+            "is_required": field[5],
+            "label": field[6]
         } for field in cur.fetchall()]
         fields.sort(key=lambda form: form.get("position"))
 
@@ -139,7 +142,7 @@ def save_form(*args, permission_level, connection, form_id: str, **kwargs):
     if connection is None:
         abort(500)
 
-    fields = json.loads(request.data)
+    filled = json.loads(request.data)
 
     try:
         cur = connection.cursor()
@@ -153,22 +156,26 @@ def save_form(*args, permission_level, connection, form_id: str, **kwargs):
         )
         if len(cur.fetchall()) == 0:
             cur.execute(
-                sql.SQL("""INSERT INTO sloth_forms (uuid, name, slug, lang) 
-                                        VALUES (%s, %s, %s, %s);"""),
-                (form_id, fields["name"], fields["slug"], fields["lang"])
+                sql.SQL("""INSERT INTO sloth_forms (uuid, name, lang) 
+                                        VALUES (%s, %s, %s);"""),
+                (form_id, filled["formName"], filled["language"])
             )
-            connection.commit()
-        for field in fields:
+        else:
+            sql.SQL("""UPDATE sloth_forms SET name = %s, lang = %s WHERE uuid = %s;"""),
+            (filled["formName"], filled["language"], form_id)
+        connection.commit()
+        for field in filled["fields"]:
             cur.execute(
-                sql.SQL("""INSERT INTO sloth_form_fields (uuid, name, form, position) 
-                            VALUES (%s, %s, %s, %s);"""),
-                (field["uuid"], field["name"], form_id, field["position"])
+                sql.SQL("""INSERT INTO sloth_form_fields (uuid, name, form, position, type, is_required, label) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s);"""),
+                (str(uuid4()), field["name"], form_id, int(field["position"]), field["type"], bool(field["isRequired"]),
+                 field["label"])
             )
         connection.commit()
-        response = make_response(json.dumps({"deleted": form_id}))
+        response = make_response(json.dumps({"saved": form_id}))
         code = 204
     except Exception as e:
-        response = make_response(json.dumps({"notDeleted": form_id}))
+        response = make_response(json.dumps({"notSaved": form_id}))
         code = 500
 
     cur.close()

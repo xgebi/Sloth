@@ -4,7 +4,6 @@ import math
 import json
 from app.toes.hooks import Hooks
 
-
 class ListInfo:
     indent = 2
 
@@ -31,17 +30,18 @@ class ParsingInfo:
 
 
 class MarkdownParser:
-    def __init__(self, *args, path=None, forms: Dict = None, **kwargs):
-        if forms is not None:
-            self.forms = forms
+    def __init__(self, *args, path=None, **kwargs):
         if path:
             with open(path, mode="r", encoding="utf-8") as text_file:
                 self.text = text_file.read()
         else:
             self.text = ""
-        self.hooks = Hooks()
 
-    def to_html_string(self, text: str = "", footnote: bool = False) -> str:
+    def to_html_string(self, text: str = "", footnote: bool = False, forms: Dict = None, hooks: Hooks = None) -> str:
+        if forms is not None:
+            self.forms = forms
+        if hooks is not None:
+            self.hooks = hooks
         # refactoring candidate
         if text:
             self.text = text

@@ -60,7 +60,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
         cur.execute(
             sql.SQL(
-                """SELECT uuid, name, sent_date, status 
+                """SELECT uuid, sent_date, status 
                 FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
         )
         raw_messages = cur.fetchall()
@@ -108,9 +108,8 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
     for msg in raw_messages:
         messages.append({
             "uuid": msg[0],
-            "name": msg[1],
-            "sent_date": datetime.datetime.fromtimestamp(float(msg[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-            "status": msg[3]
+            "sent_date": datetime.datetime.fromtimestamp(float(msg[1]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+            "status": msg[2]
         })
 
     return render_toe_from_path(

@@ -5,8 +5,10 @@ from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
 from psycopg2 import sql
 from uuid import uuid4
+from time import time
 import datetime
 import json
+from flask_cors import cross_origin
 
 from app.messages import messages
 
@@ -71,7 +73,7 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
     raw_items = []
     try:
         cur.execute(
-            sql.SQL("SELECT name, sent_date, status, body, email FROM sloth_messages WHERE uuid = %s"), [msg]
+            sql.SQL("SELECT sent_date, status FROM sloth_messages WHERE uuid = %s"), [msg]
         )
         raw_message = cur.fetchone()
         if len(raw_message) > 0:
@@ -85,11 +87,8 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
     connection.close()
 
     message = {
-        "name": raw_message[0].strip(),
-        "sent_date": datetime.datetime.fromtimestamp(float(raw_message[1])/1000.0).strftime("%Y-%m-%d"),
-        "status": raw_message[2].strip(),
-        "body": raw_message[3].strip(),
-        "email": raw_message[4].strip()
+        "sent_date": datetime.datetime.fromtimestamp(float(raw_message[0])/1000.0).strftime("%Y-%m-%d"),
+        "status": raw_message[1].strip(),
     }
 
     return render_template("message.html", post_types=post_types_result, permission_level=permission_level, message=message)
@@ -121,10 +120,10 @@ def delete_message(*args, connection, **kwargs):
 
 
 @messages.route("/api/messages/send", methods=["POST"])
-@authorize_rest(0)
+@cross_origin()
 @db_connection
 def receive_message(*args, connection, **kwargs):
-    if request.origin[request.origin.find("//") + 2: ] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
+    if request.origin[request.origin.find("//") + 2:] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
         abort(500)
     if connection is None:
         abort(500)
@@ -132,11 +131,18 @@ def receive_message(*args, connection, **kwargs):
     filled = json.loads(request.data)
     cur = connection.cursor()
     try:
+        msg_id = str(uuid4())
         cur.execute(
-            sql.SQL("""INSERT INTO sloth_messages (uuid, name, email, body, sent_date, status) 
-            VALUES (%s, %s, %s, %s, %s, %s) """),
-            (str(uuid4()), filled["name"], filled["email"], filled["body"], datetime.now(), "unread")
+            sql.SQL("""INSERT INTO sloth_messages (uuid, sent_date, status) 
+            VALUES (%s, %s, %s);"""),
+            (msg_id, time(), "unread")
         )
+        for key in filled.keys():
+            cur.execute(
+                sql.SQL("""INSERT INTO sloth_message_fields (uuid, message, name, value) 
+                        VALUES (%s, %s, %s, %s);"""),
+                (str(uuid4()), msg_id, key, filled[key])
+            )
         connection.commit()
         response = make_response(json.dumps({"messageSaved": True}))
         code = 201
