@@ -1009,9 +1009,9 @@ class PostGenerator:
                 else:
                     form_text += f"{field['label']}</label><br />"
                     if field['type'] == 'textarea':
-                        form_text += f"<textarea name='{field['name']}' id='{field['name']}></textarea>"
+                        form_text += f"<textarea name='{field['name']}' id='{field['name']}'></textarea>"
                     elif field['type'] == 'select':
-                        form_text += f"<select name='{field['name']}' id='{field['name']}></select>"
+                        form_text += f"<select name='{field['name']}' id='{field['name']}'></select>"
                     else:
                         form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' />"
                 form_text += "</div>"
