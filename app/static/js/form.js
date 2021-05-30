@@ -10,7 +10,7 @@ function addFormItem(formField) {
     if (typeof(formField.preventDefault) === "function") {
         formField = {
             selectValue: "",
-            isRequired: false,
+            is_required: false,
             label: "",
             name: "",
             options: []
@@ -85,8 +85,8 @@ function addFormItem(formField) {
     }
     const isRequired = fieldClone.querySelector("#is-required");
     const isRequiredLabel = fieldClone.querySelector("#is-required-label");
-    if (formField.isRequired) {
-        isRequired.setAttribute("checked","");
+    if (formField.is_required) {
+        isRequired.setAttribute("checked","checked");
     }
     isRequiredLabel.setAttribute('for', `is-required-${fieldId}`);
     isRequiredLabel.removeAttribute('id');
