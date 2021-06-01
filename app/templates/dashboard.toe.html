@@ -32,8 +32,7 @@
     <section>
         <h2>Messages</h2>
         <article toe:for="msg in messages">
-            <h3><a toe:href="'/messages/'+ msg['uuid']" toe:text="'From ' + msg['name']"></a></h3>
-            <div toe:text="'Sent: ' + msg['sent_date']"></div>
+            <h3><a toe:href="'/messages/'+ msg['uuid']" toe:text="'Message from ' + msg['sent_date']"></a></h3>
         </article>
     </section>
 </main>

@@ -12,15 +12,17 @@
             const message = {}
             message["formName"] = event.target.dataset["form"];
             if (event.target.querySelector(".spam-catcher").value.length !== 0) {
-                    return;
-                }
+                return;
+            }
             for (const child of event.target.children) {
                 for (const formChild of child.children) {
                     if (formChild.tagName.toLowerCase() === "checkbox") {
                         message[formChild.getAttribute("name")] = formChild.checked;
                     } else if ((formChild.tagName.toLowerCase() === "input") || (formChild.tagName.toLowerCase() === "textarea")
                         || (formChild.tagName.toLowerCase() === "select")) {
-                        message[formChild.getAttribute("name")] = formChild.value;
+                        if (formChild.getAttribute("type").toLowerCase() !== "submit") {
+                            message[formChild.getAttribute("name")] = formChild.value;
+                        }
                     }
                 }
             }

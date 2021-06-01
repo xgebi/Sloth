@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>List of messages</h1>
+    <section>
+        <table>
+            <thead>
+            <tr>
+                <th>Message</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr toe:for="message in messages">
+                    <td><a toe:href="'/messages/' + message['uuid']" toe:text="'Message from ' + message['sent_date']"></a></td>
+                    <td toe:text="message['status']"></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>
