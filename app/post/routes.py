@@ -347,9 +347,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
     cur = connection.cursor()
     media = []
-    temp_post_statuses = []
     post_type_name = ""
-    raw_all_categories = []
     try:
 
         cur.execute(
@@ -366,11 +364,11 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         )
         temp_post_statuses = cur.fetchall()
         cur.execute(
-            sql.SQL(
-                "SELECT uuid, display_name FROM sloth_taxonomy WHERE taxonomy_type = 'category' AND post_type = %s;"),
-            [post_type]
+            sql.SQL("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
+                                        WHERE post_type = %s AND lang = %s"""),
+            (post_type, lang_id)
         )
-        raw_all_categories = cur.fetchall()
+        raw_all_taxonomies = cur.fetchall()
         current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
         default_lang = get_default_language(connection=connection)
         if original_post:
@@ -422,16 +420,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     cur.close()
     connection.close()
 
-    post_statuses = [item for sublist in temp_post_statuses for item in sublist]
-
-    all_categories = []
-    for category in raw_all_categories:
-        selected = False
-        all_categories.append({
-            "uuid": category[0],
-            "display_name": category[1],
-            "selected": selected
-        })
+    categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
 
     data = {
         "new": True,
@@ -443,7 +432,9 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "lang": lang_id,
         "original_post": original_post,
         "format_uuid": default_format,
-        "libraries": post_libs
+        "libraries": post_libs,
+        "categories": categories,
+        "tags": tags,
     }
 
     token = request.cookies.get('sloth_session')
@@ -466,7 +457,6 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
             "translations": translations,
             "current_lang_id": data["lang"],
             "post_formats": post_formats,
-            "all_categories": all_categories,
             "libs": libs,
             "hook_list": HooksList.list()
         }
