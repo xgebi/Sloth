@@ -1,3 +1,9 @@
+mod toes {
+    pub fn make_sausage() {
+        println!("sausage!");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
