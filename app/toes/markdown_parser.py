@@ -7,9 +7,9 @@ from app.toes.hooks import Hooks
 class ListInfo:
     indent = 2
 
-    def __init__(self, parent=None, type=None):
+    def __init__(self, parent=None, list_type=None):
         self.level = -1 if parent is None else parent.level + 1
-        self.type = type
+        self.type = list_type
         self.parent = parent
 
 
