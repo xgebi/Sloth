@@ -3,6 +3,5 @@ pub mod toe_parser {
 
     pub fn hello() {
         println!("Hello");
-
     }
 }
