@@ -1,3 +1,6 @@
+mod toe_parser;
+mod nodes;
+
 mod toes {
     pub fn make_sausage() {
         println!("sausage!");

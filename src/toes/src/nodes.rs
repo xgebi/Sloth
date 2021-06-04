@@ -1,15 +1,14 @@
-mod nodes {
+pub mod nodes {
     enum NodeTypes {
         NODE,
         ROOT,
         PROCESSING,
         DIRECTIVE,
         TEXT,
-        COMMENT,
-        CDATA_TEXT
+        COMMENT
     }
 
-    struct Node {
+    pub struct Node {
         nodeType: String,
         html: bool,
         name: Optional<String>,
@@ -22,7 +21,7 @@ mod nodes {
     }
 
     impl Node {
-        fn new(name: String, attributes: HashMap<String, String>, children: Vec<Node>, pairedTag: bool, parent: Node) -> Node {
+        fn new(nodeType: NodeTypes, name: Option<String>, attributes: Option<HashMap<String, String>>, children: Option<Vec<Node>>, pairedTag: Option<bool>, parent: Option<Node>) -> Node {
             Node {
                 nodeType: NodeTypes::NODE,
                 html: true,
@@ -34,6 +33,17 @@ mod nodes {
                 content: None,
                 cdata: false
             }
+        }
+
+        fn toHtmlString(&self) -> String {
+            if (self.nodeType == NodeTypes::ROOT) {
+                return self.rootNodeToHtmlString();
+            }
+            ""
+        }
+
+        fn rootNodeToHtmlString(&self) -> String {
+            ""
         }
     }
 
@@ -51,12 +61,16 @@ mod nodes {
                 cdata: false
             }
         }
+
+        fn toHtmlString() -> String {
+            ""
+        }
     }
 
     impl TextNode for Node {
-        fn new(attributes: HashMap<String, String>, children: Vec<Node>, pairedTag: bool, parent: Node, cdata: bool) -> Node {
+        fn new(parent: Node, cdata: bool) -> Node {
             Node {
-                nodeType: NodeTypes::ROOT,
+                nodeType: NodeTypes::TEXT,
                 html: true,
                 name: None,
                 attributes: None,
@@ -67,12 +81,16 @@ mod nodes {
                 cdata: cdata
             }
         }
+
+        fn toHtmlString(&self) -> String {
+            format!("{}\n", self.content.unwrap())
+        }
     }
 
     impl CommentNode for Node {
         fn new(parent: Node, content: String) -> Node {
             Node {
-                nodeType: NodeTypes::ROOT,
+                nodeType: NodeTypes::COMMENT,
                 html: true,
                 name: None,
                 attributes: None,
@@ -83,12 +101,16 @@ mod nodes {
                 cdata: false
             }
         }
+
+        fn toHtmlString(&self) -> String {
+            format!("<!--{}-->\n", self.content.unwrap())
+        }
     }
 
     impl DirectiveNode for Node {
         fn new(attributes: HashMap<String, String>, parent: Node) -> Node {
             Node {
-                nodeType: NodeTypes::ROOT,
+                nodeType: NodeTypes::DIRECTIVE,
                 html: true,
                 name: "",
                 attributes: attributes,
@@ -98,6 +120,14 @@ mod nodes {
                 content: None,
                 cdata: false
             }
+        }
+
+        fn toHtmlString(&self) -> String {
+            let mut result: String = format!("<!{}", self.name);
+            for (attrName, attrValue) in &self.attributes {
+                result += format!(" {}=\"{}\"", attrName, attrValue)
+            }
+            result
         }
     }
 }
