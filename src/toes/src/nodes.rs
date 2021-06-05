@@ -1,4 +1,7 @@
 pub mod nodes {
+    use std::collections::HashMap;
+    use std::rc::Rc;
+
     #[derive(PartialEq)]
     pub enum NodeTypes {
         NODE,
@@ -10,129 +13,117 @@ pub mod nodes {
     }
 
     pub struct Node {
-        nodeType: NodeTypes,
+        node_type: NodeTypes,
         html: bool,
-        name: Optional<String>,
-        attributes: Optional<HashMap<String, String>>,
-        children: Optional<Vec<Node>>,
-        pairedTag: Option<bool>,
-        parent: Option<Node>,
+        name: Option<String>,
+        attributes: Option<HashMap<String, String>>,
+        children: Option<Rc<Vec<Node>>>,
+        paired_tag: Option<bool>,
+        parent: Box<Option<Node>>,
         content: Option<String>,
         cdata: bool
     }
 
     impl Node {
-        pub fn new(nodeType: NodeTypes, name: Option<String>, attributes: Option<HashMap<String, String>>, children: Option<Vec<Node>>, pairedTag: Option<bool>, parent: Option<Node>) -> Node {
-            if nodeType == NodeTypes::ROOT {
+        pub fn new(node_type: NodeTypes, name: Option<String>, attributes: Option<HashMap<String, String>>, children: Option<Vec<Node>>, paired_tag: Option<bool>, parent: Option<Node>, cdata: bool) -> Node {
+            if node_type == NodeTypes::ROOT {
                 return Node {
-                    nodeType: NodeTypes::ROOT,
+                    node_type: NodeTypes::ROOT,
                     html: true,
                     name: name,
                     attributes: attributes,
-                    children: children,
-                    pairedTag: pairedTag,
-                    parent: None,
+                    children: Some(Rc::new(children.unwrap())),
+                    paired_tag: Some(paired_tag.unwrap()),
+                    parent: Box::new(None),
                     content: None,
                     cdata: false
                 };
             }
 
-            if nodeType == NodeTypes::ROOT {
+            if node_type == NodeTypes::TEXT {
                 return Node {
-                    nodeType: NodeTypes::ROOT,
-                    html: true,
-                    name: name,
-                    attributes: attributes,
-                    children: children,
-                    pairedTag: pairedTag,
-                    parent: None,
-                    content: None,
-                    cdata: false
-                };
-            }
-
-            if nodeType == NodeTypes::TEXT {
-                return Node {
-                    nodeType: NodeTypes::TEXT,
+                    node_type: NodeTypes::TEXT,
                     html: true,
                     name: None,
                     attributes: None,
                     children: None,
-                    pairedTag: false,
-                    parent: parent,
+                    paired_tag: Some(false),
+                    parent: Box::new(parent),
                     content: None,
                     cdata: cdata
                 };
             }
 
-            if nodeType == NodeTypes::COMMENT {
+            if node_type == NodeTypes::COMMENT {
                 return Node {
-                    nodeType: NodeTypes::COMMENT,
+                    node_type: NodeTypes::COMMENT,
                     html: true,
                     name: None,
                     attributes: None,
                     children: None,
-                    pairedTag: false,
-                    parent: parent,
+                    paired_tag: Some(false),
+                    parent: Box::new(parent),
                     content: None,
                     cdata: false
                 };
             }
 
-            if nodeType == NodeTypes::DIRECTIVE {
+            if node_type == NodeTypes::DIRECTIVE {
                 return Node {
-                    nodeType: NodeTypes::DIRECTIVE,
+                    node_type: NodeTypes::DIRECTIVE,
                     html: true,
-                    name: "",
+                    name: None,
                     attributes: attributes,
                     children: None,
-                    pairedTag: false,
-                    parent: parent,
+                    paired_tag: Some(false),
+                    parent: Box::new(parent),
                     content: None,
                     cdata: false
                 };
             }
 
             Node {
-                nodeType: NodeTypes::NODE,
+                node_type: NodeTypes::NODE,
                 html: true,
                 name: name,
                 attributes: attributes,
-                children: children,
-                pairedTag: pairedTag,
-                parent: parent,
+                children: Some(Rc::new(children.unwrap())),
+                paired_tag: Some(paired_tag.unwrap()),
+                parent: Box::new(parent),
                 content: None,
                 cdata: false
             }
         }
 
-        fn toHtmlString(&self) -> String {
-            if self.nodeType == NodeTypes::ROOT {
-                return self.rootNodeToHtmlString();
+        fn to_html_string(&self) -> String {
+            if self.node_type == NodeTypes::ROOT {
+                return self.root_node_to_html_string();
             }
-            if self.nodeType == NodeTypes::TEXT {
-                return self.textNodeToHtmlString();
+            if self.node_type == NodeTypes::TEXT {
+                return self.text_node_to_html_string();
             }
             "".to_string()
         }
 
-        fn rootNodeToHtmlString(&self) -> String {
+        fn root_node_to_html_string(&self) -> String {
             "".to_string()
         }
 
-        fn textNodeToHtmlString(&self) -> String {
-            format!("{}\n", self.content.unwrap().as_str()).to_string()
+        fn text_node_to_html_string(&self) -> String {
+            format!("{}\n", self.content.as_ref().unwrap().as_str()).to_string()
         }
 
-        fn commentNodeToHtmlString(&self) -> String {
-            format!("<!--{}-->\n", self.content.unwrap().as_str()).to_string()
+        fn comment_node_to_html_string(&self) -> String {
+            format!("<!--{}-->\n", self.content.as_ref().unwrap().as_str()).to_string()
         }
 
-        fn directiveNodeToHtmlString(&self) -> String {
-            let mut result: String = format!("<!{}", self.name);
-            for (attrName, attrValue) in &self.attributes {
-                result += format!(" {}=\"{}\"", attrName, attrValue)
+        fn directive_node_to_html_string(&self) -> String {
+            let mut result: String = format!("<!{}", self.name.as_ref().unwrap().as_str());
+
+            for (key, val) in self.attributes.as_ref().unwrap().iter() {
+                result += format!(" {}=\"{}\"", key, val).as_str()
             }
+
             result.to_string()
         }
     }
