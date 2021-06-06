@@ -7,6 +7,7 @@ from app.authorization.authorize import authorize_rest
 from app.utilities.db_connection import db_connection
 
 from app.api.taxonomy import taxonomy
+from app.post.routes import separate_taxonomies
 
 
 @taxonomy.route("/api/taxonomy/category/new", methods=["POST"])
@@ -28,24 +29,23 @@ def create_category(*args, connection, **kwargs):
             filled["slug"] = f"{filled['slug']}-{temp[0]+1}"
         cur.execute(
             sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
-            VALUES (%s, %s, %s, %s, %s, %s)"""),
+            VALUES (%s, %s, %s, %s, %s, %s);"""),
             (str(uuid.uuid4()), filled["slug"], filled["categoryName"], filled["postType"], "category",
-             filled["language"])
+             filled["lang"])
         )
         connection.commit()
         cur.execute(
-            sql.SQL("""SELECT uuid, display_name FROM sloth_taxonomy
+            sql.SQL("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
                                         WHERE post_type = %s AND lang = %s"""),
-            [filled["postType"], None]
+            (filled["postType"], filled["lang"])
         )
-        raw_all_categories = cur.fetchall()
+        raw_all_taxonomies = cur.fetchall()
         cur.execute(
-            sql.SQL("""SELECT uuid FROM sloth_taxonomy
-                                WHERE post_type = %s AND uuid IN 
-                                (SELECT taxonomy FROM sloth_post_taxonomies WHERE post = %s)"""),
-            [filled["postType"], filled["post"]]
+            sql.SQL("""SELECT taxonomy FROM sloth_post_taxonomies
+                                                WHERE post = %s"""),
+            (None,)
         )
-        raw_post_categories = cur.fetchall()
+        raw_post_taxonomies = cur.fetchall()
     except Exception as e:
         response = make_response(json.dumps({"error": True}))
         response.headers['Content-Type'] = 'application/json'
@@ -53,20 +53,9 @@ def create_category(*args, connection, **kwargs):
 
         return response, code
 
-    post_categories = [cat_uuid for cat in raw_post_categories for cat_uuid in cat]
+    categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
 
-    all_categories = []
-    for category in raw_all_categories:
-        selected = False
-        if category[0] in post_categories:
-            selected: True
-        all_categories.append({
-            "uuid": category[0],
-            "display_name": category[1],
-            "selected": selected
-        })
-
-    response = make_response(json.dumps(all_categories))
+    response = make_response(json.dumps(categories))
     response.headers['Content-Type'] = 'application/json'
     code = 200
 

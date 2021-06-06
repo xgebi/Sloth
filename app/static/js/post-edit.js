@@ -371,7 +371,11 @@ function saveCreatePost(values) {
         });
 }
 
-function createCategory() {
+function createCategory(event) {
+    if (document.querySelector("#new-category").value.length === 0) {
+        return;
+    }
+    event.target.setAttribute("disabled", "");
     fetch('/api/taxonomy/category/new', {
         method: 'POST',
         headers: {
@@ -398,6 +402,7 @@ function createCategory() {
         })
     })
         .then(response => {
+            event.target.removeAttribute("disabled", "");
             if (response.ok) {
                 return response.json()
             }
@@ -418,6 +423,7 @@ function createCategory() {
                 }
                 categories.appendChild(option);
             }
+            document.querySelector("#new-category").value = "";
         })
         .catch((error) => {
             console.error('Error:', error);
