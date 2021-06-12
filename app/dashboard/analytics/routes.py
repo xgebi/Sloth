@@ -71,8 +71,6 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
         visit_date = date.fromtimestamp(item["lastVisit"] / 1000).isoformat()
         if visit_date in last_seven_days:
             last_seven_days[visit_date] += 1
-        else:
-            abort(500)
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
