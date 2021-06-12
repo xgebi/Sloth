@@ -5,11 +5,29 @@
 <toe:import file="nav.toe.html"/>
 <main>
     <h1>Analytics</h1>
-
+    <section>
+        <h2>Most visited pages</h2>
+        <div>
+            <button>Overall</button>
+            <button>Last year</button>
+            <button>Last month</button>
+            <button>Last week</button>
+        </div>
+        <div id="most-visited-holder"></div>
+    </section>
+    <section>
+        <h2>Pageviews (last seven days)</h2>
+        <div id="page-views-holder"></div>
+    </section>
+    <section>
+        <h2>Browser statistics</h2>
+        <div id="browsers-holder"></div>
+    </section>
 </main>
 </body>
 <script toe:inline-js>
-    const data = JSON.parse('<( data )>');
+    const pageViews = JSON.parse('<( last_seven_days )>');
+    let mostVisited = JSON.parse('<( most_visited )>')
 </script>
 <script src="/static/js/libs/d3.min.js"></script>
 <script src="/static/js/analytics.js"></script>
