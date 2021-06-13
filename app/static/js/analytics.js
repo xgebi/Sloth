@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     drawPageViewsChart();
+    drawMostVisitedChart()
 });
 
 function drawPageViewsChart() {
@@ -40,7 +41,7 @@ function drawPageViewsChart() {
 
     const xAxis = d3.axisBottom()
         .scale(xScale)
-        .ticks(7)
+        .ticks(8)
         .tickFormat(formatTime);
 
     //Define Y axis
@@ -50,11 +51,9 @@ function drawPageViewsChart() {
 
     const line = d3.line()
         .x(function (d) {
-            console.log("x", d);
             return xScale(d.day);
         })
         .y(function (d) {
-            console.log("y", d);
             return yScale(d.visits);
         });
 
@@ -79,4 +78,54 @@ function drawPageViewsChart() {
         .attr("transform", "translate(" + padding + ",0)")
         .call(yAxis);
 
+}
+
+function drawMostVisitedChart() {
+    const paddedBarHeight = 44,
+        barHeight = 20,
+        padding = 20,
+        height = (mostVisited.length * paddedBarHeight) + (2*padding),
+        width = 600;
+    const mostVisitedHolderSvg = d3.select("#most-visited-holder").append("svg");
+
+    const scale = d3
+        .scaleLinear()
+        .domain([
+            0,
+            d3.max(mostVisited, (row) => row.count * barHeight)
+        ])
+        .range([padding, width - padding]);
+
+    mostVisitedHolderSvg
+        .attr("width", width)
+        .attr("height", height)
+        .selectAll("rect")
+        .data(mostVisited)
+        .enter()
+        .append("rect")
+        .attr("x", padding)
+        .attr("y", (d, i) => {
+            return (i * paddedBarHeight) + (2 * padding);
+        })
+        .attr("height", 15)
+        .attr("width", (d) => {
+            return scale(d.count * barHeight);
+        })
+        .attr("fill", "teal");
+
+    mostVisitedHolderSvg
+        .attr("width", width)
+        .attr("height", height)
+        .selectAll("text")
+        .data(mostVisited)
+        .enter()
+        .append("text")
+        .attr("font-size", 16)
+        .text((d) => d.pathname)
+        .attr("x", (d, i, arr) => {
+            return padding;
+        })
+        .attr("y", (d, i) => {
+            return (i * paddedBarHeight) + (1.5 * padding);
+        })
 }

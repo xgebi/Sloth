@@ -55,6 +55,23 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
             "pathname": item[0],
             "count": item[1]
         } for item in cur.fetchall()])
+
+        cur.execute(
+            sql.SQL(
+                """
+                SELECT browser, browser_version, count(*)
+                FROM sloth_analytics
+                WHERE browser IS NOT NULL
+                GROUP BY browser, browser_version
+                ORDER BY count(*) DESC;
+                """
+            )
+        )
+        browser_data = json.dumps([{
+            "browser": item[0],
+            "version": item[1],
+            "count": item[2]
+        } for item in cur.fetchall()])
     except Exception as e:
         print(traceback.format_exc())
         abort(500)
@@ -81,7 +98,8 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
             "permission_level": permission_level,
             "default_lang": default_language,
             "last_seven_days": json.dumps(last_seven_days),
-            "most_visited": most_visited
+            "most_visited": most_visited,
+            "browser_data": browser_data
         },
         hooks=Hooks()
     )

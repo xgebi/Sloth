@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "cp node_modules/d3/dist/d3.min.js app/static/js/libs/d3.min.js"
+    "prepare": "npx gulp"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,10 @@
   },
   "homepage": "https://github.com/xgebi/Sloth#readme",
   "dependencies": {
-    "d3": "^6.7.0"
+    "d3": "^7.0.0"
+  },
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "gulp-shell": "^0.8.0"
   }
 }

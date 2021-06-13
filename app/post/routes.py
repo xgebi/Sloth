@@ -257,12 +257,13 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     publish_datetime = datetime.datetime.fromtimestamp(raw_post[9] / 1000) if raw_post[9] else None
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
-
+    sections = json.dumps([raw_post[2]]).replace('\"', '&quot;')
     data = {
         "uuid": post_id,
         "title": raw_post[0],
         "slug": raw_post[1],
         "content": raw_post[2],
+        "sections": f"data:json,{sections}",
         "excerpt": raw_post[3],
         "css": raw_post[4],
         "use_theme_css": raw_post[5],
@@ -421,7 +422,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     connection.close()
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
-
+    sections = json.dumps([]).replace('\"', '&quot;')
     data = {
         "new": True,
         "use_theme_js": True,
@@ -435,6 +436,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "libraries": post_libs,
         "categories": categories,
         "tags": tags,
+        "sections": f"data:json,{sections}",
     }
 
     token = request.cookies.get('sloth_session')
