@@ -25,7 +25,8 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
     cur = connection.cursor()
 
     try:
-        first_day = (datetime.today() - timedelta(days=6, hours=datetime.today().hour, minutes=datetime.today().minute,seconds=datetime.today().second, microseconds=datetime.today().microsecond))
+        today = datetime.today()
+        first_day = (today - timedelta(days=6, hours=today.hour, minutes=today.minute, seconds=today.second, microseconds=today.microsecond))
         seven_days_time_stamp = first_day.timestamp() * 1000
         cur.execute(
             sql.SQL(
