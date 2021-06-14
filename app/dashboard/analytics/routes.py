@@ -99,7 +99,9 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
             "default_lang": default_language,
             "last_seven_days": json.dumps(last_seven_days),
             "most_visited": most_visited,
-            "browser_data": browser_data
+            "browser_data": browser_data,
+            "first_day": first_day.isoformat(),
+            "tz": first_day.astimezone().tzinfo
         },
         hooks=Hooks()
     )
