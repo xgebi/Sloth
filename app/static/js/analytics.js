@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     drawPageViewsChart();
-    drawMostVisitedChart()
+    drawMostVisitedChart();
+    drawBrowserStats();
 });
 
 function drawPageViewsChart() {
@@ -37,11 +38,11 @@ function drawPageViewsChart() {
             d3.max(rows, (d) => d.day),
             d3.min(rows, (d) => d.day)
         ])
-        .range([width - padding, padding]);
-
+        .range([width - padding, padding])
+        .nice() ;
     const xAxis = d3.axisBottom()
         .scale(xScale)
-        .ticks(8)
+        .ticks(7)
         .tickFormat(formatTime);
 
     //Define Y axis
@@ -57,15 +58,14 @@ function drawPageViewsChart() {
             return yScale(d.visits);
         });
 
-
-    console.log(JSON.stringify(rows));
     pageViewsHolderSvg
         .append("path")
         .datum(rows)
         .attr("class", "line")
         .attr("d", line)
         .attr("fill", "none")
-        .attr("stroke", "teal");
+        .attr("stroke", "teal")
+        .attr("transform", "translate(-5, 0)");
 
     //Create axes
     pageViewsHolderSvg.append("g")
@@ -128,4 +128,8 @@ function drawMostVisitedChart() {
         .attr("y", (d, i) => {
             return (i * paddedBarHeight) + (1.5 * padding);
         })
+}
+
+function drawBrowserStats() {
+
 }
