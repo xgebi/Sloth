@@ -181,6 +181,10 @@ p.dangerzone {
     border: 1px solid black;
 }
 
+#browser-stats td {
+    vertical-align: top;
+}
+
 /* Sloth Editor */
 .sloth-editor {
     width: 80ch;

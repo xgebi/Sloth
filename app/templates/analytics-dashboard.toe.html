@@ -12,16 +12,25 @@
     <section>
         <h2>Most visited pages</h2>
         <div>
-            <button>Overall</button>
-            <button>Last year</button>
-            <button>Last month</button>
-            <button>Last week</button>
+            <button class="most-visited" data-period="all">Overall</button>
+            <button class="most-visited" data-period="year">Last year</button>
+            <button class="most-visited" data-period="month">Last month</button>
+            <button class="most-visited" data-period="week">Last week</button>
         </div>
         <div id="most-visited-holder"></div>
     </section>
     <section>
         <h2>Browser statistics</h2>
         <div id="browsers-holder"></div>
+        <table id="browser-stats">
+            <thead>
+                <tr>
+                    <th>Browser</th>
+                    <th>Versions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </section>
 </main>
 </body>
@@ -29,8 +38,6 @@
     const pageViews = JSON.parse('<( last_seven_days )>');
     let mostVisited = JSON.parse('<( most_visited )>');
     const browserData = JSON.parse('<( browser_data )>');
-    const firstDay = '<(first_day)>';
-    const tz = '<(tz)>';
 </script>
 <script src="/static/js/libs/d3.min.js"></script>
 <script src="/static/js/analytics.js"></script>

@@ -114,8 +114,6 @@ function drawMostVisitedChart() {
         .attr("fill", "teal");
 
     mostVisitedHolderSvg
-        .attr("width", width)
-        .attr("height", height)
         .selectAll("text")
         .data(mostVisited)
         .enter()
@@ -127,9 +125,166 @@ function drawMostVisitedChart() {
         })
         .attr("y", (d, i) => {
             return (i * paddedBarHeight) + (1.5 * padding);
+        });
+
+    document.querySelectorAll("button.most-visited").forEach((button) => {
+        button.addEventListener("click", (event) => {
+            const period = event.target.dataset["period"];
+            fetch(`/api/dashboard/analytics/pages/${period}`, {
+                method: 'GET',
+                headers: {
+                    'authorization': document.cookie
+                        .split(';')
+                        .find(row => row.trim().startsWith('sloth_session'))
+                        .split('=')[1],
+                }
+            }).then(response => {
+                if (response.ok) {
+                    return response.json()
+                }
+                throw `${response.status}: ${response.statusText}`
+            }).then(data => {
+                // not ideal, good enough for now
+                mostVisitedHolderSvg
+                    .selectAll("rect")
+                    .remove();
+
+                mostVisitedHolderSvg
+                    .selectAll("text")
+                    .remove();
+
+                const scale = d3
+                    .scaleLinear()
+                    .domain([
+                        0,
+                        d3.max(data, (row) => row.count * barHeight)
+                    ])
+                    .range([padding, width - padding]);
+
+                mostVisitedHolderSvg
+                    .attr("height", (data.length * paddedBarHeight) + (2*padding))
+                    .selectAll("rect")
+                    .data(data)
+                    .enter()
+                    .append("rect")
+                    .attr("x", padding)
+                    .attr("y", (d, i) => {
+                        return (i * paddedBarHeight) + (2 * padding);
+                    })
+                    .attr("height", 15)
+                    .transition(d3.transition().duration(750))
+                    .attr("width", (d) => {
+                        return scale(d.count * barHeight);
+                    })
+                    .attr("fill", "teal");
+
+                mostVisitedHolderSvg
+                    .selectAll("text")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .attr("font-size", 16)
+                    .text((d) => {
+                        console.log(d);
+                        return d.pathname;
+                    })
+                    .attr("x", (d, i, arr) => {
+                        return padding;
+                    })
+                    .attr("y", (d, i) => {
+                        return (i * paddedBarHeight) + (1.5 * padding);
+                    });
+            }).catch((error) => {
+                console.error('Error:', error);
+            })
         })
+    });
 }
 
 function drawBrowserStats() {
+    const refinedBrowserDataMap = {};
+    for (const item of browserData) {
+        if (!refinedBrowserDataMap[item.browser]) {
+            refinedBrowserDataMap[item.browser] = {
+                browser: item.browser,
+                count: item.count,
+                versions: [item.version]
+            };
+        } else {
+            refinedBrowserDataMap[item.browser].count += item.count;
+            refinedBrowserDataMap[item.browser].versions.push(item.version);
+        }
+    }
+    const refinedBrowserData = Object.values(refinedBrowserDataMap)
 
+    // draw chart
+    const paddedBarHeight = 44,
+        barHeight = 20,
+        height = 300,
+        width = 600,
+        padding = 40;
+    const browserHolderSvg = d3
+        .select("#browsers-holder")
+        .append("svg")
+        .attr("width", width) // todo rework later
+        .attr("height", height);
+
+    const scale = d3
+        .scaleLinear()
+        .domain([
+            0,
+            d3.max(refinedBrowserData, (item) => item.count * barHeight)
+        ])
+        .range([padding, width - padding]);
+
+    browserHolderSvg
+        .selectAll("rect")
+        .data(refinedBrowserData)
+        .enter()
+        .append("rect")
+        .attr("x", (d) => padding + 100)
+        .attr("y", (d, i) => {
+            return (i * paddedBarHeight);
+        })
+        .attr("height", paddedBarHeight - 4)
+        .attr("width", (d) => {
+            return scale(d.count * barHeight);
+        })
+        .attr("fill", "teal");
+
+    browserHolderSvg
+        .selectAll("text")
+        .data(refinedBrowserData)
+        .enter()
+        .append("text")
+        .attr("font-size", 16)
+        .text((d) => d.browser)
+        .attr("x", (d, i, arr) => {
+            return padding;
+        })
+        .attr("y", (d, i) => {
+            return (i * paddedBarHeight) + (paddedBarHeight / 2);
+        });
+    // populate table
+    const tbody = document.querySelector("#browser-stats tbody");
+    for (const item of refinedBrowserData) {
+        item.versions.sort().reverse();
+        const firstTr = document.createElement("tr");
+        const browserNameTd = document.createElement("td");
+        browserNameTd.setAttribute("rowspan", item.versions?.length);
+        browserNameTd.textContent = item.browser;
+        firstTr.appendChild(browserNameTd);
+        for (let i = 0; i < item.versions?.length; i++) {
+            const browserVersionTd = document.createElement("td");
+            browserVersionTd.textContent = item.versions[i];
+            if (i === 0) {
+                firstTr.appendChild(browserVersionTd);
+                tbody.appendChild(firstTr);
+            } else {
+                const tr = document.createElement("tr");
+                tr.append(browserVersionTd)
+                tbody.appendChild(tr);
+            }
+        }
+    }
 }
