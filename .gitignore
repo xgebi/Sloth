@@ -46,4 +46,4 @@ schedule.lock
 /src/toes/target
 /src/toes-py/target
 /src/toes-wasm/target
-app/static/js/libs/*.js
+app/static/js/libs/*min.js

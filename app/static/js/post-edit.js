@@ -463,7 +463,12 @@ function postStatusChanged(event) {
     if (event.target.value === "protected") {
         document.querySelector("#password_protection_label").classList.remove("hidden");
         document.querySelector("#password_protection").classList.remove("hidden");
+    } else if (event.target.value === "scheduled") {
+        document.querySelector("#publish-button").classList.add("hidden");
+        document.querySelector("#schedule-button").classList.remove("hidden");
     } else {
+        document.querySelector("#publish-button").classList.remove("hidden");
+        document.querySelector("#schedule-button").classList.add("hidden");
         document.querySelector("#password_protection_label").classList.add("hidden");
         document.querySelector("#password_protection").classList.add("hidden");
     }

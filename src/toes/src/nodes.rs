@@ -17,7 +17,7 @@ pub mod nodes {
         html: bool,
         name: Option<String>,
         attributes: Option<HashMap<String, String>>,
-        children: Option<Rc<Vec<Node>>>,
+        children: Option<Box<Vec<Node>>>,
         paired_tag: Option<bool>,
         parent: Box<Option<Node>>,
         content: Option<String>,

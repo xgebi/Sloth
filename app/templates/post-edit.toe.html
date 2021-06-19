@@ -4,7 +4,6 @@
 <body class="inner-city">
 <toe:import file="nav.toe.html"/>
 <main>
-    <div toe:content="data['sections']"></div>
     <post-editor toe:sections="data['sections']"></post-editor>
     <article class="post-edit">
         <h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
@@ -216,6 +215,6 @@
 </script>
 <script src="/static/js/utilities.js"></script>
 <script src="/static/js/post-edit.js"></script>
-<script src="/static/js/libs/post-editor.min.js"></script>
+<script src="/static/js/libs/post-editor.js"></script>
 </body>
 </html>

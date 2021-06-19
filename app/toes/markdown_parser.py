@@ -207,12 +207,12 @@ class MarkdownParser:
             if parsing_info.list_info.level == -1:
                 text = f"{text[:line_start]}<ol>\n<li>{text[content_start:]}"
                 parsing_info.i += len("<ol>\n<li>")
-                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
+                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, list_type=1)
             elif parsing_info.list_info.level == 0:
                 if len(text[line_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
                     text = f"{text[:line_start]}<ol><li>{text[content_start:]}"
-                    new_list = ListInfo(parent=parsing_info.list_info, type=1)
+                    new_list = ListInfo(parent=parsing_info.list_info, list_type=1)
                     parsing_info.list_info = new_list
                     parsing_info.i += len("<ol><li>") - ListInfo.indent
                 else:
@@ -243,7 +243,7 @@ class MarkdownParser:
                 elif level > parsing_info.list_info.level:
                     text = f"{text[:line_start]}<ol><li>{text[content_start:]}"
                     parsing_info.i += len("</ol><li>") - (level * ListInfo.indent) - 1
-                    parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type=1)
+                    parsing_info.list_info = ListInfo(parent=parsing_info.list_info, list_type=1)
         else:
             return self.parse_paragraph(text=text, parsing_info=parsing_info)
 
@@ -260,12 +260,12 @@ class MarkdownParser:
             if parsing_info.list_info.level == -1:
                 text = f"{text[:line_start]}<ul>\n<li>{text[content_start:]}"
                 parsing_info.i += len("<ul>\n<li>")
-                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
+                parsing_info.list_info = ListInfo(parent=parsing_info.list_info, list_type='a')
             elif parsing_info.list_info.level == 0:
                 if len(text[line_start: parsing_info.i]) > 0:
                     ListInfo.indent = len(text[line_start: parsing_info.i])
                     text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
-                    new_list = ListInfo(parent=parsing_info.list_info, type='a')
+                    new_list = ListInfo(parent=parsing_info.list_info, list_type='a')
                     parsing_info.list_info = new_list
                     parsing_info.i += len("<ul><li>") - ListInfo.indent
                 else:
@@ -296,7 +296,7 @@ class MarkdownParser:
                 elif level > parsing_info.list_info.level:
                     text = f"{text[:line_start]}<ul><li>{text[content_start:]}"
                     parsing_info.i += len("</ul><li>") - (level * ListInfo.indent) - 1
-                    parsing_info.list_info = ListInfo(parent=parsing_info.list_info, type='a')
+                    parsing_info.list_info = ListInfo(parent=parsing_info.list_info, list_type='a')
         else:
             return self.parse_italic_bold(text=text, parsing_info=parsing_info)
         return text, parsing_info

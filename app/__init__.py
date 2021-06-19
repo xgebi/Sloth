@@ -3,6 +3,7 @@ from flask import Flask, request, redirect
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
+import psycopg2
 from pathlib import Path
 from uuid import uuid4
 from flask_apscheduler import APScheduler
@@ -28,15 +29,16 @@ def create_app():  # dev, test, or prod
 
     bcrypt.init_app(app)
 
-    if not Path(os.path.join(os.getcwd(), 'schedule.lock')).is_file():
-        with open(os.path.join(os.getcwd(), 'schedule.lock'), 'w') as f:
-            f.write(str(app.config["THREAD_ID"]))
+    scheduler = APScheduler()
+    scheduler.init_app(app)
 
-            scheduler = APScheduler()
-            scheduler.init_app(app)
-            scheduler.start()
+    @scheduler.task('interval', id='do_job_1', seconds=60, misfire_grace_time=900)
+    def job1():
+        print('Job 1 executed')
+        with app.app_context():
+            scheduled_posts_job()
 
-            app.apscheduler.add_job(func=scheduled_posts_job, trigger='interval', seconds=60, id=str(uuid4()))
+    scheduler.start()
 
     @app.before_request
     def before_first_request():

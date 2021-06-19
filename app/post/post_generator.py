@@ -76,6 +76,7 @@ class PostGenerator:
             post_type: str = "",
             everything: bool = True,
             regenerate_taxonomies: List = [],
+            multiple: bool = False,
             **kwargs
     ):
         """ Main function that runs everything
@@ -105,7 +106,8 @@ class PostGenerator:
                 target=self.prepare_single_post,
                 kwargs=dict(
                     post=post,
-                    regenerate_taxonomies=regenerate_taxonomies
+                    regenerate_taxonomies=regenerate_taxonomies,
+                    multiple=multiple
                 )
             )
         elif len(post_type) > 0:
@@ -375,7 +377,7 @@ class PostGenerator:
 
         return posts
 
-    def prepare_single_post(self, *args, post, regenerate_taxonomies, **kwargs):
+    def prepare_single_post(self, *args, post, regenerate_taxonomies, multiple: bool = False, **kwargs):
         self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
@@ -394,7 +396,7 @@ class PostGenerator:
             # path for other languages
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
             post["related_posts"] = get_related_posts(connection=self.connection, post=post)
-        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path)
+        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path, multiple=multiple)
 
         if post_type["archive_enabled"]:
             posts = self.get_posts_from_post_type_language(
@@ -404,7 +406,7 @@ class PostGenerator:
             )
             # generate archive and RSS if enabled
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
+            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language, post_markdown=True)
 
         if post_type["categories_enabled"] or post_type["tags_enabled"]:
             categories, tags = self.prepare_categories_tags(post=post, language=language)
