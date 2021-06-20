@@ -1210,7 +1210,7 @@ class PostGenerator:
                 } for section in cur.fetchall()]
 
                 post["excerpt"] = sections[0]["content"]
-                post["content"] = "\n".join([section["content"] for section in sections if section["position"] > 0])
+                post["content"] = "\n".join([section["content"] for section in sections if section["position"] > 0 and section["content"] is not None])
 
             cur.close()
         except Exception as e:
@@ -1330,9 +1330,9 @@ class PostGenerator:
                     )
                 else:
                     content_text = doc.createCDATASection(
-                        "\n".join([section.content for section in post["sections"]])
+                        "\n".join([section["content"] for section in post["sections"]])
                     )
-            elif "excerpt" in post:
+            elif "content" in post or "excerpt" in post:
                 if len(post["excerpt"]) == 0:
                     post["content"] = md_parser.to_html_string(post["content"])
                     content_text = doc.createCDATASection(post['content'])
