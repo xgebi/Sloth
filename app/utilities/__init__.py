@@ -144,11 +144,12 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
         "post_status": raw_post[14],
         "imported": raw_post[15],
         "approved": raw_post[16],
-        "meta_description": raw_post[17] if len(raw_post) >= 18 and raw_post[17] is not None and len(raw_post[17]) > 0 else sections[0][:161 if len(sections[0]) > 161 else len(sections[0])],
-        "social_description": raw_post[18] if len(raw_post) >= 19 and raw_post[18] is not None and len(raw_post[18]) > 0 else sections[0][:201 if len(sections[0]) > 201 else len(sections[0])],
+        "meta_description": raw_post[17] if len(raw_post) >= 18 and raw_post[17] is not None and len(raw_post[17]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+        "social_description": raw_post[18] if len(raw_post) >= 19 and raw_post[18] is not None and len(raw_post[18]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
         "format_uuid": raw_post[19] if len(raw_post) >= 20 and raw_post[19] is not None else None,
         "format_slug": raw_post[20] if len(raw_post) >= 21 and raw_post[20] is not None else None,
         "format_name": raw_post[21] if len(raw_post) >= 22 and raw_post[21] is not None else None,
+        "sections": sections
     }
 
     return result

@@ -930,16 +930,14 @@ def save_post(*args, connection=None, **kwargs):
                 new_tags.append(tag)
 
         for new_tag in new_tags:
-            try:
-                cur.execute(
-                    sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
-                                VALUES (%s, %s, %s, %s, 'tag', %s);"""),
-                    (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
-                     filled["lang"])
-                )
-                matched_tags.append(new_tag)
-            except Exception as e:
-                print(e)
+            cur.execute(
+                sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                            VALUES (%s, %s, %s, %s, 'tag', %s);"""),
+                (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
+                 filled["lang"])
+            )
+            matched_tags.append(new_tag)
+
         connection.commit()
         # get user
         author = request.headers.get('authorization').split(":")[1]
@@ -975,7 +973,7 @@ def save_post(*args, connection=None, **kwargs):
                 sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                 title, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
                 original_lang_entry_uuid, post_format, meta_description, twitter_description) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
                 (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
                  filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
@@ -1034,7 +1032,23 @@ def save_post(*args, connection=None, **kwargs):
                                 WHERE sp.uuid = %s;"""),
             (filled["uuid"],)
         )
-        generatable_post = parse_raw_post(cur.fetchone())
+        saved_post = cur.fetchone()
+        cur.execute(
+            sql.SQL(
+                """SELECT content, section_type, position
+                FROM sloth_post_sections
+                WHERE post = %s
+                ORDER BY position ASC;"""
+            ),
+            (filled["uuid"],)
+        )
+        sections = [{
+            "content": section[0],
+            "type": section[1],
+            "position": section[2]
+        } for section in cur.fetchall()]
+
+        generatable_post = parse_raw_post(saved_post, sections=sections)
         cur.execute(
             sql.SQL(
                 """SELECT sl.location, spl.hook_name

@@ -317,23 +317,39 @@ class PostGenerator:
                         FROM sloth_media as sm 
                         INNER JOIN sloth_media_alts sma on sma.media = sm.uuid
                         WHERE sm.uuid = %s AND sma.lang = %s;"""),
-                        (post[16], post[18])
+                        (post[14], post[16])
                     )
                     raw_thumbnail = cur.fetchone()
-                    thumbnail = raw_thumbnail[0]
-                    thumbnail_alt = raw_thumbnail[1]
+                    if raw_thumbnail and len(raw_thumbnail) == 2:
+                        thumbnail = raw_thumbnail[0]
+                        thumbnail_alt = raw_thumbnail[1]
 
-                if post[17]:
+                if post[15]:
                     cur.execute(
                         sql.SQL(
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);"""
                         ),
-                        (post[17], post[17], post[0])
+                        (post[15], post[15], post[0])
                     )
                     temp_language_variants = cur.fetchall()
                 else:
                     temp_language_variants = []
+
+                cur.execute(
+                    sql.SQL(
+                        """SELECT content, section_type, position
+                        FROM sloth_post_sections
+                        WHERE post = %s
+                        ORDER BY position ASC;"""
+                    ),
+                    (post[0],)
+                )
+                sections = [{
+                    "content": section[0],
+                    "type": section[1],
+                    "position": section[2]
+                } for section in cur.fetchall()]
             except Exception as e:
                 print(e)
                 traceback.print_exc()
@@ -369,8 +385,9 @@ class PostGenerator:
                 "format_uuid": post[17],
                 "format_slug": post[18],
                 "format_name": post[19],
-                "meta_description": post[22] if len(post) >= 23 and post[22] is not None and len(post[22]) > 0 else post[6][:161 if len(post[6] ) > 161 else len(post[6])],
-                "social_description": post[23] if len(post) >= 24 and post[23] is not None and len(post[23]) > 0 else post[6][:201 if len(post[6]) > 201 else len(post[6])]
+                "meta_description": post[20] if len(post) >= 21 and post[20] is not None and len(post[20]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+                "social_description": post[21] if len(post) >= 22 and post[21] is not None and len(post[21]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+                "sections": sections
             })
 
         return posts
@@ -404,7 +421,7 @@ class PostGenerator:
             )
             # generate archive and RSS if enabled
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
-            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language, post_markdown=True)
+            self.generate_rss(output_path=os.path.join(output_path, post_type['slug']), posts=posts, language=language)
 
         if post_type["categories_enabled"] or post_type["tags_enabled"]:
             categories, tags = self.prepare_categories_tags(post=post, language=language)
@@ -594,15 +611,17 @@ class PostGenerator:
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
             i = 0
             content_with_forms = ""
+            add_content_form_hooks = False
             for section in post["sections"]:
                 if i == 0:
                     excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(
                         copy.deepcopy(section["content"]))
                     i += 1
                 else:
-                    partial_content_with_forms, add_content_form_hooks = self.get_forms_from_text(
+                    partial_content_with_forms, temp_add_content_form_hooks = self.get_forms_from_text(
                         copy.deepcopy(section["content"]))
                     content_with_forms += partial_content_with_forms
+                    add_content_form_hooks = add_content_form_hooks or temp_add_content_form_hooks
             if add_excerpt_form_hooks or add_content_form_hooks:
                 post["has_form"] = True
                 with open(Path(__file__).parent / "../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
@@ -1082,7 +1101,9 @@ class PostGenerator:
             for post_type in post_types:
                 cur.execute(
                     sql.SQL(
-                        """SELECT uuid, title, slug, excerpt, publish_date FROM sloth_posts 
+                        """SELECT sp.uuid, sp.title, sp.slug, 
+                        (SELECT content FROM sloth_post_sections WHERE position = 0 AND post = sp.uuid), 
+                        sp.publish_date FROM sloth_posts AS sp
                             WHERE post_type = %s AND post_status = 'published' AND lang = %s
                             ORDER BY publish_date DESC LIMIT %s"""
                     ),
@@ -1160,18 +1181,16 @@ class PostGenerator:
                 "author_name": post[2],
                 "author_uuid": post[3],
                 "title": post[4],
-                "content": post[5],
-                "excerpt": post[6],
-                "css": post[7],
-                "js": post[8],
-                "use_theme_css": post[9],
-                "use_theme_js": post[10],
-                "publish_date": post[11],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date": post[12],
-                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[13],
-                "post_type_slug": post[14]
+                "css": post[5],
+                "js": post[6],
+                "use_theme_css": post[7],
+                "use_theme_js": post[8],
+                "publish_date": post[9],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date": post[10],
+                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[11],
+                "post_type_slug": post[12]
             } for post in cur.fetchall()]
 
             for post in posts:
@@ -1190,8 +1209,8 @@ class PostGenerator:
                     "position": section[2]
                 } for section in cur.fetchall()]
 
-                post["excerpt"] = sections[0].content
-                post["content"] = "\n".join([section.content for section in sections])
+                post["excerpt"] = sections[0]["content"]
+                post["content"] = "\n".join([section["content"] for section in sections if section["position"] > 0])
 
             cur.close()
         except Exception as e:
@@ -1303,8 +1322,17 @@ class PostGenerator:
             post_item.appendChild(description)
 
             content = doc.createElement('content:encoded')
-            if not post_markdown:
-                md_parser = MarkdownParser()
+            md_parser = MarkdownParser()
+            if "sections" in post:
+                if not post_markdown:
+                    content_text = doc.createCDATASection(
+                        "\n".join([md_parser.to_html_string(section["content"]) for section in post["sections"]])
+                    )
+                else:
+                    content_text = doc.createCDATASection(
+                        "\n".join([section.content for section in post["sections"]])
+                    )
+            elif "excerpt" in post:
                 if len(post["excerpt"]) == 0:
                     post["content"] = md_parser.to_html_string(post["content"])
                     content_text = doc.createCDATASection(post['content'])
@@ -1312,8 +1340,6 @@ class PostGenerator:
                     post["excerpt"] = md_parser.to_html_string(post["excerpt"])
                     post["content"] = md_parser.to_html_string(post["content"])
                     content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
-            else:
-                content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}".strip())
             content.appendChild(content_text)
             post_item.appendChild(content)
             channel.appendChild(post_item)

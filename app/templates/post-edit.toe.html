@@ -4,7 +4,6 @@
 <body class="inner-city">
 <toe:import file="nav.toe.html"/>
 <main>
-    <post-editor toe:sections="data['sections']"></post-editor>
     <article class="post-edit">
         <h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
         <h1 class="full-width" toe:if="not data['new']" toe:text="'Edit ' + post_type_name"></h1>
@@ -45,14 +44,7 @@
             <dialog id="modal" class="gallery"></dialog>
         </div>
         <div class="first-column">
-            <label for="excerpt">Excerpt:</label>
-            <br/>
-            <textarea id="excerpt" toe:content="data['excerpt']"></textarea>
-        </div>
-        <div class="first-column">
-            <label for="content">Post:</label>
-            <br/>
-            <textarea id="content" toe:content="data['content']"></textarea>
+            <post-editor toe:sections="data['sections']"></post-editor>
         </div>
         <div class="first-column">
             <label for="css">Custom CSS:</label>
