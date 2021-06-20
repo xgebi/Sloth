@@ -64,7 +64,7 @@ if os.path.isfile("migration.json"):
         if os.environ['FLASK_ENV'] == "production":
             migrated_path = os.path.join(os.getcwd(), "migrated")
             with open(migrated_path, 'a') as f:
-                f.write(migration['file'])
+                f.write(f"{migration['file']}\n")
 
     con.close()
     if os.environ["FLASK_ENV"] != "development":

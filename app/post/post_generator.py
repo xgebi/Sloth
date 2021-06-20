@@ -227,7 +227,7 @@ class PostGenerator:
         try:
             cur.execute(
                 sql.SQL(
-                    """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
+                    """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
                         sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
                         sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
                         spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
@@ -260,7 +260,7 @@ class PostGenerator:
         cur = self.connection.cursor()
         try:
             cur.execute(
-                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.content, sp.excerpt, sp.css, 
+                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
                          sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
                          sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
                          spf.slug, spf.display_name, sp.meta_description, sp.twitter_description
@@ -349,28 +349,26 @@ class PostGenerator:
                 "author_name": post[2],
                 "author_uuid": post[3],
                 "title": post[4],
-                "content": post[5],
-                "excerpt": post[6],
-                "css": post[7],
-                "js": post[8],
-                "use_theme_css": post[9],
-                "use_theme_js": post[10],
-                "publish_date": post[11],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "updated_date": post[12],
-                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[13],
+                "css": post[5],
+                "js": post[6],
+                "use_theme_css": post[7],
+                "use_theme_js": post[8],
+                "publish_date": post[9],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "updated_date": post[10],
+                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[11],
                 "post_type_slug": post_type_slug,
-                "approved": post[15],
-                "imported": post[14],
+                "approved": post[13],
+                "imported": post[12],
                 "thumbnail": thumbnail,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
-                "original_lang_entry_uuid": post[17],
-                "lang": post[18],
-                "format_uuid": post[19],
-                "format_slug": post[20],
-                "format_name": post[21],
+                "original_lang_entry_uuid": post[15],
+                "lang": post[16],
+                "format_uuid": post[17],
+                "format_slug": post[18],
+                "format_name": post[19],
                 "meta_description": post[22] if len(post) >= 23 and post[22] is not None and len(post[22]) > 0 else post[6][:161 if len(post[6] ) > 161 else len(post[6])],
                 "social_description": post[23] if len(post) >= 24 and post[23] is not None and len(post[23]) > 0 else post[6][:201 if len(post[6]) > 201 else len(post[6])]
             })
@@ -594,8 +592,17 @@ class PostGenerator:
         translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
-            excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(copy.deepcopy(post["excerpt"]))
-            content_with_forms, add_content_form_hooks = self.get_forms_from_text(copy.deepcopy(post["content"]))
+            i = 0
+            content_with_forms = ""
+            for section in post["sections"]:
+                if i == 0:
+                    excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(
+                        copy.deepcopy(section["content"]))
+                    i += 1
+                else:
+                    partial_content_with_forms, add_content_form_hooks = self.get_forms_from_text(
+                        copy.deepcopy(section["content"]))
+                    content_with_forms += partial_content_with_forms
             if add_excerpt_form_hooks or add_content_form_hooks:
                 post["has_form"] = True
                 with open(Path(__file__).parent / "../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
@@ -811,6 +818,7 @@ class PostGenerator:
             excerpt_forms = self.get_forms_from_text(copy.deepcopy(raw_post[1]))
             content_forms = self.get_forms_from_text(copy.deepcopy(raw_post[2]))
             md_parser = MarkdownParser()
+            # TODO
             post["excerpt"] = md_parser.to_html_string(post["excerpt"], hooks=self.hooks, forms=excerpt_forms)
             post["content"] = md_parser.to_html_string(post["content"], hooks=self.hooks, forms=content_forms)
             if raw_post[3] is not None:
@@ -1136,7 +1144,7 @@ class PostGenerator:
         try:
             cur = self.connection.cursor()
             cur.execute(
-                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.content, A.excerpt, A.css, 
+                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.css, 
                          A.js, A.use_theme_css, A.use_theme_js,
                     A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
                                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
@@ -1145,32 +1153,53 @@ class PostGenerator:
                                 ORDER BY A.publish_date DESC LIMIT %s"""),
                 (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
             )
-            raw_posts = cur.fetchall()
+
+            posts = [{
+                "uuid": post[0],
+                "slug": post[1],
+                "author_name": post[2],
+                "author_uuid": post[3],
+                "title": post[4],
+                "content": post[5],
+                "excerpt": post[6],
+                "css": post[7],
+                "js": post[8],
+                "use_theme_css": post[9],
+                "use_theme_js": post[10],
+                "publish_date": post[11],
+                "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date": post[12],
+                "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "post_status": post[13],
+                "post_type_slug": post[14]
+            } for post in cur.fetchall()]
+
+            for post in posts:
+                cur.execute(
+                    sql.SQL(
+                        """SELECT content, section_type, position
+                        FROM sloth_post_sections
+                        WHERE post = %s
+                        ORDER BY position ASC;"""
+                    ),
+                    (post["uuid"],)
+                )
+                sections = [{
+                    "content": section[0],
+                    "type": section[1],
+                    "position": section[2]
+                } for section in cur.fetchall()]
+
+                post["excerpt"] = sections[0].content
+                post["content"] = "\n".join([section.content for section in sections])
+
             cur.close()
         except Exception as e:
             print(371)
             print(e)
             traceback.print_exc()
 
-        return [{
-            "uuid": post[0],
-            "slug": post[1],
-            "author_name": post[2],
-            "author_uuid": post[3],
-            "title": post[4],
-            "content": post[5],
-            "excerpt": post[6],
-            "css": post[7],
-            "js": post[8],
-            "use_theme_css": post[9],
-            "use_theme_js": post[10],
-            "publish_date": post[11],
-            "publish_date_formatted": datetime.fromtimestamp(float(post[11]) / 1000).strftime("%Y-%m-%d %H:%M"),
-            "update_date": post[12],
-            "update_date_formatted": datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d %H:%M"),
-            "post_status": post[13],
-            "post_type_slug": post[14]
-        } for post in raw_posts]
+        return posts
 
     def generate_rss(self, *args, output_path: Path, posts, language, post_markdown: bool = False, **kwargs):
         doc = minidom.Document()

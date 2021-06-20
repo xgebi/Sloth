@@ -69,7 +69,7 @@ def get_related_posts(*args, post, connection, **kwargs):
         cur.execute(
             sql.SQL(
                 """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title,
-                 A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
+                 A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
                  A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
                  WHERE A.uuid = %s OR (A.original_lang_entry_uuid = %s AND A.uuid <> %s);"""),
             (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"],
@@ -79,13 +79,30 @@ def get_related_posts(*args, post, connection, **kwargs):
         cur.execute(
             sql.SQL(
                 """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, 
-                A.content, A.excerpt, A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
+                A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
                 A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
                 WHERE A.original_lang_entry_uuid = %s;"""),
             (post["uuid"],)
         )
     related_posts_raw = cur.fetchall()
-    posts = [parse_raw_post(related_post) for related_post in related_posts_raw]
+    posts = []
+    for related_post in related_posts_raw:
+        cur.execute(
+            sql.SQL(
+                """SELECT content, section_type, position
+                FROM sloth_post_sections
+                WHERE post = %s
+                ORDER BY position ASC;"""
+            ),
+            (related_post[0],)
+        )
+        sections = [{
+            "content": section[0],
+            "type": section[1],
+            "position": section[2]
+        } for section in cur.fetchall()]
+        parse_raw_post(related_post, sections=sections)
+
     for post in posts:
         cur.execute(
             sql.SQL(
@@ -104,7 +121,7 @@ def get_related_posts(*args, post, connection, **kwargs):
     return posts
 
 
-def parse_raw_post(raw_post) -> Dict[str, str] or Any:
+def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
     result = {
         "uuid": raw_post[0],
         "original_lang_entry_uuid": raw_post[1],
@@ -113,27 +130,25 @@ def parse_raw_post(raw_post) -> Dict[str, str] or Any:
         "post_type": raw_post[4],
         "author": raw_post[5],
         "title": raw_post[6],
-        "content": raw_post[7],
-        "excerpt": raw_post[8],
-        "css": raw_post[9],
-        "use_theme_css": raw_post[10],
-        "js": raw_post[11],
-        "use_theme_js": raw_post[12],
-        "thumbnail": raw_post[13],
-        "publish_date": raw_post[14],
-        "publish_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[14]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[14] is not None else None,
-        "update_date": raw_post[15],
-        "update_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[15]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[15] is not None else None,
-        "post_status": raw_post[16],
-        "imported": raw_post[17],
-        "approved": raw_post[18],
-        "meta_description": raw_post[19] if len(raw_post) >= 20 and raw_post[19] is not None and len(raw_post[19]) > 0 else raw_post[8][:161 if len(raw_post[8]) > 161 else len(raw_post[8])],
-        "social_description": raw_post[20] if len(raw_post) >= 21 and raw_post[20] is not None and len(raw_post[20]) > 0 else raw_post[8][:201 if len(raw_post[8]) > 201 else len(raw_post[8])],
-        "format_uuid": raw_post[21] if len(raw_post) >= 22 and raw_post[21] is not None else None,
-        "format_slug": raw_post[22] if len(raw_post) >= 23 and raw_post[22] is not None else None,
-        "format_name": raw_post[23] if len(raw_post) >= 24 and raw_post[23] is not None else None,
+        "css": raw_post[7],
+        "use_theme_css": raw_post[8],
+        "js": raw_post[9],
+        "use_theme_js": raw_post[10],
+        "thumbnail": raw_post[11],
+        "publish_date": raw_post[12],
+        "publish_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[12]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if raw_post[12] is not None else None,
+        "update_date": raw_post[13],
+        "update_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[13]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if raw_post[13] is not None else None,
+        "post_status": raw_post[14],
+        "imported": raw_post[15],
+        "approved": raw_post[16],
+        "meta_description": raw_post[17] if len(raw_post) >= 18 and raw_post[17] is not None and len(raw_post[17]) > 0 else sections[0][:161 if len(sections[0]) > 161 else len(sections[0])],
+        "social_description": raw_post[18] if len(raw_post) >= 19 and raw_post[18] is not None and len(raw_post[18]) > 0 else sections[0][:201 if len(sections[0]) > 201 else len(sections[0])],
+        "format_uuid": raw_post[19] if len(raw_post) >= 20 and raw_post[19] is not None else None,
+        "format_slug": raw_post[20] if len(raw_post) >= 21 and raw_post[20] is not None else None,
+        "format_name": raw_post[21] if len(raw_post) >= 22 and raw_post[21] is not None else None,
     }
 
     return result

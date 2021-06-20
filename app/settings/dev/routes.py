@@ -65,6 +65,24 @@ def delete_posts(*args, permission_level, connection, **kwargs):
     try:
         cur.execute(
             sql.SQL(
+                """DELETE FROM sloth_post_sections;"""
+            )
+        )
+
+        cur.execute(
+            sql.SQL(
+                """DELETE FROM sloth_post_taxonomies;"""
+            )
+        )
+
+        cur.execute(
+            sql.SQL(
+                """DELETE FROM sloth_post_libraries;"""
+            )
+        )
+
+        cur.execute(
+            sql.SQL(
                 """DELETE FROM sloth_posts;"""
             )
         )

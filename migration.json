@@ -23,5 +23,18 @@
     "type": "sql",
     "folder": "setup",
     "file": "043_sloth_messages_upgrade.sql"
+  },
+  {
+    "type": "py",
+    "file": "improve_migrated_file"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "044_post_content_to_sections.sql"
+  },
+  {
+    "type": "py",
+    "file": "migrate_excerpt_post_to_section"
   }
 ]

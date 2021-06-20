@@ -253,8 +253,7 @@ function collectValues() {
         return false;
     }
     post["slug"] = document.querySelector("#slug").value;
-    post["excerpt"] = document.querySelector("#excerpt").value;
-    post["content"] = document.querySelector("#content").value;
+    post["sections"] = document.querySelector("post-editor").getSections();
     post["css"] = document.querySelector("#css").value;
     post["js"] = document.querySelector("#js").value;
     post["use_theme_css"] = document.querySelector("#use_theme_css").checked;

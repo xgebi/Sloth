@@ -19,8 +19,8 @@ def scheduled_posts_job(*args, connection, **kwargs):
             cur = connection.cursor()
             cur.execute(
                 sql.SQL("""
-                    SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, sp.content, 
-                            sp.excerpt, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
+                    SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title,
+                            sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
                             sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
                             sp.twitter_description, spf.uuid, spf.slug, spf.display_name
                             FROM sloth_posts as sp 

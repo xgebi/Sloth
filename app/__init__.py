@@ -34,7 +34,6 @@ def create_app():  # dev, test, or prod
 
     @scheduler.task('interval', id='do_job_1', seconds=60, misfire_grace_time=900)
     def job1():
-        print('Job 1 executed')
         with app.app_context():
             scheduled_posts_job()
 

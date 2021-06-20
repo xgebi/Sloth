@@ -1,4 +1,4 @@
-from psycopg2 import sql, errors
+from psycopg2 import sql
 import uuid
 
 
