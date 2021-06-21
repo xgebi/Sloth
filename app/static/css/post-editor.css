@@ -1,0 +1,21 @@
+section {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: 1fr 1fr;
+    max-width: 50vw;
+}
+
+section div.original {
+    max-width: 25vw;
+    overflow: scroll;
+    margin-top: 0;
+}
+
+section div.original p:first-child {
+    margin-top: 0;
+}
+
+section:not(.with-translation) textarea,
+section label{
+    grid-column: 1 / 3;
+}

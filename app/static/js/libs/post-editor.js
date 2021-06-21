@@ -3,6 +3,13 @@ class PostEditor extends HTMLElement {
         super();
         const shadow = this.attachShadow({mode: 'closed'});
 
+        const linkElem = document.createElement('link');
+        linkElem.setAttribute('rel', 'stylesheet');
+        linkElem.setAttribute('href', '/static/css/post-editor.css');
+
+        // Attach the created element to the shadow dom
+        shadow.appendChild(linkElem);
+
         const article = document.createElement("article");
         this.sectionsHolder = document.createElement("div");
         this.sectionsHolder.setAttribute("id", "sections-holder");
@@ -10,14 +17,13 @@ class PostEditor extends HTMLElement {
         let sections = []
         if (this.hasAttribute("sections")) {
             sections = JSON.parse(this.getAttribute("sections").substr("data:json,".length));
-            console.log(sections);
         }
 
         if (sections.length === 0) {
             sections.push({
                 content: "",
                 type: "text",
-                translation: "",
+                original: "",
                 position: 0
             });
         }
@@ -33,7 +39,7 @@ class PostEditor extends HTMLElement {
             } else {
                 label.setAttribute("aria-label", `Content of section #${section.position}`)
             }
-            this.sectionsHolder.appendChild(this.#createSection(label, section.content, section.type, section.translation));
+            this.sectionsHolder.appendChild(this.#createSection(label, section.content, section.type, section.original));
         }
         article.appendChild(this.sectionsHolder);
 
@@ -56,18 +62,21 @@ class PostEditor extends HTMLElement {
         shadow.appendChild(article);
     }
 
-    #createSection(label, text, type, translation, position) {
+    #createSection(label, text, type, original, position) {
         const section = document.createElement("section");
+        if (original) {
+            section.setAttribute("class", "with-translation")
+        }
         const textArea = document.createElement("textarea");
         section.appendChild(label);
         textArea.textContent = text;
         section.appendChild(textArea);
 
-        if (translation?.length > 0) {
-            const pTranslation = document.createElement("p");
-            pTranslation.setAttribute("class", "translation");
-            pTranslation.textContent = translation;
-            section.appendChild(pTranslation);
+        if (original?.length > 0) {
+            const divOriginal = document.createElement("div");
+            divOriginal.setAttribute("class", "original");
+            divOriginal.innerHTML = original;
+            section.appendChild(divOriginal);
         }
 
         const select = document.createElement("select");

@@ -18,6 +18,7 @@ from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.utilities.db_connection import db_connection
+from app.toes.markdown_parser import MarkdownParser
 
 reserved_folder_names = ('tag', 'category')
 
@@ -252,11 +253,30 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             ),
             (post_id,)
         )
-        sections = json.dumps([{
+        sections = [{
             "content": section[0],
             "type": section[1],
             "position": section[2]
-        } for section in cur.fetchall()]).replace('\"', '&quot;')
+        } for section in cur.fetchall()]
+
+        if raw_post[16]:
+            cur.execute(
+                sql.SQL(
+                    """SELECT content, section_type, position
+                    FROM sloth_post_sections
+                    WHERE post = %s
+                    ORDER BY position ASC;"""
+                ),
+                (raw_post[16],)
+            )
+            translated_sections = cur.fetchall()
+            md_parser = MarkdownParser()
+            for section in sections:
+                for trans_section in translated_sections:
+                    if section["position"] == trans_section[2]:
+                        section["original"] = md_parser.to_html_string(trans_section[0])
+
+        sections = json.dumps(sections).replace('\"', '&quot;')
     except Exception as e:
         print(traceback.format_exc())
         print("db error B")
