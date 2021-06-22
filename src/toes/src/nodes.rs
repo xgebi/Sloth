@@ -12,27 +12,27 @@ pub mod nodes {
         COMMENT
     }
 
-    pub struct Node {
-        node_type: NodeTypes,
-        html: bool,
-        name: Option<String>,
-        attributes: Option<HashMap<String, String>>,
-        children: Option<Box<Vec<Node>>>,
-        paired_tag: Option<bool>,
-        parent: Box<Option<Node>>,
-        content: Option<String>,
-        cdata: bool
+    pub struct Node<'b> {
+        pub node_type: NodeTypes,
+        pub html: bool,
+        pub name: Option<String>,
+        pub attributes: Option<HashMap<String, String>>,
+        pub children: Option<Box<Vec<Node<'b>>>>,
+        pub paired_tag: Option<bool>,
+        pub parent: Box<Option<Node<'b>>>,
+        pub content: Option<String>,
+        pub cdata: bool
     }
 
-    impl Node {
-        pub fn new(node_type: NodeTypes, name: Option<String>, attributes: Option<HashMap<String, String>>, children: Option<Vec<Node>>, paired_tag: Option<bool>, parent: Option<Node>, cdata: bool) -> Node {
+    impl Node<'_> {
+        pub fn new(node_type: NodeTypes, name: Option<String>, attributes: Option<HashMap<String, String>>, children: Option<Vec<&Node<'b>>>, paired_tag: Option<bool>, parent: Option<Node<'b>>, cdata: bool) -> Node<'b> {
             if node_type == NodeTypes::ROOT {
                 return Node {
                     node_type: NodeTypes::ROOT,
                     html: true,
                     name: name,
                     attributes: attributes,
-                    children: Some(Rc::new(children.unwrap())),
+                    children: Some(Box::new(children.unwrap())),
                     paired_tag: Some(paired_tag.unwrap()),
                     parent: Box::new(None),
                     content: None,
@@ -87,7 +87,7 @@ pub mod nodes {
                 html: true,
                 name: name,
                 attributes: attributes,
-                children: Some(Rc::new(children.unwrap())),
+                children: Some(Box::new(children.unwrap())),
                 paired_tag: Some(paired_tag.unwrap()),
                 parent: Box::new(parent),
                 content: None,

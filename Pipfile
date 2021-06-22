@@ -17,6 +17,7 @@ psycopg2 = "*"
 requests = "*"
 flask-apscheduler = "*"
 psycopg2-binary = "*"
+tweepy = "*"
 
 [requires]
 python_version = "3.8"

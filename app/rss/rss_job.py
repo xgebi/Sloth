@@ -1,17 +1,11 @@
 import os
-import time
 from pathlib import Path
-from threading import Thread
+from psycopg2 import sql, connect
+from datetime import datetime
+from app.utilities import parse_raw_post
+from app.post.post_generator import PostGenerator
+from app.utilities.db_connection import db_connection
 
-
-class RssJob:
-    def __init__(self, interval):
-        self.interval = interval
-        t = Thread(target=self.run)
-        t.start()
-
-
-    def run(self):
-        while not Path(os.path.join(os.getcwd(), 'rss.lock')).is_file():
-            print("RssJob ran")
-            time.sleep(self.interval)
+@db_connection
+def check_rss_updates():
+    pass

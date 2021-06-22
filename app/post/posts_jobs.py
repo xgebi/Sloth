@@ -62,3 +62,8 @@ def scheduled_posts_job(*args, connection, **kwargs):
             post['post_status'] = "published"
             post["libraries"] = libraries[post["uuid"]]
             gen.run(post=post, multiple=True)
+
+
+@db_connection
+def post_to_twitter(*args, connection, **kwargs):
+    pass

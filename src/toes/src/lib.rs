@@ -1,5 +1,8 @@
+#![feature(in_band_lifetimes)]
+
 mod toe_parser;
 mod nodes;
+mod xml_parsing_info;
 
 mod toes {
     pub fn make_sausage() {
