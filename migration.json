@@ -36,5 +36,10 @@
   {
     "type": "py",
     "file": "migrate_excerpt_post_to_section"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "045_add_referrer_column.sql"
   }
 ]
