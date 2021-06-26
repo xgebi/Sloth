@@ -1,0 +1,1 @@
+ALTER TABLE sloth_analytics ADD column referrer text;
