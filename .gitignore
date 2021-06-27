@@ -48,3 +48,6 @@ schedule.lock
 /src/toes-wasm/target
 app/static/js/libs/*min.js
 migrated
+
+*.so
+*.h

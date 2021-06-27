@@ -5,6 +5,12 @@ SlothCMS is an experimental project during which I'd like to learn Python, Go an
 To activate this project's virtualenv, run `pipenv shell`.
 Alternatively, run a command inside the virtualenv with `pipenv run`.
 
+Building Post Generator
+
+```shell
+go build -buildmode=c-shared -o post_generator.so
+```
+
 
 ### Bucket list
 - multilingual blog ✅
@@ -19,4 +25,4 @@ Alternatively, run a command inside the virtualenv with `pipenv run`.
 - IndieWeb 🛠
 - Toe compiler (Go)
 - Markdown compiler (Go)
-- WebAssembly
+- ~~WebAssembly~~ (?)

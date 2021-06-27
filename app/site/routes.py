@@ -23,7 +23,7 @@ def update_analytics(*args, connection, **kwargs):
         cur.execute(
             sql.SQL(
                 """INSERT INTO sloth_analytics (uuid, pathname, last_visit, browser, browser_version, referrer) 
-				VALUES (%s, %s, %s, %s, %s)"""),
+				VALUES (%s, %s, %s, %s, %s, %s)"""),
             (str(uuid.uuid4()), analytics_data["page"], time() * 1000, user_agent.browser, user_agent.version,
              analytics_data["referrer"])
         )
