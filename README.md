@@ -5,6 +5,8 @@ SlothCMS is an experimental project during which I'd like to learn Python, Go an
 To activate this project's virtualenv, run `pipenv shell`.
 Alternatively, run a command inside the virtualenv with `pipenv run`.
 
+https://stackoverflow.com/questions/16053364/make-sure-only-one-worker-launches-the-apscheduler-event-in-a-pyramid-web-app-ru
+
 Building Post Generator
 
 ```shell
