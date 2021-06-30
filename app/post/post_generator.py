@@ -17,7 +17,7 @@ import copy
 from app.post import get_translations
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
-from app.toes.markdown_parser import MarkdownParser
+from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
@@ -629,8 +629,10 @@ class PostGenerator:
             else:
                 post["has_form"] = False
             md_parser = MarkdownParser()
-            post["excerpt"] = md_parser.to_html_string(excerpt_with_forms)
-            post["content"] = md_parser.to_html_string(content_with_forms)
+            post["excerpt"], excerpt_footnotes = md_parser.to_html_string(excerpt_with_forms)
+            post["content"], content_footnotes = md_parser.to_html_string(content_with_forms)
+            excerpt_footnotes.extend(content_footnotes)
+            post["content"] = combine_footnotes(text=post["content"], footnotes=excerpt_footnotes)
 
             rendered = render_toe_from_string(
                 template=template,
@@ -1115,11 +1117,12 @@ class PostGenerator:
 
                 for item in raw_items:
                     excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
+                    excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
                     posts[post_type['slug']].append({
                         "uuid": item[0],
                         "title": item[1],
                         "slug": item[2],
-                        "excerpt": md_parser.to_html_string(excerpt),
+                        "excerpt": excerpt,
                         "publish_date": item[4],
                         "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
                             "%Y-%m-%d %H:%M"),
@@ -1325,8 +1328,14 @@ class PostGenerator:
             md_parser = MarkdownParser()
             if "sections" in post:
                 if not post_markdown:
+                    footnotes = []
+                    sections = []
+                    for section in post["sections"]:
+                        temp_text, temp_footnotes = md_parser.to_html_string(section["content"])
+                        footnotes.extend(temp_footnotes)
+                        sections.append(temp_text)
                     content_text = doc.createCDATASection(
-                        "\n".join([md_parser.to_html_string(section["content"]) for section in post["sections"]])
+                        combine_footnotes(text="\n".join(sections), footnotes=footnotes)
                     )
                 else:
                     content_text = doc.createCDATASection(
@@ -1334,12 +1343,12 @@ class PostGenerator:
                     )
             elif "content" in post or "excerpt" in post:
                 if len(post["excerpt"]) == 0:
-                    post["content"] = md_parser.to_html_string(post["content"])
-                    content_text = doc.createCDATASection(post['content'])
+                    post["content"], footnotes = md_parser.to_html_string(post["content"])
+                    content_text = doc.createCDATASection(combine_footnotes(text=post['content'], footnotes=footnotes))
                 else:
-                    post["excerpt"] = md_parser.to_html_string(post["excerpt"])
-                    post["content"] = md_parser.to_html_string(post["content"])
-                    content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}")
+                    post["excerpt"], ex_footnotes = md_parser.to_html_string(post["excerpt"])
+                    post["content"], con_footnotes = md_parser.to_html_string(post["content"])
+                    content_text = doc.createCDATASection(combine_footnotes(text=f"{post['excerpt']} {post['content']}", footnotes=ex_footnotes.extend(con_footnotes)))
             content.appendChild(content_text)
             post_item.appendChild(content)
             channel.appendChild(post_item)

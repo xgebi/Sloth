@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from app.toes.markdown_parser import MarkdownParser
+from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 
 
 class MyTestCase(unittest.TestCase):
@@ -53,11 +53,19 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_footnote(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_footnotes.md"))
-        text = mdp.to_html_string()
+        text, footnotes = mdp.to_html_string()
 
         #self.assertEqual(text.count("id='footnote-link-"), 2)
         #self.assertEqual(text.count("href='#footnote-"), 4)
-        print(text)
+        print(combine_footnotes(text=text, footnotes=footnotes))
+
+    def test_paragraph_with_nested_footnote(self):
+        mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_footnotes_with_nested_footnotes.md"))
+        text, footnotes = mdp.to_html_string()
+
+        #self.assertEqual(text.count("id='footnote-link-"), 2)
+        #self.assertEqual(text.count("href='#footnote-"), 4)
+        print(combine_footnotes(text=text, footnotes=footnotes))
 
     def test_paragraph_with_list(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_list.md"))

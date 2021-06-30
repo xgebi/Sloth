@@ -1,8 +1,10 @@
-from typing import Dict
+import copy
+from typing import Dict, List
 import re
 import math
 import json
 from app.toes.hooks import Hooks
+
 
 class ListInfo:
     indent = 2
@@ -19,11 +21,19 @@ class Footnote:
         self.footnote = footnote
 
 
+def combine_footnotes(text: str, footnotes: List[Footnote]) -> str:
+    if footnotes is None:
+        return text
+    footnotes.sort(key=lambda f: f.index)
+    footnotes_str = "\n".join([footnote.footnote for footnote in footnotes])
+    return f"{text}<h2>Footnotes</h2><ol>{footnotes_str}</ol>"
+
+
 class ParsingInfo:
     def __init__(self):
         self.i = 0
         self.list_info = ListInfo()
-        self.footnotes = []
+        self.footnotes: List[Footnote] = []
 
     def move_index(self, step: int = 1):
         self.i += step
@@ -37,7 +47,7 @@ class MarkdownParser:
         else:
             self.text = ""
 
-    def to_html_string(self, text: str = "", footnote: bool = False, forms: Dict = None, hooks: Hooks = None) -> str:
+    def to_html_string(self, text: str = "", forms: Dict = None, hooks: Hooks = None, footnote: bool = False) -> (str, List[Footnote]):
         if forms is not None:
             self.forms = forms
         if hooks is not None:
@@ -46,7 +56,7 @@ class MarkdownParser:
         if text:
             self.text = text
         if len(self.text) == 0:
-            return self.text
+            return self.text, []
         if self.text is None:
             return "Error: empty text"
 
@@ -74,11 +84,11 @@ class MarkdownParser:
                     parsing_info.move_index()
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
-                footnote_pattern = re.compile("\[\d+\. .+?\][ \.\?\!\:\;$]")
+                footnote_pattern = re.compile("\[\d+\. .+?\]")
                 link_pattern = re.compile("\[(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
                 if link_pattern.match(result[parsing_info.i:]) and not footnote_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
-                elif footnote_pattern.match(result[parsing_info.i:]) and not footnote:
+                elif footnote_pattern.match(result[parsing_info.i:]):
                     result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info,
                                                                pattern=footnote_pattern)
                 elif result[parsing_info.i + 1] == "[" and hasattr(self, 'forms'):
@@ -94,7 +104,7 @@ class MarkdownParser:
                     result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
-            elif not result[parsing_info.i].isspace() and not footnote:
+            elif not result[parsing_info.i].isspace():
                 # parse paragraph
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
@@ -112,7 +122,7 @@ class MarkdownParser:
         if not footnote:
             result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
-        return result
+        return result, parsing_info.footnotes
 
     def parse_bloquote(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         # Very Work In Progress
@@ -122,7 +132,7 @@ class MarkdownParser:
         end = text[j:].find("\n")
         alt_end = text[j:].find("\n>")
         if alt_end != -1 and end < alt_end:
-            text = f"{text[:parsing_info.i]}<blockquote>{text[parsing_info.i + 1: end + parsing_info.i + 1].strip()}</blockquote>{text[end + parsing_info.i + 1: ]}"
+            text = f"{text[:parsing_info.i]}<blockquote>{text[parsing_info.i + 1: end + parsing_info.i + 1].strip()}</blockquote>{text[end + parsing_info.i + 1:]}"
             parsing_info.move_index(len("<blockquote>"))
 
         elif end == alt_end:
@@ -142,7 +152,7 @@ class MarkdownParser:
                     parsing_info.move_index(len("<blockquote>"))
                     break
                 if line_end == len(text):
-                    line += text[j: ]
+                    line += text[j:]
                     text = f"{text[:parsing_info.i]}<blockquote>{line.strip()}</blockquote>"
                     parsing_info.move_index(len("<blockquote>"))
                     break
@@ -151,9 +161,7 @@ class MarkdownParser:
                     parsing_info.move_index(len("<blockquote>"))
                     break
 
-
         return text, parsing_info
-
 
     def parse_forms(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         end = text[parsing_info.i + 1:].find("]]")
@@ -367,7 +375,7 @@ class MarkdownParser:
         if (parsing_info.i - 1 < 0 or text[parsing_info.i - 1] == " " or text[parsing_info.i - 1] == ">"
             or text[parsing_info.i - 1] == "\n") and text[parsing_info.i + 1] != "`":
             j = text[parsing_info.i + 1:].find("`") + (parsing_info.i + 1)
-            if (j+1 < len(text) and text[j + 1] != "`") or (j + 1 == len(text)):
+            if (j + 1 < len(text) and text[j + 1] != "`") or (j + 1 == len(text)):
                 replacement = f"<span class='code'>{text[parsing_info.i + 1:j]}</span>"
                 if parsing_info.i == 0:
                     text = replacement + text[j + 1:]
@@ -394,12 +402,35 @@ class MarkdownParser:
         return text, parsing_info
 
     def parse_footnote(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
-        end = pattern.match(text[parsing_info.i:]).span()[1] - 1
-        raw_footnote = text[parsing_info.i + 1: parsing_info.i + end - 1]
+        j = parsing_info.i
+        end = -1
+        in_code = False
+        bracket_count = 0
+        while j < len(text):
+            if text[j] == "`":
+                in_code = not in_code
+                if text[j: j+3] == "```":
+                    j += 3
+                else:
+                    j += 1
+            elif text[j] == "[" and not in_code:
+                bracket_count += 1
+                j += 1
+            elif text[j] == "]" and not in_code:
+                bracket_count -= 1
+                if bracket_count == 0:
+                    end = j
+                    break
+                j += 1
+            else:
+                j += 1
+
+
+        raw_footnote = text[parsing_info.i + 1: end]
         index = raw_footnote[:raw_footnote.find(". ")]
         footnote_content = raw_footnote[raw_footnote.find(". ") + 2:]
         footnote_code = f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>"
-        text = f"{text[:parsing_info.i]}{footnote_code}{text[parsing_info.i + end:]}"
+        text = f"{text[:parsing_info.i]}{footnote_code}{text[end + 1:]}"
 
         parsing_info.footnotes.append(
             Footnote(index=index, footnote=footnote_content)
@@ -411,13 +442,19 @@ class MarkdownParser:
         if len(parsing_info.footnotes) > 0:
             # TODO Make footnotes word and list type configurable
             footnotes = []
-            for footnote in parsing_info.footnotes:
+            raw_footnotes = copy.deepcopy(parsing_info.footnotes)
+            i = 0
+            while i < len(raw_footnotes):
                 footnote_parser = MarkdownParser()
-                parsed_footnote = footnote_parser.to_html_string(footnote.footnote, footnote=True)
+                parsed_footnote, nested_footnotes = footnote_parser.to_html_string(raw_footnotes[i].footnote, footnote=True)
+                raw_footnotes.extend(nested_footnotes)
                 footnotes.append(
-                    f"<li id='footnote-{footnote.index}'>{parsed_footnote}<a href='#footnote-link-{footnote.index}'>🔼{footnote.index}</a></li>")
-            footnotes_str = "\n".join(footnotes)
-            text = f"{text}<h2>Footnotes</h2><ol>{footnotes_str}</ol>"
+                    Footnote(
+                        index=raw_footnotes[i].index,
+                        footnote=f"<li id='footnote-{raw_footnotes[i].index}'>{parsed_footnote}<a href='#footnote-link-{raw_footnotes[i].index}'>🔼{raw_footnotes[i].index}</a></li>")
+                )
+                i += 1
+            parsing_info.footnotes = footnotes
         return text, parsing_info
 
     def parse_link(self, text: str, parsing_info: ParsingInfo, pattern) -> (str, ParsingInfo):
