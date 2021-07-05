@@ -44,7 +44,7 @@
             <dialog id="modal" class="gallery"></dialog>
         </div>
         <div class="first-column">
-            <post-editor toe:sections="data['sections']"></post-editor>
+            <post-editor></post-editor>
         </div>
         <div class="first-column">
             <label for="css">Custom CSS:</label>
@@ -204,6 +204,7 @@
 </main>
 <script toe:inline-js>
     const currentLanguage = `<( current_lang_id )>`;
+    const sections = <( data['sections'] )>;
 </script>
 <script src="/static/js/utilities.js"></script>
 <script src="/static/js/post-edit.js"></script>

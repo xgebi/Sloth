@@ -93,6 +93,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     document.querySelector("#add-library").addEventListener('click', addLibrary)
     document.querySelectorAll("#library-list button").forEach(button => button.addEventListener('click', removeLibraryFromList));
+
+    document.querySelector("post-editor").sections = sections;
 });
 
 function calculateLengthEvent(event) {

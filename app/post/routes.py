@@ -280,9 +280,9 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             for section in sections:
                 for trans_section in translated_sections:
                     if section["position"] == trans_section[2]:
-                        section["original"] = trans_section[0].replace("\n", "\n<br />")
+                        section["original"] = trans_section[0]
 
-        sections = json.dumps(sections).replace('\"', '&quot;')
+        sections = json.dumps(sections)
     except Exception as e:
         print(traceback.format_exc())
         print("db error B")
@@ -303,7 +303,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
         "uuid": post_id,
         "title": raw_post[0],
         "slug": raw_post[1],
-        "sections": f"data:json,{sections}",
+        "sections": sections,
         "css": raw_post[2],
         "use_theme_css": raw_post[3],
         "js": raw_post[4],
@@ -477,7 +477,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     connection.close()
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
-    sections = json.dumps(sections).replace('\"', '&quot;')
+    sections = json.dumps(sections)
     data = {
         "new": True,
         "use_theme_js": True,
@@ -491,7 +491,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         "libraries": post_libs,
         "categories": categories,
         "tags": tags,
-        "sections": f"data:json,{sections}",
+        "sections": sections,
     }
 
     token = request.cookies.get('sloth_session')
@@ -856,7 +856,6 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
         abort(500)
 
     cur = connection.cursor()
-    site_url = ""
     media = []
     try:
         cur.execute(
@@ -872,7 +871,6 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
             "uuid": medium[0],
             "filePath": f"{site_url}/{medium[1]}"
         } for medium in raw_media}
-        languages = get_languages(connection=connection)
         cur.execute(
             sql.SQL(
                 """SELECT media, alt FROM sloth_media_alts
@@ -1207,12 +1205,20 @@ def delete_post(*args, permission_level, connection, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.post_type, A.slug, spt.slug 
             FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s"""),
-            [filled["post"]]
+            (filled["post"], )
         )
         res = cur.fetchone()
         cur.execute(
+            sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
+            (filled["post"],)
+        )
+        cur.execute(
+            sql.SQL("""DELETE FROM sloth_post_sections WHERE post = %s;"""),
+            (filled["post"],)
+        )
+        cur.execute(
             sql.SQL("DELETE FROM sloth_posts WHERE uuid = %s"),
-            [filled["post"]]
+            (filled["post"],)
         )
         connection.commit()
         cur.execute(

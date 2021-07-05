@@ -25,7 +25,7 @@ def render_toe_from_path(
     if path_to_templates is None and template is None:
         return None
 
-    toe_engine = Toe(path_to_templates=path_to_templates, template_name=template, data=data, hooks=hooks,
+    toe_engine = Toe(*args, path_to_templates=path_to_templates, template_name=template, data=data, hooks=hooks,
                      base_path=path_to_templates, **kwargs)
     return toe_engine.process_tree()
 
@@ -35,7 +35,7 @@ def render_toe_from_string(
     if template is None:
         return None
 
-    toe_engine = Toe(template_string=template, data=data, hooks=hooks, base_path=base_path, **kwargs)
+    toe_engine = Toe(*args, template_string=template, data=data, hooks=hooks, base_path=base_path, **kwargs)
     return toe_engine.process_tree()
 
 
@@ -49,6 +49,7 @@ class Toe:
 
     def __init__(
             self,
+            *args,
             path_to_templates=None,
             template_name=None,
             data: Dict = {},

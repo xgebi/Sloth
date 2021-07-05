@@ -1,6 +1,9 @@
 class PostEditor extends HTMLElement {
     constructor() {
         super();
+    }
+
+    set sections(data) {
         const shadow = this.attachShadow({mode: 'closed'});
 
         const linkElem = document.createElement('link');
@@ -14,10 +17,7 @@ class PostEditor extends HTMLElement {
         this.sectionsHolder = document.createElement("div");
         this.sectionsHolder.setAttribute("id", "sections-holder");
 
-        let sections = []
-        if (this.hasAttribute("sections")) {
-            sections = JSON.parse(this.getAttribute("sections").substr("data:json,".length));
-        }
+        let sections = data;
 
         if (sections.length === 0) {
             sections.push({
@@ -75,7 +75,7 @@ class PostEditor extends HTMLElement {
         if (original?.length > 0) {
             const divOriginal = document.createElement("div");
             divOriginal.setAttribute("class", "original");
-            divOriginal.innerHTML = original;
+            divOriginal.innerHTML = original.replaceAll("<", "&lt;").replaceAll("\n", "<br />");
             section.appendChild(divOriginal);
         }
 
