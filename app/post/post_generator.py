@@ -1356,3 +1356,42 @@ class PostGenerator:
 
         with codecs.open(os.path.join(output_path, "feed.xml"), "w", "utf-8") as f:
             f.write(doc.toprettyxml())
+
+    def generate_sitemap(self, *args, output_path: Path, **kwargs):
+        # <?xml version="1.0" encoding="UTF-8"?>
+        # <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        # <url><loc>http://www.example.com/index.html</loc></url>
+        # </urlset>
+
+        doc = minidom.Document()
+        root_node = doc.createElement('urlset')
+        root_node.setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
+        doc.appendChild(root_node)
+
+        cur = self.connection.cursor()
+        try:
+            # Get languages
+            cur.execute(
+                sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+            )
+            main_lang = cur.fetchone()[0]
+            cur.execute(
+                sql.SQL("""SELECT uuid, short_name FROM sloth_language_settings;""")
+            )
+            langs = {lang[0]: {
+                "uuid": lang[0],
+                "path": f"{lang[1]}" if lang[0] != main_lang else "",
+            } for lang in cur.fetchall()}
+            #   Get posts
+            cur.execute(
+                sql.SQL("""SELECT lang, slug FROM sloth_posts;""")
+            )
+            posts = [f"{langs[post[0]].path}/{post[1]}" if len(langs[post[0]].path) > 0 else f"{post[1]}" for post in cur.fetchall()]
+            #   Get post types
+
+            #   Get taxonomy
+        except Exception as e:
+            pass
+
+        with codecs.open(os.path.join(output_path, "sitemap.xml"), "w", "utf-8") as f:
+            f.write(doc.toprettyxml())

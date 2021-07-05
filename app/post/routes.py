@@ -18,7 +18,6 @@ from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.utilities.db_connection import db_connection
-from app.toes.markdown_parser import MarkdownParser
 
 reserved_folder_names = ('tag', 'category')
 
@@ -1203,11 +1202,25 @@ def delete_post(*args, permission_level, connection, **kwargs):
     count = []
     try:
         cur.execute(
-            sql.SQL("""SELECT A.post_type, A.slug, spt.slug 
+            sql.SQL("""SELECT A.post_type, A.slug, spt.slug, A.lang 
             FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s"""),
             (filled["post"], )
         )
         res = cur.fetchone()
+        cur.execute(
+            sql.SQL("""SELECT A.uuid 
+                    FROM sloth_posts as A WHERE A.original_lang_entry_uuid = %s ORDER BY publish_date ASC"""),
+            (filled["post"],)
+        )
+        oldest_alternative = cur.fetchone()
+        cur.execute(
+            sql.SQL("""UPDATE sloth_posts SET original_lang_entry_uuid = '' WHERE uuid = %s;"""),
+            oldest_alternative
+        )
+        cur.execute(
+            sql.SQL("""UPDATE sloth_posts SET original_lang_entry_uuid = %s WHERE original_lang_entry_uuid = %s;"""),
+            (oldest_alternative[0], filled["post"])
+        )
         cur.execute(
             sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
             (filled["post"],)
@@ -1230,9 +1243,11 @@ def delete_post(*args, permission_level, connection, **kwargs):
     cur.close()
     gen = PostGenerator(connection=connection)
     if count[0] == 0:
-        gen.delete_post_type_post_files({"slug": res[2]})
+        # post_type, language,
+        gen.delete_post_type_post_files(post_type=res[2], language=res[3])
     else:
-        gen.delete_post_files({"slug": res[2]}, {"slug": res[1]})
+        # post_type, post, language,
+        gen.delete_post_files(post_type=res[2], post=res[1], language=res[3])
         gen.run(post_type=res[2])
 
     return json.dumps(res[0])
