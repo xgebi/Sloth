@@ -184,7 +184,7 @@ class MarkdownParser:
         return text, parsing_info
 
     def parse_headline(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
-        level = len(text[parsing_info.i:text[parsing_info.i:].find(" ") + + parsing_info.i])
+        level = len(text[parsing_info.i:text[parsing_info.i:].find(" ") + parsing_info.i])
         end_of_line = text[parsing_info.i:].find("\n")
         tail = text[end_of_line + parsing_info.i:] if end_of_line >= 0 else ""
         if text[parsing_info.i:text[parsing_info.i:].find("\n") + parsing_info.i].find("{#") > -1 \

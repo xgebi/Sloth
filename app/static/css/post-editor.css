@@ -7,7 +7,7 @@ section {
 
 section div.original {
     max-width: 25vw;
-    overflow: scroll;
+    overflow: auto;
     margin-top: 0;
 }
 

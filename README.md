@@ -25,6 +25,6 @@ go build -buildmode=c-shared -o post_generator.so
 - Markdown compiler (Python) ✅
   - currently v2 (working name of Markdown dialect SlothMark)
 - IndieWeb 🛠
-- Toe compiler (Go)
-- Markdown compiler (Go)
+- Toe compiler (Go) 🛠
+- Markdown compiler (Go) 🛠
 - ~~WebAssembly~~ (?)

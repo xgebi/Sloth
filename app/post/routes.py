@@ -236,7 +236,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 INNER JOIN sloth_libraries sl on spl.library = sl.uuid
                 WHERE spl.post = %s;"""
             ),
-            (post_id, )
+            (post_id,)
         )
         post_libs = [{
             "uuid": lib[0],
@@ -271,6 +271,13 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             )
             translated_sections = cur.fetchall()
             md_parser = MarkdownParser()
+            while len(sections) < len(translated_sections):
+                sections.append({
+                    "content": "",
+                    "original": "",
+                    "type": translated_sections[len(sections)].type,
+                    "position": len(sections)
+                })
             for section in sections:
                 for trans_section in translated_sections:
                     if section["position"] == trans_section[2]:
@@ -405,6 +412,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
         raw_all_taxonomies = cur.fetchall()
         current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
         default_lang = get_default_language(connection=connection)
+        sections = []
         if original_post:
             translations, translatable_languages = get_translations(
                 connection=connection,
@@ -412,6 +420,21 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
                 original_entry_uuid=original_post,
                 languages=languages
             )
+            cur.execute(
+                sql.SQL(
+                    """SELECT content, section_type, position
+                    FROM sloth_post_sections
+                    WHERE post = %s
+                    ORDER BY position ASC;"""
+                ),
+                (original_post,)
+            )
+            sections = [{
+                "content": "",
+                "original": section[0],
+                "type": section[1],
+                "position": section[2],
+            } for section in cur.fetchall()]
         else:
             translatable_languages = languages
             translations = []
@@ -455,7 +478,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
     connection.close()
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
-    sections = json.dumps([]).replace('\"', '&quot;')
+    sections = json.dumps(sections).replace('\"', '&quot;')
     data = {
         "new": True,
         "use_theme_js": True,
@@ -1022,11 +1045,12 @@ def save_post(*args, connection=None, **kwargs):
         # save libraries
         cur.execute(
             sql.SQL("""DELETE FROM sloth_post_libraries WHERE post = %s;"""),
-            (filled["uuid"], )
+            (filled["uuid"],)
         )
         for lib in filled["libs"]:
             cur.execute(
-                sql.SQL("""INSERT INTO sloth_post_libraries (uuid, post, library, hook_name)  VALUES (%s, %s, %s, %s)"""),
+                sql.SQL(
+                    """INSERT INTO sloth_post_libraries (uuid, post, library, hook_name)  VALUES (%s, %s, %s, %s)"""),
                 (str(uuid.uuid4()), filled["uuid"], lib["libId"], lib["hook"])
             )
         connection.commit()

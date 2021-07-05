@@ -8,26 +8,26 @@ class MyTestCase(unittest.TestCase):
 
     def test_empty_file_returns_empty(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "empty.md"))
-        empty_string = mdp.to_html_string()
+        empty_string = mdp.to_html_string()[0]
         self.assertEqual(empty_string, "")
 
     def test_two_paragraphs_file(self):
         # Assume
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph.md"))
-        two_paragraphs = mdp.to_html_string()
+        two_paragraphs = mdp.to_html_string()[0]
         # Assert
         self.assertEqual(two_paragraphs.count("<p>"), 2)
         self.assertEqual(two_paragraphs.count("</p>"), 2)
 
     def test_styled_paragraph(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "styled_paragraph.md"))
-        result = mdp.to_html_string()
+        result = mdp.to_html_string()[0]
         print(result)
 
     def test_headlines(self):
         # Assume
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "headlines.md"))
-        headlines = mdp.to_html_string()
+        headlines = mdp.to_html_string()[0]
         # Assert
         self.assertEqual(headlines.count("<h1"), 1)
         self.assertEqual(headlines.count("</h1>"), 1)
@@ -45,7 +45,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_image_link_headlines(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_image_link_headlines.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
 
         print(text)
         #self.assertEqual(text.count("<img "), 1)
@@ -53,7 +53,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_footnote(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_footnotes.md"))
-        text, footnotes = mdp.to_html_string()
+        text, footnotes = mdp.to_html_string()[0]
 
         #self.assertEqual(text.count("id='footnote-link-"), 2)
         #self.assertEqual(text.count("href='#footnote-"), 4)
@@ -61,7 +61,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_nested_footnote(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_footnotes_with_nested_footnotes.md"))
-        text, footnotes = mdp.to_html_string()
+        text, footnotes = mdp.to_html_string()[0]
 
         #self.assertEqual(text.count("id='footnote-link-"), 2)
         #self.assertEqual(text.count("href='#footnote-"), 4)
@@ -69,23 +69,23 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_list(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_list.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
         print(text)
 
     def test_block_quotes(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "block_quotes.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
         print(text)
 
     def test_block_quotes_with_paragraphs(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "blockquotes_paragrahps.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
         print(text)
 
 
     def test_paragraph_with_code(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "paragraph_with_code.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
 
         self.assertIn("<span class='code'>raichu</span>", text)
         self.assertIn("<span class='code'>pika?</span>", text)
@@ -99,54 +99,54 @@ class MyTestCase(unittest.TestCase):
 
     def test_paragraph_with_code(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "real_text.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
         print(text)
 
     def test_basic_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "basic_list.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_link_in_footnote(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "link_in_footnote.md"))
-        text = mdp.to_html_string()
+        text = mdp.to_html_string()[0]
 
         self.assertEqual(text, "<p>Give a flying flamingo<sup><a href='#footnote-3' id='footnote-link-3'>3.</a></sup> is the third resource.</p><h2>Footnotes</h2><ol><li id='footnote-3'>Thanks to <a href=\"https://en.wikipedia.org/wiki/John_Bercow\">John Bercow</a> for giving us PG alternatives to swear words<a href='#footnote-link-3'>🔼3</a></li></ol>")
 
     def test_nested_numeric_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_numeric_list.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_nested_numeric_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_numeric_list_weird.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_nested_points_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_points_list.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_nested_points_lists_off(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_points_list_weird.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_nested_mixed_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_mixed_list.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         print(text)
 
     def test_list_with_inline_code(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "list_with_inline_code.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         self.assertEqual(text, """<ul>
 <li><span class='code'>aaa</span>
@@ -160,9 +160,15 @@ class MyTestCase(unittest.TestCase):
 
     def test_html_link(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "html.md"))
-        text = bl.to_html_string()
+        text = bl.to_html_string()[0]
 
         self.assertEqual(text, '<div id="aaa"><a href="#aaa">aaa</a></div>')
+
+    def test_html_link_with_parenthesis(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "link_with_parenthesis.md"))
+        text = bl.to_html_string()[0]
+
+        self.assertEqual(text, '<p>A significant number of sports competitions have rules about foreigners. In Japan every sumo <a href="https://en.wikipedia.org/wiki/Heya_(sumo)">stable</a> (部屋, heya) has a limit of one foreigner, so at any time there are about 43. In this post I\'ll look into webscraping, filling missing data and analyzing how good they are (hint: last to top ranked wrestlers are from Mongolia).</p>')
 
 
 if __name__ == '__main__':
