@@ -281,7 +281,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             for section in sections:
                 for trans_section in translated_sections:
                     if section["position"] == trans_section[2]:
-                        section["original"] = md_parser.to_html_string(trans_section[0])
+                        section["original"] = trans_section[0]
 
         sections = json.dumps(sections).replace('\"', '&quot;')
     except Exception as e:
