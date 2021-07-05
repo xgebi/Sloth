@@ -275,7 +275,7 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 sections.append({
                     "content": "",
                     "original": "",
-                    "type": translated_sections[len(sections)].type,
+                    "type": translated_sections[len(sections)][2],
                     "position": len(sections)
                 })
             for section in sections:
