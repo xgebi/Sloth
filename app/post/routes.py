@@ -270,18 +270,17 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 (raw_post[16],)
             )
             translated_sections = cur.fetchall()
-            md_parser = MarkdownParser()
             while len(sections) < len(translated_sections):
                 sections.append({
                     "content": "",
                     "original": "",
-                    "type": translated_sections[len(sections)][2],
+                    "type": translated_sections[len(sections)][1],
                     "position": len(sections)
                 })
             for section in sections:
                 for trans_section in translated_sections:
                     if section["position"] == trans_section[2]:
-                        section["original"] = trans_section[0]
+                        section["original"] = trans_section[0].replace("\n", "\n<br />")
 
         sections = json.dumps(sections).replace('\"', '&quot;')
     except Exception as e:

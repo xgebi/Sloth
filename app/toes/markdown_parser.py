@@ -84,17 +84,7 @@ class MarkdownParser:
                     parsing_info.move_index()
             elif result[parsing_info.i] == "[":
                 # parse footnote and link
-                footnote_pattern = re.compile("\[\d+\. .+?\]")
-                link_pattern = re.compile("\[(.*)\]\(([0-9A-z\-\_\.\~\!\*\'\(\)\;\:\@\&\=\+\$\,\/\?\%\#]+)\)")
-                if link_pattern.match(result[parsing_info.i:]) and not footnote_pattern.match(result[parsing_info.i:]):
-                    result, parsing_info = self.parse_link(text=result, parsing_info=parsing_info, pattern=link_pattern)
-                elif footnote_pattern.match(result[parsing_info.i:]):
-                    result, parsing_info = self.parse_footnote(text=result, parsing_info=parsing_info,
-                                                               pattern=footnote_pattern)
-                elif result[parsing_info.i + 1] == "[" and hasattr(self, 'forms'):
-                    result, parsing_info = self.parse_forms(text=result, parsing_info=parsing_info)
-                else:
-                    parsing_info.move_index()
+                result, parsing_info = self.parse_square_brackets(text=result, parsing_info=parsing_info)
             elif len(result) > parsing_info.i + 2 and result[parsing_info.i:parsing_info.i + 2] == "![":
                 # parse image
                 result, parsing_info = self.parse_image(text=result, parsing_info=parsing_info)
@@ -104,7 +94,7 @@ class MarkdownParser:
                     result, parsing_info = self.parse_headline(text=result, parsing_info=parsing_info)
                 else:
                     parsing_info.move_index()
-            elif not result[parsing_info.i].isspace():
+            elif not result[parsing_info.i].isspace() and not footnote:
                 # parse paragraph
                 result, parsing_info = self.parse_paragraph(text=result, parsing_info=parsing_info)
             elif result[parsing_info.i] == '\n':
@@ -123,6 +113,57 @@ class MarkdownParser:
             result, parsing_info = self.add_footnotes(text=result, parsing_info=parsing_info)
 
         return result, parsing_info.footnotes
+
+    def parse_square_brackets(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
+        j = self.get_end_boundary_within_characters(parsing_info.i, "[", "]", text)
+        footnote_pattern = re.compile("\[\d+\. .+?\]")
+        if text[j+1] == "(":
+            k = self.get_end_boundary_within_characters(j + 1, "(", ")", text)
+            label = text[parsing_info.i + 1:j]
+            url = text[j + 2: k]
+            link_code = f"<a href=\"{url}\">{label}</a>"
+            text = f"{text[:parsing_info.i]}{link_code}{text[k+1:]}"
+            parsing_info.move_index(len(f"<a href=\"{url}\">"))
+
+        elif footnote_pattern.match(text[parsing_info.i:j+1]):
+            raw_footnote = text[parsing_info.i + 1: j]
+            index = raw_footnote[:raw_footnote.find(". ")]
+            footnote_content = raw_footnote[raw_footnote.find(". ") + 2:]
+            footnote_code = f"<sup><a href='#footnote-{index}' id='footnote-link-{index}'>{index}.</a></sup>"
+            text = f"{text[:parsing_info.i]}{footnote_code}{text[j + 1:]}"
+
+            parsing_info.footnotes.append(
+                Footnote(index=index, footnote=footnote_content)
+            )
+            parsing_info.move_index(len(footnote_code))
+        else:
+            parsing_info.move_index()
+        return text, parsing_info
+
+    def get_end_boundary_within_characters(self, j: int, start_char: str, end_char: str, text: str):
+        end = -1
+        in_code = False
+        bracket_count = 0
+        while j < len(text):
+            if text[j] == "`":
+                in_code = not in_code
+                if text[j: j + 3] == "```":
+                    j += 3
+                else:
+                    j += 1
+            elif text[j] == start_char and not in_code:
+                bracket_count += 1
+                j += 1
+            elif text[j] == end_char and not in_code:
+                bracket_count -= 1
+                if bracket_count == 0:
+                    end = j
+                    break
+                j += 1
+            else:
+                j += 1
+
+        return end
 
     def parse_bloquote(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
         # Very Work In Progress
@@ -160,21 +201,6 @@ class MarkdownParser:
                     text = f"{text[:parsing_info.i]}<blockquote>{line.strip()}</blockquote>{text[line_end + 1:]}"
                     parsing_info.move_index(len("<blockquote>"))
                     break
-
-        return text, parsing_info
-
-    def parse_forms(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
-        end = text[parsing_info.i + 1:].find("]]")
-        keyword_check = text[parsing_info.i + 2].startswith("form ")
-        if end == -1 or keyword_check != 0:
-            parsing_info.move_index(2)
-        else:
-            end += parsing_info.i
-            form_name = text[keyword_check + parsing_info.i + 3: end]  # 3 is there because "[[{name} "
-            if form_name in self.forms:
-                form_data = json.loads(self.forms[form_name])
-            else:
-                parsing_info.move_index()
 
         return text, parsing_info
 

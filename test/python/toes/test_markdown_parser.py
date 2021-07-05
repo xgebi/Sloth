@@ -94,9 +94,6 @@ class MyTestCase(unittest.TestCase):
 <p>const j = 4;</p>
 </code></pre>""", text)
 
-    def test_custom_forms(self):
-        pass
-
     def test_paragraph_with_code(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "real_text.md"))
         text = mdp.to_html_string()[0]
@@ -110,9 +107,11 @@ class MyTestCase(unittest.TestCase):
 
     def test_link_in_footnote(self):
         mdp = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "link_in_footnote.md"))
-        text = mdp.to_html_string()[0]
+        text, footnotes = mdp.to_html_string()
 
-        self.assertEqual(text, "<p>Give a flying flamingo<sup><a href='#footnote-3' id='footnote-link-3'>3.</a></sup> is the third resource.</p><h2>Footnotes</h2><ol><li id='footnote-3'>Thanks to <a href=\"https://en.wikipedia.org/wiki/John_Bercow\">John Bercow</a> for giving us PG alternatives to swear words<a href='#footnote-link-3'>🔼3</a></li></ol>")
+        self.assertEqual(text, "<p>Give a flying flamingo<sup><a href='#footnote-3' id='footnote-link-3'>3.</a></sup> is the third resource.</p>")
+        self.assertEqual(footnotes[0].footnote, "<li id='footnote-3'>Thanks to <a href=\"https://en.wikipedia.org/wiki/John_Bercow\">John Bercow</a> for giving us PG alternatives to swear words<a href='#footnote-link-3'>🔼3</a></li>")
+        self.assertEqual(footnotes[0].index, '3')
 
     def test_nested_numeric_lists(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_numeric_list.md"))
@@ -142,7 +141,24 @@ class MyTestCase(unittest.TestCase):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "nested_mixed_list.md"))
         text = bl.to_html_string()[0]
 
-        print(text)
+        self.assertEqual(text, """<ul>
+<li>aaa
+</li><li>bbb
+<ol><li>ccc
+</li><li>ddd
+<ul><li>eee
+</li></ul></li></ol></li><li>fff</li>
+</ul>
+
+<ol>
+<li>ggg
+</li><li>hhh
+<ul><li>iii
+</li><li>JJJ
+<ul><li>kkk
+</li></ul></li></ul></li><li>lll</li>
+</ol>
+""")
 
     def test_list_with_inline_code(self):
         bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "list_with_inline_code.md"))
@@ -169,6 +185,12 @@ class MyTestCase(unittest.TestCase):
         text = bl.to_html_string()[0]
 
         self.assertEqual(text, '<p>A significant number of sports competitions have rules about foreigners. In Japan every sumo <a href="https://en.wikipedia.org/wiki/Heya_(sumo)">stable</a> (部屋, heya) has a limit of one foreigner, so at any time there are about 43. In this post I\'ll look into webscraping, filling missing data and analyzing how good they are (hint: last to top ranked wrestlers are from Mongolia).</p>')
+
+    def test_links(self):
+        bl = MarkdownParser(path=os.path.join(os.getcwd(), "resources", "markdown", "links.md"))
+        text = bl.to_html_string()[0]
+
+        self.assertEqual(text, '<p>At the moment I am learning through courses. First one is Scott Jehl\'s <a href="https://scottjehl.com/lfwp/">course on performance</a>. Second course is <a href="https://www.udemy.com/course/user-experience-design-fundamentals/">User Experience Design Fundamentals</a> because the back-end of my CMS needs improvements. Third is a <a href="https://www.udemy.com/course/hands-on-data-structures-and-algorithms-in-rust/">hands-on Rust course</a>. </p>')
 
 
 if __name__ == '__main__':
