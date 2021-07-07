@@ -63,6 +63,7 @@ class PostEditor extends HTMLElement {
         shadow.querySelectorAll("textarea").forEach((textArea) => {
             textArea.style.width = "100%";
             textArea.style.height = "100%";
+            textArea.parentElement.style.height = `${textArea.scrollHeight}px`;
             // textArea.style.height = "auto";
             // textArea.style.height = (textArea.scrollHeight) + "px";
             // textArea.style.overflowY = "visible";
@@ -122,9 +123,9 @@ class PostEditor extends HTMLElement {
         return sections;
     }
 
-    #onInput() {
-      this.style.height = "auto";
-      this.style.height = (this.scrollHeight) + "px";
+    #onInput(event) {
+        event.target.parentElement.style.height = `auto`;
+        event.target.parentElement.style.height = `${this.scrollHeight}px`;
     }
 }
 
