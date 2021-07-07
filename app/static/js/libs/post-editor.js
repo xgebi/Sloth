@@ -60,6 +60,9 @@ class PostEditor extends HTMLElement {
         });
         article.appendChild(addSectionButton);
         shadow.appendChild(article);
+        shadow.querySelectorAll("textarea").forEach((textArea) => {
+            textArea.setAttribute("style", "height:" + (textArea.scrollHeight) + "px;overflow-y:hidden;");
+        })
     }
 
     #createSection(label, text, type, original, position) {
@@ -70,6 +73,7 @@ class PostEditor extends HTMLElement {
         const textArea = document.createElement("textarea");
         section.appendChild(label);
         textArea.textContent = text;
+        textArea.addEventListener("input", this.#onInput, false);
         section.appendChild(textArea);
 
         if (original?.length > 0) {
@@ -110,6 +114,11 @@ class PostEditor extends HTMLElement {
             })
         }
         return sections;
+    }
+
+    #onInput() {
+      this.style.height = "auto";
+      this.style.height = (this.scrollHeight) + "px";
     }
 }
 

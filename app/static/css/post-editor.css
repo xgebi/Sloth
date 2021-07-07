@@ -1,12 +1,12 @@
 section {
     display: grid;
     gap: .5rem;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(25ch, 1fr) 1fr;
     max-width: 50vw;
 }
 
 section div.original {
-    max-width: 25vw;
+    max-width: 25ch;
     overflow: auto;
     margin-top: 0;
 }
