@@ -61,7 +61,11 @@ class PostEditor extends HTMLElement {
         article.appendChild(addSectionButton);
         shadow.appendChild(article);
         shadow.querySelectorAll("textarea").forEach((textArea) => {
-            textArea.setAttribute("style", "height:" + (textArea.scrollHeight) + "px;overflow-y:hidden;");
+            textArea.style.width = "100%";
+            textArea.style.height = "100%";
+            // textArea.style.height = "auto";
+            // textArea.style.height = (textArea.scrollHeight) + "px";
+            // textArea.style.overflowY = "visible";
         })
     }
 
@@ -70,11 +74,13 @@ class PostEditor extends HTMLElement {
         if (original) {
             section.setAttribute("class", "with-translation")
         }
+        const textAreaDiv = document.createElement("div");
         const textArea = document.createElement("textarea");
         section.appendChild(label);
         textArea.textContent = text;
         textArea.addEventListener("input", this.#onInput, false);
-        section.appendChild(textArea);
+        textAreaDiv.appendChild(textArea);
+        section.appendChild(textAreaDiv);
 
         if (original?.length > 0) {
             const divOriginal = document.createElement("div");
