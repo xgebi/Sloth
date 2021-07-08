@@ -56,7 +56,12 @@ class PostEditor extends HTMLElement {
             } else {
                 label.setAttribute("aria-label", `Content of section #${sc.children.length}`)
             }
-            sc.appendChild(this.#createSection(label, "", "text", ""));
+            const section = this.#createSection(label, "", "text", "");
+            sc.appendChild(section);
+            const textArea = section.querySelector("textarea");
+            textArea.style.width = "100%";
+            textArea.style.height = "100%";
+            textArea.parentElement.style.height = `${textArea.scrollHeight}px`;
         });
         article.appendChild(addSectionButton);
         shadow.appendChild(article);
@@ -64,9 +69,6 @@ class PostEditor extends HTMLElement {
             textArea.style.width = "100%";
             textArea.style.height = "100%";
             textArea.parentElement.style.height = `${textArea.scrollHeight}px`;
-            // textArea.style.height = "auto";
-            // textArea.style.height = (textArea.scrollHeight) + "px";
-            // textArea.style.overflowY = "visible";
         })
     }
 
