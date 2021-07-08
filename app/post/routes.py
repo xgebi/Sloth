@@ -152,14 +152,14 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                     INNER JOIN sloth_users AS B ON sp.author = B.uuid 
                     INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
                     WHERE sp.uuid = %s"""),
-            [post_id]
+            (post_id, )
         )
         raw_post = cur.fetchone()
         if raw_post is None:
             return redirect('/post/nothing')
         cur.execute(
             sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
-            [raw_post[11]]
+            (raw_post[11], )
         )
         post_type_name = cur.fetchone()[0]
 
@@ -203,8 +203,12 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
                 languages=languages
             )
         else:
-            translatable = languages
-            translations = []
+            translations, translatable = get_translations(
+                connection=connection,
+                post_uuid="",
+                original_entry_uuid=post_id,
+                languages=languages
+            )
         cur.execute(
             sql.SQL(
                 """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
