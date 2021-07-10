@@ -41,7 +41,8 @@ def show_media_list(*args, permission_level, connection, **kwargs):
             "permission_level": permission_level,
             "media": media_data,
             "default_lang": default_lang,
-            "languages": languages
+            "languages": languages,
+            "json_media": json.dumps(media_data),
         },
         hooks=Hooks()
     )

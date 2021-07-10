@@ -7,65 +7,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
     for (const button of deleteButtons) {
         button.addEventListener('click', deleteButton)
     }
+    document.querySelector("media-uploader").addEventListener('uploaded', (event) => {
+        console.log(event);
+    })
 });
 
 function openModal() {
-    const dialog = document.querySelector("#modal");
-    if (dialog.getAttribute("open")) {
-        return;
-    }
-    dialog.showModal();
-
-    const fileLabel = document.createElement('label');
-    fileLabel.setAttribute('for', 'file-upload');
-    fileLabel.textContent = "File";
-    dialog.appendChild(fileLabel);
-
-    const fileUploadInput = document.createElement('input');
-    fileUploadInput.setAttribute('id', 'file-upload');
-    fileUploadInput.setAttribute("type", "file");
-    dialog.appendChild(fileUploadInput);
-
-    const h2 = document.createElement('h2');
-    h2.textContent = "Alt descriptions";
-    dialog.appendChild(h2)
-
-    languages.forEach(lang => {
-        console.log(lang);
-        const altLabel = document.createElement('label');
-        altLabel.setAttribute('for', `alt-${lang["long_name"].toLowerCase()}`);
-        altLabel.textContent = `Alternative text (${lang["long_name"]})`;
-        dialog.appendChild(altLabel);
-
-        const altInput = document.createElement('input');
-        altInput.setAttribute('id', `alt-${lang["long_name"].toLowerCase()}`);
-        altInput.setAttribute("class", "alt-input");
-        altInput.setAttribute("type", "text");
-        altInput.setAttribute("data-lang", lang["uuid"]);
-
-        dialog.appendChild(altInput);
-    })
-
-    const uploadButton = document.createElement('button');
-    uploadButton.textContent = "Upload file";
-    uploadButton.addEventListener('click', () => {
-        uploadFile();
-        closeModal(dialog);
-    });
-    dialog.appendChild(uploadButton);
-
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close'
-    closeButton.addEventListener('click', () => closeModal(dialog));
-    dialog.appendChild(closeButton);
-}
-
-function closeModal(dialog) {
-    while (dialog.firstChild) {
-        dialog.removeChild(dialog.lastChild);
-    }
-    dialog.removeAttribute('open');
+    const mediaUploader = document.querySelector("media-uploader");
+    mediaUploader.languages = languages;
+    mediaUploader.open();
 }
 
 function renderImages(media) {
@@ -93,42 +43,6 @@ function renderImages(media) {
     }
 }
 
-function uploadFile() {
-    const formData = new FormData();
-    const fileField = document.querySelector('#file-upload');
-    const altFields = document.querySelectorAll(".alt-input");
-
-    const alts = [];
-    altFields.forEach(alt => {
-        alts.push({
-            lang_uuid: alt.dataset["lang"],
-            text: alt.value
-        })
-    });
-
-    formData.append('alt', JSON.stringify(alts));
-    formData.append('image', fileField.files[0]);
-
-    fetch('/api/media/upload-file', {
-        method: 'POST',
-        headers: {
-            'authorization': document.cookie
-                .split(';')
-                .find(row => row.trim().startsWith('sloth_session'))
-                .split('=')[1]
-        },
-        body: formData
-    }).then(response => {
-        if (response.ok) {
-            return response.json()
-        }
-        throw `${response.status}: ${response.statusText}`
-    }).then(result => {
-        renderImages(result["media"]);
-    }).catch(error => {
-        console.error('Error:', error);
-    });
-}
 
 function deleteButton(event) {
     const dialog = document.querySelector("#modal");

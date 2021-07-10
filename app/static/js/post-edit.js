@@ -1,44 +1,10 @@
 const post = {};
 
-const gallery = {
-    _items: [],
-    get images() {
-        return this._items;
-    },
-    set images(images) {
-        this._items = images;
-    }
-};
-
 // not ideal but it'll do for now
 const META_DESC = 160;
 const SOCIAL_DESC = 200;
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    // 1. get gallery
-    fetch(`/api/post/media/${currentLanguage}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'authorization': document.cookie
-                .split(';')
-                .find(row => row.trim().startsWith('sloth_session'))
-                .split('=')[1]
-        }
-    })
-        .then(response => {
-            if (response.ok) {
-                return response.json()
-            }
-            throw `${response.status}: ${response.statusText}`
-        })
-        .then(data => {
-            gallery.images = data.media;
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
-
     document.querySelector("#gallery-opener").addEventListener('click', () => {
         openGalleryDialog(gallery.images, "gallery");
     });
@@ -94,14 +60,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelector("#add-library").addEventListener('click', addLibrary)
     document.querySelectorAll("#library-list button").forEach(button => button.addEventListener('click', removeLibraryFromList));
 
-    document.querySelector("post-editor").sections = sections;
+    const postEditor = document.querySelector("post-editor");
+    postEditor.sections = sections;
+    const mediaGallery = document.querySelector("media-gallery");
+    mediaGallery.addEventListener('picked', (event) => {
+        postEditor.addImageToCurrentTextArea(event.detail.image);
+    })
 });
 
 function calculateLengthEvent(event) {
     if (event.target.id === "meta-description") {
-        calculateLength(META_DESC, `#${event.target.id}`)
+        calculateLength(META_DESC, `#${event.target.id}`);
     } else if (event.target.id === "social-description") {
-        calculateLength(SOCIAL_DESC, `#${event.target.id}`)
+        calculateLength(SOCIAL_DESC, `#${event.target.id}`);
     }
 }
 

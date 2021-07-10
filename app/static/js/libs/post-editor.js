@@ -1,4 +1,6 @@
 class PostEditor extends HTMLElement {
+    #currentTextArea = {}
+
     constructor() {
         super();
     }
@@ -69,6 +71,14 @@ class PostEditor extends HTMLElement {
             textArea.style.width = "100%";
             textArea.style.height = "100%";
             textArea.parentElement.style.height = `${textArea.scrollHeight}px`;
+            textArea.addEventListener('input', () => {
+                this.#currentTextArea = textArea;
+            });
+
+            textArea.addEventListener('paste', () => {
+                this.#currentTextArea = textArea;
+            });
+
         })
     }
 
@@ -128,6 +138,11 @@ class PostEditor extends HTMLElement {
     #onInput(event) {
         event.target.parentElement.style.height = `auto`;
         event.target.parentElement.style.height = `${this.scrollHeight}px`;
+    }
+
+    addImageToCurrentTextArea(image) {
+        this.#currentTextArea.textContent =
+            `${this.#currentTextArea.textContent.slice(0, this.#currentTextArea.textContent.selectionStart)}${image}${this.#currentTextArea.textContent.slice(this.#currentTextArea.textContent.selectionEnd)}`;
     }
 }
 

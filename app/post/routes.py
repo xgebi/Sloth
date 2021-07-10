@@ -18,6 +18,7 @@ from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
 from app.utilities.db_connection import db_connection
+from app.media.routes import get_media
 
 reserved_folder_names = ('tag', 'category')
 
@@ -142,6 +143,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             sql.SQL("SELECT uuid, file_path FROM sloth_media")
         )
         media = cur.fetchall()
+
+        media_data = get_media(connection=connection)
 
         cur.execute(
             sql.SQL("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
@@ -353,7 +356,8 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
             "current_lang_id": data["lang"],
             "post_formats": post_formats,
             "libs": libs,
-            "hook_list": HooksList.list()
+            "hook_list": HooksList.list(),
+            "media_data": media_data
         }
     )
 

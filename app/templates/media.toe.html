@@ -17,11 +17,14 @@
         </article>
 
     </section>
-    <dialog id="modal"></dialog>
+    <media-gallery></media-gallery>
+    <media-uploader></media-uploader>
 </main>
 <script toe:inline-js>
     const languages = JSON.parse('<( languages | json )>');
+    const media = <( json_media )>;
 </script>
+<script src="/static/js/libs/media-uploader.js"></script>
 <script src="/static/js/media.js"></script>
 </body>
 </html>
