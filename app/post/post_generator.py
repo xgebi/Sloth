@@ -609,9 +609,11 @@ class PostGenerator:
         translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
+            md_parser = MarkdownParser()
             i = 0
             content_with_forms = ""
             add_content_form_hooks = False
+            content_footnotes = []
             for section in post["sections"]:
                 if i == 0:
                     excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(
@@ -620,7 +622,9 @@ class PostGenerator:
                 else:
                     partial_content_with_forms, temp_add_content_form_hooks = self.get_forms_from_text(
                         copy.deepcopy(section["content"]))
+                    partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(partial_content_with_forms)
                     content_with_forms += partial_content_with_forms
+                    content_footnotes.extend(partial_content_footnotes)
                     add_content_form_hooks = add_content_form_hooks or temp_add_content_form_hooks
             if add_excerpt_form_hooks or add_content_form_hooks:
                 post["has_form"] = True
@@ -628,11 +632,10 @@ class PostGenerator:
                     self.hooks.footer.append(Hook(content=fi.read(), condition="post['has_form']"))
             else:
                 post["has_form"] = False
-            md_parser = MarkdownParser()
+
             post["excerpt"], excerpt_footnotes = md_parser.to_html_string(excerpt_with_forms)
-            post["content"], content_footnotes = md_parser.to_html_string(content_with_forms)
             excerpt_footnotes.extend(content_footnotes)
-            post["content"] = combine_footnotes(text=post["content"], footnotes=excerpt_footnotes)
+            post["content"] = combine_footnotes(text=content_with_forms, footnotes=excerpt_footnotes)
 
             rendered = render_toe_from_string(
                 template=template,
