@@ -69,7 +69,7 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
     temp_endpoint_result = {}
     try:
         cur.execute(
-            sql.SQL("""SELECT uuid, path, data FROM sloth_mock_endpoints WHERE uuid = %s"""),
+            sql.SQL("""SELECT uuid, path, data, content_type FROM sloth_mock_endpoints WHERE uuid = %s"""),
             [endpoint]
         )
         temp_endpoint_result = cur.fetchone()
@@ -84,6 +84,7 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
         "uuid": temp_endpoint_result[0],
         "path": temp_endpoint_result[1],
         "data": temp_endpoint_result[2],
+        "content_type": temp_endpoint_result[3],
         "new": False
     }
 
@@ -175,13 +176,13 @@ def save_endpoint(*args, permission_level, connection, endpoint_id, **kwargs):
     try:
         if filled["new"].lower() == "true":
             cur.execute(
-                sql.SQL("""INSERT INTO sloth_mock_endpoints VALUES (%s, %s, %s)"""),
-                [endpoint_id, filled["path"], filled["data"]]
+                sql.SQL("""INSERT INTO sloth_mock_endpoints VALUES (%s, %s, %s, %s)"""),
+                (endpoint_id, filled["path"], filled["data"], filled["content_type"])
             )
         else:
             cur.execute(
-                sql.SQL("""UPDATE sloth_mock_endpoints SET path = %s, data = %s WHERE uuid = %s"""),
-                [filled["path"], filled["data"], endpoint_id]
+                sql.SQL("""UPDATE sloth_mock_endpoints SET path = %s, data = %s, content_type = %s WHERE uuid = %s"""),
+                (filled["path"], filled["data"], filled["content_type"], endpoint_id)
             )
         connection.commit()
     except Exception as e:
@@ -206,12 +207,13 @@ def get_endpoint(*args, connection, path, **kwargs):
     cur = connection.cursor()
     try:
         cur.execute(
-            sql.SQL("""SELECT data FROM sloth_mock_endpoints WHERE path = %s;"""),
+            sql.SQL("""SELECT data, content_type FROM sloth_mock_endpoints WHERE path = %s;"""),
             [path]
         )
         temp_result = cur.fetchone()
-        if temp_result is not None and len(temp_result) == 1:
+        if temp_result is not None and len(temp_result) >= 1:
             result = temp_result[0]
+            content_type = temp_result[1]
         else:
             result = json.dumps({"error": "Missing data"})
     except Exception as e:
@@ -222,6 +224,6 @@ def get_endpoint(*args, connection, path, **kwargs):
     connection.close()
 
     response = make_response(result)
-    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Type'] = content_type
 
     return response
