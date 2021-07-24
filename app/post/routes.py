@@ -115,13 +115,13 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
             "author": item[5]
         })
     # List of {{post_type["name"]}}
-
+    post_type_display_name = [post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0]['display_name']
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="post-list.toe.html",
         hooks=Hooks(),
         data={
-            "title": f"List of {post_type['name']}",
+            "title": f"List of {post_type_display_name}",
             "post_types": post_types_result,
             "permission_level": permission_level,
             "default_lang": default_lang,

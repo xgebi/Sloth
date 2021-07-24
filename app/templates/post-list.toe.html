@@ -24,11 +24,11 @@
     </thead>
     <tbody>
         <tr toe:for="post in post_list">
-            <td>{{ post["title"] }}</td>
-            <td>{{ post["status"] }}</td>
-            <td>{{ post["update_date"] }}</td>
-            <td>{{ post["publish_date"] }}</td>
-            <td><a href="/post/{{post['uuid']}}/edit">Edit</a></td>
+            <td toe:text="post['title']"></td>
+            <td toe:text="post['status']"></td>
+            <td toe:text="post['update_date']"></td>
+            <td toe:text="post['publish_date']"></td>
+            <td><a toe:href="'/post/' + post['uuid'] + '/edit'">Edit</a></td>
         </tr>
     </tbody>
 </table>
