@@ -14,14 +14,13 @@ import traceback
 import re
 import copy
 
-from app.post import get_translations
+from app.post import get_translations, get_taxonomy_for_post_preped_for_listing
 from app.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
-
 
 class PostGenerator:
     runnable = True
@@ -139,7 +138,7 @@ class PostGenerator:
         post_types = post_types_object.get_post_type_list(self.connection)
         # generate posts for languages
         for language in self.languages:
-            self.generate_posts_for_language(language=language, post_types=post_types)
+            self.generate_posts_for_language(language=language, post_types=post_types, generate_all=True)
         # remove lock
         os.remove(Path(os.path.join(os.getcwd(), 'generating.lock')))
 
@@ -193,7 +192,7 @@ class PostGenerator:
             self.generate_taxonomy(taxonomy=tags, language=language, output_path=output_path,
                                    post_type=post_type, title=self.settings["tag-title"][language["uuid"]]["content"])
 
-    def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], **kwargs):
+    def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], generate_all=False, **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
             # path for main language
             output_path = Path(self.config["OUTPUT_PATH"])
@@ -213,7 +212,7 @@ class PostGenerator:
             self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type, language=language)
 
         # generate home
-        self.generate_home(output_path=output_path, post_types=post_types, language=language)
+        self.generate_home(output_path=output_path, post_types=post_types, language=language, generate_all=generate_all)
 
     def get_posts_for_taxonomy(
             self,
@@ -610,6 +609,13 @@ class PostGenerator:
 
         translations = self.get_translation_links(translations=translations_filtered, post_type=post_type, post=post)
 
+        categories, tags = get_taxonomy_for_post_preped_for_listing(
+            connection=self.connection,
+            uuid=post['uuid'],
+            main_language=self.settings['main_language'],
+            language=language
+        )
+
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
             md_parser = MarkdownParser()
             i = 0
@@ -650,7 +656,9 @@ class PostGenerator:
                     "translations": translations,
                     "is_home": False,
                     "is_post": True,
-                    "language": language["uuid"]
+                    "language": language["uuid"],
+                    "categories": categories,
+                    "tags": tags
                 },
                 hooks=self.hooks,
                 base_path=self.theme_path
@@ -1098,9 +1106,12 @@ class PostGenerator:
             output_path: Path,
             post_types: List[Dict[str, str]],
             language,
+            generate_all=False,
             **kwargs
     ):
         self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path, language=language)
+        if (generate_all and self.config["OUTPUT_PATH"] == str(output_path)) or not generate_all:
+            self.generate_sitemap()
         posts = {}
         try:
             cur = self.connection.cursor()
@@ -1362,11 +1373,15 @@ class PostGenerator:
         with codecs.open(os.path.join(output_path, "feed.xml"), "w", "utf-8") as f:
             f.write(doc.toprettyxml())
 
-    def generate_sitemap(self, *args, output_path: Path, **kwargs):
+    def generate_sitemap(self, *args, **kwargs):
         # <?xml version="1.0" encoding="UTF-8"?>
         # <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         # <url><loc>http://www.example.com/index.html</loc></url>
         # </urlset>
+
+        # self.settings['site_url']['settings_value']
+
+        output_path = self.config["OUTPUT_PATH"]
 
         doc = minidom.Document()
         root_node = doc.createElement('urlset')
@@ -1387,16 +1402,118 @@ class PostGenerator:
                 "uuid": lang[0],
                 "path": f"{lang[1]}" if lang[0] != main_lang else "",
             } for lang in cur.fetchall()}
+
+            #   Get post types
+            cur.execute(
+                sql.SQL("""SELECT uuid, slug FROM sloth_post_types;""")
+            )
+            post_type_slugs = {slug[0] : {
+                "slug": slug[1]
+            } for slug in cur.fetchall()}
+            for lang in langs.keys():
+                home_url = doc.createElement("url")
+                home_loc = doc.createElement("loc")
+                home_loc.appendChild(doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}"))
+                home_url.appendChild(home_loc)
+                home_change_freq = doc.createElement("changefreq")
+                home_change_freq.appendChild(doc.createTextNode("daily"))
+                home_url.appendChild(home_change_freq)
+                home_last_mod = doc.createElement("lastmod")
+                home_last_mod.appendChild(doc.createTextNode(datetime.now().strftime("%Y-%m-%d")))
+                home_url.appendChild(home_last_mod)
+                root_node.appendChild(home_url)
+
+                for post_type in post_type_slugs.keys():
+                    pt_url = doc.createElement("url")
+                    pt_loc = doc.createElement("loc")
+                    if len(langs[lang]['path']) == 0:
+                        pt_loc.appendChild(
+                            doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}"))
+                    else:
+                        pt_loc.appendChild(
+                            doc.createTextNode(
+                                f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}"))
+                    pt_url.appendChild(pt_loc)
+                    pt_change_freq = doc.createElement("changefreq")
+                    pt_change_freq.appendChild(doc.createTextNode("weekly"))
+                    pt_url.appendChild(pt_change_freq)
+                    root_node.appendChild(pt_url)
+
+                    # get categories per post type
+                    cur.execute(
+                        sql.SQL("""SELECT slug FROM sloth_taxonomy 
+                        WHERE taxonomy_type = %s AND post_type = %s;"""),
+                        ('category', post_type)
+                    )
+                    category_slugs = [slug[0] for slug in cur.fetchall()]
+                    for category in category_slugs:
+                        if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "category", category).is_dir():
+                            continue
+                        pt_url = doc.createElement("url")
+                        pt_loc = doc.createElement("loc")
+                        if len(langs[lang]['path']) == 0:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
+                        else:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
+                        pt_url.appendChild(pt_loc)
+                        pt_change_freq = doc.createElement("changefreq")
+                        pt_change_freq.appendChild(doc.createTextNode("monthly"))
+                        pt_url.appendChild(pt_change_freq)
+                        root_node.appendChild(pt_url)
+                    # get tags per post type
+                    cur.execute(
+                        sql.SQL("""SELECT slug FROM sloth_taxonomy 
+                                            WHERE taxonomy_type = %s AND post_type = %s;"""),
+                        ('tag', post_type)
+                    )
+                    tag_slugs = [slug[0] for slug in cur.fetchall()]
+                    for tag in tag_slugs:
+                        if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "tag", tag).is_dir():
+                            continue
+                        pt_url = doc.createElement("url")
+                        pt_loc = doc.createElement("loc")
+                        if len(langs[lang]['path']) == 0:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
+                        else:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
+                        pt_url.appendChild(pt_loc)
+                        pt_change_freq = doc.createElement("changefreq")
+                        pt_change_freq.appendChild(doc.createTextNode("monthly"))
+                        pt_url.appendChild(pt_change_freq)
+                        root_node.appendChild(pt_url)
             #   Get posts
             cur.execute(
-                sql.SQL("""SELECT lang, slug FROM sloth_posts;""")
+                sql.SQL("""SELECT lang, slug, post_type, update_date FROM sloth_posts;""")
             )
-            posts = [f"{langs[post[0]].path}/{post[1]}" if len(langs[post[0]].path) > 0 else f"{post[1]}" for post in cur.fetchall()]
-            #   Get post types
-
-            #   Get taxonomy
+            for post in cur.fetchall():
+                pt_url = doc.createElement("url")
+                pt_loc = doc.createElement("loc")
+                if len(langs[post[0]]['path']) == 0:
+                    pt_loc.appendChild(
+                        doc.createTextNode(
+                            f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
+                else:
+                    pt_loc.appendChild(
+                        doc.createTextNode(
+                            f"{self.settings['site_url']['settings_value']}/{langs[post[0]]['path']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
+                pt_url.appendChild(pt_loc)
+                pt_change_freq = doc.createElement("changefreq")
+                pt_change_freq.appendChild(doc.createTextNode("monthly"))
+                pt_url.appendChild(pt_change_freq)
+                pt_last_mod = doc.createElement("lastmod")
+                pt_last_mod.appendChild(doc.createTextNode(datetime.fromtimestamp(post[3]/1000).strftime("%Y-%m-%d")))
+                pt_url.appendChild(pt_last_mod)
+                root_node.appendChild(pt_url)
         except Exception as e:
-            pass
+            print(e)
 
         with codecs.open(os.path.join(output_path, "sitemap.xml"), "w", "utf-8") as f:
             f.write(doc.toprettyxml())

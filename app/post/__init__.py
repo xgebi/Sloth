@@ -1,5 +1,6 @@
 from flask import Blueprint
 from psycopg2 import sql
+from typing import List
 
 post = Blueprint('post', __name__, template_folder='templates')
 
@@ -44,6 +45,42 @@ def get_translations(*args, connection, post_uuid, original_entry_uuid, language
     except Exception as e:
         print(e)
         return [], []
+
+
+def get_taxonomy_for_post_preped_for_listing(connection, uuid: str, main_language, language) -> (List, List):
+    if main_language['settings_value'] == language['uuid']:
+        prefix = '/'
+    else:
+        prefix = f"/{language['short_name']}/"
+
+    cur = connection.cursor()
+    try:
+        cur.execute(
+            sql.SQL("""SELECT st.slug, st.display_name, st.taxonomy_type
+                FROM sloth_post_taxonomies AS spt
+                INNER JOIN sloth_taxonomy AS st
+                ON st.uuid = spt.taxonomy
+                WHERE spt.post = %s;"""),
+            (uuid, )
+        )
+        all_taxonomies = cur.fetchall()
+    except Exception as e:
+        print(e)
+        return [], []
+    categories = []
+    tags = []
+
+    for taxonomy in all_taxonomies:
+        thing = {
+            "display_name": taxonomy[1],
+            "url": f"{prefix}{taxonomy[2]}/{taxonomy[0]}"
+        }
+        if taxonomy[2] == "tag":
+            tags.append(thing)
+        elif taxonomy[2] == "category":
+            categories.append(thing)
+
+    return categories, tags
 
 
 from app.post import routes
