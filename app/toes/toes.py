@@ -316,9 +316,14 @@ class Toe:
             if type(attribute_value) == str and attribute_value[0] == "'":
                 return attribute_value[1: len(attribute_value) - 1]
             else:
-                if attribute_value.find(" | ") >= 0:
-                    return self.process_pipe(attribute_value)
-                resolved_value = self.current_scope.find_variable(attribute_value)
+                try:
+                    resolved_value = float(attribute_value)
+                    if resolved_value == int(attribute_value):
+                        resolved_value = int(attribute_value)
+                except:
+                    if attribute_value.find(" | ") >= 0:
+                        return self.process_pipe(attribute_value)
+                    resolved_value = self.current_scope.find_variable(attribute_value)
 
                 return resolved_value if resolved_value is not None else ""
         else:

@@ -606,7 +606,9 @@ class PostGenerator:
             languages=self.languages
         )
 
-        translations = self.get_translation_links(translations=translations_temp, post_type=post_type, post=post)
+        translations_filtered = [translation for translation in translations_temp if translation["status"].lower() == 'published']
+
+        translations = self.get_translation_links(translations=translations_filtered, post_type=post_type, post=post)
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
             md_parser = MarkdownParser()

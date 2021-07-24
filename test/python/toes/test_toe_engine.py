@@ -147,7 +147,12 @@ class MyTestCase(unittest.TestCase):
             template="toe_while.toe.html",
             data={}
         )
-        self.assertEqual(toe, '<!DOCTYPE html><html lang="en"><div>Hello</div><div>Hello</div></html>')
+        self.assertEqual(toe, """<!DOCTYPE html><html lang="en"><div>Hello
+</div>
+<div>Hello
+</div>
+</html>
+""")
 
     def test_if_length_function(self):
         toe = render_toe_from_path(

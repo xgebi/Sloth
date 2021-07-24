@@ -114,16 +114,24 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
             "status": item[4],
             "author": item[5]
         })
+    # List of {{post_type["name"]}}
 
-    return render_template("post-list.html",
-                           post_types=post_types_result,
-                           permission_level=permission_level,
-                           post_list=items,
-                           post_type=post_type_info,
-                           languages=languages,
-                           default_lang=default_lang,
-                           current_lang=current_lang
-                           )
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="post-list.toe.html",
+        hooks=Hooks(),
+        data={
+            "title": f"List of {post_type['name']}",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "default_lang": default_lang,
+            "hook_list": HooksList.list(),
+            "current_lang": current_lang,
+            "languages": languages,
+            "post_list": items,
+            "post_type": post_type_info,
+        }
+    )
 
 
 @post.route("/post/<post_id>/edit")
