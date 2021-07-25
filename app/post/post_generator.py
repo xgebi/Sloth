@@ -1424,6 +1424,8 @@ class PostGenerator:
                 root_node.appendChild(home_url)
 
                 for post_type in post_type_slugs.keys():
+                    if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug']).is_dir():
+                        continue
                     pt_url = doc.createElement("url")
                     pt_loc = doc.createElement("loc")
                     if len(langs[lang]['path']) == 0:
