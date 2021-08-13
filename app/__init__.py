@@ -3,17 +3,18 @@ from flask import Flask, request, redirect
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
-import psycopg2
 from pathlib import Path
 from uuid import uuid4
 # from flask_apscheduler import APScheduler
 from app.rss.rss_job import check_rss_updates
 from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
 from apscheduler.schedulers.background import BackgroundScheduler
-import toes
 
 bcrypt = Bcrypt()
 
+class Dummy:
+    def __init__(self):
+        self.name = "Dummy bot"
 
 def create_app():  # dev, test, or prod
 
@@ -23,8 +24,6 @@ def create_app():  # dev, test, or prod
         SECRET_KEY='dev',
         THREAD_ID=uuid4()
     )
-
-    toes.parse_markdown_to_html("")
 
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py'))
     app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')

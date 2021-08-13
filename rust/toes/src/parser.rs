@@ -2,6 +2,7 @@ use atree::Arena;
 use atree::Token;
 use std::error::Error;
 use crate::node::ToeNode;
+use pyo3::prelude::*;
 
 enum States {
     NewPage,
@@ -9,6 +10,18 @@ enum States {
     LookingForAttribute,
     LookingForChildNodes,
     InsideScript,
+}
+
+#[pyclass]
+pub(crate) struct Hook {
+    content: String,
+    condition: String
+}
+
+#[pyclass]
+pub(crate) struct Hooks {
+    footer: Vec<Hook>,
+    head: Vec<Hook>
 }
 
 struct XmlParsingInfo<'a> {

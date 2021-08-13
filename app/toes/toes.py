@@ -31,7 +31,13 @@ def render_toe_from_path(
 
 
 def render_toe_from_string(
-        *args, template: str, data: Dict = {}, hooks: Hooks = {}, base_path=None, **kwargs):
+        *args,
+        template: str,
+        data: Dict = {},
+        hooks: Hooks = {},
+        base_path=None,
+        **kwargs
+):
     if template is None:
         return None
 
