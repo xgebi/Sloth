@@ -4,11 +4,11 @@ use std::error::Error;
 use crate::node::ToeNode;
 
 enum States {
-    new_page,
-    read_node_name,
-    looking_for_attribute,
-    looking_for_child_nodes,
-    inside_script,
+    NewPage,
+    ReadNodeName,
+    LookingForAttribute,
+    LookingForChildNodes,
+    InsideScript,
 }
 
 struct XmlParsingInfo<'a> {
@@ -28,6 +28,7 @@ pub(crate) fn parse_toes(mut template: String) -> Arena<ToeNode> {
     //
     // let hello = &s[0..5];
     // let world = &s[6..11];
+    // let first_and_last = [&v[..3], &v[l - 3..]].concat();
 
     a
 }

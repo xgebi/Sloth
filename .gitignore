@@ -49,5 +49,7 @@ schedule.lock
 app/static/js/libs/*min.js
 migrated
 
+toes.pyd
+
 *.so
 *.h
