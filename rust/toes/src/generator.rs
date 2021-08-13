@@ -2,6 +2,7 @@ use postgres::Client;
 use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
+use std::sync::Arc;
 
 struct Setting {
     name: String,
@@ -27,33 +28,36 @@ fn set_individual_setting(
     setting_name: String,
     settings_type: Option<String>,
     alternate_name: Option<String>
-) -> Result<Setting, Error> {
+) -> Option<Setting> {
     let mut sst: String;
     match settings_type {
         Some(s) => sst = s,
-        Err(e) => sst = String::from("sloth")
+        None => sst = String::from("sloth")
     }
 
     let res = conn.query_one("SELECT settings_name, settings_value, settings_value_type
                                 FROM sloth_settings WHERE settings_name = $1 AND settings_type = $2",
                              &[&setting_name, &sst]
     );
-    if let Some(row) = res {
-        if let Some(name) = alternate_name {
-            Ok(Setting {
-                name,
-                value: String::from(row.get("settings_value")),
-                value_type: String::from(row.get("settings_value_type"))
-            })
-        } else {
-            Ok(Setting {
-                name: String::from(row.get("settings_name")),
-                value: String::from(row.get("settings_value")),
-                value_type: String::from(row.get("settings_value_type"))
-            })
+    match res {
+        Ok(row) => {
+            return if let Some(name) = alternate_name {
+                Some(Setting {
+                    name,
+                    value: row.get("settings_value"),
+                    value_type: row.get("settings_value_type"),
+                })
+            } else {
+                Some(Setting {
+                    name: row.get("settings_name"),
+                    value: row.get("settings_value"),
+                    value_type: row.get("settings_value_type"),
+                })
+            }
+        },
+        Err(e) => {
+            return None;
         }
-    } else {
-        Err(None)
     }
 }
 
