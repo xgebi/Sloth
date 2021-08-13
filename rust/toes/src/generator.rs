@@ -15,16 +15,34 @@ struct TranslatableSetting {
 }
 
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: String, theme_path: String, output_path: String) {
-    let general_settings = prepare_settings();
+    let general_settings = prepare_settings(&mut conn);
     let translated_settings = prepare_translatable_settings();
 }
 
-fn prepare_settings() -> HashMap<String, Setting> {
-    HashMap::new()
+fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
+    let mut settings = HashMap::new();
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("active_theme"),
+        Some(String::from("themes")),
+        None,
+    ) {
+        settings.insert(String::from("active_theme"), setting);
+    }
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("main_language"),
+        None,
+        None,
+    ) {
+        settings.insert(String::from("main_language"), setting);
+    }
+
+    settings
 }
 
 fn set_individual_setting(
-    mut conn: Client,
+    conn: &mut Client,
     setting_name: String,
     settings_type: Option<String>,
     alternate_name: Option<String>
