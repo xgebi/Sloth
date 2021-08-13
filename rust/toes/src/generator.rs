@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
 use std::sync::Arc;
+use pyo3::types::PyDict;
 
 struct Setting {
     name: String,
@@ -14,7 +15,7 @@ struct TranslatableSetting {
     setting: HashMap<String, Setting>
 }
 
-pub(crate) fn prepare_single_post(mut conn: Client, uuid: String, theme_path: String, output_path: String) {
+pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
     let general_settings = prepare_settings(&mut conn);
     let translated_settings = prepare_translatable_settings();
 }
@@ -47,7 +48,7 @@ fn set_individual_setting(
     settings_type: Option<String>,
     alternate_name: Option<String>
 ) -> Option<Setting> {
-    let mut sst: String;
+    let sst: String;
     match settings_type {
         Some(s) => sst = s,
         None => sst = String::from("sloth")

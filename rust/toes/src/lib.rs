@@ -22,16 +22,17 @@ fn parse_markdown_to_html(template: String) -> String {
 #[pyfunction]
 fn generate_post(
     connection_dict: &PyDict,
-    mut working_directory_path: String,
-    uuid: String,
+    working_directory_path: String,
+    post: &PyDict,
     theme_path: String,
-    output_path: String
+    output_path: String,
+    clean_taxonomy: Option<bool>
 ) {
     if lock_generation(working_directory_path) < 0 {
         return;
     }
     if let Ok(mut conn) = created_connection(connection_dict) {
-        prepare_single_post(conn, uuid, theme_path, output_path);
+        prepare_single_post(conn, post, theme_path, output_path);
     }
 }
 
