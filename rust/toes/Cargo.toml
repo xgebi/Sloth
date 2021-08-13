@@ -12,6 +12,8 @@ bench = false
 
 [dependencies]
 atree = "0.5.2"
+postgres = "0.19.1"
+postgres-types = "0.2.1"
 
 [dependencies.pyo3]
 version = "0.14.2"

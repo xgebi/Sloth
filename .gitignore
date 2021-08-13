@@ -43,9 +43,8 @@ generating.lock
 rss.lock
 schedule.lock
 
-/src/toes/target
-/src/toes-py/target
-/src/toes-wasm/target
+rust/toes/target/
+
 app/static/js/libs/*min.js
 migrated
 

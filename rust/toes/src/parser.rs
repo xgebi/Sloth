@@ -12,15 +12,19 @@ enum States {
     InsideScript,
 }
 
-#[pyclass]
+#[derive(Clone, Debug, FromPyObject)]
 pub(crate) struct Hook {
+    #[pyo3(item("content"))]
     content: String,
+    #[pyo3(item("condition"))]
     condition: String
 }
 
-#[pyclass]
+#[derive(Clone, Debug, FromPyObject)]
 pub(crate) struct Hooks {
+    #[pyo3(item("footer"))]
     footer: Vec<Hook>,
+    #[pyo3(item("head"))]
     head: Vec<Hook>
 }
 
