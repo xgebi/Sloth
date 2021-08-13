@@ -11,6 +11,7 @@ use atree::Arena;
 use std::error::Error;
 use std::io::Write;
 use postgres::{Client, NoTls};
+use crate::generator::prepare_single_post;
 
 #[pyfunction]
 fn parse_markdown_to_html(template: String) -> String {
@@ -19,12 +20,18 @@ fn parse_markdown_to_html(template: String) -> String {
 }
 
 #[pyfunction]
-fn generate_post(connection_dict: &PyDict, mut working_directory_path: String, uuid: String) {
+fn generate_post(
+    connection_dict: &PyDict,
+    mut working_directory_path: String,
+    uuid: String,
+    theme_path: String,
+    output_path: String
+) {
     if lock_generation(working_directory_path) < 0 {
         return;
     }
     if let Ok(mut conn) = created_connection(connection_dict) {
-        conn;
+        prepare_single_post(conn, uuid, theme_path, output_path);
     }
 }
 
@@ -78,18 +85,6 @@ fn created_connection(connection_dict: &PyDict) -> Result<Client, postgres::Erro
     let mut client = Client::connect(&*connection_string, NoTls)?;
     Ok(client)
 }
-
-// #[pyfunction]
-// fn rust_render_toe_from_path<'a>(path: String, dummy: &PyDict) {
-//     // println!("{:?}", dummy.get_item("name").unwrap());
-//     // println!("{:?}", dummy);
-//     println!("{:?}", dummy.get_item("hooks").unwrap());
-//     // .extract::<Hooks>()
-//     // match dummy.get_item("hooks").unwrap().extract::<Hooks>() {
-//     //     Ok(v) => println!("{:?}", v),
-//     //     Err(e) => println!("{:?}", e),
-//     // }
-// }
 
 #[pymodule]
 fn toes(py: Python, m: &PyModule) -> PyResult<()> {
