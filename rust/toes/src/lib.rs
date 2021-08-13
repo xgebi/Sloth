@@ -19,31 +19,31 @@ fn parse_markdown_to_html(template: String) -> String {
 }
 
 #[pyfunction]
-fn generate_post(connection: &PyDict, mut working_directory_path: String, uuid: String) {
+fn generate_post(connection_dict: &PyDict, mut working_directory_path: String, uuid: String) {
     if lock_generation(working_directory_path) < 0 {
         return;
     }
-    if let Ok(mut conn) = created_connection(connection) {
+    if let Ok(mut conn) = created_connection(connection_dict) {
         conn;
     }
 }
 
 #[pyfunction]
-fn generate_post_type(connection: &PyDict, mut working_directory_path: String, uuid: String) {
+fn generate_post_type(connection_dict: &PyDict, mut working_directory_path: String, uuid: String) {
     if lock_generation(working_directory_path) < 0 {
         return;
     }
-    if let Ok(mut conn) = created_connection(connection) {
+    if let Ok(mut conn) = created_connection(connection_dict) {
         conn;
     }
 }
 
 #[pyfunction]
-fn generate_all(connection: &PyDict, mut working_directory_path: String) {
+fn generate_all(connection_dict: &PyDict, mut working_directory_path: String) {
     if lock_generation(working_directory_path) < 0 {
         return;
     }
-    if let Ok(mut conn) = created_connection(connection) {
+    if let Ok(mut conn) = created_connection(connection_dict) {
         conn;
     }
 }
@@ -65,8 +65,17 @@ fn lock_generation(mut working_directory_path: String) -> i8 {
     return 1
 }
 
-fn created_connection(connection: &PyDict) -> Result<Client, postgres::Error> {
-    let mut client = Client::connect("host=localhost user=postgres", NoTls)?;
+fn created_connection(connection_dict: &PyDict) -> Result<Client, postgres::Error> {
+    let dbname: &str = connection_dict.get_item("DATABASE_NAME").unwrap().extract::<&str>().unwrap();
+    let dbuser: &str = connection_dict.get_item("DATABASE_USER").unwrap().extract::<&str>().unwrap();
+    let dbpass: &str = connection_dict.get_item("DATABASE_PASSWORD").unwrap().extract::<&str>().unwrap();
+    let dbhost: &str = connection_dict.get_item("DATABASE_URL").unwrap().extract::<&str>().unwrap();
+    let dbport: &str = connection_dict.get_item("DATABASE_PORT").unwrap().extract::<&str>().unwrap();
+    // host=/var/run/postgresql,localhost port=1234 user=postgres password='password with spaces'
+    let connection_string: String = format!("host={} port={} user={} password='{}' dbname={}",
+                                            dbhost, dbport, dbuser, dbpass, dbname);
+
+    let mut client = Client::connect(&*connection_string, NoTls)?;
     Ok(client)
 }
 
