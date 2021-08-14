@@ -13,7 +13,7 @@ bench = false
 [dependencies]
 atree = "0.5.2"
 postgres = "0.19.1"
-postgres-types = "0.2.1"
+postgres-types = { version = "0.2.1", features = ["derive"] }
 
 [dependencies.pyo3]
 version = "0.14.2"

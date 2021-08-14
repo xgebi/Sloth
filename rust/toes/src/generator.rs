@@ -4,16 +4,30 @@ use std::error::Error;
 use std::string::String;
 use std::sync::Arc;
 use pyo3::types::PyDict;
+use postgres_types::{ToSql, FromSql};
 
 #[derive(Debug)]
 struct Setting {
     name: String,
     value: String,
-    value_type: String,
+    value_type: SlothSettingsType,
 }
 
 struct TranslatableSetting {
     setting: HashMap<String, Setting>
+}
+
+#[derive(Debug, ToSql, FromSql)]
+#[postgres(name = "sloth_settings_type")]
+enum SlothSettingsType {
+    #[postgres(name = "boolean")]
+    boolean,
+    #[postgres(name = "text")]
+    text,
+    #[postgres(name = "text-long")]
+    text_long,
+    #[postgres(name = "select")]
+    select
 }
 
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
