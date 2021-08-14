@@ -36,14 +36,14 @@ pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: S
 }
 
 fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
-    let mut settings = HashMap::new();
+    let mut settings: HashMap<String, Setting> = HashMap::new();
     if let Some(setting) = set_individual_setting(
         conn,
         String::from("active_theme"),
         Some(String::from("themes")),
         None,
     ) {
-        settings.insert(String::from("active_theme"), setting);
+        settings.insert(setting.name.clone(), setting);
     }
     if let Some(setting) = set_individual_setting(
         conn,
@@ -51,11 +51,45 @@ fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
         None,
         None,
     ) {
-        settings.insert(String::from("main_language"), setting);
+        settings.insert(setting.name.clone(), setting);
     }
-    if settings.contains_key("main_language") {
-        println!("{:?}", settings.get("main_language"));
+
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("main_language"),
+        None,
+        None,
+    ) {
+        settings.insert(setting.name.clone(), setting);
     }
+
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("number_rss_posts"),
+        None,
+        None,
+    ) {
+        settings.insert(setting.name.clone(), setting);
+    }
+
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("site_url"),
+        None,
+        None,
+    ) {
+        settings.insert(setting.name.clone(), setting);
+    }
+
+    if let Some(setting) = set_individual_setting(
+        conn,
+        String::from("api_url"),
+        None,
+        Some(String::from("sloth_api_url")),
+    ) {
+        settings.insert(setting.name.clone(), setting);
+    }
+
     settings
 }
 
