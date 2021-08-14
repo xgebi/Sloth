@@ -5,6 +5,7 @@ use std::string::String;
 use std::sync::Arc;
 use pyo3::types::PyDict;
 
+#[derive(Debug)]
 struct Setting {
     name: String,
     value: String,
@@ -17,7 +18,7 @@ struct TranslatableSetting {
 
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
     let general_settings = prepare_settings(&mut conn);
-    let translated_settings = prepare_translatable_settings();
+    //let translated_settings = prepare_translatable_settings();
 }
 
 fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
@@ -38,7 +39,9 @@ fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
     ) {
         settings.insert(String::from("main_language"), setting);
     }
-
+    if settings.contains_key("main_language") {
+        println!("{:?}", settings.get("main_language"));
+    }
     settings
 }
 
@@ -104,4 +107,12 @@ fn set_translatable_setting(mut conn: Client, name: String) {
     //     value: row.get("settings_value"),
     //     value_type: row.get("settings_value_type")
     // };
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
 }

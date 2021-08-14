@@ -169,3 +169,13 @@ def positive_min(*args, floats: bool = False):
     if not pm_change:
         raise NoPositiveMinimumException()
     return positive_minimum
+
+
+def get_connection_dict(config) -> Dict:
+    return {
+        "dbname": config["DATABASE_NAME"],
+        "user": config["DATABASE_USER"],
+        "host": config["DATABASE_URL"],
+        "port": str(config["DATABASE_PORT"]),
+        "password": config["DATABASE_PASSWORD"],
+    }

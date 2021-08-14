@@ -16,7 +16,7 @@ from app.post.post_generator import PostGenerator
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
-from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts
+from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
 import toes
@@ -1123,7 +1123,7 @@ def save_post(*args, connection=None, **kwargs):
         # get post
         if filled["post_status"] == 'published':
             toes.generate_post(
-                {},
+                get_connection_dict(current_app.config),
                 os.getcwd(),
                 generatable_post,
                 current_app.config["THEMES_PATH"],
