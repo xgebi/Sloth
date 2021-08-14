@@ -3,6 +3,7 @@ mod compiler;
 mod node;
 mod generator;
 mod shared;
+mod variable_scope;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
@@ -39,7 +40,7 @@ fn generate_post(
     println!("Connection dict above");
     if let Ok(mut conn) = created_connection(connection_dict) {
         println!("Connection created");
-        prepare_single_post(conn, post, theme_path, output_path);
+        prepare_single_post(&mut conn, post, theme_path, output_path);
     }
 
     unlock_generation(&working_directory_path);
