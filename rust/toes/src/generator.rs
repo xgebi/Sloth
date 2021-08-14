@@ -1,10 +1,11 @@
-use postgres::Client;
+use postgres::{Client, Row};
 use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
 use std::sync::Arc;
 use pyo3::types::PyDict;
 use postgres_types::{ToSql, FromSql};
+use std::collections::hash_map::RandomState;
 
 #[derive(Debug)]
 struct Setting {
@@ -13,8 +14,14 @@ struct Setting {
     value_type: SlothSettingsType,
 }
 
+struct TranslatableSettingItem {
+    name: String,
+    content: String,
+    lang: String
+}
+
 struct TranslatableSetting {
-    setting: HashMap<String, Setting>
+    setting: HashMap<String, TranslatableSettingItem>
 }
 
 #[derive(Debug, ToSql, FromSql)]
@@ -32,7 +39,7 @@ enum SlothSettingsType {
 
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
     let general_settings = prepare_settings(&mut conn);
-    //let translated_settings = prepare_translatable_settings();
+    let translated_settings = prepare_translatable_settings(&mut conn);
 }
 
 fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
@@ -131,33 +138,49 @@ fn set_individual_setting(
     }
 }
 
-fn prepare_translatable_settings() -> HashMap<String, TranslatableSetting> {
-    HashMap::new()
+fn prepare_translatable_settings(conn: &mut Client) -> HashMap<String, TranslatableSetting> {
+    let mut translatable_settings : HashMap<String, TranslatableSetting> = HashMap::new();
+
+    translatable_settings.insert(
+        String::from("sitename"),
+        set_translatable_setting(conn, String::from("sitename")));
+    translatable_settings.insert(
+        String::from("description"),
+        set_translatable_setting(conn, String::from("description")));
+    translatable_settings.insert(
+        String::from("sub_headline"),
+        set_translatable_setting(conn, String::from("sub_headline")));
+    translatable_settings.insert(
+        String::from("archive-title"),
+        set_translatable_setting(conn, String::from("archive-title")));
+    translatable_settings.insert(
+        String::from("category-title"),
+        set_translatable_setting(conn, String::from("category-title")));
+    translatable_settings.insert(
+        String::from("tag-title"),
+        set_translatable_setting(conn, String::from("tag-title")));
+
+    translatable_settings
 }
 
-fn set_translatable_setting(mut conn: Client, name: String) -> HashMap<String, TranslatableSetting> {
-    let mut setting = HashMap::new();
-    for row in conn.query("SELECT uuid, name, content, lang
+fn set_translatable_setting(conn: &mut Client, name: String) -> TranslatableSetting {
+    let mut setting: HashMap<String, TranslatableSettingItem> = HashMap::new();
+    let mut translatable_settings = TranslatableSetting {
+        setting: HashMap::new()
+    };
+    for row in conn.query("SELECT name, content, lang
                 FROM sloth_localized_strings WHERE name = %s;",
                           &[&name],
-    )? {
-
+    ).unwrap() {
+        let item = TranslatableSettingItem {
+            name: row.get("name"),
+            content: row.get("content"),
+            lang: row.get("lang")
+        };
+        translatable_settings.setting.insert(item.lang.clone(), item);
     }
 
-    setting
-
-    // setting: HashMap<String, Setting>
-
-    // for row in client.query("SELECT foo FROM bar WHERE baz = $1", &[&baz])? {
-    //     let foo: i32 = row.get("foo");
-    //     println!("foo: {}", foo);
-    // }
-    //
-    // Setting {
-    //     name: row.get("settings_name"),
-    //     value: row.get("settings_value"),
-    //     value_type: row.get("settings_value_type")
-    // };
+    translatable_settings
 }
 
 #[cfg(test)]

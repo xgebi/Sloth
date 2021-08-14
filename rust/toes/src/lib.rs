@@ -73,7 +73,7 @@ fn lock_generation(mut working_directory_path: &String) -> i8 {
 
     let mut file = std::fs::File::create(file_path).expect("create failed");
     match file.write("generation locked".as_bytes()) {
-        Ok(n) => println!("Lock successful"),
+        Ok(_) => println!("Lock successful"),
         Err(e) => {
             println!("Lock unsuccessful");
             return -1;

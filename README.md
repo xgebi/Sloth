@@ -7,9 +7,12 @@ Alternatively, run a command inside the virtualenv with `pipenv run`.
 
 ## Rust setup
 
-Use `cargo build` to create a compiled library.
+Toes live in `rust/toes`.
 
-On Windows use `cp .\target\debug\toes.dll ..\..\toes.pyd` to make the library available.
+Use `cargo build` to create a compiled library for development purposes. For production use `cargo build --release`.
+
+
+On Windows use `cp .\target\<target>\toes.dll ..\..\toes.pyd` to make the library available.
 
 On Linux TBD.
 
