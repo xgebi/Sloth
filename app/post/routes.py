@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from time import time
 from typing import List, Dict
-
+import threading
 from flask import request, current_app, abort, redirect, render_template
 from psycopg2 import sql
 
@@ -1122,14 +1122,17 @@ def save_post(*args, connection=None, **kwargs):
         generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
         # get post
         if filled["post_status"] == 'published':
-            toes.generate_post(
-                get_connection_dict(current_app.config),
-                os.getcwd(),
-                generatable_post,
-                current_app.config["THEMES_PATH"],
-                current_app.config["OUTPUT_PATH"],
-                taxonomy_to_clean
-            )
+            (threading.Thread(
+                target=toes.generate_post,
+                args=[
+                    get_connection_dict(current_app.config),
+                    os.getcwd(),
+                    generatable_post,
+                    current_app.config["THEMES_PATH"],
+                    current_app.config["OUTPUT_PATH"],
+                    taxonomy_to_clean
+                ]
+            )).start()
 
         if filled["post_status"] == 'protected':
             # get post type slug

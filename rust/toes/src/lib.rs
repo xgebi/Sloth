@@ -29,7 +29,7 @@ fn generate_post(
     clean_taxonomy: Option<Vec<String>>
 ) {
     println!("{}", working_directory_path);
-    if lock_generation(working_directory_path) < 0 {
+    if lock_generation(&working_directory_path) < 0 {
         println!("lock failed");
         return;
     }
@@ -40,11 +40,13 @@ fn generate_post(
         println!("Connection created");
         prepare_single_post(conn, post, theme_path, output_path);
     }
+
+    unlock_generation(&working_directory_path);
 }
 
 #[pyfunction]
 fn generate_post_type(connection_dict: &PyDict, mut working_directory_path: String, uuid: String) {
-    if lock_generation(working_directory_path) < 0 {
+    if lock_generation(&working_directory_path) < 0 {
         return;
     }
     if let Ok(mut conn) = created_connection(connection_dict) {
@@ -54,7 +56,7 @@ fn generate_post_type(connection_dict: &PyDict, mut working_directory_path: Stri
 
 #[pyfunction]
 fn generate_all(connection_dict: &PyDict, mut working_directory_path: String) {
-    if lock_generation(working_directory_path) < 0 {
+    if lock_generation(&working_directory_path) < 0 {
         return;
     }
     if let Ok(mut conn) = created_connection(connection_dict) {
@@ -62,8 +64,8 @@ fn generate_all(connection_dict: &PyDict, mut working_directory_path: String) {
     }
 }
 
-fn lock_generation(mut working_directory_path: String) -> i8 {
-    let file_path = std::path::Path::new(&working_directory_path).join("generating.lock");
+fn lock_generation(mut working_directory_path: &String) -> i8 {
+    let file_path = std::path::Path::new(working_directory_path).join("generating.lock");
     if file_path.exists() {
         println!("lock exists, {}", file_path.to_str().unwrap());
         return -1;
@@ -78,6 +80,16 @@ fn lock_generation(mut working_directory_path: String) -> i8 {
         }
     }
     return 1
+}
+
+fn unlock_generation(mut working_directory_path: &String) {
+    let file_path = std::path::Path::new(&working_directory_path).join("generating.lock");
+    if file_path.exists() {
+        match std::fs::remove_file(file_path) {
+            Ok(_) => println!("generation unlocked"),
+            Err(e) => println!("{:?}", e)
+        }
+    }
 }
 
 fn created_connection(connection_dict: &PyDict) -> Result<Client, postgres::Error> {
