@@ -38,19 +38,24 @@ enum SlothSettingsType {
     Select
 }
 
-pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
-    let general_settings = prepare_settings(&mut conn);
-    let translated_settings = prepare_translatable_settings(&mut conn);
+pub(crate) fn prepare_single_post(conn: &mut Client, uuid: &PyDict, theme_path: String, output_path: String) {
+    let general_settings = prepare_settings(conn);
+    let translated_settings = prepare_translatable_settings(conn);
     let hooks = Hooks {
         head: Vec::new(),
         footer: Vec::new()
     };
 
     // get menus
+    get_menus(conn);
     // get languages
+    get_languages(conn);
     // set footer
+    get_footer(conn);
     // set theme
+    set_theme();
     // set feed tags
+    set_feed_tags();
 }
 
 fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {
@@ -127,9 +132,9 @@ fn set_individual_setting(
                                 FROM sloth_settings WHERE settings_name = $1 AND settings_type = $2",
                              &[&setting_name, &sst]
     );
-    match res {
+    return match res {
         Ok(row) => {
-            return if let Some(name) = alternate_name {
+            if let Some(name) = alternate_name {
                 Some(Setting {
                     name,
                     value: row.get("settings_value"),
@@ -144,7 +149,7 @@ fn set_individual_setting(
             }
         },
         Err(e) => {
-            return None;
+            None
         }
     }
 }
@@ -192,6 +197,26 @@ fn set_translatable_setting(conn: &mut Client, name: String) -> TranslatableSett
     }
 
     translatable_settings
+}
+
+fn get_menus(conn: &mut Client) {
+
+}
+
+fn get_languages(conn: &mut Client) {
+
+}
+
+fn get_footer(conn: &mut Client) {
+
+}
+
+fn set_theme() {
+
+}
+
+fn set_feed_tags() {
+
 }
 
 #[cfg(test)]
