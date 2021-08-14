@@ -21,13 +21,13 @@ struct TranslatableSetting {
 #[postgres(name = "sloth_settings_type")]
 enum SlothSettingsType {
     #[postgres(name = "boolean")]
-    boolean,
+    Boolean,
     #[postgres(name = "text")]
-    text,
+    Text,
     #[postgres(name = "text-long")]
-    text_long,
+    TextLong,
     #[postgres(name = "select")]
-    select
+    Select
 }
 
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
@@ -135,16 +135,19 @@ fn prepare_translatable_settings() -> HashMap<String, TranslatableSetting> {
     HashMap::new()
 }
 
-fn set_translatable_setting(mut conn: Client, name: String) {
-    // if let Some(sst) = settings_type {
-    //     set_settings_type = sst;
-    //}
+fn set_translatable_setting(mut conn: Client, name: String) -> HashMap<String, TranslatableSetting> {
+    let mut setting = HashMap::new();
+    for row in conn.query("SELECT uuid, name, content, lang
+                FROM sloth_localized_strings WHERE name = %s;",
+                          &[&name],
+    )? {
 
-    // conn.query("SELECT uuid, name, content, lang
-    //             FROM sloth_localized_strings WHERE name = %s;",
-    //                &[&name]
-    // )?;
-    //
+    }
+
+    setting
+
+    // setting: HashMap<String, Setting>
+
     // for row in client.query("SELECT foo FROM bar WHERE baz = $1", &[&baz])? {
     //     let foo: i32 = row.get("foo");
     //     println!("foo: {}", foo);
