@@ -30,9 +30,3 @@ class Hooks:
     def __init__(self) -> None:
         self.footer: List[Hook] = []
         self.head: List[Hook] = []
-
-    def to_dict(self):
-        return {
-            "footer": [hook.to_dict() for hook in self.footer],
-            "head": [hook.to_dict() for hook in self.head]
-        }

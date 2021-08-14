@@ -6,6 +6,7 @@ use std::sync::Arc;
 use pyo3::types::PyDict;
 use postgres_types::{ToSql, FromSql};
 use std::collections::hash_map::RandomState;
+use crate::shared::{Hooks, Hook};
 
 #[derive(Debug)]
 struct Setting {
@@ -40,6 +41,16 @@ enum SlothSettingsType {
 pub(crate) fn prepare_single_post(mut conn: Client, uuid: &PyDict, theme_path: String, output_path: String) {
     let general_settings = prepare_settings(&mut conn);
     let translated_settings = prepare_translatable_settings(&mut conn);
+    let hooks = Hooks {
+        head: Vec::new(),
+        footer: Vec::new()
+    };
+
+    // get menus
+    // get languages
+    // set footer
+    // set theme
+    // set feed tags
 }
 
 fn prepare_settings(conn: &mut Client) -> HashMap<String, Setting> {

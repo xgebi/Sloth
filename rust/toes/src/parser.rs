@@ -12,22 +12,6 @@ enum States {
     InsideScript,
 }
 
-#[derive(Clone, Debug, FromPyObject)]
-pub(crate) struct Hook {
-    #[pyo3(item("content"))]
-    content: String,
-    #[pyo3(item("condition"))]
-    condition: String
-}
-
-#[derive(Clone, Debug, FromPyObject)]
-pub(crate) struct Hooks {
-    #[pyo3(item("footer"))]
-    footer: Vec<Hook>,
-    #[pyo3(item("head"))]
-    head: Vec<Hook>
-}
-
 struct XmlParsingInfo<'a> {
     i: u32,
     state: States,

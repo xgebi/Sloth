@@ -2,6 +2,7 @@ mod parser;
 mod compiler;
 mod node;
 mod generator;
+mod shared;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};

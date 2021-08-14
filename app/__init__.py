@@ -8,10 +8,7 @@ from uuid import uuid4
 # from flask_apscheduler import APScheduler
 from app.rss.rss_job import check_rss_updates
 from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
-from apscheduler.schedulers.background import BackgroundScheduler
 
-
-# import toes
 from app.toes.hooks import Hooks, Hook
 
 bcrypt = Bcrypt()
@@ -35,11 +32,6 @@ def create_app():  # dev, test, or prod
     app.config['CORS_HEADERS'] = 'Content-Type'
 
     bcrypt.init_app(app)
-
-
-    # temp_hooks = Hooks()
-    # temp_hooks.footer.append(Hook(content="My Hook", condition="true"))
-    # toes.rust_render_toe_from_path("", {"hooks": temp_hooks.to_dict()})
 
     #scheduler = BackgroundScheduler()
     # scheduler.init_app(app)
