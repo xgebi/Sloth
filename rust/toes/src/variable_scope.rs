@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 struct VariableScope {
-    parent: VariableScope,
     variables: HashMap<String, String>
 }
 

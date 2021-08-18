@@ -7,7 +7,7 @@ mod variable_scope;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
-use crate::parser::{parse_toes, Hooks};
+use crate::parser::{parse_toes};
 use crate::node::ToeNode;
 use atree::Arena;
 use std::error::Error;
