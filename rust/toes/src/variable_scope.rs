@@ -5,6 +5,11 @@ struct VariableScope {
     variables: HashMap<String, String>
 }
 
+fn dddd() {
+    let mut vs = VariableScope { variables: HashMap::new() };
+    vs.variables.insert(String::from("a"), String::from("b"));
+}
+
 fn find_variable(node: &Node<VariableScope>, arena: &Arena<VariableScope>, variable_name: &String) -> Option<String> {
     if node.data.variables.contains_key(variable_name) {
         return Some(node.data.variables.get(variable_name).unwrap().clone());
@@ -28,6 +33,31 @@ fn is_variable(node: &Node<VariableScope>, arena: &Arena<VariableScope>, variabl
         }
     }
     return false;
+}
+
+fn create_variable(node: &mut Node<VariableScope>, arena: &Arena<VariableScope>, variable_name: String, variable_value: String) -> Result<(), ()> {
+    if !node.data.variables.contains_key(&*variable_name) {
+        node.data.variables.insert(variable_name, variable_value);
+        return Ok(());
+    }
+    Err(())
+}
+
+fn assign_variable(node: &mut Node<VariableScope>, arena: &Arena<VariableScope>, variable_name: String, variable_value: String) -> Result<(), ()> {
+    if node.data.variables.contains_key(&*variable_name) {
+        node.data.variables.insert(variable_name, variable_value);
+        return Ok(());
+    } else {
+        while let mut parent = node.ancestors(arena).next().unwrap() {
+            if parent.data.variables.contains_key(&*variable_name) {
+                let mut local_hash_map = HashMap::from(parent.data.variables.clone());
+                local_hash_map.get_mut(&variable_name).unwrap() = &mut variable_value.clone();
+                parent.data = VariableScope { variables: local_hash_map };
+                return Ok(());
+            }
+        }
+    }
+    Err(())
 }
 
 #[cfg(test)]
