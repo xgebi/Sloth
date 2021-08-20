@@ -37,14 +37,15 @@ toes.generate_all()
 
 ### Bucket list
 - multilingual blog ✅
-- rss reader 🛠
-- post scheduler 🛠
-- twitter integration 🛠
+- rss reader 
+- post scheduler 
+- twitter integration 
 - post formats ✅
 - user management (not a priority)
 - Toe compiler (Python) ✅
 - Markdown compiler (Python) ✅
   - currently v2 (working name of Markdown dialect SlothMark)
-- IndieWeb 🛠
+- IndieWeb 
 - Toe compiler (Rust) 🛠
 - Markdown compiler (Rust) 🛠
+- Dockerization 🛠
