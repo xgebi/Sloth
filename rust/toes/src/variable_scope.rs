@@ -44,11 +44,11 @@ fn assign_variable(arena: &mut Arena<VariableScope>, token: Token, variable_name
         arena.get_mut(token).unwrap().data.variables.insert(variable_name, variable_value);
         return Ok(());
     } else {
-        while let Some(mut parent) = arena.get(token).unwrap().ancestors_tokens(arena).next() {
+        for parent in arena.get(token).unwrap().ancestors_tokens(arena).next() {
             match arena.get_mut(parent) {
                 None => { continue; }
                 Some(parent_variables) => {
-                    if !parent_variables.data.variables.contains_key(&*variable_name) {
+                    if parent_variables.data.variables.contains_key(&*variable_name) {
                         parent_variables.data.variables.insert(variable_name.clone(), variable_value.clone());
                         return Ok(());
                     }
@@ -62,7 +62,7 @@ fn assign_variable(arena: &mut Arena<VariableScope>, token: Token, variable_name
 #[cfg(test)]
 mod tests {
     use atree::Arena;
-    use crate::variable_scope::{VariableScope, is_variable, find_variable, assign_variable};
+    use crate::variable_scope::{VariableScope, is_variable, find_variable, assign_variable, create_variable};
     use std::collections::HashMap;
 
     #[test]
@@ -100,6 +100,40 @@ mod tests {
         let (mut arena, root_token) = Arena::with_data(top_scope);
         let result = assign_variable(&mut arena, root_token, String::from("myVar"), String::from("'1'"));
         assert_eq!(result, expected);
-        assert_eq!(arena.get(root_token).unwrap().data.variables.get("myVar").unwrap().clone(), String::from("'1'"))
+        assert_eq!(arena.get(root_token).unwrap().data.variables.get("myVar").unwrap().clone(), String::from("'1'"));
+    }
+
+    #[test]
+    fn assign_variable_in_parent_scope() {
+        let mut top_scope = VariableScope { variables: HashMap::new() };
+        top_scope.variables.insert(String::from("myVar"), String::from("'2'"));
+        let expected = Ok(());
+        let (mut arena, root_token) = Arena::with_data(top_scope);
+        let current_variable_scope = VariableScope { variables: HashMap::new() };
+        let current_variable_scope_token = root_token.append(&mut arena, current_variable_scope);
+        let result = assign_variable(&mut arena, current_variable_scope_token, String::from("myVar"), String::from("'1'"));
+        assert_eq!(result, expected);
+        assert_eq!(arena.get(root_token).unwrap().data.variables.get("myVar").unwrap().clone(), String::from("'1'"));
+    }
+
+    #[test]
+    fn successfully_create_variable() {
+        let mut top_scope = VariableScope { variables: HashMap::new() };
+        top_scope.variables.insert(String::from("myVar"), String::from("'2'"));
+        let expected = Ok(());
+        let (mut arena, root_token) = Arena::with_data(top_scope);
+        let result = create_variable(&mut arena, root_token, String::from("myVar2"), String::from("'1'"));
+        assert_eq!(result, expected);
+        assert_eq!(arena.get(root_token).unwrap().data.variables.get("myVar2").unwrap().clone(), String::from("'1'"));
+    }
+
+    #[test]
+    fn fail_to_create_variable() {
+        let mut top_scope = VariableScope { variables: HashMap::new() };
+        top_scope.variables.insert(String::from("myVar"), String::from("'2'"));
+        let expected = Err(());
+        let (mut arena, root_token) = Arena::with_data(top_scope);
+        let result = create_variable(&mut arena, root_token, String::from("myVar"), String::from("'1'"));
+        assert_eq!(result, expected);
     }
 }
