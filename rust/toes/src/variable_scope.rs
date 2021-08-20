@@ -1,15 +1,12 @@
 use std::collections::HashMap;
 use atree::{Node, Arena};
+use std::collections::hash_map::Entry;
 
 struct VariableScope {
     variables: HashMap<String, String>
 }
 
-fn dddd() {
-    let mut vs = VariableScope { variables: HashMap::new() };
-    vs.variables.insert(String::from("a"), String::from("b"));
-}
-
+// TODO rework it to arena and token instead of Node
 fn find_variable(node: &Node<VariableScope>, arena: &Arena<VariableScope>, variable_name: &String) -> Option<String> {
     if node.data.variables.contains_key(variable_name) {
         return Some(node.data.variables.get(variable_name).unwrap().clone());
@@ -43,16 +40,14 @@ fn create_variable(node: &mut Node<VariableScope>, arena: &Arena<VariableScope>,
     Err(())
 }
 
-fn assign_variable(node: &mut Node<VariableScope>, arena: &Arena<VariableScope>, variable_name: String, variable_value: String) -> Result<(), ()> {
+fn assign_variable(node: &mut Node<VariableScope>, arena: &mut Arena<VariableScope>, variable_name: String, mut variable_value: String) -> Result<(), ()> {
     if node.data.variables.contains_key(&*variable_name) {
         node.data.variables.insert(variable_name, variable_value);
         return Ok(());
     } else {
-        while let mut parent = node.ancestors(arena).next().unwrap() {
-            if parent.data.variables.contains_key(&*variable_name) {
-                let mut local_hash_map = HashMap::from(parent.data.variables.clone());
-                local_hash_map.get_mut(&variable_name).unwrap() = &mut variable_value.clone();
-                parent.data = VariableScope { variables: local_hash_map };
+        while let mut parent = node.ancestors_tokens(arena).next().unwrap() {
+            if arena.get(parent).unwrap().data.variables.contains_key(&*variable_name) {
+                arena.get_mut(parent).unwrap().data.variables.entry(variable_name).and_modify(|e| { *e = variable_value });
                 return Ok(());
             }
         }
@@ -63,7 +58,7 @@ fn assign_variable(node: &mut Node<VariableScope>, arena: &Arena<VariableScope>,
 #[cfg(test)]
 mod tests {
     use atree::Arena;
-    use crate::variable_scope::{VariableScope, is_variable, find_variable};
+    use crate::variable_scope::{VariableScope, is_variable, find_variable, assign_variable};
     use std::collections::HashMap;
 
     #[test]
@@ -82,5 +77,14 @@ mod tests {
         let (mut arena, root_token) = Arena::with_data(top_scope);
 
         assert_eq!(find_variable(&arena[root_token], &arena, &String::from("myVar")), Some(String::from("'1'")));
+    }
+
+    #[test]
+    fn assign_variable_not_in_scope() {
+        let mut top_scope = VariableScope { variables: HashMap::new() };
+        let expected = Ok(());
+        let (mut arena, root_token) = Arena::with_data(top_scope);
+        let result = assign_variable(&mut arena[root_token], &mut arena, String::from("myVar"), String::from("'1'"));
+        assert_eq!(result, expected);
     }
 }
