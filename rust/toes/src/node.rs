@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub(crate) enum NodeTypes {
     Node,
     Root,
@@ -5,18 +7,68 @@ pub(crate) enum NodeTypes {
     Directive,
     Text,
     Comment,
-    Cdata // look if it is necessary
-
 }
 
 pub struct ToeNode {
-    pub(crate) name: String,
+    pub(crate) name: Option<String>,
     pub(crate) node_type: NodeTypes,
+    pub(crate) attributes: HashMap<String, String>,
+    pub(crate) content: Option<String>,
+    // children and parent are dealt through aTree
 }
 
 impl ToeNode {
-    fn to_string() {
+    pub fn create_root_node() -> ToeNode {
+        ToeNode{
+            name: Some(String::from("xml")),
+            node_type: NodeTypes::Root,
+            attributes: HashMap::new(),
+            content: None
+        }
+    }
 
+    pub fn create_processing_node() -> ToeNode {
+        ToeNode{
+            name: Some(String::from("xml")),
+            node_type: NodeTypes::Root,
+            attributes: HashMap::new(),
+            content: None
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self.node_type {
+            NodeTypes::Node =>  { self.node_to_string() }
+            NodeTypes::Root => { self.root_node_to_string() }
+            NodeTypes::Processing => { self.processing_node_to_string() }
+            NodeTypes::Directive => { self.directive_node_to_string() }
+            NodeTypes::Text => { self.text_node_to_string() }
+            NodeTypes::Comment => {self.comment_node_to_string() }
+        }
+    }
+
+    fn node_to_string(&self) -> String {
+        String::new()
+    }
+
+    fn root_node_to_string(&self) -> String {
+        String::new()
+    }
+
+    fn processing_node_to_string(&self) -> String {
+        String::new()
+    }
+
+    fn directive_node_to_string(&self) -> String {
+        String::new()
+    }
+
+    fn text_node_to_string(&self) -> String {
+        String::new()
+    }
+
+    fn comment_node_to_string(&self) -> String {
+        String::new()
     }
 
     fn is_unpaired(tag_name: String) -> bool {
