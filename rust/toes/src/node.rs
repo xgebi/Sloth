@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(PartialEq, Eq, Debug)]
 pub(crate) enum NodeTypes {
     Node,
     Root,
@@ -48,11 +49,24 @@ impl ToeNode {
     }
 
     fn node_to_string(&self) -> String {
-        String::new()
+        let mut result = String::new();
+        result += &*format!("<{} ", self.name.as_ref().unwrap());
+        for (key, value) in self.attributes.iter() {
+            result += &*format!("{}=\"{}\"", key, value);
+        }
+        // Add here paired checks
+        result += &*format!(">");
+        result
     }
 
     fn root_node_to_string(&self) -> String {
-        String::new()
+        let mut result = String::new();
+        result += &*format!("<?{} ", self.name.as_ref().unwrap());
+        for (key, value) in self.attributes.iter() {
+            result += &*format!("{}=\"{}\"", key, value);
+        }
+        result += &*format!(" ?>");
+        result
     }
 
     fn processing_node_to_string(&self) -> String {
@@ -85,6 +99,7 @@ impl ToeNode {
 #[cfg(test)]
 mod tests {
     use crate::ToeNode;
+    use crate::node::NodeTypes;
 
     #[test]
     fn is_tag_paired() {
@@ -105,4 +120,20 @@ mod tests {
     fn is_not_tag_unpaired() {
         assert_eq!(ToeNode::is_unpaired(String::from("div")), false);
     }
+
+    // Root Node tests
+    #[test]
+    fn test_creating_root_node() {
+        let root_node = ToeNode::create_root_node();
+        assert_eq!(root_node.node_type, NodeTypes::Root);
+    }
+
+    #[test]
+    fn root_node_to_string() {
+        let mut root_node = ToeNode::create_root_node();
+        root_node.attributes.insert(String::from("version"), String::from("1.0"));
+        assert_eq!(root_node.to_string(), "<?xml version=\"1.0\" ?>");
+    }
+
+    // Processing nodes
 }
