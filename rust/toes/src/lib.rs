@@ -4,6 +4,7 @@ mod node;
 mod generator;
 mod shared;
 mod variable_scope;
+mod alt_variable_scope;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
