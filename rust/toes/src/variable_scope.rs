@@ -21,7 +21,7 @@ impl VariableScope {
         return None
     }
 
-    fn is_variable(self, variable_name: &String) -> bool {
+    fn variable_exists(self, variable_name: &String) -> bool {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name) {
                 return true;
@@ -42,7 +42,7 @@ impl VariableScope {
 
     fn assign_variable(&mut self, variable_name: &String, variable_value: &mut String) -> bool {
         let mut current_index = self.scopes.len() - 1;
-        while current_index >= 0 {
+        loop {
             if self.scopes[current_index].variables.contains_key(variable_name) {
                 if let Some(x) = self.scopes[current_index].variables.get_mut(variable_name) {
                     *x = variable_value.clone();
@@ -50,6 +50,9 @@ impl VariableScope {
                 return true;
             }
             current_index -= 1;
+            if current_index == 0 {
+                break;
+            }
         }
         false
     }
