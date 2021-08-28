@@ -16,7 +16,7 @@ struct XmlParsingInfo {
     i: u32,
     state: States,
     current_node: Rc<ToeNode>,
-    root_node: Rc<ToeNode>,
+    root_node: Rc<ToeTreeTop>,
 }
 
 pub(crate) fn parse_toes(mut template: String) -> ToeTreeTop {
@@ -32,6 +32,9 @@ pub(crate) fn parse_toes(mut template: String) -> ToeTreeTop {
     // let hello = &s[0..5];
     // let world = &s[6..11];
     // let first_and_last = [&v[..3], &v[l - 3..]].concat();
+    // let a = "a".graphemes(true).collect::<Vec<&str>>();
+    // res.children.join("");
+    // let slice:&[i32] = &my_vec[2..4];
     res
 }
 

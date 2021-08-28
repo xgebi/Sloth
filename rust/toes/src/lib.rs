@@ -1,13 +1,14 @@
-mod parser;
+mod toe_parser;
 mod compiler;
 mod node;
 mod generator;
 mod shared;
 mod variable_scope;
+mod markdown_parser;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
-use crate::parser::{parse_toes};
+use crate::toe_parser::{parse_toes};
 use crate::node::ToeNode;
 use std::error::Error;
 use std::io::Write;

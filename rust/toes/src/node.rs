@@ -193,8 +193,6 @@ mod tests {
         let mut root_node = ToeNode::create_root_node();
         root_node.attributes.insert(String::from("version"), String::from("1.0"));
         assert_eq!(root_node.to_string(), "<?xml version=\"1.0\" ?>");
-
-        // let a = "a".graphemes(true).collect::<Vec<&str>>();
     }
 
     // Processing nodes
