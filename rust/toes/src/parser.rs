@@ -1,8 +1,8 @@
-use atree::Arena;
-use atree::Token;
 use std::error::Error;
-use crate::node::ToeNode;
+use crate::node::{ToeNode, ToeTreeTop};
 use pyo3::prelude::*;
+use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
 
 enum States {
     NewPage,
@@ -12,17 +12,19 @@ enum States {
     InsideScript,
 }
 
-struct XmlParsingInfo<'a> {
+struct XmlParsingInfo {
     i: u32,
     state: States,
-    current_node: &'a Token,
-    root_node: &'a Token,
+    current_node: Rc<ToeNode>,
+    root_node: Rc<ToeNode>,
 }
 
-pub(crate) fn parse_toes(mut template: String) -> Arena<ToeNode> {
-    let mut a: Arena<ToeNode> = Arena::new();
+pub(crate) fn parse_toes(mut template: String) -> ToeTreeTop {
+    let mut res = ToeTreeTop {
+        children: Vec::new(),
+    };
     if template.chars().count() == 0 {
-        return a;
+        return res;
     }
 
     // let s = String::from("hello world");
@@ -30,8 +32,7 @@ pub(crate) fn parse_toes(mut template: String) -> Arena<ToeNode> {
     // let hello = &s[0..5];
     // let world = &s[6..11];
     // let first_and_last = [&v[..3], &v[l - 3..]].concat();
-
-    a
+    res
 }
 
 #[cfg(test)]

@@ -130,7 +130,7 @@ impl ToeNode {
 mod tests {
     use crate::ToeNode;
     use crate::node::NodeTypes;
-    use atree::Arena;
+    use unicode_segmentation::UnicodeSegmentation;
 
     #[test]
     fn is_tag_paired() {
@@ -193,6 +193,8 @@ mod tests {
         let mut root_node = ToeNode::create_root_node();
         root_node.attributes.insert(String::from("version"), String::from("1.0"));
         assert_eq!(root_node.to_string(), "<?xml version=\"1.0\" ?>");
+
+        // let a = "a".graphemes(true).collect::<Vec<&str>>();
     }
 
     // Processing nodes

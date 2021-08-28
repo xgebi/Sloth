@@ -170,4 +170,22 @@ mod tests {
         assert_eq!(scope.assign_variable(&String::from("var"), &mut String::from("b")), true);
         assert_eq!(scope.find_variable(&String::from("var")), Some(String::from("b")));
     }
+
+    #[test]
+    fn test_fail_assign_variable() {
+        let mut scope = VariableScope {
+            scopes: Vec::new()
+        };
+        let mut ss1 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss1);
+
+        let mut ss2 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss2);
+
+        assert_eq!(scope.assign_variable(&String::from("var"), &mut String::from("b")), false);
+    }
 }
