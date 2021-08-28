@@ -18,6 +18,7 @@ pub struct ToeNode {
     pub(crate) node_type: NodeTypes,
     pub(crate) attributes: HashMap<String, String>,
     pub(crate) content: Option<String>,
+    pub(crate) children: Vec<ToeNode>,
     // children and parent are dealt through aTree
 }
 //
