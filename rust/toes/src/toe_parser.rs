@@ -49,7 +49,7 @@ pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
     loop {
         match iterable_template[parsing_info.i] {
             "<" => {
-                parse_starting_tag_character(&iterable_template, &parsing_info)
+                parse_starting_tag_character(&iterable_template, &mut parsing_info)
             }
             ">" => {
                 parse_ending_tag_character()
@@ -72,8 +72,16 @@ pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
     parsing_info.root_node
 }
 
-fn parse_starting_tag_character(template: &Vec<&str>, parsing_info: &XmlParsingInfo) {
+fn parse_starting_tag_character(template: &Vec<&str>, parsing_info: &mut XmlParsingInfo) {
+    if template[parsing_info.i + 1] == " " {
+        parsing_info.move_index(None);
+    } else if parsing_info.state == States::NewPage {
 
+    } else if parsing_info.state == States::LookingForChildNodes {
+
+    } else {
+        parsing_info.move_index(None);
+    }
 }
 
 fn parse_ending_tag_character() {
