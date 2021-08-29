@@ -4,9 +4,7 @@ use std::borrow::Borrow;
 #[derive(PartialEq, Eq, Debug)]
 pub(crate) enum NodeTypes {
     Node,
-    Root,
     Processing,
-    Directive,
     Text,
     Comment,
 }
@@ -44,32 +42,40 @@ impl ToeNode {
         }
     }
 
-    pub fn create_root_node() -> ToeNode {
-        ToeNode{
-            name: Some(String::from("xml")),
-            node_type: NodeTypes::Root,
-            attributes: HashMap::new(),
-            content: None,
-            children: None
-        }
-    }
-
     pub fn create_processing_node() -> ToeNode {
         ToeNode{
-            name: Some(String::from("xml")),
-            node_type: NodeTypes::Root,
+            name: Some(String::from("")),
+            node_type: NodeTypes::Processing,
             attributes: HashMap::new(),
             content: None,
             children: None,
         }
     }
 
+    pub fn create_text_node(content: Option<String>) -> ToeNode {
+        ToeNode {
+            name: None,
+            node_type: NodeTypes::Text,
+            attributes: HashMap::new(),
+            content,
+            children: None
+        }
+    }
+
+    pub fn create_comment_node(content: Option<String>) -> ToeNode {
+        ToeNode {
+            name: None,
+            node_type: NodeTypes::Comment,
+            attributes: HashMap::new(),
+            content,
+            children: None
+        }
+    }
+
     pub fn to_string(&self) -> String {
         match self.node_type {
             NodeTypes::Node =>  { self.node_to_string() }
-            NodeTypes::Root => { self.root_node_to_string() }
             NodeTypes::Processing => { self.processing_node_to_string() }
-            NodeTypes::Directive => { self.directive_node_to_string() }
             NodeTypes::Text => { self.text_node_to_string() }
             NodeTypes::Comment => {self.comment_node_to_string() }
         }
@@ -99,7 +105,7 @@ impl ToeNode {
         result
     }
 
-    fn root_node_to_string(&self) -> String {
+    fn processing_node_to_string(&self) -> String {
         let mut result = String::new();
         result += &*format!("<?{} ", self.name.as_ref().unwrap());
         for (key, value) in self.attributes.iter() {
@@ -109,19 +115,17 @@ impl ToeNode {
         result
     }
 
-    fn processing_node_to_string(&self) -> String {
-        String::new()
-    }
-
-    fn directive_node_to_string(&self) -> String {
-        String::new()
-    }
-
     fn text_node_to_string(&self) -> String {
+        if let Some(content) = &self.content {
+            return content.clone();
+        }
         String::new()
     }
 
     fn comment_node_to_string(&self) -> String {
+        if let Some(content) = &self.content {
+            return String::from(format!("<!-- {} -->", content.clone()));
+        }
         String::new()
     }
 }
@@ -180,20 +184,44 @@ mod tests {
         assert_eq!(node.to_string(), "<div><br /></div>");
     }
 
-
-    // Root Node tests
+    // Processing nodes
     #[test]
-    fn test_creating_root_node() {
-        let root_node = ToeNode::create_root_node();
-        assert_eq!(root_node.node_type, NodeTypes::Root);
+    fn test_creating_processing_node() {
+        let processing_node = ToeNode::create_processing_node();
+        assert_eq!(processing_node.node_type, NodeTypes::Processing);
     }
 
     #[test]
-    fn root_node_to_string() {
-        let mut root_node = ToeNode::create_root_node();
-        root_node.attributes.insert(String::from("version"), String::from("1.0"));
-        assert_eq!(root_node.to_string(), "<?xml version=\"1.0\" ?>");
+    fn processing_node_to_string() {
+        let mut processing_node = ToeNode::create_processing_node();
+        processing_node.name = Some(String::from("processing"));
+        processing_node.attributes.insert(String::from("attr"), String::from("attr-val"));
+        assert_eq!(processing_node.to_string(), "<?processing attr=\"attr-val\" ?>");
+    }
+
+    // Text nodes
+    #[test]
+    fn test_creating_text_node() {
+        let text_node = ToeNode::create_text_node(Some("text".to_string()));
+        assert_eq!(text_node.node_type, NodeTypes::Text);
+    }
+
+    #[test]
+    fn text_node_to_string() {
+        let mut text_node = ToeNode::create_text_node(Some("text".to_string()));
+        assert_eq!(text_node.to_string(), "text");
     }
 
     // Processing nodes
+    #[test]
+    fn test_creating_comment_node() {
+        let comment_node = ToeNode::create_comment_node(Some("this is comment".to_string()));
+        assert_eq!(comment_node.node_type, NodeTypes::Comment);
+    }
+
+    #[test]
+    fn comment_node_to_string() {
+        let comment_node = ToeNode::create_comment_node(Some("this is comment".to_string()));
+        assert_eq!(comment_node.to_string(), "<!-- this is comment -->");
+    }
 }
