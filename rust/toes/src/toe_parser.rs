@@ -36,15 +36,33 @@ pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
     let mut res = ToeTreeTop {
         children: Vec::new(),
     };
+    if template.len() == 0 {
+        return Rc::new(res);
+    }
     let iterable_template = template.graphemes(true).collect::<Vec<&str>>();
-    let parsing_info = XmlParsingInfo {
+    let mut parsing_info = XmlParsingInfo {
         i: 0,
         state: States::NewPage,
         current_node: None,
         root_node: Rc::new(res)
     };
     loop {
+        match iterable_template[parsing_info.i] {
+            "<" => {
+                parse_starting_tag_character(&iterable_template, &parsing_info)
+            }
+            ">" => {
+                parse_ending_tag_character()
+            }
+            _ => {
+                let ch: &str = iterable_template[parsing_info.i];
+                if ch.trim().len() == 0 {
+                    parsing_info.move_index(None);
+                } else {
 
+                }
+            }
+        }
 
         if parsing_info.i == iterable_template.len() as u32 {
             break;
@@ -54,10 +72,18 @@ pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
     parsing_info.root_node
 }
 
+fn parse_starting_tag_character(template: &Vec<&str>, parsing_info: &XmlParsingInfo) {
+
+}
+
+fn parse_ending_tag_character() {
+
+}
+
 #[cfg(test)]
 mod tests {
     use crate::node::ToeTreeTop;
-    use crate::toe_parser::{XmlParsingInfo, States};
+    use crate::toe_parser::{XmlParsingInfo, States, parse_starting_tag_character};
     use std::rc::Rc;
 
     #[test]
@@ -88,5 +114,10 @@ mod tests {
         };
         parsing_info.move_index(Some(2));
         assert_eq!(parsing_info.i, 2);
+    }
+
+    #[test]
+    fn test_parse_starting_tag_character() {
+        // parse_starting_tag_character()
     }
 }
