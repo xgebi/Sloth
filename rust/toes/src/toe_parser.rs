@@ -15,24 +15,78 @@ enum States {
 struct XmlParsingInfo {
     i: u32,
     state: States,
-    current_node: Rc<ToeNode>,
+    current_node: Option<Rc<ToeNode>>,
     root_node: Rc<ToeTreeTop>,
 }
 
-pub(crate) fn parse_toes(mut template: String) -> ToeTreeTop {
+impl XmlParsingInfo {
+    fn move_index(&mut self, step: Option<u32>) {
+        match step {
+            None => {
+                self.i += 1;
+            }
+            Some(s) => {
+                self.i += s;
+            }
+        }
+    }
+}
+
+pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
     let mut res = ToeTreeTop {
         children: Vec::new(),
     };
-    if template.chars().count() == 0 {
-        return res;
+    let iterable_template = template.graphemes(true).collect::<Vec<&str>>();
+    let parsing_info = XmlParsingInfo {
+        i: 0,
+        state: States::NewPage,
+        current_node: None,
+        root_node: Rc::new(res)
+    };
+    loop {
+
+
+        if parsing_info.i == iterable_template.len() as u32 {
+            break;
+        }
     }
-    res
+
+    parsing_info.root_node
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::node::ToeTreeTop;
+    use crate::toe_parser::{XmlParsingInfo, States};
+    use std::rc::Rc;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_index_move_by_one() {
+        let mut res = ToeTreeTop {
+            children: Vec::new(),
+        };
+        let mut parsing_info = XmlParsingInfo {
+            i: 0,
+            state: States::NewPage,
+            current_node: None,
+            root_node: Rc::new(res)
+        };
+        parsing_info.move_index(None);
+        assert_eq!(parsing_info.i, 1);
+    }
+
+    #[test]
+    fn test_index_move_by_two() {
+        let mut res = ToeTreeTop {
+            children: Vec::new(),
+        };
+        let mut parsing_info = XmlParsingInfo {
+            i: 0,
+            state: States::NewPage,
+            current_node: None,
+            root_node: Rc::new(res)
+        };
+        parsing_info.move_index(Some(2));
+        assert_eq!(parsing_info.i, 2);
     }
 }
