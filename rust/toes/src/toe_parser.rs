@@ -3,7 +3,9 @@ use crate::node::{ToeNode, ToeTreeTop};
 use pyo3::prelude::*;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
+use std::convert::TryInto;
 
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
 enum States {
     NewPage,
     ReadNodeName,
@@ -13,20 +15,20 @@ enum States {
 }
 
 struct XmlParsingInfo {
-    i: u32,
+    i: usize,
     state: States,
     current_node: Option<Rc<ToeNode>>,
     root_node: Rc<ToeTreeTop>,
 }
 
 impl XmlParsingInfo {
-    fn move_index(&mut self, step: Option<u32>) {
+    fn move_index(&mut self, step: Option<u16>) {
         match step {
             None => {
                 self.i += 1;
             }
             Some(s) => {
-                self.i += s;
+                self.i += usize::from(s);
             }
         }
     }
@@ -64,7 +66,7 @@ pub(crate) fn parse_toes(mut template: String) -> Rc<ToeTreeTop> {
             }
         }
 
-        if parsing_info.i == iterable_template.len() as u32 {
+        if parsing_info.i == (iterable_template.len() as u32).try_into().unwrap() {
             break;
         }
     }

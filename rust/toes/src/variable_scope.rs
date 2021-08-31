@@ -7,11 +7,17 @@ struct SingleScope {
 }
 
 #[derive(Clone)]
-struct VariableScope {
+pub(crate) struct VariableScope {
     scopes: Vec<SingleScope>
 }
 
 impl VariableScope {
+    pub(crate) fn create() -> VariableScope {
+        VariableScope {
+            scopes: Vec::new()
+        }
+    }
+
     fn find_variable(self, variable_name: &String) -> Option<String> {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name) {
@@ -65,9 +71,7 @@ mod tests {
 
     #[test]
     fn test_creating_scope() {
-        let scope = VariableScope {
-            scopes: Vec::new()
-        };
+        let scope = VariableScope::create();
         assert_eq!(scope.scopes.len(), 0);
     }
 
