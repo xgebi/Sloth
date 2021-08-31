@@ -1,5 +1,11 @@
 use std::rc::Rc;
 use crate::variable_scope::VariableScope;
+use std::str::pattern;
+
+struct Condition {
+    value: String,
+    processed: bool
+}
 
 fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bool {
     if condition.to_lowercase() == "true" {
@@ -8,6 +14,21 @@ fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bo
         return false;
     }
 
+    let mut condition = Condition {
+        value: condition,
+        processed: false
+    };
+
+    if condition.value.contains(" and ") || condition.value.contains(" or ") {
+        return process_compound_condition(condition, variable_scope);
+    }
+
+    let sides = condition.value.split("");
+
+    false
+}
+
+fn process_compound_condition(condition: Condition, variable_scope: Rc<VariableScope>) -> bool {
     false
 }
 
