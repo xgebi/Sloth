@@ -51,4 +51,112 @@ mod tests {
         let res = process_condition("false".to_string(), Rc::new(var_scope));
         assert_eq!(res, false);
     }
+
+    // simple conditions
+    #[test]
+    fn bool_variable() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"true".to_string());
+        let res = process_condition("myVar".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_lte() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar lte 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_lte() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar lte 0".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn variable_compare_lt() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar lt 2".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_lt() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar lt 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn variable_compare_gte() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar gte 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_gte() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar gte 2".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn variable_compare_gt() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar gt 2".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_gt() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar gt 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn variable_compare_eq() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar eq 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_eq() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar eq 2".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn variable_compare_neq() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar neq 2".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn variable_compare_not_neq() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"1".to_string());
+        let res = process_condition("myVar neq 1".to_string(), Rc::new(var_scope));
+        assert_eq!(res, false);
+    }
+
+    // compound tests
+
 }

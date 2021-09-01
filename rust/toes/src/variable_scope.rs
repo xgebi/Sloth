@@ -18,7 +18,7 @@ impl VariableScope {
         }
     }
 
-    fn find_variable(self, variable_name: &String) -> Option<String> {
+    pub(crate) fn find_variable(self, variable_name: &String) -> Option<String> {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name) {
                 return Some(scope.variables.get(variable_name).unwrap().clone())
@@ -27,7 +27,7 @@ impl VariableScope {
         return None
     }
 
-    fn variable_exists(self, variable_name: &String) -> bool {
+    pub(crate) fn variable_exists(self, variable_name: &String) -> bool {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name) {
                 return true;
@@ -36,7 +36,7 @@ impl VariableScope {
         return false;
     }
 
-    fn create_variable(&mut self, variable_name: &String, variable_value: &String) -> bool {
+    pub(crate) fn create_variable(&mut self, variable_name: &String, variable_value: &String) -> bool {
         if !self.scopes.last().unwrap().variables.contains_key(variable_name) {
             let last_index = self.scopes.len() - 1;
             self.scopes[last_index].variables.insert(variable_name.to_string(), variable_value.to_string());
@@ -46,7 +46,7 @@ impl VariableScope {
         false
     }
 
-    fn assign_variable(&mut self, variable_name: &String, variable_value: &mut String) -> bool {
+    pub(crate) fn assign_variable(&mut self, variable_name: &String, variable_value: &mut String) -> bool {
         let mut current_index = self.scopes.len() - 1;
         loop {
             if self.scopes[current_index].variables.contains_key(variable_name) {
