@@ -6,6 +6,7 @@ mod shared;
 mod variable_scope;
 mod markdown_parser;
 mod hooks;
+mod compiler;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
