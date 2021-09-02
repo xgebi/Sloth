@@ -34,7 +34,7 @@ fn process_compound_condition(condition: Condition, variable_scope: Rc<VariableS
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::process_condition;
+    use crate::condition_processing::process_condition;
     use crate::variable_scope::VariableScope;
     use std::rc::Rc;
 
@@ -416,5 +416,44 @@ mod tests {
         assert_eq!(res, false);
     }
 
-    //mix
+    // mix
+    #[test]
+    fn and_or_without_parenthesis() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"2".to_string());
+        let res = process_condition("myVar neq 1 and myVar neq 2 or myVar neq 0".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn and_with_parenthesis_or() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"2".to_string());
+        let res = process_condition("(myVar neq 1 and myVar neq 2) or myVar neq 0".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn and_or_with_parenthesis() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"2".to_string());
+        let res = process_condition("myVar neq 1 and (myVar neq 2 or myVar neq 0)".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn and_or_with_parenthesis() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"2".to_string());
+        let res = process_condition("(myVar neq 1 or myVar neq 2) and (myVar neq 0 or myVar neq 2)".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn and_or_with_parenthesis() {
+        let mut var_scope = VariableScope::create();
+        var_scope.create_variable(&"myVar".to_string(), &"2".to_string());
+        let res = process_condition("(myVar neq 1 or not myVar neq 2) and (myVar neq 0 or not myVar neq 2)".to_string(), Rc::new(var_scope));
+        assert_eq!(res, true);
+    }
 }
