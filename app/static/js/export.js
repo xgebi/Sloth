@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 });
 
 function downloadFile() {
-    fetch('/api/content/export/sloth', {
+    fetch('/api/content/export/sloth', { // TODO create the endpoint
         method: 'POST',
         headers: {
             'authorization': document.cookie

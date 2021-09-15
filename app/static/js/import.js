@@ -14,7 +14,7 @@ function uploadFile() {
     formData.append('data', wpData.files[0]);
     formData.append('uploads', wpUploads.files[0]);
 
-    fetch('/api/content/import/wordpress', {
+    fetch('/api/settings/import/wordpress', {
         method: 'POST',
         headers: {
             'authorization': document.cookie
@@ -46,7 +46,7 @@ function uploadMedia() {
     const reader = new FileReader();
     reader.onload = function (evt) {
         document.querySelector("#wordpress-uploads-button").setAttribute("disabled", "disabled");
-        fetch('/api/content/import/wordpress-media', {
+        fetch('/api/settings/import/wordpress-media', { // TODO create endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-zip-compressed',

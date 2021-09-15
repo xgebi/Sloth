@@ -18,6 +18,12 @@ impl VariableScope {
         }
     }
 
+    pub(crate) fn remove_last_scope(mut self) {
+        if self.scopes.len() > 0 {
+            self.scopes.pop()
+        }
+    }
+
     pub(crate) fn find_variable(self, variable_name: &String) -> Option<String> {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name) {

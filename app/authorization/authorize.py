@@ -5,7 +5,13 @@ import json
 from app.authorization.user import User
 
 
-def authorize_rest(permission_level):
+def authorize_rest(permission_level: int):
+    """
+    Decorator that checks one has privileges to access REST API
+
+    :param permission_level:
+    :return:
+    """
     def inner(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
@@ -28,7 +34,13 @@ def authorize_rest(permission_level):
     return inner
 
 
-def authorize_web(permission_level):
+def authorize_web(permission_level: int):
+    """
+    Decorator that checks one has privileges to access a page
+
+    :param permission_level:
+    :return:
+    """
     def inner(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
