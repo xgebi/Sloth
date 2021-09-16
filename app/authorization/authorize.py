@@ -18,7 +18,7 @@ def authorize_rest(permission_level: int):
             auth = request.headers.get('authorization').split(":")
             user = User(auth[1], auth[2])
 
-            pass_token = user.authorize_user(permission_level)
+            pass_token = user.authorize_user(permissions_level=permission_level)
 
             if pass_token:
                 return fn(*args, permission_level=pass_token[1], **kwargs)
@@ -51,7 +51,7 @@ def authorize_web(permission_level: int):
             if len(auth) != 3:
                 return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
             user = User(auth[1], auth[2])
-            pass_token = user.authorize_user(permission_level)
+            pass_token = user.authorize_user(permissions_level=permission_level)
 
             if not pass_token:
                 return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")

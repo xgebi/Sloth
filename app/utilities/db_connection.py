@@ -35,17 +35,21 @@ def db_connection(fn):
     :param fn:
     :return:
     """
+
     @wraps(fn)
     def wrapper(*args, connection: Optional[psycopg.Connection] = None, **kwargs):
         if connection is not None:
             return fn(*args, connection=connection, **kwargs)
-
-        config = current_app.config
-        conn_str = f"postgresql://{config['DATABASE_USER']}:{config['DATABASE_PASSWORD']}@{config['DATABASE_URL']}:{config['DATABASE_PORT']}/{config['DATABASE_NAME']}"
-        try:
-            with psycopg.connect(conn_str) as conn:
-                return fn(*args, connection=conn, **kwargs)
-        except psycopg.errors.DatabaseError:
-            return None
+        conn = connect_to_db()
+        return fn(*args, connection=conn, **kwargs)
 
     return wrapper
+
+
+def connect_to_db() -> Optional[psycopg.Connection]:
+    config = current_app.config
+    conn_str = f"postgresql://{config['DATABASE_USER']}:{config['DATABASE_PASSWORD']}@{config['DATABASE_URL']}:{config['DATABASE_PORT']}/{config['DATABASE_NAME']}"
+    try:
+        return psycopg.connect(conn_str)
+    except psycopg.errors.DatabaseError:
+        return None

@@ -1,3 +1,4 @@
+import psycopg
 from psycopg2 import sql
 from typing import Tuple, List, Dict, Any
 import datetime
@@ -45,22 +46,22 @@ def get_languages(*args, connection, lang_id: str = "", as_list:bool= True, **kw
     } for lang in temp_languages}
 
 
-def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:
-    cur = connection.cursor()
-    try:
-        cur.execute(
-            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings 
-            WHERE uuid = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language')""")
-        )
-        main_language = cur.fetchone()
-    except Exception as e:
-        print(e)
-        return {}
+def get_default_language(*args, connection: psycopg.Connection, **kwargs) -> Dict[str, str]:
+    with connection.cursor() as cur:
+        try:
+            cur.execute(
+                """SELECT uuid, long_name FROM sloth_language_settings 
+                WHERE uuid = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language')"""
+            )
+            main_language = cur.fetchone()
+        except psycopg.errors.DatabaseError as e:
+            print(e)
+            return {}
 
-    return {
-        "uuid": main_language[0],
-        "long_name": main_language[1]
-    }
+        return {
+            "uuid": main_language[0],
+            "long_name": main_language[1]
+        }
 
 
 def get_related_posts(*args, post, connection, **kwargs):
@@ -92,7 +93,7 @@ def get_related_posts(*args, post, connection, **kwargs):
                 """SELECT content, section_type, position
                 FROM sloth_post_sections
                 WHERE post = %s
-                ORDER BY position ASC;"""
+                ORDER BY position;"""
             ),
             (related_post[0],)
         )
