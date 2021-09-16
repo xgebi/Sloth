@@ -7,7 +7,7 @@ import json
 import uuid
 from typing import Tuple
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 
 class UserInfo:
@@ -33,7 +33,7 @@ class User:
         self.uuid = uuid
         self.token = token
 
-    @db_connection
+    @db_connection_legacy
     def login_user(self, username: str, password: str, connection=None) -> UserInfo or None:
         config = current_app.config
         if connection is None:

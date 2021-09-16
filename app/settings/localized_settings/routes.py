@@ -5,7 +5,7 @@ from psycopg2 import sql
 from uuid import uuid4
 
 from app.authorization.authorize import authorize_rest, authorize_web
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language, get_languages
 from app.post.post_types import PostTypes
 from app.toes.toes import render_toe_from_path
@@ -16,7 +16,7 @@ from app.settings.localized_settings import localized_settings
 
 @localized_settings.route("/settings/localized-settings")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_localized_settings(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -77,7 +77,7 @@ def show_localized_settings(*args, permission_level, connection, **kwargs):
 
 @localized_settings.route("/settings/localized-settings/save", methods=["POST"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def change_localized_settings(*args, permission_level, connection, **kwargs):
     data = request.form
     languages = get_languages(connection=connection)

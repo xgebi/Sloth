@@ -1,17 +1,17 @@
 from flask import request, current_app, abort, redirect, render_template
 from psycopg2 import sql
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.authorization.authorize import authorize_web
 
 from app.post.post_types import PostTypes
 
-from settings import settings_users
+from app.web.settings.users import settings_users
 
 
 @settings_users.route("/settings/users")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_users_list(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -50,7 +50,7 @@ def show_users_list(*args, permission_level, connection, **kwargs):
 
 @settings_users.route("/settings/users/<user>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_user(*args, permission_level, connection=None, user, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -94,7 +94,7 @@ def show_user(*args, permission_level, connection=None, user, **kwargs):
 
 @settings_users.route("/settings/my-account")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_my_account(*args, permission_level, connection=None, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -132,7 +132,7 @@ def show_my_account(*args, permission_level, connection=None, **kwargs):
 
 @settings_users.route("/settings/users/<user>/save", methods=["POST"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def save_user(*args, permission_level, connection=None, user, **kwargs):
     if connection is None:
         return redirect("/database-error")

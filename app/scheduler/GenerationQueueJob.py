@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2 import sql, errors
 from datetime import datetime
 from app.post.post_generator import PostGenerator
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 
 from app.scheduler.Job import Job
@@ -14,7 +14,7 @@ class GenerationQueueJob(Job):
         self.interval = interval
         self.next_run = datetime.now() + (interval * 60)
 
-    @db_connection
+    @db_connection_legacy
     def run(self, *args, connection, **kwargs):
         self.last_run = datetime.now()
         self.running = True
@@ -30,7 +30,7 @@ class GenerationQueueJob(Job):
         self.next_run = datetime.now() + (self.interval * 60)
         self.running = False
 
-    @db_connection
+    @db_connection_legacy
     def add_to_queue(self, *args, post, connection, **kwargs):
         # sloth_generation_queue
         pass

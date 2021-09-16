@@ -6,7 +6,7 @@ import os
 from app.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities import get_default_language
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.toes.toes import render_toe_from_path
 from app.toes.hooks import Hooks
 
@@ -15,7 +15,7 @@ from app.settings.language_settings import language_settings
 
 @language_settings.route("/settings/language", methods=["GET"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_language_settings(*args, permission_level, connection=None, **kwargs):
     if connection is None:
         abort(500)
@@ -68,7 +68,7 @@ def show_language_settings(*args, permission_level, connection=None, **kwargs):
 
 @language_settings.route("/api/settings/language/<lang_id>/save", methods=["POST", "PUT"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def save_language_info(*args, connection=None, lang_id: str, **kwargs):
     if connection is None:
         abort(500)
@@ -116,7 +116,7 @@ def save_language_info(*args, connection=None, lang_id: str, **kwargs):
 
 @language_settings.route("/api/settings/language/<lang_id>/delete", methods=["DELETE"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def delete_language(*args, connection=None, lang_id: str, **kwargs):
     if connection is None:
         abort(500)

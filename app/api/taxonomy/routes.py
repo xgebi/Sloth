@@ -4,7 +4,7 @@ from psycopg2 import sql
 import uuid
 
 from app.authorization.authorize import authorize_rest
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 from app.api.taxonomy import taxonomy
 from app.post.routes import separate_taxonomies
@@ -12,7 +12,7 @@ from app.post.routes import separate_taxonomies
 
 @taxonomy.route("/api/taxonomy/category/new", methods=["POST"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def create_category(*args, connection, **kwargs):
     if connection is None:
         abort(500)

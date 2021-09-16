@@ -1,5 +1,5 @@
 from flask import abort, redirect, render_template, make_response, request, current_app
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language, get_languages
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
@@ -18,7 +18,7 @@ from app.messages import messages
 
 @messages.route("/messages")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_message_list(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -68,7 +68,7 @@ def show_message_list(*args, permission_level, connection, **kwargs):
 
 @messages.route("/messages/<msg>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_message(*args, permission_level, connection, msg, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -127,7 +127,7 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
 
 @messages.route("/api/messages/delete", methods=["POST", "PUT", "DELETE"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def delete_message(*args, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -152,7 +152,7 @@ def delete_message(*args, connection, **kwargs):
 
 @messages.route("/api/messages/send", methods=["POST"])
 @cross_origin()
-@db_connection
+@db_connection_legacy
 def receive_message(*args, connection, **kwargs):
     if request.origin[request.origin.find("//") + 2:] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
         abort(500)

@@ -16,7 +16,7 @@ import copy
 
 from app.post import get_translations, get_taxonomy_for_post_preped_for_listing
 from app.utilities import get_related_posts
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
@@ -27,7 +27,7 @@ class PostGenerator:
     theme_path = ""
     menus = {}
 
-    @db_connection
+    @db_connection_legacy
     def __init__(self, *args, connection, **kwargs):
         self.settings = {}
         if connection is None:

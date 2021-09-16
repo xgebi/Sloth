@@ -10,7 +10,7 @@ from uuid import uuid4
 import traceback
 import zipfile
 import shutil
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.hooks import Hooks
 from app.post.post_generator import PostGenerator
@@ -21,7 +21,7 @@ from app.settings.content import content
 
 @content.route("/settings/import")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_import_settings(*args, permission_level: int, connection, **kwargs):
     """
     Renders page that will show import options
@@ -48,7 +48,7 @@ def show_import_settings(*args, permission_level: int, connection, **kwargs):
 
 @content.route("/api/settings/import/wordpress", methods=["PUT", "POST"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def import_wordpress_content(*args, permission_level, connection=None, **kwargs):
     """
     API endpoint for importing Wordpress file
@@ -427,7 +427,7 @@ def process_taxonomy(*args, taxonomy_list: List, **kwargs) -> List:
 
 @content.route("/settings/export")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_export_settings(*args, permission_level: int, connection, **kwargs):
     """
     Renders page that will show export options

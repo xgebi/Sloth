@@ -1,14 +1,14 @@
 from flask import request, flash, url_for, current_app, abort, redirect, render_template
 import pytz
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.registration.Registration import Registration
 
 from app.registration import registration
 
 
 @registration.route('/registration', methods=["GET", "POST"])
-@db_connection
+@db_connection_legacy
 def registration_steps(*args, connection=None, **kwargs):
     if request.method.upper() == "GET":
         return render_template("registration.html", registration={}, timezones=pytz.all_timezones)

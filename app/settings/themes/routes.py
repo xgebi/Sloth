@@ -10,7 +10,7 @@ import json
 import zipfile
 import shutil
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_generator import PostGenerator
@@ -22,7 +22,7 @@ from app.settings.themes import settings_themes
 
 @settings_themes.route("/settings/themes")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_theme_settings(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -74,7 +74,7 @@ def show_theme_settings(*args, permission_level, connection, **kwargs):
 
 @settings_themes.route("/settings/themes/activate/<theme_name>")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def save_active_theme_settings(*args, theme_name, connection=None, **kwargs):
     # save theme theme to database
     cur = connection.cursor()
@@ -115,7 +115,7 @@ def upload_theme(*args, **kwargs):
 
 @settings_themes.route("/api/themes/list", methods=["GET"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def show_themes_list(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)

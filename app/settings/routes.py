@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from app.post.post_generator import PostGenerator
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.toes import render_toe_from_path
 from app.toes.hooks import Hooks
@@ -18,7 +18,7 @@ from app.utilities import get_default_language, get_languages
 
 @settings.route("/settings")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_settings(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -73,7 +73,7 @@ def show_settings(*args, permission_level, connection, **kwargs):
 
 @settings.route("/settings/save", methods=["POST"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def save_settings(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/settings?error=db")

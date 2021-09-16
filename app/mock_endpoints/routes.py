@@ -5,7 +5,7 @@ import json
 import uuid
 import os
 from app.post.post_types import PostTypes
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language
 from app.authorization.authorize import authorize_web
 from app.toes.toes import render_toe_from_path
@@ -17,7 +17,7 @@ from app.mock_endpoints import mock_endpoints
 
 @mock_endpoints.route("/mock-endpoints")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_endpoints_list(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -56,7 +56,7 @@ def show_endpoints_list(*args, permission_level, connection, **kwargs):
 
 @mock_endpoints.route("/mock-endpoints/<endpoint>", methods=["GET"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
     if connection is None:
         abort(500)
@@ -109,7 +109,7 @@ def show_endpoint(*args, permission_level, connection, endpoint, **kwargs):
 
 @mock_endpoints.route("/api/mock-endpoints/<endpoint>/delete", methods=["DELETE"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def delete_endpoint(*args, permission_level, connection, endpoint, **kwargs):
     if connection is None:
         abort(500)
@@ -133,7 +133,7 @@ def delete_endpoint(*args, permission_level, connection, endpoint, **kwargs):
 
 @mock_endpoints.route("/mock-endpoints/new", methods=["GET"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_new_endpoint(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -162,7 +162,7 @@ def show_new_endpoint(*args, permission_level, connection, **kwargs):
 
 @mock_endpoints.route("/mock-endpoints/<endpoint_id>/save", methods=["POST", "PUT"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def save_endpoint(*args, permission_level, connection, endpoint_id, **kwargs):
     if connection is None:
         abort(500)
@@ -196,7 +196,7 @@ def save_endpoint(*args, permission_level, connection, endpoint_id, **kwargs):
 
 @mock_endpoints.route("/api/mock/<path>", methods=["GET"])
 @cross_origin()
-@db_connection
+@db_connection_legacy
 def get_endpoint(*args, connection, path, **kwargs):
     if request.origin[request.origin.find("//") + 2: ] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
         abort(500)

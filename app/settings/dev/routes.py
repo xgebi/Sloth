@@ -11,12 +11,12 @@ from app.settings.dev import dev_settings
 from app.toes.hooks import Hooks
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_default_language
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 
 @dev_settings.route("/settings/dev")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_dev_settings(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -54,7 +54,7 @@ def show_dev_settings(*args, permission_level, connection, **kwargs):
 
 @dev_settings.route("/api/settings/dev/posts", methods=["DELETE"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def delete_posts(*args, permission_level, connection, **kwargs):
     if os.environ["FLASK_ENV"] != "development":
         abort(403)
@@ -107,7 +107,7 @@ def delete_posts(*args, permission_level, connection, **kwargs):
 
 @dev_settings.route("/api/settings/dev/taxonomy", methods=["DELETE"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def delete_taxonomy(*args, permission_level, connection, **kwargs):
     code = -1
     if os.environ["FLASK_ENV"] != "development":
@@ -147,7 +147,7 @@ def delete_taxonomy(*args, permission_level, connection, **kwargs):
 
 @dev_settings.route("/api/settings/dev/health-check", methods=["GET"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def check_posts_health(*args, permission_level, connection, **kwargs):
     if connection is None:
         response = make_response(json.dumps(

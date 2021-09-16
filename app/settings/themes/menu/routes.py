@@ -5,7 +5,7 @@ import uuid
 from app.authorization.authorize import authorize_web, authorize_rest
 import datetime
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_languages, get_default_language
 from app.post.post_types import PostTypes
 
@@ -14,7 +14,7 @@ from app.settings.themes.menu import menu
 
 @menu.route("/settings/themes/menu")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_menus(*args, permission_level, connection, **kwargs):
     cur = connection.cursor()
     main_lang = ""
@@ -32,7 +32,7 @@ def show_menus(*args, permission_level, connection, **kwargs):
 
 @menu.route("/settings/themes/menu/<lang_id>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_lang_menus(*args, permission_level, connection, lang_id, **kwargs):
     return return_menu_language(permission_level=permission_level, connection=connection, lang_id=lang_id)
 
@@ -80,7 +80,7 @@ def return_menu_language(*args, permission_level, connection, lang_id, **kwargs)
 
 @menu.route("/api/settings/themes/menu/<menu>")
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def get_menu(*args, connection, menu, **kwargs):
     cur = connection.cursor()
     temp_result = []
@@ -109,7 +109,7 @@ def get_menu(*args, connection, menu, **kwargs):
 
 @menu.route("/api/settings/themes/menu/save", methods=["POST", "PUT"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def save_menu(*args, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -162,7 +162,7 @@ def save_menu(*args, connection, **kwargs):
 
 @menu.route("/api/settings/themes/menu/delete", methods=["DELETE"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def delete_menu(*args, connection, **kwargs):
     filled = json.loads(request.data)
     if not filled["menu"] or len(filled["menu"]) == 0:

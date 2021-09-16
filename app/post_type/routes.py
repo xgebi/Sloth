@@ -2,7 +2,7 @@ from flask import request, abort, redirect, render_template
 
 from app.post.post_generator import PostGenerator
 from app.utilities import get_default_language
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
 from psycopg2 import sql
@@ -14,7 +14,7 @@ from app.post_type import post_type
 
 @post_type.route("/post-types")
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_post_types(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -34,7 +34,7 @@ def show_post_types(*args, permission_level, connection, **kwargs):
 
 @post_type.route("/post-type/new", methods=["GET"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def new_post_type_page(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -60,7 +60,7 @@ def new_post_type_page(*args, permission_level, connection, **kwargs):
 
 @post_type.route("/post-type/<post_type_id>", methods=["GET"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def show_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -82,7 +82,7 @@ def show_post_type(*args, permission_level, connection, post_type_id, **kwargs):
 
 @post_type.route("/post-type/<post_type_id>", methods=["POST", "PUT"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -148,7 +148,7 @@ def save_post_type(*args, permission_level, connection, post_type_id, **kwargs):
 
 @post_type.route("/post-type/<post_type_id>/create", methods=["POST", "PUT"])
 @authorize_web(1)
-@db_connection
+@db_connection_legacy
 def create_post_type(*args, permission_level, connection, post_type_id, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -176,7 +176,7 @@ def create_post_type(*args, permission_level, connection, post_type_id, **kwargs
 
 @post_type.route("/api/post-type/delete", methods=["DELETE"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def delete_post_type(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")

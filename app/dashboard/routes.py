@@ -1,7 +1,7 @@
 from flask import abort, make_response, request
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.hooks import Hooks
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language
 import json
 import re
@@ -19,7 +19,7 @@ from app.dashboard import dashboard
 
 @dashboard.route('/dashboard')
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_dashboard(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -131,7 +131,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
 @dashboard.route("/api/dashboard-information")
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def dashboard_information(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)
@@ -184,7 +184,7 @@ def dashboard_information(*args, connection=None, **kwargs):
 
 @dashboard.route("/api/dashboard-information/create-draft", methods=["POST"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def create_draft(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)

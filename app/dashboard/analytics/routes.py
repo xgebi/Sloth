@@ -6,7 +6,7 @@ from flask import abort, make_response, request
 from datetime import datetime, timedelta, date
 from app.authorization.authorize import authorize_web
 from app.toes.hooks import Hooks
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language
 import traceback
 import os
@@ -17,7 +17,7 @@ from app.dashboard.analytics import analytics
 
 @analytics.route('/dashboard/analytics')
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_dashboard(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -109,7 +109,7 @@ def show_dashboard(*args, permission_level, connection, **kwargs):
 
 @analytics.route('/api/dashboard/analytics/pages/<period>')
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def get_pages_in_time_data(*args, permission_level, connection, period: str, **kwargs):
     cur = connection.cursor()
     today = datetime.today()

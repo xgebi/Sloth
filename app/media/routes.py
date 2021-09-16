@@ -8,7 +8,7 @@ import os
 import traceback
 
 from app.authorization.authorize import authorize_rest, authorize_web
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.utilities import get_default_language, get_languages
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks
@@ -19,7 +19,7 @@ from app.media import media
 
 @media.route("/media")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_media_list(*args, permission_level, connection, **kwargs):
     if connection is None:
         return redirect("/database-error")
@@ -50,7 +50,7 @@ def show_media_list(*args, permission_level, connection, **kwargs):
 
 @media.route("/api/media", methods=["GET"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def get_media_data(*args, connection, **kwargs):
     if connection is None:
         response = make_response(json.dumps({
@@ -69,7 +69,7 @@ def get_media_data(*args, connection, **kwargs):
 
 @media.route("/api/media/upload-file", methods=['POST'])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def upload_item(*args, connection=None, **kwargs):
     image = request.files["image"]
     alts = json.loads(request.form["alt"])
@@ -151,7 +151,7 @@ def upload_item(*args, connection=None, **kwargs):
 
 @media.route("/api/media/delete-file", methods=['POST', 'DELETE'])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def delete_item(*args, connection=None, **kwargs):
     file_data = json.loads(request.data)
 

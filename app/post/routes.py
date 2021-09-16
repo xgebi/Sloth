@@ -17,7 +17,7 @@ from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.media.routes import get_media
 #import toes
 
@@ -27,7 +27,7 @@ reserved_folder_names = ('tag', 'category')
 # WEB
 @post.route("/post/nothing")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def no_post(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -41,7 +41,7 @@ def no_post(*args, permission_level, connection, **kwargs):
 
 @post.route("/post/<post_type>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
     cur = connection.cursor()
     lang_id = ""
@@ -59,7 +59,7 @@ def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
 
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_posts_list_language(*args, permission_level, connection, post_type, lang_id, **kwargs):
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
@@ -137,7 +137,7 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
 
 @post.route("/post/<post_id>/edit")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -395,7 +395,7 @@ def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[D
 
 @post.route("/post/<post_type>/new/<lang_id>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwargs):
     original_post = request.args.get('original');
     post_types = PostTypes()
@@ -538,7 +538,7 @@ def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwa
 
 @post.route("/post/<type_id>/taxonomy")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, **kwargs):
     return show_taxonomy(
         permission_level=permission_level,
@@ -550,7 +550,7 @@ def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, *
 
 @post.route("/post/<type_id>/taxonomy/<lang_id>")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_post_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwargs):
     return show_taxonomy(
         permission_level=permission_level,
@@ -603,7 +603,7 @@ def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwarg
 
 @post.route("/post/<type_id>/formats")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_formats(*args, permission_level, connection, type_id, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -655,7 +655,7 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
 
 @post.route("/api/post/formats", methods=["POST", "PUT"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def save_post_format(*args, permission_level, connection, **kwargs):
     filled = json.loads(request.data)
     cur = connection.cursor()
@@ -717,7 +717,7 @@ def save_post_format(*args, permission_level, connection, **kwargs):
 
 @post.route("/api/post/formats", methods=["DELETE"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def delete_post_format(*args, permission_level, connection, **kwargs):
     filled = json.loads(request.data)
     cur = connection.cursor()
@@ -759,7 +759,7 @@ def delete_post_format(*args, permission_level, connection, **kwargs):
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -804,7 +804,7 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["POST", "PUT"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
     cur = connection.cursor()
     filled = request.form
@@ -838,7 +838,7 @@ def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/new")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_type, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -866,7 +866,7 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
 # API
 @post.route("/api/post/media/<lang_id>", methods=["GET"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def get_media_data(*args, connection, lang_id: str, **kwargs):
     if connection is None:
         abort(500)
@@ -910,7 +910,7 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
 
 @post.route("/api/post/upload-file", methods=['POST'])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def upload_image(*args, file_name, connection=None, **kwargs):
     ext = file_name[file_name.rfind("."):]
     if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"):
@@ -942,7 +942,7 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 
 @post.route("/api/post", methods=['POST'])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def save_post(*args, connection=None, **kwargs):
     if connection is None:
         abort(500)
@@ -1218,7 +1218,7 @@ def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def delete_post(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -1283,7 +1283,7 @@ def delete_post(*args, permission_level, connection, **kwargs):
 
 @post.route("/api/post/taxonomy/<taxonomy_id>", methods=["DELETE"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def delete_taxonomy(*args, permission_level, connection, taxonomy_id, **kwargs):
     if connection is None:
         abort(500)
@@ -1305,7 +1305,7 @@ def delete_taxonomy(*args, permission_level, connection, taxonomy_id, **kwargs):
 
 @post.route("/api/post/regenerate-all", methods=["POST", "PUT"])
 @authorize_rest(0)
-@db_connection
+@db_connection_legacy
 def regenerate_all(*args, permission_level, connection, **kwargs):
     if connection is None:
         abort(500)
@@ -1317,7 +1317,7 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
 
 
 @post.route("/api/post/secret", methods=["POST"])
-@db_connection
+@db_connection_legacy
 def get_protected_post(*args, connection, **kwargs):
     filled = json.loads(request.data)
 

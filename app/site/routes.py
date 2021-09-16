@@ -6,14 +6,14 @@ import uuid
 from time import time
 import traceback
 
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 from app.site import site
 
 
 @site.route("/api/analytics", methods=["POST"])
 @cross_origin()
-@db_connection
+@db_connection_legacy
 def update_analytics(*args, connection, **kwargs):
     analytics_data = request.get_json()
     user_agent = request.user_agent
@@ -45,7 +45,7 @@ def update_analytics(*args, connection, **kwargs):
 
 @site.route("/api/messages", methods=["POST"])
 @cross_origin()
-@db_connection
+@db_connection_legacy
 def send_message(*args, connection, **kwargs):
     message_data = request.get_json()
     try:

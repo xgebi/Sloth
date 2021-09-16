@@ -1,6 +1,6 @@
 from flask import abort, request, redirect, current_app, make_response
 from app.authorization.authorize import authorize_web
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 from app.toes.hooks import Hooks
 from app.toes.toes import render_toe_from_path
 from app.post.post_types import PostTypes
@@ -17,7 +17,7 @@ from app.libraries import libraries
 # display libraries
 @libraries.route("/libraries")
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def show_libraries(*args, permission_level, connection, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -63,7 +63,7 @@ def show_libraries(*args, permission_level, connection, **kwargs):
 # add library
 @libraries.route("/libraries/new", methods=["POST"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def add_libraries(*args, permission_level, connection, **kwargs):
     lib_data = request.form
     lib_file = request.files["lib-file"]
@@ -100,7 +100,7 @@ def add_libraries(*args, permission_level, connection, **kwargs):
 # delete library
 @libraries.route("/libraries/delete", methods=["DELETE"])
 @authorize_web(0)
-@db_connection
+@db_connection_legacy
 def delete_library(*args, permission_level, connection, **kwargs):
     lib_to_delete = request.data
 

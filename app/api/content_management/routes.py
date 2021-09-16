@@ -1,14 +1,14 @@
 from flask import request, current_app, make_response, abort
 import json
 from app.authorization.authorize import authorize_rest
-from app.utilities.db_connection import db_connection
+from app.utilities.db_connection import db_connection_legacy
 
 from app.api.content_management import content_management
 
 
 @content_management.route("/api/content/clear", methods=["DELETE"])
 @authorize_rest(1)
-@db_connection
+@db_connection_legacy
 def clear_content(*args, connection=None, **kwargs):
     cur = connection.cursor()
 
