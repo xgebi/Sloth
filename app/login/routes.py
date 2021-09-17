@@ -1,9 +1,4 @@
-import time
-import uuid
-
-import psycopg
-from flask import request, redirect, make_response
-
+from flask import request, redirect, make_response, current_app, abort
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.authorization.user import User, UserInfo
 from app.toes.toes import render_toe_from_path
@@ -11,6 +6,9 @@ from app.toes.hooks import Hooks
 import json
 import os
 from typing import Tuple
+import time
+import uuid
+import psycopg
 
 from app.login import login
 from app.utilities.db_connection import db_connection
@@ -58,7 +56,7 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
         cur.execute("""
         SELECT banned_until, attempts, time_period FROM sloth_ban_list 
         WHERE ip = %s;""",
-                    (ip, )
+                    (ip,)
                     )
         banned_raw = cur.fetchone()
         if banned_raw is not None:
@@ -90,9 +88,19 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
     # if good redirect to dashboard
     if info is not None:
         with connection.cursor() as cur:
-            cur.execute("""DELETE FROM sloth_ban_list WHERE ip = %s""", (ip, ))
+            cur.execute("""DELETE FROM sloth_ban_list WHERE ip = %s""", (ip,))
             connection.commit()
-        response = make_response(redirect('/dashboard' if request.args.get("redirect") is None else request.args.get("redirect")))
+            cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = %s;""", ("api_url",))
+            host = cur.fetchone()[0]
+
+        if request.args.get("redirect"):
+            try:
+                current_app.url_map.bind(host).match(request.args.get("redirect"))
+                response = make_response(redirect(request.args.get("redirect")))
+            except Exception:
+                abort(500)
+        else:
+            response = make_response(redirect('/dashboard'))
         response.set_cookie('sloth_session', f"{info.display_name}:{info.uuid}:{info.token}")
         return response
     else:
@@ -118,12 +126,13 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
                              banned["banned_until"], banned["time_period"])
                             )
             connection.commit()
+    connection.close()
     return redirect("/login/error")
 
 
 @login.route("/logout")
 @authorize_web(0)
-def logout(*args, permission_level, **kwargs):
+def logout(*args, permission_level: int, **kwargs):
     cookie = request.cookies.get('sloth_session')
     user = User(cookie[1], cookie[2])
     user.logout_user()
