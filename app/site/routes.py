@@ -5,7 +5,6 @@ import psycopg
 import uuid
 from time import time
 import traceback
-
 from app.utilities.db_connection import db_connection
 
 from app.site import site
@@ -44,40 +43,5 @@ def update_analytics(*args, connection: psycopg.Connection, **kwargs):
         code = 500
     connection.close()
 
-    response.headers['Content-Type'] = 'application/json'
-    return response, code
-
-
-@site.route("/api/messages", methods=["POST"])
-@cross_origin()
-@db_connection
-def send_message(*args, connection: psycopg.Connection, **kwargs):
-    """
-    API endpoint for receiving data from forms on the static site
-
-    :param args:
-    :param connection:
-    :param kwargs:
-    :return:
-    """
-    message_data = request.get_json()
-    try:
-        # TODO fix this
-        with connection.cursor() as cur:
-            cur.execute("""INSERT INTO sloth_messages VALUES (%s, %s, %s, %s, %s, %s)""",
-                        (str(uuid.uuid4()), message_data["name"], message_data["email"], message_data["body"],
-                         time() * 1000,
-                         'unread'))
-            connection.commit()
-
-        response = make_response(json.dumps({"page_recorded": "ok"}))
-        code = 200
-    except psycopg.errors.DatabaseError as e:
-        print("100")
-        print(traceback.format_exc())
-        response = make_response(json.dumps({"page_recorded": "not ok"}))
-        code = 500
-
-    connection.close()
     response.headers['Content-Type'] = 'application/json'
     return response, code

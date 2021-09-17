@@ -7,6 +7,8 @@ from pathlib import Path
 from time import time
 from typing import List, Dict
 import threading
+
+import psycopg
 from flask import request, current_app, abort, redirect, render_template
 from psycopg2 import sql
 
@@ -17,18 +19,24 @@ from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
-from app.utilities.db_connection import db_connection_legacy
+from app.utilities.db_connection import db_connection_legacy, db_connection
 from app.media.routes import get_media
-#import toes
-
-reserved_folder_names = ('tag', 'category')
+# import toes
 
 
-# WEB
 @post.route("/post/nothing")
 @authorize_web(0)
-@db_connection_legacy
-def no_post(*args, permission_level, connection, **kwargs):
+@db_connection
+def no_post(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    """
+    Renders placeholder page when there's no post to edit
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_lang = get_default_language(connection=connection)
@@ -41,18 +49,28 @@ def no_post(*args, permission_level, connection, **kwargs):
 
 @post.route("/post/<post_type>")
 @authorize_web(0)
-@db_connection_legacy
-def show_posts_list(*args, permission_level, connection, post_type, **kwargs):
-    cur = connection.cursor()
+@db_connection
+def show_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, **kwargs):
+    """
+    
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param kwargs:
+    :return:
+    """
     lang_id = ""
     try:
-        cur.execute(
-            sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-        )
-        lang_id = cur.fetchone()[0]
+        with connection.cursor() as cur:
+            cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+            lang_id = cur.fetchone()[0]
     except Exception as e:
         print(e)
+        connection.close()
         abort(500)
+
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
 

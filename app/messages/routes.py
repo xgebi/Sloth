@@ -1,5 +1,6 @@
-from flask import abort, redirect, render_template, make_response, request, current_app
-from app.utilities.db_connection import db_connection_legacy
+import psycopg
+from flask import abort, redirect, make_response, request, current_app
+from app.utilities.db_connection import db_connection_legacy, db_connection
 from app.utilities import get_default_language, get_languages
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
@@ -18,28 +19,29 @@ from app.messages import messages
 
 @messages.route("/messages")
 @authorize_web(0)
-@db_connection_legacy
-def show_message_list(*args, permission_level, connection, **kwargs):
-    if connection is None:
-        return redirect("/database-error")
+@db_connection
+def show_message_list(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    """
+    Renders a page with list of messages
 
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
-
-    raw_messages = []
     try:
-        cur.execute(
-            sql.SQL("""SELECT uuid, sent_date, status 
-            FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
-        )
-        raw_messages = cur.fetchall()
-    except Exception as e:
+        with connection.cursor() as cur:
+            cur.execute("""SELECT uuid, sent_date, status 
+                FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
+            raw_messages = cur.fetchall()
+    except psycopg.errors.DatabaseError as e:
         print("db error d")
         abort(500)
 
-    cur.close()
     default_lang = get_default_language(connection=connection)
     languages = get_languages(connection=connection)
     connection.close()
@@ -49,7 +51,6 @@ def show_message_list(*args, permission_level, connection, **kwargs):
         "sent_date": datetime.datetime.fromtimestamp(float(message[1]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
         "status": message[2]
     } for message in raw_messages]
-
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -68,37 +69,38 @@ def show_message_list(*args, permission_level, connection, **kwargs):
 
 @messages.route("/messages/<msg>")
 @authorize_web(0)
-@db_connection_legacy
-def show_message(*args, permission_level, connection, msg, **kwargs):
-    if connection is None:
-        return redirect("/database-error")
+@db_connection
+def show_message(*args, permission_level: int, connection: psycopg.Connection, msg, **kwargs):
+    """
+    Renders a page with a message
 
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param msg:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
-
-    raw_message_fields = []
     try:
-        cur.execute(
-            sql.SQL("SELECT sent_date, status FROM sloth_messages WHERE uuid = %s"), (msg,)
-        )
-        raw_message = cur.fetchone()
-        cur.execute(
-            sql.SQL("SELECT name, value FROM sloth_message_fields WHERE message = %s"), (msg,)
-        )
-        raw_message_fields = cur.fetchall()
-        if len(raw_message) > 0:
-            cur.execute(sql.SQL("UPDATE sloth_messages SET status = 'read' WHERE uuid = %s"), [msg])
-            connection.commit()
-    except Exception as e:
+        with connection.cursor() as cur:
+            cur.execute("""SELECT sent_date, status FROM sloth_messages WHERE uuid = %s""", (msg,))
+            raw_message = cur.fetchone()
+            cur.execute("""SELECT name, value FROM sloth_message_fields WHERE message = %s""", (msg,))
+            raw_message_fields = cur.fetchall()
+            if len(raw_message) > 0:
+                cur.execute("""UPDATE sloth_messages SET status = 'read' WHERE uuid = %s""", (msg, ))
+                connection.commit()
+    except psycopg.errors.DatabaseError as e:
         print("db error e")
+        connection.close()
         abort(500)
 
     default_lang = get_default_language(connection=connection)
     languages = get_languages(connection=connection)
 
-    cur.close()
     connection.close()
 
     message = {
@@ -127,18 +129,23 @@ def show_message(*args, permission_level, connection, msg, **kwargs):
 
 @messages.route("/api/messages/delete", methods=["POST", "PUT", "DELETE"])
 @authorize_rest(0)
-@db_connection_legacy
-def delete_message(*args, connection, **kwargs):
-    if connection is None:
-        abort(500)
+@db_connection
+def delete_message(*args, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint handling deleting a message
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
 
     filled = json.loads(request.data)
-    cur = connection.cursor()
+
     try:
-        cur.execute(
-            sql.SQL("DELETE FROM sloth_messages WHERE uuid = %s"), [filled["message_uuid"]]
-        )
-        connection.commit()
+        with connection.cursor() as cur:
+            cur.execute("""DELETE FROM sloth_messages WHERE uuid = %s""", (filled["message_uuid"], ))
+            connection.commit()
         response = make_response(json.dumps({"cleaned": False}))
         code = 204
     except Exception as e:
