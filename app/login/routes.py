@@ -16,6 +16,11 @@ from app.utilities.db_connection import db_connection
 
 @login.route("/login")
 def show_login():
+    """
+    Renders login page
+
+    :return:
+    """
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="login.toe.html",
@@ -30,6 +35,11 @@ def show_login():
 
 @login.route("/login/error")
 def show_login_error():
+    """
+    Renders login page with error message
+
+    :return:
+    """
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="login.toe.html",
@@ -47,6 +57,14 @@ def show_login_error():
 @login.route('/login/process', methods=["POST"])
 @db_connection
 def process_login(*args, connection: psycopg.Connection, **kwargs):
+    """
+    Processes logging in
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     if request.headers.getlist("X-Forwarded-For"):
         ip = request.headers.getlist("X-Forwarded-For")[0]
     else:
@@ -133,6 +151,14 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
 @login.route("/logout")
 @authorize_web(0)
 def logout(*args, permission_level: int, **kwargs):
+    """
+    Processes log out
+
+    :param args:
+    :param permission_level:
+    :param kwargs:
+    :return:
+    """
     cookie = request.cookies.get('sloth_session')
     user = User(cookie[1], cookie[2])
     user.logout_user()
@@ -145,11 +171,22 @@ def logout(*args, permission_level: int, **kwargs):
 @login.route("/api/user/keep-logged-in", methods=["POST"])
 @authorize_rest(0)
 def keep_logged_in(*args, permission_level, **kwargs):
+    """
+    API endpoint to keep logged in user logged in
+    :param args:
+    :param permission_level:
+    :param kwargs:
+    :return:
+    """
     return json.dumps({"loggedIn": True})
 
 
 @login.route("/api/login")
 def api_login() -> Tuple[str, int]:
+    """
+    API endpoint that processes logging in
+    :return:
+    """
     # get credentials
     data = json.loads(request.data)
     username = data.get("username")
@@ -169,6 +206,11 @@ def api_login() -> Tuple[str, int]:
 @login.route("/api/logout")
 @authorize_rest(0)
 def api_logout() -> Tuple[str, int]:
+    """
+    API endpoint which logs human out
+
+    :return:
+    """
     data = json.loads(request.data)
     username = data.get("username")
     token = data.get("token")

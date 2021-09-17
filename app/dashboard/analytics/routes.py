@@ -8,7 +8,6 @@ from app.utilities.db_connection import db_connection_legacy, db_connection
 from app.utilities import get_default_language
 import traceback
 import os
-from psycopg2 import sql
 import json
 import psycopg
 
@@ -171,7 +170,8 @@ def month_delta(working_date, delta):
     :return:
     """
     m, y = (working_date.month + delta) % 12, working_date.year + (working_date.month + delta - 1) // 12
-    if not m: m = 12
+    if not m:
+        m = 12
     d = min(working_date.day, [31,
                                29 if y % 4 == 0 and (not y % 100 == 0 or y % 400 == 0) else 28,
                                31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1])

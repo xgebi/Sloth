@@ -34,8 +34,10 @@ toes.generate_all()
 - Rust 1.54.0
 - (optional, recommended) Gunicorn
 
-### TODO List
+### TO-DO List
 - app.lists
+- app.settings.integration
+- app.libraries deletion
 
 
 ### Bucket list

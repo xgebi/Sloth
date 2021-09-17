@@ -1,6 +1,6 @@
-from flask import abort, request, redirect, current_app, make_response
+from flask import abort, request, make_response
 from app.authorization.authorize import authorize_web
-from app.utilities.db_connection import db_connection_legacy, db_connection
+from app.utilities.db_connection import db_connection
 from app.toes.hooks import Hooks
 from app.toes.toes import render_toe_from_path
 from app.post.post_types import PostTypes
@@ -19,6 +19,15 @@ from app.forms import forms
 @authorize_web(0)
 @db_connection
 def show_forms(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    """
+    Renders page which shows list of forms
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
@@ -60,6 +69,16 @@ def show_forms(*args, permission_level: int, connection: psycopg.Connection, **k
 @authorize_web(0)
 @db_connection
 def show_form(*args, permission_level: int, connection: psycopg.Connection, form_id: str, **kwargs):
+    """
+    Show page where human can edit the form
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param form_id:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
@@ -125,6 +144,16 @@ def show_form(*args, permission_level: int, connection: psycopg.Connection, form
 @authorize_web(0)
 @db_connection
 def save_form(*args, permission_level: int, connection: psycopg.Connection, form_id: str, **kwargs):
+    """
+    Processes saving the form
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param form_id:
+    :param kwargs:
+    :return:
+    """
     filled = json.loads(request.data)
 
     try:
@@ -168,6 +197,16 @@ def save_form(*args, permission_level: int, connection: psycopg.Connection, form
 @authorize_web(0)
 @db_connection
 def delete_form(*args, permission_level: int, connection: psycopg.Connection, form_id: str, **kwargs):
+    """
+    API endpoint processes form deletion
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param form_id:
+    :param kwargs:
+    :return:
+    """
     try:
         with connection.cursor() as cur:
             cur.execute("""DELETE FROM sloth_form_fields WHERE form = %s;""",

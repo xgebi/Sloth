@@ -19,6 +19,15 @@ from app.libraries import libraries
 @authorize_web(0)
 @db_connection
 def show_libraries(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    """
+    Renders page showing libraries in the system
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
@@ -56,12 +65,24 @@ def show_libraries(*args, permission_level: int, connection: psycopg.Connection,
 @authorize_web(0)
 @db_connection
 def add_libraries(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    """
+    Endpoint (non-API) to upload new library
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     lib_data = request.form
     lib_file = request.files["lib-file"]
 
     if not lib_file.filename.endswith(".js"):
         return redirect("/libraries?error=upload")
-    filename = f"{lib_file.filename[lib_file.filename.find('/'):lib_file.filename.rfind('.')]}-{lib_data['lib-version']}.js"
+    if lib_file.filename.startswith("."):
+        connection.close()
+        abort(500)
+    filename = f"{lib_file.filename[:lib_file.filename.rfind('.')]}-{lib_data['lib-version']}.js"
     try:
         if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs")):
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
@@ -77,6 +98,7 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
             connection.commit()
     except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())
+        connection.close()
         abort(500)
     connection.close()
     return redirect("/libraries")
@@ -87,7 +109,16 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
 @authorize_web(0)
 @db_connection
 def delete_library(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
-    lib_to_delete = request.data
+    """
+    TODO implement with front-end ability to delete a library, until then this is only a stub
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
+    lib_to_delete = json.loads(request.data)
 
     try:
         with connection.cursor() as cur:
@@ -95,16 +126,20 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
                         (lib_to_delete["uuid"],)
                         )
             location = cur.fetchone()[0]
+            cur.execute("""DELETE FROM sloth_post_libraries WHERE library = %s;""",
+                        (lib_to_delete["uuid"],)
+                        )
             cur.execute("""DELETE FROM sloth_libraries WHERE uuid = %s;""",
                         (lib_to_delete["uuid"],)
                         )
-        os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", location))
+            connection.commit()
+            os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", location))
 
         response = make_response(json.dumps({
             "deleted": lib_to_delete["uuid"]
         }))
         code = 204
-    except Exception as e:
+    except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())
         abort(500)
         response = make_response(json.dumps({
