@@ -38,6 +38,8 @@ toes.generate_all()
 - app.lists
 - app.settings.integration
 - app.libraries deletion
+- app.rss
+- scheduling
 
 
 ### Bucket list
@@ -54,3 +56,5 @@ toes.generate_all()
 - Toe compiler (Rust) 🛠
 - Markdown compiler (Rust) 🛠
 - Dockerization 🛠
+- CSRF
+- Custom WSGI framework

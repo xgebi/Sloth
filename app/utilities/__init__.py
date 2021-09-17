@@ -157,7 +157,14 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
     return result
 
 
-def positive_min(*args, floats: bool = False):
+def positive_min(*args, floats: bool = False) -> int or float:
+    """
+    Calculates positive minimum
+
+    :param args:
+    :param floats:
+    :return:
+    """
     if floats:
         args = [float(arg) for arg in args if arg >= 0]
     else:
@@ -174,6 +181,12 @@ def positive_min(*args, floats: bool = False):
 
 
 def get_connection_dict(config) -> Dict:
+    """
+    Creates a dict with connection information
+
+    :param config:
+    :return:
+    """
     return {
         "dbname": config["DATABASE_NAME"],
         "user": config["DATABASE_USER"],

@@ -105,14 +105,8 @@ def create_app():  # dev, test, or prod
     from app.settings.content import content
     app.register_blueprint(content)
 
-    from app.web.settings.users import settings_users
-    app.register_blueprint(settings_users)
-
     from app.post import post
     app.register_blueprint(post)
-
-    from app.web.design import design
-    app.register_blueprint(design)
 
     from app.messages import messages
     app.register_blueprint(messages)
