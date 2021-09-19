@@ -4,7 +4,7 @@ from flask import abort, make_response, request
 from datetime import datetime, timedelta, date
 from app.authorization.authorize import authorize_web
 from app.toes.hooks import Hooks
-from app.utilities.db_connection import db_connection_legacy, db_connection
+from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language
 import traceback
 import os
