@@ -47,6 +47,11 @@ def db_connection(fn):
 
 
 def connect_to_db() -> Optional[psycopg.Connection]:
+    """
+    creates a connection to database
+
+    :return:
+    """
     config = current_app.config
     conn_str = f"postgresql://{config['DATABASE_USER']}:{config['DATABASE_PASSWORD']}@{config['DATABASE_URL']}:{config['DATABASE_PORT']}/{config['DATABASE_NAME']}"
     try:

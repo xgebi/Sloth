@@ -21,6 +21,8 @@ from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
 from app.utilities.db_connection import db_connection_legacy, db_connection
 from app.media.routes import get_media
+
+
 # import toes
 
 
@@ -52,7 +54,7 @@ def no_post(*args, permission_level: int, connection: psycopg.Connection, **kwar
 @db_connection
 def show_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, **kwargs):
     """
-    
+    Renders
 
     :param args:
     :param permission_level:
@@ -83,9 +85,20 @@ def show_posts_list_language(*args, permission_level, connection, post_type, lan
                             lang_id=lang_id)
 
 
-def return_post_list(*args, permission_level, connection, post_type, lang_id, **kwargs):
-    if connection is None:
-        return redirect("/database-error")
+def return_post_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str,
+                     **kwargs):
+    """
+    Returns rendering of list of posts belonging to a post type
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
+
     post_type_info = {
         "uuid": post_type
     }
@@ -93,28 +106,21 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
-
-    raw_items = []
-    # uuid, post_type, title, publish_date, update_date, post_status, categories, deleted
     try:
-        cur.execute(
-            sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"), [post_type]
-        )
+        with connection.cursor() as cur:
+            cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""", (post_type,))
 
-        post_type_info["name"] = cur.fetchall()[0][0]
-        cur.execute(
-            sql.SQL("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
-            FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-            WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC"""),
-            [post_type, lang_id]
-        )
-        raw_items = cur.fetchall()
-    except Exception as e:
+            post_type_info["name"] = cur.fetchall()[0][0]
+            cur.execute("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
+                FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
+                WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC""",
+                        (post_type, lang_id))
+            raw_items = cur.fetchall()
+    except Exception:
         print("db error Q")
+        connection.close()
         abort(500)
 
-    cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_lang = get_default_language(connection=connection)
     connection.close()
@@ -134,7 +140,8 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
             "author": item[5]
         })
     # List of {{post_type["name"]}}
-    post_type_display_name = [post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0]['display_name']
+    post_type_display_name = \
+    [post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0]['display_name']
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="post-list.toe.html",
@@ -155,167 +162,146 @@ def return_post_list(*args, permission_level, connection, post_type, lang_id, **
 
 @post.route("/post/<post_id>/edit")
 @authorize_web(0)
-@db_connection_legacy
-def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
+@db_connection
+def show_post_edit(*args, permission_level: int, connection: psycopg.Connection, post_id: str, **kwargs):
+    """
+    Renders an edit page for a post
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_id:
+    :param kwargs:
+    :return:
+    """
+
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
     media = []
     post_type_name = ""
     raw_post = {}
     temp_thumbnail_info = []
     try:
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path FROM sloth_media")
-        )
-        media = cur.fetchall()
+        with connection.cursor() as cur:
+            cur.execute("""SELECT uuid, file_path FROM sloth_media""")
+            media = cur.fetchall()
 
-        media_data = get_media(connection=connection)
+            media_data = get_media(connection=connection)
 
-        cur.execute(
-            sql.SQL("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
-             sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
-             sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
-             sp.meta_description, sp.twitter_description
-                    FROM sloth_posts AS sp 
-                    INNER JOIN sloth_users AS B ON sp.author = B.uuid 
-                    INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                    WHERE sp.uuid = %s"""),
-            (post_id, )
-        )
-        raw_post = cur.fetchone()
-        if raw_post is None:
-            return redirect('/post/nothing')
-        cur.execute(
-            sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
-            (raw_post[11], )
-        )
-        post_type_name = cur.fetchone()[0]
+            cur.execute("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
+                 sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
+                 sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
+                 sp.meta_description, sp.twitter_description
+                        FROM sloth_posts AS sp 
+                        INNER JOIN sloth_users AS B ON sp.author = B.uuid 
+                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                        WHERE sp.uuid = %s""",
+                        (post_id,))
+            raw_post = cur.fetchone()
+            if raw_post is None:
+                return redirect('/post/nothing')
+            cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""",
+                        (raw_post[11],))
+            post_type_name = cur.fetchone()[0]
 
-        cur.execute(
-            sql.SQL("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
-                                WHERE post_type = %s AND lang = %s"""),
-            (raw_post[11], raw_post[15])
-        )
-        raw_all_taxonomies = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT taxonomy FROM sloth_post_taxonomies
-                                        WHERE post = %s"""),
-            (post_id,)
-        )
-        raw_post_taxonomies = cur.fetchall()
-        cur.execute(
-            sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
-        )
-        temp_post_statuses = cur.fetchall()
-        if raw_post[6] is not None:
-            cur.execute(
-                sql.SQL(
+            cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
+                                    WHERE post_type = %s AND lang = %s""",
+                        (raw_post[11], raw_post[15]))
+            raw_all_taxonomies = cur.fetchall()
+            cur.execute("""SELECT taxonomy FROM sloth_post_taxonomies
+                                            WHERE post = %s""",
+                        (post_id,))
+            raw_post_taxonomies = cur.fetchall()
+            cur.execute("""SELECT unnest(enum_range(NULL::sloth_post_status))"""
+                        )
+            temp_post_statuses = cur.fetchall()
+            if raw_post[6] is not None:
+                cur.execute(
                     """SELECT sma.alt, 
                     concat(
                         (SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'), '/',file_path
                     )
                         FROM sloth_media AS sm 
                         INNER JOIN sloth_media_alts sma on sm.uuid = sma.media
-                        WHERE sm.uuid=%s AND sma.lang = %s"""),
-                (raw_post[6], raw_post[15])
-            )
-            temp_thumbnail_info = cur.fetchone()
-        current_lang, languages = get_languages(connection=connection, lang_id=raw_post[15])
-        translatable = []
+                        WHERE sm.uuid=%s AND sma.lang = %s""",
+                    (raw_post[6], raw_post[15]))
+                temp_thumbnail_info = cur.fetchone()
+            current_lang, languages = get_languages(connection=connection, lang_id=raw_post[15])
+            translatable = []
 
-        if raw_post[16]:
-            translations, translatable = get_translations(
-                connection=connection,
-                post_uuid="",
-                original_entry_uuid=raw_post[16],
-                languages=languages
-            )
-        else:
-            translations, translatable = get_translations(
-                connection=connection,
-                post_uuid="",
-                original_entry_uuid=post_id,
-                languages=languages
-            )
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
-            ),
-            (raw_post[11],)
-        )
-        post_formats = [{
-            "uuid": pf[0],
-            "slug": pf[1],
-            "display_name": pf[2]
-        } for pf in cur.fetchall()]
+            if raw_post[16]:
+                translations, translatable = get_translations(
+                    connection=connection,
+                    post_uuid="",
+                    original_entry_uuid=raw_post[16],
+                    languages=languages
+                )
+            else:
+                translations, translatable = get_translations(
+                    connection=connection,
+                    post_uuid="",
+                    original_entry_uuid=post_id,
+                    languages=languages
+                )
+            cur.execute("""SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s""",
+                        (raw_post[11],))
+            post_formats = [{
+                "uuid": pf[0],
+                "slug": pf[1],
+                "display_name": pf[2]
+            } for pf in cur.fetchall()]
 
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, name, version, location 
-                FROM sloth_libraries;""")
-        )
-        libs = [{
-            "uuid": lib[0],
-            "name": lib[1],
-            "version": lib[2],
-            "location": lib[3]
-        } for lib in cur.fetchall()]
-        cur.execute(
-            sql.SQL(
-                """SELECT sl.uuid, sl.name, sl.version, spl.hook_name
-                FROM sloth_post_libraries AS spl
-                INNER JOIN sloth_libraries sl on spl.library = sl.uuid
-                WHERE spl.post = %s;"""
-            ),
-            (post_id,)
-        )
-        post_libs = [{
-            "uuid": lib[0],
-            "name": lib[1],
-            "version": lib[2],
-            "hook": lib[3]
-        } for lib in cur.fetchall()]
-        cur.execute(
-            sql.SQL(
-                """SELECT content, section_type, position
-                FROM sloth_post_sections
-                WHERE post = %s
-                ORDER BY position ASC;"""
-            ),
-            (post_id,)
-        )
-        sections = [{
-            "content": section[0],
-            "type": section[1],
-            "position": section[2]
-        } for section in cur.fetchall()]
-
-        if raw_post[16]:
-            cur.execute(
-                sql.SQL(
-                    """SELECT content, section_type, position
+            cur.execute("""SELECT uuid, name, version, location 
+                    FROM sloth_libraries;""")
+            libs = [{
+                "uuid": lib[0],
+                "name": lib[1],
+                "version": lib[2],
+                "location": lib[3]
+            } for lib in cur.fetchall()]
+            cur.execute("""SELECT sl.uuid, sl.name, sl.version, spl.hook_name
+                    FROM sloth_post_libraries AS spl
+                    INNER JOIN sloth_libraries sl on spl.library = sl.uuid
+                    WHERE spl.post = %s;""",
+                        (post_id,))
+            post_libs = [{
+                "uuid": lib[0],
+                "name": lib[1],
+                "version": lib[2],
+                "hook": lib[3]
+            } for lib in cur.fetchall()]
+            cur.execute("""SELECT content, section_type, position
                     FROM sloth_post_sections
                     WHERE post = %s
-                    ORDER BY position ASC;"""
-                ),
-                (raw_post[16],)
-            )
-            translated_sections = cur.fetchall()
-            while len(sections) < len(translated_sections):
-                sections.append({
-                    "content": "",
-                    "original": "",
-                    "type": translated_sections[len(sections)][1],
-                    "position": len(sections)
-                })
-            for section in sections:
-                for trans_section in translated_sections:
-                    if section["position"] == trans_section[2]:
-                        section["original"] = trans_section[0]
+                    ORDER BY position ASC;""",
+                        (post_id,))
+            sections = [{
+                "content": section[0],
+                "type": section[1],
+                "position": section[2]
+            } for section in cur.fetchall()]
 
-        sections = json.dumps(sections)
+            if raw_post[16]:
+                cur.execute("""SELECT content, section_type, position
+                        FROM sloth_post_sections
+                        WHERE post = %s
+                        ORDER BY position ASC;""",
+                            (raw_post[16],))
+                translated_sections = cur.fetchall()
+                while len(sections) < len(translated_sections):
+                    sections.append({
+                        "content": "",
+                        "original": "",
+                        "type": translated_sections[len(sections)][1],
+                        "position": len(sections)
+                    })
+                for section in sections:
+                    for trans_section in translated_sections:
+                        if section["position"] == trans_section[2]:
+                            section["original"] = trans_section[0]
+
+            sections = json.dumps(sections)
     except Exception as e:
         print(traceback.format_exc())
         print("db error B")
@@ -390,6 +376,15 @@ def show_post_edit(*args, permission_level, connection, post_id, **kwargs):
 
 
 def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[Dict], List[Dict]):
+    """
+    Separates taxonomies to tags and categories
+
+    :param args:
+    :param taxonomies:
+    :param post_taxonomies:
+    :param kwargs:
+    :return:
+    """
     categories = []
     tags = []
 
@@ -413,101 +408,88 @@ def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[D
 
 @post.route("/post/<post_type>/new/<lang_id>")
 @authorize_web(0)
-@db_connection_legacy
-def show_post_new(*args, permission_level, connection, post_type, lang_id, **kwargs):
+@db_connection
+def show_post_new(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str, **kwargs):
+    """
+    Renders pages for a new post in a language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
     original_post = request.args.get('original');
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
     media = []
     post_type_name = ""
     try:
+        with connection.cursor() as cur:
+            cur.execute("SELECT uuid, file_path FROM sloth_media")
+            media = cur.fetchall()
+            cur.execute("SELECT display_name FROM sloth_post_types WHERE uuid = %s",
+                        (post_type,))
+            post_type_name = cur.fetchone()[0]
+            cur.execute("SELECT unnest(enum_range(NULL::sloth_post_status))")
+            temp_post_statuses = cur.fetchall()
+            cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
+                                            WHERE post_type = %s AND lang = %s""",
+                        (post_type, lang_id))
+            raw_all_taxonomies = cur.fetchall()
+            current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
+            default_lang = get_default_language(connection=connection)
+            sections = []
+            if original_post:
+                translations, translatable_languages = get_translations(
+                    connection=connection,
+                    post_uuid="",
+                    original_entry_uuid=original_post,
+                    languages=languages
+                )
+                cur.execute("""SELECT content, section_type, position
+                        FROM sloth_post_sections
+                        WHERE post = %s
+                        ORDER BY position ASC;""",
+                            (original_post,))
+                sections = [{
+                    "content": "",
+                    "original": section[0],
+                    "type": section[1],
+                    "position": section[2],
+                } for section in cur.fetchall()]
+            else:
+                translatable_languages = languages
+                translations = []
+            cur.execute("""SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s""",
+                        (post_type,))
+            post_formats = [{
+                "uuid": pf[0],
+                "slug": pf[1],
+                "display_name": pf[2]
+            } for pf in cur.fetchall()]
 
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path FROM sloth_media")
-        )
-        media = cur.fetchall()
-        cur.execute(
-            sql.SQL("SELECT display_name FROM sloth_post_types WHERE uuid = %s"),
-            [post_type]
-        )
-        post_type_name = cur.fetchone()[0]
-        cur.execute(
-            sql.SQL("SELECT unnest(enum_range(NULL::sloth_post_status))")
-        )
-        temp_post_statuses = cur.fetchall()
-        cur.execute(
-            sql.SQL("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
-                                        WHERE post_type = %s AND lang = %s"""),
-            (post_type, lang_id)
-        )
-        raw_all_taxonomies = cur.fetchall()
-        current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
-        default_lang = get_default_language(connection=connection)
-        sections = []
-        if original_post:
-            translations, translatable_languages = get_translations(
-                connection=connection,
-                post_uuid="",
-                original_entry_uuid=original_post,
-                languages=languages
-            )
-            cur.execute(
-                sql.SQL(
-                    """SELECT content, section_type, position
-                    FROM sloth_post_sections
-                    WHERE post = %s
-                    ORDER BY position ASC;"""
-                ),
-                (original_post,)
-            )
-            sections = [{
-                "content": "",
-                "original": section[0],
-                "type": section[1],
-                "position": section[2],
-            } for section in cur.fetchall()]
-        else:
-            translatable_languages = languages
-            translations = []
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s"""
-            ),
-            (post_type,)
-        )
-        post_formats = [{
-            "uuid": pf[0],
-            "slug": pf[1],
-            "display_name": pf[2]
-        } for pf in cur.fetchall()]
+            cur.execute("""SELECT uuid FROM sloth_post_formats WHERE post_type = %s AND deletable = %s """,
+                        (post_type, False))
+            default_format = cur.fetchone()[0]
 
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid FROM sloth_post_formats WHERE post_type = %s AND deletable = %s """
-            ),
-            (post_type, False)
-        )
-        default_format = cur.fetchone()[0]
-
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, name, version, location 
-                FROM sloth_libraries;""")
-        )
-        libs = [{
-            "uuid": lib[0],
-            "name": lib[1],
-            "version": lib[2],
-            "location": lib[3]
-        } for lib in cur.fetchall()]
-        post_libs = []
+            cur.execute("""SELECT uuid, name, version, location 
+                    FROM sloth_libraries;""")
+            libs = [{
+                "uuid": lib[0],
+                "name": lib[1],
+                "version": lib[2],
+                "location": lib[3]
+            } for lib in cur.fetchall()]
+            post_libs = []
     except Exception as e:
+        connection.close()
         print("db error A")
         abort(500)
 
-    cur.close()
     connection.close()
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
@@ -1250,7 +1232,7 @@ def delete_post(*args, permission_level, connection, **kwargs):
         cur.execute(
             sql.SQL("""SELECT A.post_type, A.slug, spt.slug, A.lang 
             FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s"""),
-            (filled["post"], )
+            (filled["post"],)
         )
         res = cur.fetchone()
         cur.execute(

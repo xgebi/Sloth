@@ -1,10 +1,9 @@
 import psycopg
-from flask import abort, redirect, make_response, request, current_app
-from app.utilities.db_connection import db_connection_legacy, db_connection
+from flask import abort, make_response, request, current_app
+from app.utilities.db_connection import db_connection
 from app.utilities import get_default_language, get_languages
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
-from psycopg2 import sql
 from uuid import uuid4
 from time import time
 import datetime
@@ -64,7 +63,7 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
             "messages": message_list
         },
         hooks=Hooks()
-)
+    )
 
 
 @messages.route("/messages/<msg>")
@@ -91,9 +90,9 @@ def show_message(*args, permission_level: int, connection: psycopg.Connection, m
             cur.execute("""SELECT name, value FROM sloth_message_fields WHERE message = %s""", (msg,))
             raw_message_fields = cur.fetchall()
             if len(raw_message) > 0:
-                cur.execute("""UPDATE sloth_messages SET status = 'read' WHERE uuid = %s""", (msg, ))
+                cur.execute("""UPDATE sloth_messages SET status = 'read' WHERE uuid = %s""", (msg,))
                 connection.commit()
-    except psycopg.errors.DatabaseError as e:
+    except psycopg.errors.DatabaseError:
         print("db error e")
         connection.close()
         abort(500)
@@ -144,7 +143,7 @@ def delete_message(*args, connection: psycopg.Connection, **kwargs):
 
     try:
         with connection.cursor() as cur:
-            cur.execute("""DELETE FROM sloth_messages WHERE uuid = %s""", (filled["message_uuid"], ))
+            cur.execute("""DELETE FROM sloth_messages WHERE uuid = %s""", (filled["message_uuid"],))
             connection.commit()
         response = make_response(json.dumps({"cleaned": False}))
         code = 204
@@ -159,36 +158,36 @@ def delete_message(*args, connection: psycopg.Connection, **kwargs):
 
 @messages.route("/api/messages/send", methods=["POST"])
 @cross_origin()
-@db_connection_legacy
-def receive_message(*args, connection, **kwargs):
+@db_connection
+def receive_message(*args, connection: psycopg.Connection, **kwargs):
+    """
+    Processes received message
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     if request.origin[request.origin.find("//") + 2:] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
-        abort(500)
-    if connection is None:
         abort(500)
 
     filled = json.loads(request.data)
     cur = connection.cursor()
     try:
         msg_id = str(uuid4())
-        cur.execute(
-            sql.SQL("""INSERT INTO sloth_messages (uuid, sent_date, status) 
-            VALUES (%s, %s, %s);"""),
-            (msg_id, time() * 1000, "unread")
-        )
-        cur.execute(
-            sql.SQL("""SELECT sff.name FROM sloth_form_fields AS sff 
-            INNER JOIN sloth_forms sf on sf.uuid = sff.form WHERE sf.name = %s AND sff.is_required = TRUE;"""),
-            (filled["formName"],)
-        )
+        cur.execute("""INSERT INTO sloth_messages (uuid, sent_date, status) 
+            VALUES (%s, %s, %s);""",
+                    (msg_id, time() * 1000, "unread"))
+        cur.execute("""SELECT sff.name FROM sloth_form_fields AS sff 
+            INNER JOIN sloth_forms sf on sf.uuid = sff.form WHERE sf.name = %s AND sff.is_required = TRUE;""",
+                    (filled["formName"],))
         for required in cur.fetchall():
             if required in filled and len(filled[required]) == 0:
                 raise Exception("missing required fields")
         for key in filled.keys():
-            cur.execute(
-                sql.SQL("""INSERT INTO sloth_message_fields (uuid, message, name, value) 
-                        VALUES (%s, %s, %s, %s);"""),
-                (str(uuid4()), msg_id, key, filled[key])
-            )
+            cur.execute("""INSERT INTO sloth_message_fields (uuid, message, name, value) 
+                        VALUES (%s, %s, %s, %s);""",
+                        (str(uuid4()), msg_id, key, filled[key]))
         connection.commit()
         response = make_response(json.dumps({"messageSaved": True}))
         code = 201

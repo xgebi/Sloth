@@ -112,10 +112,9 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
             host = cur.fetchone()[0]
 
         if request.args.get("redirect"):
-            try:
-                current_app.url_map.bind(host).match(request.args.get("redirect"))
+            if current_app.url_map.bind(host).test(request.args.get("redirect")):
                 response = make_response(redirect(request.args.get("redirect")))
-            except Exception:
+            else:
                 abort(500)
         else:
             response = make_response(redirect('/dashboard'))

@@ -1,6 +1,5 @@
 import psycopg
 from flask import request, abort, redirect, make_response
-from psycopg2 import sql
 import os
 import json
 from pathlib import Path
