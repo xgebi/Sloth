@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Mock Endpoints</h1>
+    <section>
+        <a href="/mock-endpoints/new">Create new endpoint</a>
+        <table>
+            <thead>
+            <tr>
+                <td>Path</td>
+                <td>Action</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr toe:for="endpoint in endpoints_list">
+                <td toe:text="endpoint['path']"></td>
+                <td><a toe:href="'/mock-endpoints/' + endpoint['uuid']">Edit</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

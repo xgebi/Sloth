@@ -1,20 +1,18 @@
+import psycopg
 from psycopg2 import sql
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Optional
 import datetime
 import sys
 
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
-def get_languages(*args, connection, lang_id: str = "", as_list:bool= True, **kwargs) \
+def get_languages(*args, connection: psycopg.Connection, lang_id: Optional[str] = "", as_list: Optional[bool] = True, **kwargs) \
         -> Tuple[Dict[str, Any], List[Dict[str, Any]]] or List[Dict[str, Any]]:
-    cur = connection.cursor()
-    temp_languages = []
     try:
-        cur.execute(
-            sql.SQL("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
-        )
-        temp_languages = cur.fetchall()
+        with connection.cursor() as cur:
+            cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
+            temp_languages = cur.fetchall()
     except Exception as e:
         print(e)
         return ()
@@ -45,22 +43,22 @@ def get_languages(*args, connection, lang_id: str = "", as_list:bool= True, **kw
     } for lang in temp_languages}
 
 
-def get_default_language(*args, connection, **kwargs) -> Dict[str, str]:
-    cur = connection.cursor()
-    try:
-        cur.execute(
-            sql.SQL("""SELECT uuid, long_name FROM sloth_language_settings 
-            WHERE uuid = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language')""")
-        )
-        main_language = cur.fetchone()
-    except Exception as e:
-        print(e)
-        return {}
+def get_default_language(*args, connection: psycopg.Connection, **kwargs) -> Dict[str, str]:
+    with connection.cursor() as cur:
+        try:
+            cur.execute(
+                """SELECT uuid, long_name FROM sloth_language_settings 
+                WHERE uuid = (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language')"""
+            )
+            main_language = cur.fetchone()
+        except psycopg.errors.DatabaseError as e:
+            print(e)
+            return {}
 
-    return {
-        "uuid": main_language[0],
-        "long_name": main_language[1]
-    }
+        return {
+            "uuid": main_language[0],
+            "long_name": main_language[1]
+        }
 
 
 def get_related_posts(*args, post, connection, **kwargs):
@@ -92,7 +90,7 @@ def get_related_posts(*args, post, connection, **kwargs):
                 """SELECT content, section_type, position
                 FROM sloth_post_sections
                 WHERE post = %s
-                ORDER BY position ASC;"""
+                ORDER BY position;"""
             ),
             (related_post[0],)
         )
@@ -144,8 +142,12 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
         "post_status": raw_post[14],
         "imported": raw_post[15],
         "approved": raw_post[16],
-        "meta_description": raw_post[17] if len(raw_post) >= 18 and raw_post[17] is not None and len(raw_post[17]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
-        "social_description": raw_post[18] if len(raw_post) >= 19 and raw_post[18] is not None and len(raw_post[18]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+        "meta_description": raw_post[17] if len(raw_post) >= 18 and raw_post[17] is not None and len(
+            raw_post[17]) > 0 else sections[0]["content"][
+                                   :161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+        "social_description": raw_post[18] if len(raw_post) >= 19 and raw_post[18] is not None and len(
+            raw_post[18]) > 0 else sections[0]["content"][
+                                   :161 if len(sections[0]) > 161 else len(sections[0]["content"])],
         "format_uuid": raw_post[19] if len(raw_post) >= 20 and raw_post[19] is not None else None,
         "format_slug": raw_post[20] if len(raw_post) >= 21 and raw_post[20] is not None else None,
         "format_name": raw_post[21] if len(raw_post) >= 22 and raw_post[21] is not None else None,
@@ -155,7 +157,14 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
     return result
 
 
-def positive_min(*args, floats: bool = False):
+def positive_min(*args, floats: bool = False) -> int or float:
+    """
+    Calculates positive minimum
+
+    :param args:
+    :param floats:
+    :return:
+    """
     if floats:
         args = [float(arg) for arg in args if arg >= 0]
     else:
@@ -172,6 +181,12 @@ def positive_min(*args, floats: bool = False):
 
 
 def get_connection_dict(config) -> Dict:
+    """
+    Creates a dict with connection information
+
+    :param config:
+    :return:
+    """
     return {
         "dbname": config["DATABASE_NAME"],
         "user": config["DATABASE_USER"],

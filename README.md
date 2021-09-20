@@ -34,6 +34,13 @@ toes.generate_all()
 - Rust 1.54.0
 - (optional, recommended) Gunicorn
 
+### TO-DO List
+- app.lists
+- app.settings.integration
+- app.libraries deletion
+- app.rss
+- scheduling
+
 
 ### Bucket list
 - multilingual blog ✅
@@ -49,3 +56,5 @@ toes.generate_all()
 - Toe compiler (Rust) 🛠
 - Markdown compiler (Rust) 🛠
 - Dockerization 🛠
+- CSRF
+- Custom WSGI framework

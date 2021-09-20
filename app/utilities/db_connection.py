@@ -29,20 +29,32 @@ def db_connection_legacy(fn):
 
 
 def db_connection(fn):
+    """
+    Decorator function which creates a connection to database for the function
+
+    :param fn:
+    :return:
+    """
+
     @wraps(fn)
     def wrapper(*args, connection: Optional[psycopg.Connection] = None, **kwargs):
         if connection is not None:
             return fn(*args, connection=connection, **kwargs)
-
-        config = current_app.config
-        with psycopg.connect(
-                f"dbname={config['DATABASE_NAME']} user={config['DATABASE_USER']} host={config['DATABASE_URL']} port={config['DATABASE_PORT']} password={config['DATABASE_PASSWORD']}") as conn:
-            return fn(*args, connection=conn, **kwargs)
-
-        response = make_response(json.dumps({"database_connection": "not working"}))
-        response.headers['Content-Type'] = 'application/json'
-        code = 500
-
-        return response, code
+        conn = connect_to_db()
+        return fn(*args, connection=conn, **kwargs)
 
     return wrapper
+
+
+def connect_to_db() -> Optional[psycopg.Connection]:
+    """
+    creates a connection to database
+
+    :return:
+    """
+    config = current_app.config
+    conn_str = f"postgresql://{config['DATABASE_USER']}:{config['DATABASE_PASSWORD']}@{config['DATABASE_URL']}:{config['DATABASE_PORT']}/{config['DATABASE_NAME']}"
+    try:
+        return psycopg.connect(conn_str)
+    except psycopg.errors.DatabaseError:
+        return None

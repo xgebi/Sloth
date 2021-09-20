@@ -19,6 +19,7 @@ psycopg2-binary = "*"
 tweepy = "*"
 apscheduler = "*"
 psycopg = {extras = ["binary", "pool"], version = "*"}
+pylint = "*"
 
 [requires]
 python_version = "3.8"

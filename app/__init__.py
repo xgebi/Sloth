@@ -13,9 +13,11 @@ from app.toes.hooks import Hooks, Hook
 
 bcrypt = Bcrypt()
 
+
 class Dummy:
     def __init__(self):
         self.name = "Dummy bot"
+
 
 def create_app():  # dev, test, or prod
 
@@ -33,7 +35,7 @@ def create_app():  # dev, test, or prod
 
     bcrypt.init_app(app)
 
-    #scheduler = BackgroundScheduler()
+    # scheduler = BackgroundScheduler()
     # scheduler.init_app(app)
     #
     # @scheduler.task('interval', id='check_scheduled_posts', seconds=60, misfire_grace_time=900)
@@ -60,8 +62,18 @@ def create_app():  # dev, test, or prod
                 '/design') or request.path.startswith('/static')) and not registration_lock_file.is_file():
             return redirect('/registration')
 
-    from app.errors import errors
-    app.register_blueprint(errors)
+    if os.environ["FLASK_ENV"] != "development":
+        @app.errorhandler(500)
+        def internal_error(error):
+            return "500 error", 500
+
+    @app.errorhandler(403)
+    def internal_error(error):
+        return "403 error", 403
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return "404 error", 404
 
     from app.api.content_management import content_management
     app.register_blueprint(content_management)
@@ -93,14 +105,8 @@ def create_app():  # dev, test, or prod
     from app.settings.content import content
     app.register_blueprint(content)
 
-    from app.web.settings.users import settings_users
-    app.register_blueprint(settings_users)
-
     from app.post import post
     app.register_blueprint(post)
-
-    from app.web.design import design
-    app.register_blueprint(design)
 
     from app.messages import messages
     app.register_blueprint(messages)

@@ -6,7 +6,7 @@ from app.authorization.authorize import authorize_web
 
 from app.post.post_types import PostTypes
 
-from app.web.settings.users import settings_users
+from app.settings.users import settings_users
 
 
 @settings_users.route("/settings/users")
