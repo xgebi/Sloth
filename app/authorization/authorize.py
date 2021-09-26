@@ -56,6 +56,8 @@ def authorize_web(permission_level: int):
                     redirect_path = request.path
                 else:
                     redirect_path = "/"
+            else:
+                redirect_path = "/"
             if auth is None:
                 return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
             auth = auth.split(":")

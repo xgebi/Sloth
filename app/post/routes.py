@@ -10,7 +10,6 @@ import threading
 
 import psycopg
 from flask import request, current_app, abort, redirect, render_template
-from psycopg2 import sql
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.post import post, get_translations
@@ -54,7 +53,7 @@ def no_post(*args, permission_level: int, connection: psycopg.Connection, **kwar
 @db_connection
 def show_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, **kwargs):
     """
-    Renders
+    Renders a list of posts for default language
 
     :param args:
     :param permission_level:
@@ -79,8 +78,19 @@ def show_posts_list(*args, permission_level: int, connection: psycopg.Connection
 
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)
-@db_connection_legacy
-def show_posts_list_language(*args, permission_level, connection, post_type, lang_id, **kwargs):
+@db_connection
+def show_posts_list_language(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str, **kwargs):
+    """
+    Renders list of post for a language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
 
@@ -538,8 +548,18 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
 
 @post.route("/post/<type_id>/taxonomy")
 @authorize_web(0)
-@db_connection_legacy
-def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, **kwargs):
+@db_connection
+def show_post_taxonomy_main_lang(*args, permission_level: int, connection: psycopg.Connection, type_id: str, **kwargs):
+    """
+    Renders a list of taxonomies for default language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param type_id:
+    :param kwargs:
+    :return:
+    """
     return show_taxonomy(
         permission_level=permission_level,
         connection=connection,
@@ -550,8 +570,19 @@ def show_post_taxonomy_main_lang(*args, permission_level, connection, type_id, *
 
 @post.route("/post/<type_id>/taxonomy/<lang_id>")
 @authorize_web(0)
-@db_connection_legacy
-def show_post_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwargs):
+@db_connection
+def show_post_taxonomy(*args, permission_level: int, connection: psycopg.Connection, type_id: str, lang_id: str, **kwargs):
+    """
+    Renders a list of taxonomies for a language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param type_id:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
     return show_taxonomy(
         permission_level=permission_level,
         connection=connection,
@@ -560,29 +591,35 @@ def show_post_taxonomy(*args, permission_level, connection, type_id, lang_id, **
     )
 
 
-def show_taxonomy(*args, permission_level, connection, type_id, lang_id, **kwargs):
+def show_taxonomy(*args, permission_level: int, connection: psycopg.Connection, type_id: str, lang_id: str, **kwargs):
+    """
+    Renders a list of taxonomies
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param type_id:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
     taxonomy = {}
     try:
-        cur.execute(
-            sql.SQL("SELECT unnest(enum_range(NULL::sloth_taxonomy_type))")
-        )
-        taxonomy_types = [item for sublist in cur.fetchall() for item in sublist]
-        for taxonomy_type in taxonomy_types:
-            cur.execute(
-                sql.SQL("""SELECT uuid, display_name 
-                FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s AND lang = %s"""),
-                (type_id, taxonomy_type, lang_id)
-            )
-            taxonomy[taxonomy_type] = cur.fetchall()
+        with connection.cursor() as cur:
+            cur.execute("SELECT unnest(enum_range(NULL::sloth_taxonomy_type))")
+            taxonomy_types = [item for sublist in cur.fetchall() for item in sublist]
+            for taxonomy_type in taxonomy_types:
+                cur.execute("""SELECT uuid, display_name 
+                    FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s AND lang = %s""",
+                    (type_id, taxonomy_type, lang_id))
+                taxonomy[taxonomy_type] = cur.fetchall()
     except Exception as e:
         print("db error C")
         abort(500)
 
-    cur.close()
     # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_language = get_default_language(connection=connection)
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
@@ -910,31 +947,34 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
 
 @post.route("/api/post/upload-file", methods=['POST'])
 @authorize_rest(0)
-@db_connection_legacy
-def upload_image(*args, file_name, connection=None, **kwargs):
+@db_connection
+def upload_image(*args, file_name, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint for uploading a file
+    TODO check file_name type
+
+    :param args:
+    :param file_name:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     ext = file_name[file_name.rfind("."):]
     if not ext.lower() in (".png", ".jpg", ".jpeg", ".svg", ".bmp", ".tiff"):
         abort(500)
     with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", file_name), 'wb') as f:
         f.write(request.data)
 
-    file = {}
-    cur = connection.cursor()
-
     try:
-
-        cur.execute(
-            sql.SQL("INSERT INTO sloth_media VALUES (%s, %s, %s) RETURNING uuid, file_path"),
-            [str(uuid.uuid4()), os.path.join("sloth-content", file_name), ""]
-        )
-        file = cur.fetchone()
-        cur.close()
+        with connection.cursor() as cur:
+            cur.execute("INSERT INTO sloth_media VALUES (%s, %s, %s) RETURNING uuid, file_path",
+                        (str(uuid.uuid4()), os.path.join("sloth-content", file_name), ""))
+            file = cur.fetchone()
     except Exception as e:
         print(traceback.format_exc())
         connection.close()
         abort(500)
 
-    cur.close()
     connection.close()
 
     return json.dumps({"media": file}), 201
@@ -942,330 +982,295 @@ def upload_image(*args, file_name, connection=None, **kwargs):
 
 @post.route("/api/post", methods=['POST'])
 @authorize_rest(0)
-@db_connection_legacy
-def save_post(*args, connection=None, **kwargs):
-    if connection is None:
-        abort(500)
+@db_connection
+def save_post(*args, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint to save a post
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     result = {}
     filled = json.loads(request.data)
     filled["thumbnail"] = filled["thumbnail"] if len(filled["thumbnail"]) > 0 else None
-    cur = connection.cursor()
-    if "lang" not in filled:
-        cur.execute(
-            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';"),
-        )
-        lang = cur.fetchone()[0]
-    else:
-        lang = filled["lang"]
     try:
-        # process tags
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, slug, display_name, post_type, taxonomy_type 
-                    FROM sloth_taxonomy 
-                    WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;"""
-            ),
-            (filled["post_type_uuid"], lang)
-        )
-        existing_tags = cur.fetchall()
-
-        existing_tags_slugs = [slug[1] for slug in existing_tags]
-        # refactoring candidate:
-        matched_tags = []
-        new_tags = []
-        for tag in filled["tags"]:
-            if tag["slug"] in existing_tags_slugs:
-                if tag["uuid"] == "added":
-                    for et in existing_tags:
-                        if et[1] == tag["slug"]:
-                            tag["uuid"] = et[0]
-                            break
-                matched_tags.append(tag)
+        with connection.cursor() as cur:
+            if "lang" not in filled:
+                cur.execute("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';")
+                lang = cur.fetchone()[0]
             else:
-                tag["uuid"] = str(uuid.uuid4())
-                new_tags.append(tag)
+                lang = filled["lang"]
 
-        for new_tag in new_tags:
-            cur.execute(
-                sql.SQL("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
-                            VALUES (%s, %s, %s, %s, 'tag', %s);"""),
-                (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
-                 filled["lang"])
-            )
-            matched_tags.append(new_tag)
+                # process tags
+                cur.execute("""SELECT uuid, slug, display_name, post_type, taxonomy_type 
+                            FROM sloth_taxonomy 
+                            WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
+                            (filled["post_type_uuid"], lang))
+                existing_tags = cur.fetchall()
 
-        connection.commit()
-        # get user
-        author = request.headers.get('authorization').split(":")[1]
+                existing_tags_slugs = [slug[1] for slug in existing_tags]
+                # refactoring candidate:
+                matched_tags = []
+                new_tags = []
+                for tag in filled["tags"]:
+                    if tag["slug"] in existing_tags_slugs:
+                        if tag["uuid"] == "added":
+                            for et in existing_tags:
+                                if et[1] == tag["slug"]:
+                                    tag["uuid"] = et[0]
+                                    break
+                        matched_tags.append(tag)
+                    else:
+                        tag["uuid"] = str(uuid.uuid4())
+                        new_tags.append(tag)
 
-        if filled["post_status"] == 'published' and filled["publish_date"] is None:
-            publish_date = str(time() * 1000)
-        elif filled["post_status"] == 'scheduled':
-            publish_date = filled["publish_date"]
-        elif filled['post_status'] == 'draft':
-            publish_date = None
-        # save post
-        if filled["new"] and str(filled["new"]).lower() != 'none':
-            unique_post = False
-            while filled["new"] and not unique_post:
-                cur.execute(
-                    sql.SQL("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s"),
-                    [filled["uuid"]]
-                )
-                if cur.fetchone()[0] != 0:
-                    filled["uuid"] = str(uuid.uuid4())
+                for new_tag in new_tags:
+                    cur.execute("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                                    VALUES (%s, %s, %s, %s, 'tag', %s);""",
+                                (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
+                                 filled["lang"]))
+                    matched_tags.append(new_tag)
+
+                connection.commit()
+                # get user
+                author = request.headers.get('authorization').split(":")[1]
+
+                if filled["post_status"] == 'published' and filled["publish_date"] is None:
+                    publish_date = str(time() * 1000)
+                elif filled["post_status"] == 'scheduled':
+                    publish_date = filled["publish_date"]
+                elif filled['post_status'] == 'draft':
+                    publish_date = None
+                # save post
+                if filled["new"] and str(filled["new"]).lower() != 'none':
+                    unique_post = False
+                    while filled["new"] and not unique_post:
+                        cur.execute("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s",
+                                    (filled["uuid"],))
+                        if cur.fetchone()[0] != 0:
+                            filled["uuid"] = str(uuid.uuid4())
+                        else:
+                            unique_post = True
+
+                    cur.execute(
+                        "SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;",
+                        (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
+                    similar = cur.fetchone()[0]
+                    if int(similar) > 0:
+                        filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+
+                    cur.execute("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
+                        title, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
+                        original_lang_entry_uuid, post_format, meta_description, twitter_description) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                                (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
+                                 filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
+                                 filled["post_status"], lang, filled["password"] if "password" in filled else None,
+                                 filled["original_post"] if "original_post" in filled else "", filled["post_format"],
+                                 filled["meta_description"], filled["social_description"]))
+                    connection.commit()
+                    taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
+                                                                 tags=matched_tags)
+                    result["uuid"] = filled["uuid"]
                 else:
-                    unique_post = True
+                    # when editting this don't forget that last item needs to be uuid
+                    cur.execute("""UPDATE sloth_posts SET slug = %s, title = %s, css = %s, js = %s,
+                         thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
+                         password = %s, post_format = %s, meta_description = %s, twitter_description = %s WHERE uuid = %s;""",
+                                (filled["slug"], filled["title"], filled["css"], filled["js"],
+                                 filled["thumbnail"] if filled["thumbnail"] != "None" else None,
+                                 filled["publish_date"] if filled["publish_date"] is not None else publish_date,
+                                 str(time() * 1000), filled["post_status"], filled["approved"],
+                                 filled["password"] if "password" in filled else None, filled["post_format"],
+                                 filled["meta_description"], filled["social_description"], filled["uuid"]))
+                    connection.commit()
+                    taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
+                                                                 tags=matched_tags)
 
-            cur.execute(
-                sql.SQL("SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"),
-                [f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]]
-            )
-            similar = cur.fetchone()[0]
-            if int(similar) > 0:
-                filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+                # save libraries
+                cur.execute("""DELETE FROM sloth_post_libraries WHERE post = %s;""",
+                            (filled["uuid"],))
+                for lib in filled["libs"]:
+                    cur.execute(
+                        """INSERT INTO sloth_post_libraries (uuid, post, library, hook_name)  VALUES (%s, %s, %s, %s)""",
+                        (str(uuid.uuid4()), filled["uuid"], lib["libId"], lib["hook"]))
+                connection.commit()
 
-            cur.execute(
-                sql.SQL("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                title, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
-                original_lang_entry_uuid, post_format, meta_description, twitter_description) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
-                (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
-                 filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
-                 filled["post_status"], lang, filled["password"] if "password" in filled else None,
-                 filled["original_post"] if "original_post" in filled else "", filled["post_format"],
-                 filled["meta_description"], filled["social_description"])
-            )
-            connection.commit()
-            taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
-            result["uuid"] = filled["uuid"]
-        else:
-            # when editting this don't forget that last item needs to be uuid
-            cur.execute(
-                sql.SQL("""UPDATE sloth_posts SET slug = %s, title = %s, css = %s, js = %s,
-                 thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
-                 password = %s, post_format = %s, meta_description = %s, twitter_description = %s WHERE uuid = %s;"""),
-                (filled["slug"], filled["title"], filled["css"], filled["js"],
-                 filled["thumbnail"] if filled["thumbnail"] != "None" else None,
-                 filled["publish_date"] if filled["publish_date"] is not None else publish_date,
-                 str(time() * 1000), filled["post_status"], filled["approved"],
-                 filled["password"] if "password" in filled else None, filled["post_format"],
-                 filled["meta_description"], filled["social_description"], filled["uuid"])
-            )
-            connection.commit()
-            taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled, tags=matched_tags)
+                cur.execute("""DELETE from sloth_post_sections WHERE post = %s;""",
+                            (filled["uuid"],))
+                for section in filled["sections"]:
+                    cur.execute("""INSERT INTO sloth_post_sections VALUES (%s, %s, %s, %s, %s)""",
+                                (str(uuid.uuid4()), filled["uuid"], section["content"], section["type"],
+                                 section["position"]))
+                connection.commit()
 
-        # save libraries
-        cur.execute(
-            sql.SQL("""DELETE FROM sloth_post_libraries WHERE post = %s;"""),
-            (filled["uuid"],)
-        )
-        for lib in filled["libs"]:
-            cur.execute(
-                sql.SQL(
-                    """INSERT INTO sloth_post_libraries (uuid, post, library, hook_name)  VALUES (%s, %s, %s, %s)"""),
-                (str(uuid.uuid4()), filled["uuid"], lib["libId"], lib["hook"])
-            )
-        connection.commit()
+                cur.execute("""SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, 
+                                        sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
+                                        sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
+                                        sp.twitter_description, spf.uuid, spf.slug, spf.display_name
+                                        FROM sloth_posts as sp 
+                                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                                        WHERE sp.uuid = %s;""",
+                            (filled["uuid"],))
+                saved_post = cur.fetchone()
+                cur.execute(
+                    """SELECT content, section_type, position
+                    FROM sloth_post_sections
+                    WHERE post = %s
+                    ORDER BY position ASC;""",
+                    (filled["uuid"],))
+                sections = [{
+                    "content": section[0],
+                    "type": section[1],
+                    "position": section[2]
+                } for section in cur.fetchall()]
 
-        cur.execute(
-            sql.SQL("""DELETE from sloth_post_sections WHERE post = %s;"""),
-            (filled["uuid"],)
-        )
-        for section in filled["sections"]:
-            cur.execute(
-                sql.SQL("""INSERT INTO sloth_post_sections VALUES (%s, %s, %s, %s, %s)"""),
-                (str(uuid.uuid4()), filled["uuid"], section["content"], section["type"], section["position"])
-            )
-        connection.commit()
+                generatable_post = parse_raw_post(saved_post, sections=sections)
+                cur.execute(
+                    """SELECT sl.location, spl.hook_name
+                    FROM sloth_post_libraries AS spl
+                    INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+                    WHERE spl.post = %s;""",
+                    (filled["uuid"],))
+                generatable_post["libraries"] = [{
+                    "location": lib[0],
+                    "hook_name": lib[1]
+                } for lib in cur.fetchall()]
+                generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
+                # get post
+                if filled["post_status"] == 'published':
+                    gen = PostGenerator(connection=connection)
+                    gen.run(post=generatable_post, regenerate_taxonomies=taxonomy_to_clean)
+                    # (threading.Thread(
+                    #     target=toes.generate_post,
+                    #     args=[
+                    #         get_connection_dict(current_app.config),
+                    #         os.getcwd(),
+                    #         generatable_post,
+                    #         current_app.config["THEMES_PATH"],
+                    #         current_app.config["OUTPUT_PATH"],
+                    #         taxonomy_to_clean
+                    #     ]
+                    # )).start()
 
-        cur.execute(
-            sql.SQL("""SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, 
-                                sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
-                                sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
-                                sp.twitter_description, spf.uuid, spf.slug, spf.display_name
-                                FROM sloth_posts as sp 
-                                INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                                WHERE sp.uuid = %s;"""),
-            (filled["uuid"],)
-        )
-        saved_post = cur.fetchone()
-        cur.execute(
-            sql.SQL(
-                """SELECT content, section_type, position
-                FROM sloth_post_sections
-                WHERE post = %s
-                ORDER BY position ASC;"""
-            ),
-            (filled["uuid"],)
-        )
-        sections = [{
-            "content": section[0],
-            "type": section[1],
-            "position": section[2]
-        } for section in cur.fetchall()]
-
-        generatable_post = parse_raw_post(saved_post, sections=sections)
-        cur.execute(
-            sql.SQL(
-                """SELECT sl.location, spl.hook_name
-                FROM sloth_post_libraries AS spl
-                INNER JOIN sloth_libraries sl on sl.uuid = spl.library
-                WHERE spl.post = %s;"""
-            ),
-            (filled["uuid"],)
-        )
-        generatable_post["libraries"] = [{
-            "location": lib[0],
-            "hook_name": lib[1]
-        } for lib in cur.fetchall()]
-        generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
-        # get post
-        if filled["post_status"] == 'published':
-            gen = PostGenerator(connection=connection)
-            gen.run(post=generatable_post, regenerate_taxonomies=taxonomy_to_clean)
-            # (threading.Thread(
-            #     target=toes.generate_post,
-            #     args=[
-            #         get_connection_dict(current_app.config),
-            #         os.getcwd(),
-            #         generatable_post,
-            #         current_app.config["THEMES_PATH"],
-            #         current_app.config["OUTPUT_PATH"],
-            #         taxonomy_to_clean
-            #     ]
-            # )).start()
-
-        if filled["post_status"] == 'protected':
-            # get post type slug
-            cur.execute(
-                sql.SQL("""SELECT slug FROM sloth_post_types WHERE uuid = %s;"""),
-                (generatable_post["post_type"],)
-            )
-            post_type_slug = cur.fetchone()
-            cur.execute(
-                sql.SQL("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;"""),
-                (generatable_post["lang"],)
-            )
-            language_raw = cur.fetchone()
-            # get post slug
-            gen = PostGenerator()
-            gen.delete_post_files(
-                post_type=post_type_slug[0],
-                post=generatable_post["slug"],
-                language={
-                    "uuid": language_raw[0],
-                    "short_name": language_raw[1],
-                    "long_name": language_raw[2]
-                }
-            )
-    except Exception as e:
+                if filled["post_status"] == 'protected':
+                    # get post type slug
+                    cur.execute("""SELECT slug FROM sloth_post_types WHERE uuid = %s;""",
+                                (generatable_post["post_type"],))
+                    post_type_slug = cur.fetchone()
+                    cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;""",
+                                (generatable_post["lang"],))
+                    language_raw = cur.fetchone()
+                    # get post slug
+                    gen = PostGenerator()
+                    gen.delete_post_files(
+                        post_type=post_type_slug[0],
+                        post=generatable_post["slug"],
+                        language={
+                            "uuid": language_raw[0],
+                            "short_name": language_raw[1],
+                            "long_name": language_raw[2]
+                        }
+                    )
+    except Exception:
         print(traceback.format_exc())
-        return json.dumps({"error": str(e)}), 500
-
-    cur.close()
+        return json.dumps({"error": "Error saving post"}), 500
 
     result["saved"] = True
     result["postType"] = generatable_post["post_type"]
     return json.dumps(result)
 
 
-def sort_out_post_taxonomies(*args, connection, article, tags, **kwargs):
-    cur = connection.cursor()
-    categories = article["categories"]
-    cur.execute(
-        sql.SQL("""SELECT uuid, taxonomy FROM sloth_post_taxonomies WHERE post = %s;"""),
-        (article["uuid"],)
-    )
-    raw_taxonomies = cur.fetchall()
-    taxonomies = [{
-        "uuid": taxonomy[0],
-        "taxonomy": taxonomy[1]
-    } for taxonomy in raw_taxonomies]
-    for_deletion = []
-    tag_ids = [tag["uuid"] for tag in tags]
-    for taxonomy in taxonomies:
-        if taxonomy["taxonomy"] not in categories and taxonomy["taxonomy"] not in tag_ids:
-            for_deletion.append(taxonomy)
-        elif taxonomy["taxonomy"] in categories:
-            categories.remove(taxonomy["taxonomy"])
-        elif taxonomy["taxonomy"] in tag_ids:
-            tags = [tag for tag in tags if tag["uuid"] != taxonomy["taxonomy"]]
+def sort_out_post_taxonomies(*args, connection: psycopg.Connection, article: Dict, tags: List, **kwargs) -> List:
+    """
+    Sorts out post taxonomies to be deleted
 
-    for taxonomy in for_deletion:
-        cur.execute(
-            sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s"""),
-            (taxonomy["uuid"],)
-        )
-        taxonomies.remove(taxonomy)
-    connection.commit()
+    :param args:
+    :param connection:
+    :param article:
+    :param tags:
+    :param kwargs:
+    :return:
+    """
+    try:
+        with connection.cursor() as cur:
+            categories = article["categories"]
+            cur.execute("""SELECT uuid, taxonomy FROM sloth_post_taxonomies WHERE post = %s;""",
+                (article["uuid"],))
+            raw_taxonomies = cur.fetchall()
+            taxonomies = [{
+                "uuid": taxonomy[0],
+                "taxonomy": taxonomy[1]
+            } for taxonomy in raw_taxonomies]
+            for_deletion = []
+            tag_ids = [tag["uuid"] for tag in tags]
+            for taxonomy in taxonomies:
+                if taxonomy["taxonomy"] not in categories and taxonomy["taxonomy"] not in tag_ids:
+                    for_deletion.append(taxonomy)
+                elif taxonomy["taxonomy"] in categories:
+                    categories.remove(taxonomy["taxonomy"])
+                elif taxonomy["taxonomy"] in tag_ids:
+                    tags = [tag for tag in tags if tag["uuid"] != taxonomy["taxonomy"]]
 
-    for category in categories:
-        cur.execute(
-            sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-            (str(uuid.uuid4()), article["uuid"], category)
-        )
-    for tag in tags:
-        cur.execute(
-            sql.SQL("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)"""),
-            (str(uuid.uuid4()), article["uuid"], tag["uuid"])
-        )
-    connection.commit()
-    cur.close()
+            for taxonomy in for_deletion:
+                cur.execute("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s""",
+                    (taxonomy["uuid"],))
+                taxonomies.remove(taxonomy)
+            connection.commit()
+
+            for category in categories:
+                cur.execute("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)""",
+                    (str(uuid.uuid4()), article["uuid"], category))
+            for tag in tags:
+                cur.execute("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)""",
+                    (str(uuid.uuid4()), article["uuid"], tag["uuid"]))
+            connection.commit()
+    except Exception:
+        return []
 
     return for_deletion
 
 
 @post.route("/api/post/delete", methods=['POST', 'DELETE'])
 @authorize_rest(0)
-@db_connection_legacy
-def delete_post(*args, permission_level, connection, **kwargs):
-    if connection is None:
-        abort(500)
+@db_connection
+def delete_post(*args, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint to delete a post
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
 
     filled = json.loads(request.data)
 
-    cur = connection.cursor()
-    res = {}
-    count = []
     try:
-        cur.execute(
-            sql.SQL("""SELECT A.post_type, A.slug, spt.slug, A.lang 
-            FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s"""),
-            (filled["post"],)
-        )
-        res = cur.fetchone()
-        cur.execute(
-            sql.SQL("""SELECT A.uuid 
-                    FROM sloth_posts as A WHERE A.original_lang_entry_uuid = %s ORDER BY publish_date ASC"""),
-            (filled["post"],)
-        )
-        oldest_alternative = cur.fetchone()
-        cur.execute(
-            sql.SQL("""UPDATE sloth_posts SET original_lang_entry_uuid = '' WHERE uuid = %s;"""),
-            oldest_alternative
-        )
-        cur.execute(
-            sql.SQL("""UPDATE sloth_posts SET original_lang_entry_uuid = %s WHERE original_lang_entry_uuid = %s;"""),
-            (oldest_alternative[0], filled["post"])
-        )
-        cur.execute(
-            sql.SQL("""DELETE FROM sloth_post_taxonomies WHERE post = %s;"""),
-            (filled["post"],)
-        )
-        cur.execute(
-            sql.SQL("""DELETE FROM sloth_post_sections WHERE post = %s;"""),
-            (filled["post"],)
-        )
-        cur.execute(
-            sql.SQL("DELETE FROM sloth_posts WHERE uuid = %s"),
-            (filled["post"],)
-        )
-        connection.commit()
-        cur.execute(
-            sql.SQL("SELECT COUNT(uuid) FROM sloth_posts")
-        )
-        count = cur.fetchone()
+        with connection.cursor() as cur:
+            cur.execute("""SELECT A.post_type, A.slug, spt.slug, A.lang 
+                FROM sloth_posts as A INNER JOIN sloth_post_types spt on A.post_type = spt.uuid WHERE A.uuid = %s""",
+                        (filled["post"],))
+            res = cur.fetchone()
+            cur.execute("""SELECT A.uuid 
+                        FROM sloth_posts as A WHERE A.original_lang_entry_uuid = %s ORDER BY publish_date ASC""",
+                        (filled["post"],))
+            oldest_alternative = cur.fetchone()
+            cur.execute("""UPDATE sloth_posts SET original_lang_entry_uuid = '' WHERE uuid = %s;""",
+                        oldest_alternative)
+            cur.execute("""UPDATE sloth_posts SET original_lang_entry_uuid = %s WHERE original_lang_entry_uuid = %s;""",
+                        (oldest_alternative[0], filled["post"]))
+            cur.execute("""DELETE FROM sloth_post_taxonomies WHERE post = %s;""",
+                        (filled["post"],))
+            cur.execute("""DELETE FROM sloth_post_sections WHERE post = %s;""",
+                        (filled["post"],))
+            cur.execute("DELETE FROM sloth_posts WHERE uuid = %s",
+                        (filled["post"],))
+            connection.commit()
+            cur.execute("SELECT COUNT(uuid) FROM sloth_posts")
+            count = cur.fetchone()
     except Exception as e:
         abort(500)
     cur.close()
@@ -1283,32 +1288,43 @@ def delete_post(*args, permission_level, connection, **kwargs):
 
 @post.route("/api/post/taxonomy/<taxonomy_id>", methods=["DELETE"])
 @authorize_rest(0)
-@db_connection_legacy
-def delete_taxonomy(*args, permission_level, connection, taxonomy_id, **kwargs):
-    if connection is None:
-        abort(500)
+@db_connection
+def delete_taxonomy(*args, connection: psycopg.Connection, taxonomy_id: str, **kwargs):
+    """
+    API end point to delete taxonomy
+    TODO check this when designing API
 
-    cur = connection.cursor()
+    :param args:
+    :param connection:
+    :param taxonomy_id:
+    :param kwargs:
+    :return:
+    """
 
     try:
-        cur.execute(
-            sql.SQL("DELETE FROM sloth_taxonomy WHERE uuid = %s;"),
-            [taxonomy_id]
-        )
-        connection.commit()
+        with connection.cursor() as cur:
+            cur.execute("DELETE FROM sloth_taxonomy WHERE uuid = %s;",
+                        (taxonomy_id, ))
+            connection.commit()
     except Exception as e:
+        connection.close()
         return json.dumps({"error": "db"})
-    cur.close()
     connection.close()
     return json.dumps({"deleted": True})
 
 
 @post.route("/api/post/regenerate-all", methods=["POST", "PUT"])
 @authorize_rest(0)
-@db_connection_legacy
-def regenerate_all(*args, permission_level, connection, **kwargs):
-    if connection is None:
-        abort(500)
+@db_connection
+def regenerate_all(*args, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint to trigger regenerating all blog content
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
 
     gen = PostGenerator(connection=connection)
     gen.run()
@@ -1317,20 +1333,24 @@ def regenerate_all(*args, permission_level, connection, **kwargs):
 
 
 @post.route("/api/post/secret", methods=["POST"])
-@db_connection_legacy
-def get_protected_post(*args, connection, **kwargs):
+@db_connection
+def get_protected_post(*args, connection: psycopg.Connection, **kwargs):
+    """
+    TODO implement accessing password protected posts properly after Rust Toes
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
     filled = json.loads(request.data)
 
-    raw_post = []
-
     try:
-        cur = connection.cursor()
-        cur.execute(
-            sql.SQL("""SELECT uuid 
-            FROM sloth_posts WHERE password = %s AND slug = %s;"""),
-            [filled["password"], filled["slug"]]
-        )
-        raw_post = cur.fetchone()
+        with connection.cursor() as cur:
+            cur.execute("""SELECT uuid 
+                FROM sloth_posts WHERE password = %s AND slug = %s;""",
+                        (filled["password"], filled["slug"]))
+            raw_post = cur.fetchone()
     except Exception as e:
         print(e)
 
@@ -1350,7 +1370,14 @@ def get_protected_post(*args, connection, **kwargs):
 
 @post.route("/api/post/is-generating", methods=["GET"])
 @authorize_rest(0)
-def is_generating(*args, permission_level, **kwargs):
+def is_generating(*args, **kwargs):
+    """
+    API endpoint to check whether Sloth is generating the files
+
+    :param args:
+    :param kwargs:
+    :return:
+    """
     return json.dumps({
         "generating": Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
     })

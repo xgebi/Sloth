@@ -1,6 +1,5 @@
 import os
-import psycopg2
+import psycopg
 
-from app.rss.rss_job import RssJob
 
 config_filename = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')

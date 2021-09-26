@@ -1,15 +1,17 @@
+import os
+import traceback
+import json
+from uuid import uuid4
 import psycopg
+
 from flask import abort, request, redirect, current_app, make_response
+
 from app.authorization.authorize import authorize_web
 from app.utilities.db_connection import db_connection
 from app.toes.hooks import Hooks
 from app.toes.toes import render_toe_from_path
 from app.post.post_types import PostTypes
 from app.utilities import get_default_language
-import os
-import traceback
-import json
-from uuid import uuid4
 
 from app.libraries import libraries
 
@@ -84,18 +86,25 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
         abort(500)
     filename = f"{lib_file.filename[:lib_file.filename.rfind('.')]}-{lib_data['lib-version']}.js"
     try:
-        if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs")):
+        if not os.path.exists(
+                os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs")):
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
 
         lib_file.save(
-            os.path.normpath(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename))
+            os.path.normpath(
+                os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename)
+            )
         )
 
         location = f"/sloth-content/libs/{filename}"
 
         with connection.cursor() as cur:
-            cur.execute("""INSERT INTO sloth_libraries (uuid, name, version, location)  VALUES (%s, %s, %s, %s);""",
-                        (str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location))
+            cur.execute(
+                """
+                INSERT INTO sloth_libraries (uuid, name, version, location) 
+                VALUES (%s, %s, %s, %s);
+                """,
+                (str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location))
             connection.commit()
     except psycopg.errors.DatabaseError:
         print(traceback.format_exc())
@@ -134,7 +143,9 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
                         (lib_to_delete["uuid"],)
                         )
             connection.commit()
-            os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", location))
+            os.remove(
+                os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", location)
+            )
 
         response = make_response(json.dumps({
             "deleted": lib_to_delete["uuid"]
