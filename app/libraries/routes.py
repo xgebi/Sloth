@@ -9,6 +9,7 @@ from app.utilities import get_default_language
 import os
 import traceback
 import json
+import re
 from uuid import uuid4
 
 from app.libraries import libraries
@@ -18,7 +19,7 @@ from app.libraries import libraries
 @libraries.route("/libraries")
 @authorize_web(0)
 @db_connection
-def show_libraries(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+def show_libraries(permission_level: int, connection: psycopg.Connection):
     """
     Renders page showing libraries in the system
 
@@ -42,7 +43,7 @@ def show_libraries(*args, permission_level: int, connection: psycopg.Connection,
                 "location": lib[3]
             } for lib in cur.fetchall()]
 
-    except psycopg.errors.DatabaseError as e:
+    except psycopg.errors.DatabaseError:
         print(traceback.format_exc())
         abort(500)
     connection.close()
@@ -86,15 +87,17 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
     try:
         if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs")):
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
+
+        if filename.rfind("/") >= 0:
+            filename = filename[filename.rfind("/") + 1:]
+
         with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename), 'wb') as f:
             lib_file.save(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename))
         location = f"/sloth-content/libs/{filename}"
 
         with connection.cursor() as cur:
-            cur.execute("""INSERT INTO sloth_libraries (uuid, name, version, location)  
-                    VALUES (%s, %s, %s, %s);""",
-                        (str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location)
-                        )
+            cur.execute("""INSERT INTO sloth_libraries (uuid, name, version, location)  VALUES (%s, %s, %s, %s);""",
+                        (str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location))
             connection.commit()
     except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())

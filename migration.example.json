@@ -1,7 +1,7 @@
 [
   {
     "type": "sql",
-    "folder": "setup",
+    "folder": "migrations",
     "file": "021_reworked_taxonomy.sql"
   },
   {

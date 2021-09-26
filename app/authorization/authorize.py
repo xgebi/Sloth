@@ -1,4 +1,4 @@
-from flask import request, redirect, make_response, current_app, abort
+from flask import request, redirect, make_response, current_app
 from functools import wraps
 import json
 
@@ -71,9 +71,8 @@ def authorize_web(permission_level: int):
                 user.refresh_login()
                 return fn(*args, permission_level=pass_token[1], **kwargs)
             if current_app.url_map.bind(host).test(request.path):
-                return redirect("/login" if request.path == "/login" else f"/login?redirect={request.path}")
-            else:
-                return redirect("/")
+                return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
+            return redirect("/")
 
         return wrapper
 
