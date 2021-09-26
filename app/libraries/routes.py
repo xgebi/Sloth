@@ -9,7 +9,6 @@ from app.utilities import get_default_language
 import os
 import traceback
 import json
-import re
 from uuid import uuid4
 
 from app.libraries import libraries
@@ -88,18 +87,17 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
         if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs")):
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
 
-        if filename.rfind("/") >= 0:
-            filename = filename[filename.rfind("/") + 1:]
+        lib_file.save(
+            os.path.normpath(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename))
+        )
 
-        with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename), 'wb') as f:
-            lib_file.save(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename))
         location = f"/sloth-content/libs/{filename}"
 
         with connection.cursor() as cur:
             cur.execute("""INSERT INTO sloth_libraries (uuid, name, version, location)  VALUES (%s, %s, %s, %s);""",
                         (str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location))
             connection.commit()
-    except psycopg.errors.DatabaseError as e:
+    except psycopg.errors.DatabaseError:
         print(traceback.format_exc())
         connection.close()
         abort(500)
@@ -142,7 +140,7 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
             "deleted": lib_to_delete["uuid"]
         }))
         code = 204
-    except psycopg.errors.DatabaseError as e:
+    except psycopg.errors.DatabaseError:
         print(traceback.format_exc())
         abort(500)
         response = make_response(json.dumps({
