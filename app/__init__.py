@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 # from flask_apscheduler import APScheduler
 from app.rss.rss_job import check_rss_updates
-from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
+# from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
 
 from app.toes.hooks import Hooks, Hook
 

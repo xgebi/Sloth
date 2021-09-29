@@ -1,9 +1,10 @@
 use std::rc::Rc;
 use crate::variable_scope::VariableScope;
 use std::str::pattern;
+use unicode_segmentation::UnicodeSegmentation;
 
 struct Condition {
-    value: String,
+    value: Vec<&str>,
     processed: bool
 }
 
@@ -15,16 +16,42 @@ fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bo
     }
 
     let mut condition = Condition {
-        value: condition,
+        value: condition.graphemes(true).collect::<Vec<&str>>(),
         processed: false
     };
 
-    if condition.value.contains(" and ") || condition.value.contains(" or ") {
-        return process_compound_condition(condition, variable_scope);
+    let mut parenthesis_depth: u16 = 0;
+    let mut inside_quotes: bool = false;
+    let mut temp_start = -1;
+    for i in 0..condition.value.len() {
+        match condition.value[i] {
+            "\"" => {
+                if condition.value[i - 1] != "\\" {
+                    inside_quotes = !inside_quotes
+                }
+            },
+            "\'" => {
+                if condition.value[i - 1] != "\\" {
+                    inside_quotes = !inside_quotes
+                }
+            },
+            "(" => {
+                if !inside_quotes {
+                    parenthesis_depth += 1;
+                }
+            },
+            ")" => {
+                if !inside_quotes {
+                    parenthesis_depth -= 1;
+                }
+            }
+            _ => {
+
+            }
+        }
     }
 
-    let sides = condition.value.split("");
-
+    condition.processed = true;
     false
 }
 
