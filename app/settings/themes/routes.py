@@ -1,4 +1,5 @@
 from flask import request, current_app, abort, redirect
+from werkzeug import utils as w_utils
 import psycopg
 import os
 from pathlib import Path
@@ -114,8 +115,8 @@ def upload_theme(*args, **kwargs):
         path = os.path.join(current_app.config["THEMES_PATH"], theme.filename[:theme.filename.rfind(".zip")])
         if os.path.isdir(path):
             shutil.rmtree(path)
-        with open(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'wb') as f:
-            theme.save(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
+        with open(w_utils.secure_filename(os.path.join(current_app.config["THEMES_PATH"], theme.filename)), 'wb') as f:
+            theme.save(w_utils.secure_filename(os.path.join(current_app.config["THEMES_PATH"], theme.filename)))
         os.makedirs(path)
         with zipfile.ZipFile(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'r') as zip_ref:
             zip_ref.extractall(current_app.config["THEMES_PATH"])

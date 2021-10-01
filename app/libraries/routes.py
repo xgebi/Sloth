@@ -5,7 +5,7 @@ from uuid import uuid4
 import psycopg
 
 from flask import abort, request, redirect, current_app, make_response
-
+from werkzeug import utils as w_utils
 from app.authorization.authorize import authorize_web
 from app.utilities.db_connection import db_connection
 from app.toes.hooks import Hooks
@@ -91,7 +91,7 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
 
         lib_file.save(
-            os.path.normpath(
+            w_utils.secure_filename(
                 os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename)
             )
         )
