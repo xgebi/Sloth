@@ -115,12 +115,12 @@ def upload_theme(*args, **kwargs):
         path = os.path.join(current_app.config["THEMES_PATH"], theme.filename[:theme.filename.rfind(".zip")])
         if os.path.isdir(path):
             shutil.rmtree(path)
-        with open(w_utils.secure_filename(os.path.join(current_app.config["THEMES_PATH"], theme.filename)), 'wb') as f:
-            theme.save(w_utils.secure_filename(os.path.join(current_app.config["THEMES_PATH"], theme.filename)))
+        with open(os.path.join(current_app.config["THEMES_PATH"], w_utils.secure_filename(theme.filename)), 'wb') as f:
+            theme.save(os.path.join(current_app.config["THEMES_PATH"], w_utils.secure_filename(theme.filename)))
         os.makedirs(path)
-        with zipfile.ZipFile(os.path.join(current_app.config["THEMES_PATH"], theme.filename), 'r') as zip_ref:
+        with zipfile.ZipFile(os.path.join(current_app.config["THEMES_PATH"], w_utils.secure_filename(theme.filename)), 'r') as zip_ref:
             zip_ref.extractall(current_app.config["THEMES_PATH"])
-        os.remove(os.path.join(current_app.config["THEMES_PATH"], theme.filename))
+        os.remove(os.path.join(current_app.config["THEMES_PATH"], w_utils.secure_filename(theme.filename)))
         return json.dumps({"theme_uploaded": theme.filename[:theme.filename.rfind(".zip")]}), 201
     else:
         abort(500)

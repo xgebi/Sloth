@@ -91,9 +91,7 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
             os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs"))
 
         lib_file.save(
-            w_utils.secure_filename(
-                os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", filename)
-            )
+                os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", w_utils.secure_filename(filename))
         )
 
         location = f"/sloth-content/libs/{filename}"

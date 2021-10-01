@@ -119,17 +119,17 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month))):
         os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month)))
     while os.path.exists(
-            w_utils.secure_filename(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))):
+            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename))):
         if filename[:filename.rfind('.')].endswith(f"-{index - 1}"):
             filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
         else:
             filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
         index += 1
 
-    with open(w_utils.secure_filename(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)),
+    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename)),
               'wb') as f:
         image.save(
-            w_utils.secure_filename(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)))
+            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename)))
 
     try:
         with connection.cursor() as cur:

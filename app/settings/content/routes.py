@@ -1,6 +1,6 @@
 from typing import List, Dict
 from flask import abort, request, current_app, make_response
-from werkzeug import utils
+from werkzeug import utils as w_utils
 from psycopg2 import sql
 import json
 import os
@@ -87,10 +87,12 @@ def import_wordpress_content(*args, permission_level, connection=None, **kwargs)
             if not os.path.isdir(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp")):
                 os.makedirs(os.path.join(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp")))
 
-            with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename),
+            with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp",
+                                   w_utils.secure_filename(uploads.filename)),
                       'wb') as f:
                 uploads.save(
-                    utils.secure_filename(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename)))
+                    os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp",
+                                 w_utils.secure_filename(uploads.filename)))
 
             with zipfile.ZipFile(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename), 'r') as zip_ref:
                 zip_ref.extractall(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded"))
