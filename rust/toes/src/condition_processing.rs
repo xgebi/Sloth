@@ -3,8 +3,8 @@ use crate::variable_scope::VariableScope;
 use std::str::pattern;
 use unicode_segmentation::UnicodeSegmentation;
 
-struct Condition {
-    value: Vec<&str>,
+struct Condition<'a> {
+    value: Vec<&'a str>,
     processed: bool
 }
 
@@ -44,7 +44,10 @@ fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bo
                 if !inside_quotes {
                     parenthesis_depth -= 1;
                 }
-            }
+            },
+            " " => {
+
+            },
             _ => {
 
             }
@@ -55,7 +58,7 @@ fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bo
     false
 }
 
-fn process_compound_condition(condition: Condition, variable_scope: Rc<VariableScope>) -> bool {
+fn solve_condition(condition: Condition, variable_scope: Rc<VariableScope>) -> bool {
     false
 }
 

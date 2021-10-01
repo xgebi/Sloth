@@ -59,22 +59,20 @@ def authorize_web(permission_level: int):
             else:
                 redirect_path = "/"
             if auth is None:
-                return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
+                return redirect("/login" if redirect_path == "/login" else f"/login?redirect={redirect_path}")
             auth = auth.split(":")
             if len(auth) != 3:
-                return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
+                return redirect("/login" if redirect_path == "/login" else f"/login?redirect={redirect_path}")
             user = User(auth[1], auth[2])
             pass_token = user.authorize_user(permissions_level=permission_level)
 
             if not pass_token:
-                return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
+                return redirect("/login" if redirect_path == "/login" else f"/login?redirect={redirect_path}")
 
             if pass_token[0]:
                 user.refresh_login()
                 return fn(*args, permission_level=pass_token[1], **kwargs)
-            if current_app.url_map.bind(host).test(request.path):
-                return redirect("/login" if request.path == "/login" else f"/login?redirect={redirect_path}")
-            return redirect("/")
+            return redirect("/login" if redirect_path == "/login" else f"/login?redirect={redirect_path}")
 
         return wrapper
 
