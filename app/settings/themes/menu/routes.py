@@ -166,9 +166,9 @@ def save_menu(*args, connection, **kwargs):
 def delete_menu(*args, connection, **kwargs):
     filled = json.loads(request.data)
     if not filled["menu"] or len(filled["menu"]) == 0:
-        return json.dumps({"error": "Nothing to delete", }), 400
-    if connection is None:
-        return json.dumps({"error": "Connection to database doesn't exist"})
+        response = make_response(json.dumps({"menuDeleted": filled["menu"]}))
+        response.headers['Content-Type'] = 'application/json'
+        return response, 400
 
     cur = connection.cursor()
     try:
@@ -186,5 +186,6 @@ def delete_menu(*args, connection, **kwargs):
         abort(500)
     cur.close()
     connection.close()
-
-    return json.dumps({"menuDeleted": filled["menu"]}), 204
+    response = make_response(json.dumps({"menuDeleted": filled["menu"]}))
+    response.headers['Content-Type'] = 'application/json'
+    return response, 204
