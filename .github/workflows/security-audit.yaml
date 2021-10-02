@@ -1,23 +1,2 @@
-name: "Security audit"
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'rust/toes/Cargo.toml'
-      - 'rust/toes/Cargo.lock'
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ main ]
-    paths:
-      - 'rust/toes/Cargo.toml'
-      - 'rust/toes/Cargo.lock'
-  schedule:
-    - cron: '24 21 * * 0'
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+name: rust-audit-check
+uses: actions-rs/audit-check@v1.2.0
