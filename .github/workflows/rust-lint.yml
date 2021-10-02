@@ -4,8 +4,8 @@ on:
     branches:
       - main
     paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+      - 'rust/toes/Cargo.toml'
+      - 'rust/toes/Cargo.lock'
 jobs:
   lint:
     name: Lint
