@@ -1,6 +1,9 @@
-name: RustLint
+name: RustAudit
 on:
   push:
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
 jobs:
   lint:
     name: Lint
