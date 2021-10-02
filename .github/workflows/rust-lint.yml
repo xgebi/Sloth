@@ -6,13 +6,11 @@ on:
       - '**/Cargo.lock'
 jobs:
   security_audit:
-    defaults:
-      run:
-        working-directory: ./rust/toes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: audit
+        working-directory: ./rust/toes
         uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
