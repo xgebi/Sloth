@@ -1,9 +1,11 @@
 name: RustAudit
 on:
   push:
+    branches:
+      - main
     paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+      - 'rust/toes/Cargo.toml'
+      - 'rust/toes/Cargo.lock'
 jobs:
   lint:
     name: Lint
