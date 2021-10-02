@@ -3,9 +3,9 @@ on:
   push:
     branches:
       - main
-#    paths:
-#      - 'rust/toes/Cargo.toml'
-#      - 'rust/toes/Cargo.lock'
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
 jobs:
   lint:
     name: Lint
