@@ -1,5 +1,9 @@
 name: RustLint
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
 jobs:
   lint:
     name: Lint
