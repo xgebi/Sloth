@@ -20,7 +20,7 @@ impl VariableScope {
 
     pub(crate) fn remove_last_scope(mut self) {
         if self.scopes.len() > 0 {
-            self.scopes.pop()
+            self.scopes.pop();
         }
     }
 
