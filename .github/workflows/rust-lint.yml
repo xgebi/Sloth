@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: 'rust/toes'
+        working-directory: ./rust/toes
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/audit-check@v1
