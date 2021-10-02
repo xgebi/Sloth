@@ -1,5 +1,6 @@
 name: RustLint
-on: [push, pull_request]
+on:
+  push:
 jobs:
   lint:
     name: Lint
