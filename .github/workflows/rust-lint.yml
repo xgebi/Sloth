@@ -1,13 +1,12 @@
 name: RustLint
-on:
-  push:
-    paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+on: [push, pull_request]
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust/toes
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/audit-check@v1
