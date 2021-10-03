@@ -7,6 +7,7 @@ mod variable_scope;
 mod markdown_parser;
 mod hooks;
 mod compiler;
+mod simple_condition;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
