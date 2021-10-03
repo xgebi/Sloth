@@ -71,7 +71,7 @@ impl SimpleCondition {
             let substring: &str = &s.to_string()[1..s.len() - 1];
             self.evaluate_after_string(String::from(substring), variable_scope)
         } else {
-
+            self.evaluate_lhs_variable(variable_scope)
         }
     }
 
@@ -91,7 +91,71 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_lhs_variable(self, variable_name: String, variable_scope: Rc<VariableScope>) -> bool {
+    fn evaluate_lhs_variable(self, variable_scope: Rc<VariableScope>) -> bool {
+        false
+    }
+
+    fn evaluate_int_int(resolved_lhs: i64, resolved_rhs: i64) -> bool {
+        false
+    }
+
+    fn evaluate_int_float(resolved_lhs: i64, resolved_rhs: f64) -> bool {
+        false
+    }
+
+    fn evaluate_int_string(resolved_lhs: i64, resolved_rhs: String) -> bool {
+        false
+    }
+
+    fn evaluate_int_bool(resolved_lhs: i64, resolved_rhs: bool) -> bool {
+        false
+    }
+
+    fn evaluate_float_int(resolved_lhs: f64, resolved_rhs: i64) -> bool {
+        false
+    }
+
+    fn evaluate_float_float(resolved_lhs: f64, resolved_rhs: f64) -> bool {
+        false
+    }
+
+    fn evaluate_float_string(resolved_lhs: f64, resolved_rhs: String) -> bool {
+        false
+    }
+
+    fn evaluate_float_bool(resolved_lhs: f64, resolved_rhs: bool) -> bool {
+        false
+    }
+
+    fn evaluate_string_int(resolved_lhs: String, resolved_rhs: i64) -> bool {
+        false
+    }
+
+    fn evaluate_string_float(resolved_lhs: String, resolved_rhs: f64) -> bool {
+        false
+    }
+
+    fn evaluate_string_string(resolved_lhs: String, resolved_rhs: String) -> bool {
+        false
+    }
+
+    fn evaluate_string_bool(resolved_lhs: String, resolved_rhs: bool) -> bool {
+        false
+    }
+
+    fn evaluate_bool_int(resolved_lhs: bool, resolved_rhs: i64) -> bool {
+        false
+    }
+
+    fn evaluate_bool_float(resolved_lhs: bool, resolved_rhs: f64) -> bool {
+        false
+    }
+
+    fn evaluate_bool_string(resolved_lhs: bool, resolved_rhs: String) -> bool {
+        false
+    }
+
+    fn evaluate_bool_bool(resolved_lhs: bool, resolved_rhs: bool) -> bool {
         false
     }
 }
