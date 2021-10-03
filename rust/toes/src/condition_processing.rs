@@ -1,6 +1,8 @@
+use std::num::ParseIntError;
 use std::rc::Rc;
 use crate::variable_scope::VariableScope;
 use unicode_segmentation::UnicodeSegmentation;
+use regex::Regex;
 
 struct Condition<'a> {
     value: Vec<&'a str>,
@@ -34,7 +36,10 @@ impl SimpleCondition {
     }
 
     pub(crate) fn evaluate(self, variable_scope: Rc<VariableScope>) {
-
+        let intRe = Regex::new(r"^\d+$").unwrap();
+        let floatRe = Regex::new(r"^\d+[\.,]\d+$").unwrap();
+        let singleStr = Regex::new(r"^'.+'$").unwrap();
+        let doubleStr = Regex::new(r#"^".+"$"#).unwrap();
     }
 }
 
