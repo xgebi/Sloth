@@ -154,22 +154,18 @@ impl SimpleCondition {
     fn evaluate_bool_bool(&self, resolved_lhs: bool, resolved_rhs: bool) -> bool {
         let eq = String::from("eq");
         let ne = String::from("ne");
-        match &self.operator {
-            eq => {
-                if !self.negated {
-                    return resolved_lhs == resolved_rhs;
-                }
-                resolved_lhs != resolved_rhs
-            },
-            ne => {
-                if !self.negated {
-                    return resolved_lhs != resolved_rhs;
-                }
-                resolved_lhs == resolved_rhs
-            },
-            _ => {
-                false
+        if self.operator == eq {
+            if !self.negated {
+                return resolved_lhs == resolved_rhs;
             }
+            resolved_lhs != resolved_rhs
+        } else if self.operator == ne {
+            if !self.negated {
+                return resolved_lhs != resolved_rhs;
+            }
+            resolved_lhs == resolved_rhs
+        } else {
+            false
         }
     }
 }
@@ -208,7 +204,7 @@ mod tests {
             rhs: "true".to_string(),
             operator: "ne".to_string()
         };
-        assert_eq!(cond.evaluate_bool_bool(true, true), true);
+        assert_eq!(cond.evaluate_bool_bool(true, true), false);
     }
 
     #[test]
@@ -219,6 +215,6 @@ mod tests {
             rhs: "true".to_string(),
             operator: "ne".to_string()
         };
-        assert_eq!(cond.evaluate_bool_bool(true, true), false);
+        assert_eq!(cond.evaluate_bool_bool(true, true), true);
     }
 }
