@@ -91,12 +91,41 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_int_int(resolved_lhs: i64, resolved_rhs: i64) -> bool {
-        false
+    fn evaluate_int_int(&self, resolved_lhs: i64, resolved_rhs: i64) -> bool {
+        if self.operator.eq(&String::from("gte")) {
+            resolved_lhs >= resolved_rhs
+        } else if self.operator.eq(&String::from("gt")) {
+            resolved_lhs > resolved_rhs
+        } else if self.operator.eq(&String::from("lte")) {
+            resolved_lhs <= resolved_rhs
+        } else if self.operator.eq(&String::from("lt")) {
+            resolved_lhs < resolved_rhs
+        } else if self.operator.eq(&String::from("eq")) {
+            resolved_lhs == resolved_rhs
+        } else if self.operator.eq(&String::from("ne")) {
+            resolved_lhs != resolved_rhs
+        } else {
+            false
+        }
     }
 
-    fn evaluate_int_float(resolved_lhs: i64, resolved_rhs: f64) -> bool {
-        false
+    fn evaluate_int_float(&self, resolved_lhs: i64, resolved_rhs: f64) -> bool {
+        let lhs = resolved_lhs as f64;
+        if self.operator.eq(&String::from("gte")) {
+            lhs >= resolved_rhs
+        } else if self.operator.eq(&String::from("gt")) {
+            lhs > resolved_rhs
+        } else if self.operator.eq(&String::from("lte")) {
+            lhs <= resolved_rhs
+        } else if self.operator.eq(&String::from("lt")) {
+            lhs < resolved_rhs
+        } else if self.operator.eq(&String::from("eq")) {
+            lhs == resolved_rhs
+        } else if self.operator.eq(&String::from("ne")) {
+            lhs != resolved_rhs
+        } else {
+            false
+        }
     }
 
     fn evaluate_int_string(resolved_lhs: i64, resolved_rhs: String) -> bool {
@@ -107,12 +136,41 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_float_int(resolved_lhs: f64, resolved_rhs: i64) -> bool {
-        false
+    fn evaluate_float_int(&self, resolved_lhs: f64, resolved_rhs: i64) -> bool {
+        let rhs = resolved_rhs as f64;
+        if self.operator.eq(&String::from("gte")) {
+            resolved_lhs >= rhs
+        } else if self.operator.eq(&String::from("gt")) {
+            resolved_lhs > rhs
+        } else if self.operator.eq(&String::from("lte")) {
+            resolved_lhs <= rhs
+        } else if self.operator.eq(&String::from("lt")) {
+            resolved_lhs < rhs
+        } else if self.operator.eq(&String::from("eq")) {
+            resolved_lhs == rhs
+        } else if self.operator.eq(&String::from("ne")) {
+            resolved_lhs != rhs
+        } else {
+            false
+        }
     }
 
-    fn evaluate_float_float(resolved_lhs: f64, resolved_rhs: f64) -> bool {
-        false
+    fn evaluate_float_float(&self, resolved_lhs: f64, resolved_rhs: f64) -> bool {
+        if self.operator.eq(&String::from("gte")) {
+            resolved_lhs >= resolved_rhs
+        } else if self.operator.eq(&String::from("gt")) {
+            resolved_lhs > resolved_rhs
+        } else if self.operator.eq(&String::from("lte")) {
+            resolved_lhs <= resolved_rhs
+        } else if self.operator.eq(&String::from("lt")) {
+            resolved_lhs < resolved_rhs
+        } else if self.operator.eq(&String::from("eq")) {
+            resolved_lhs == resolved_rhs
+        } else if self.operator.eq(&String::from("ne")) {
+            resolved_lhs != resolved_rhs
+        } else {
+            false
+        }
     }
 
     fn evaluate_float_string(resolved_lhs: f64, resolved_rhs: String) -> bool {
