@@ -7,6 +7,37 @@ struct Condition<'a> {
     processed: bool
 }
 
+struct SimpleCondition {
+    negated: bool,
+    lhs: String,
+    rhs: String,
+    operator: String
+}
+
+impl SimpleCondition {
+    pub(crate) fn new_from_lhs(lhs: String) -> SimpleCondition {
+        SimpleCondition {
+            lhs,
+            rhs: String::new(),
+            operator: String::new(),
+            negated: false
+        }
+    }
+
+    pub(crate) fn new_from_negation(negated: bool) -> SimpleCondition {
+        SimpleCondition {
+            lhs: String::new(),
+            rhs: String::new(),
+            operator: String::new(),
+            negated
+        }
+    }
+
+    pub(crate) fn evaluate(self, variable_scope: Rc<VariableScope>) {
+
+    }
+}
+
 fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bool {
     if condition.to_lowercase() == "true" {
         return true;
@@ -21,7 +52,7 @@ fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bo
 
     let mut parenthesis_depth: u16 = 0;
     let mut inside_quotes: bool = false;
-    let mut temp_start: usize = 0;
+    let mut temp_start: usize = usize::MIN;
     for i in 0..condition.value.len() {
         match condition.value[i] {
             "\"" => {
