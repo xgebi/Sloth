@@ -131,8 +131,20 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_string_string(resolved_lhs: String, resolved_rhs: String) -> bool {
-        false
+    fn evaluate_string_string(&self, resolved_lhs: String, resolved_rhs: String) -> bool {
+        if self.operator.eq(&String::from("eq")) {
+            if !self.negated {
+                return resolved_lhs.eq(&resolved_rhs);
+            }
+            resolved_lhs.ne(&resolved_rhs)
+        } else if self.operator.eq(&String::from("ne")) {
+            if !self.negated {
+                return resolved_lhs.ne(&resolved_rhs);
+            }
+            resolved_lhs.eq(&resolved_rhs)
+        } else {
+            false
+        }
     }
 
     fn evaluate_string_bool(resolved_lhs: String, resolved_rhs: bool) -> bool {
@@ -216,5 +228,49 @@ mod tests {
             operator: "ne".to_string()
         };
         assert_eq!(cond.evaluate_bool_bool(true, true), true);
+    }
+
+    #[test]
+    fn test_string_equals_string() {
+        let cond = SimpleCondition {
+            negated: false,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "eq".to_string()
+        };
+        assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), true);
+    }
+
+    #[test]
+    fn test_negates_string_equals_string() {
+        let cond = SimpleCondition {
+            negated: true,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "eq".to_string()
+        };
+        assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), false);
+    }
+
+    #[test]
+    fn test_string_not_equals_string() {
+        let cond = SimpleCondition {
+            negated: false,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "ne".to_string()
+        };
+        assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), false);
+    }
+
+    #[test]
+    fn test_negates_string_not_equals_string() {
+        let cond = SimpleCondition {
+            negated: true,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "ne".to_string()
+        };
+        assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), true);
     }
 }
