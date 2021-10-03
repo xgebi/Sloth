@@ -9,6 +9,24 @@ struct Condition<'a> {
     processed: bool
 }
 
+struct Regexes {
+    int_re: Regex,
+    float_re: Regex,
+    single_str: Regex,
+    double_str: Regex,
+}
+
+impl Regexes {
+    pub(crate) fn new() -> Regexes {
+        Regexes {
+            int_re: Regex::new(r"^\d+$").unwrap(),
+            float_re: Regex::new(r"^\d+[\.,]\d+$").unwrap(),
+            single_str: Regex::new(r"^'.+'$").unwrap(),
+            double_str: Regex::new(r#"^".+"$"#).unwrap(),
+        }
+    }
+}
+
 struct SimpleCondition {
     negated: bool,
     lhs: String,
@@ -36,10 +54,41 @@ impl SimpleCondition {
     }
 
     pub(crate) fn evaluate(self, variable_scope: Rc<VariableScope>) {
-        let intRe = Regex::new(r"^\d+$").unwrap();
-        let floatRe = Regex::new(r"^\d+[\.,]\d+$").unwrap();
-        let singleStr = Regex::new(r"^'.+'$").unwrap();
-        let doubleStr = Regex::new(r#"^".+"$"#).unwrap();
+        let regs = Regexes::new();
+
+        if self.lhs.as_str() == "true" || self.lhs.as_str() == "false" {
+
+        } else if regs.int_re.is_match(self.lhs.as_str()) {
+
+        } else if regs.float_re.is_match(self.lhs.as_str()) {
+
+        } else if regs.single_str.is_match(self.lhs.as_str()) {
+
+        } else if regs.double_str.is_match(self.lhs.as_str()) {
+
+        } else {
+
+        }
+    }
+
+    fn evaluate_after_int(self, variable_scope: Rc<VariableScope>) {
+
+    }
+
+    fn evaluate_after_float(self, variable_scope: Rc<VariableScope>) {
+
+    }
+
+    fn evaluate_after_string(self, variable_scope: Rc<VariableScope>) {
+
+    }
+
+    fn evaluate_after_boolean(self, variable_scope: Rc<VariableScope>) {
+
+    }
+
+    fn evaluate_variable(self, variable_scope: Rc<VariableScope>) {
+
     }
 }
 
