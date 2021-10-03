@@ -53,42 +53,46 @@ impl SimpleCondition {
         }
     }
 
-    pub(crate) fn evaluate(self, variable_scope: Rc<VariableScope>) {
+    pub(crate) fn evaluate(self, variable_scope: Rc<VariableScope>) -> bool {
         let regs = Regexes::new();
 
-        if self.lhs.as_str() == "true" || self.lhs.as_str() == "false" {
-
+        if self.lhs.as_str() == "true" {
+            self.evaluate_after_boolean(true, variable_scope)
+        } else if self.lhs.as_str() == "false" {
+            self.evaluate_after_boolean(false, variable_scope)
         } else if regs.int_re.is_match(self.lhs.as_str()) {
-
+            self.evaluate_after_int(self.lhs.parse::<i64>().unwrap(), variable_scope)
         } else if regs.float_re.is_match(self.lhs.as_str()) {
-
+            self.evaluate_after_float(self.lhs.parse::<f64>().unwrap(), variable_scope)
         } else if regs.single_str.is_match(self.lhs.as_str()) {
-
+            let substring: &str = &s.to_string()[1..s.len() - 1];
+            self.evaluate_after_string(String::from(substring), variable_scope)
         } else if regs.double_str.is_match(self.lhs.as_str()) {
-
+            let substring: &str = &s.to_string()[1..s.len() - 1];
+            self.evaluate_after_string(String::from(substring), variable_scope)
         } else {
 
         }
     }
 
-    fn evaluate_after_int(self, variable_scope: Rc<VariableScope>) {
-
+    fn evaluate_after_int(self, resolved_lhs: i64, variable_scope: Rc<VariableScope>) -> bool {
+        false
     }
 
-    fn evaluate_after_float(self, variable_scope: Rc<VariableScope>) {
-
+    fn evaluate_after_float(self, resolved_lhs: f64, variable_scope: Rc<VariableScope>) -> bool {
+        false
     }
 
-    fn evaluate_after_string(self, variable_scope: Rc<VariableScope>) {
-
+    fn evaluate_after_string(self, resolved_lhs: String, variable_scope: Rc<VariableScope>) -> bool {
+        false
     }
 
-    fn evaluate_after_boolean(self, variable_scope: Rc<VariableScope>) {
-
+    fn evaluate_after_boolean(self, resolved_lhs: bool, variable_scope: Rc<VariableScope>) -> bool {
+        false
     }
 
-    fn evaluate_variable(self, variable_scope: Rc<VariableScope>) {
-
+    fn evaluate_lhs_variable(self, variable_name: String, variable_scope: Rc<VariableScope>) -> bool {
+        false
     }
 }
 
