@@ -59,27 +59,62 @@ impl SimpleCondition {
         } else if regs.int_re.is_match(lhs.as_str()) {
             self.evaluate_after_int(&lhs.parse::<i64>().unwrap(), variable_scope)
         } else if regs.float_re.is_match(lhs.as_str()) {
-            self::SimpleCondition::evaluate_after_float(&lhs.parse::<f64>().unwrap(), variable_scope)
+            self.evaluate_after_float(&lhs.parse::<f64>().unwrap(), variable_scope)
         } else if regs.single_str.is_match(lhs.as_str()) {
             let substring: &str = &lhs[1..lhs.len() - 1];
-            self::SimpleCondition::evaluate_after_string(String::from(substring), variable_scope)
+            self.evaluate_after_string(String::from(substring), variable_scope)
         } else if regs.double_str.is_match(lhs.as_str()) {
             let substring: &str = &self.lhs[1..lhs.len() - 1];
-            self::SimpleCondition::evaluate_after_string(String::from(substring), variable_scope)
+            self.evaluate_after_string(String::from(substring), variable_scope)
         } else {
-            self::SimpleCondition::evaluate_lhs_variable(variable_scope)
+            self.evaluate_lhs_variable(variable_scope)
+        }
+    }
+
+    fn evaluate_lhs_variable(&self, variable_scope: Rc<VariableScope>) -> bool {
+        if variable_scope.variable_exists(&self.lhs) {
+
+            true
+        } else {
+            false
+        }
+    }
+
+    fn evaluate_rhs_variable(&self, variable_scope: Rc<VariableScope>) -> bool {
+        if variable_scope.variable_exists(&self.rhs) {
+
+            true
+        } else {
+            false
         }
     }
 
     fn evaluate_after_int(&self, resolved_lhs: &i64, variable_scope: Rc<VariableScope>) -> bool {
+        let regs = Regexes::new();
+        let rhs = &self.rhs.clone();
+
+        if self.rhs == "true" {
+            false
+        } else if self.rhs == "false" {
+            false
+        } else if regs.int_re.is_match(rhs.as_str()) {
+            self.evaluate_int_int(resolved_lhs, &rhs.parse::<i64>().unwrap(),)
+        } else if regs.float_re.is_match(rhs.as_str()) {
+            self.evaluate_int_float(resolved_lhs, &rhs.parse::<f64>().unwrap())
+        } else if regs.single_str.is_match(rhs.as_str()) {
+            false
+        } else if regs.double_str.is_match(rhs.as_str()) {
+            false
+        } else {
+            self.evaluate_rhs_variable(variable_scope)
+        }
+    }
+
+    fn evaluate_after_float(&self, resolved_lhs: &f64, variable_scope: Rc<VariableScope>) -> bool {
         false
     }
 
-    fn evaluate_after_float(resolved_lhs: &f64, variable_scope: Rc<VariableScope>) -> bool {
-        false
-    }
-
-    fn evaluate_after_string(resolved_lhs: String, variable_scope: Rc<VariableScope>) -> bool {
+    fn evaluate_after_string(&self, resolved_lhs: String, variable_scope: Rc<VariableScope>) -> bool {
         false
     }
 
@@ -87,11 +122,7 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_lhs_variable(variable_scope: Rc<VariableScope>) -> bool {
-        false
-    }
-
-    fn evaluate_int_int(&self, resolved_lhs: i64, resolved_rhs: i64) -> bool {
+    fn evaluate_int_int(&self, resolved_lhs: &i64, resolved_rhs: &i64) -> bool {
         if self.operator.eq(&String::from("gte")) {
             resolved_lhs >= resolved_rhs
         } else if self.operator.eq(&String::from("gt")) {
@@ -109,8 +140,8 @@ impl SimpleCondition {
         }
     }
 
-    fn evaluate_int_float(&self, resolved_lhs: i64, resolved_rhs: f64) -> bool {
-        let lhs = resolved_lhs as f64;
+    fn evaluate_int_float(&self, resolved_lhs: &i64, resolved_rhs: &f64) -> bool {
+        let lhs = resolved_lhs as &f64;
         if self.operator.eq(&String::from("gte")) {
             lhs >= resolved_rhs
         } else if self.operator.eq(&String::from("gt")) {
