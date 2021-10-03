@@ -151,7 +151,74 @@ impl SimpleCondition {
         false
     }
 
-    fn evaluate_bool_bool(resolved_lhs: bool, resolved_rhs: bool) -> bool {
-        false
+    fn evaluate_bool_bool(&self, resolved_lhs: bool, resolved_rhs: bool) -> bool {
+        let eq = String::from("eq");
+        let ne = String::from("ne");
+        match &self.operator {
+            eq => {
+                if !self.negated {
+                    return resolved_lhs == resolved_rhs;
+                }
+                resolved_lhs != resolved_rhs
+            },
+            ne => {
+                if !self.negated {
+                    return resolved_lhs != resolved_rhs;
+                }
+                resolved_lhs == resolved_rhs
+            },
+            _ => {
+                false
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::simple_condition::SimpleCondition;
+
+    #[test]
+    fn test_bool_equals_bool() {
+        let cond = SimpleCondition {
+            negated: false,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "eq".to_string()
+        };
+        assert_eq!(cond.evaluate_bool_bool(true, true), true);
+    }
+
+    #[test]
+    fn test_negated_bool_equals_bool() {
+        let cond = SimpleCondition {
+            negated: true,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "eq".to_string()
+        };
+        assert_eq!(cond.evaluate_bool_bool(true, true), false);
+    }
+
+    #[test]
+    fn test_bool_not_equals_bool() {
+        let cond = SimpleCondition {
+            negated: false,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "ne".to_string()
+        };
+        assert_eq!(cond.evaluate_bool_bool(true, true), true);
+    }
+
+    #[test]
+    fn test_negated_bool_not_equals_bool() {
+        let cond = SimpleCondition {
+            negated: true,
+            lhs: "true".to_string(),
+            rhs: "true".to_string(),
+            operator: "ne".to_string()
+        };
+        assert_eq!(cond.evaluate_bool_bool(true, true), false);
     }
 }
