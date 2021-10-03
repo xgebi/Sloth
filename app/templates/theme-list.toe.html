@@ -24,8 +24,12 @@
         <tbody>
             <tr toe:for="theme in themes">
                 <td toe:text="theme['displayName']"></td>
-                <td toe:if="theme['choosable'] and theme['name'] != active_theme"><a href="/settings/themes/activate/{{ theme["name"] }}">Choose theme</a></td>
-                <td toe:if="not theme['choosable'] or not theme['name'] != active_theme"></td>
+                <toe:fragment toe:if="theme['choosable']">
+                    <toe:fragment toe:if="theme['name'] neq active_theme">
+                        <td><a toe:href="'/settings/themes/activate/' + theme['name']">Choose theme</a></td>
+                    </toe:fragment>
+                </toe:fragment>
+                <td toe:if="theme['name'] neq active_theme"></td>
             </tr>
         </tbody>
     </table>

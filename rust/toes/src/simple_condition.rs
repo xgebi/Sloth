@@ -133,7 +133,7 @@ impl SimpleCondition {
             resolved_lhs < resolved_rhs
         } else if self.operator.eq(&String::from("eq")) {
             resolved_lhs == resolved_rhs
-        } else if self.operator.eq(&String::from("ne")) {
+        } else if self.operator.eq(&String::from("neq")) {
             resolved_lhs != resolved_rhs
         } else {
             false
@@ -152,7 +152,7 @@ impl SimpleCondition {
             lhs < resolved_rhs
         } else if self.operator.eq(&String::from("eq")) {
             lhs == resolved_rhs
-        } else if self.operator.eq(&String::from("ne")) {
+        } else if self.operator.eq(&String::from("neq")) {
             lhs != resolved_rhs
         } else {
             false
@@ -179,7 +179,7 @@ impl SimpleCondition {
             resolved_lhs < rhs
         } else if self.operator.eq(&String::from("eq")) {
             resolved_lhs == rhs
-        } else if self.operator.eq(&String::from("ne")) {
+        } else if self.operator.eq(&String::from("neq")) {
             resolved_lhs != rhs
         } else {
             false
@@ -197,7 +197,7 @@ impl SimpleCondition {
             resolved_lhs < resolved_rhs
         } else if self.operator.eq(&String::from("eq")) {
             resolved_lhs == resolved_rhs
-        } else if self.operator.eq(&String::from("ne")) {
+        } else if self.operator.eq(&String::from("neq")) {
             resolved_lhs != resolved_rhs
         } else {
             false
@@ -226,7 +226,7 @@ impl SimpleCondition {
                 return resolved_lhs.eq(&resolved_rhs);
             }
             resolved_lhs.ne(&resolved_rhs)
-        } else if self.operator.eq(&String::from("ne")) {
+        } else if self.operator.eq(&String::from("neq")) {
             if !self.negated {
                 return resolved_lhs.ne(&resolved_rhs);
             }
@@ -254,13 +254,13 @@ impl SimpleCondition {
 
     fn evaluate_bool_bool(&self, resolved_lhs: bool, resolved_rhs: bool) -> bool {
         let eq = String::from("eq");
-        let ne = String::from("ne");
+        let neq = String::from("neq");
         if self.operator == eq {
             if !self.negated {
                 return resolved_lhs == resolved_rhs;
             }
             resolved_lhs != resolved_rhs
-        } else if self.operator == ne {
+        } else if self.operator == neq {
             if !self.negated {
                 return resolved_lhs != resolved_rhs;
             }
@@ -303,7 +303,7 @@ mod tests {
             negated: false,
             lhs: "true".to_string(),
             rhs: "true".to_string(),
-            operator: "ne".to_string()
+            operator: "neq".to_string()
         };
         assert_eq!(cond.evaluate_bool_bool(true, true), false);
     }
@@ -314,7 +314,7 @@ mod tests {
             negated: true,
             lhs: "true".to_string(),
             rhs: "true".to_string(),
-            operator: "ne".to_string()
+            operator: "neq".to_string()
         };
         assert_eq!(cond.evaluate_bool_bool(true, true), true);
     }
@@ -347,7 +347,7 @@ mod tests {
             negated: false,
             lhs: "true".to_string(),
             rhs: "true".to_string(),
-            operator: "ne".to_string()
+            operator: "neq".to_string()
         };
         assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), false);
     }
@@ -358,7 +358,7 @@ mod tests {
             negated: true,
             lhs: "true".to_string(),
             rhs: "true".to_string(),
-            operator: "ne".to_string()
+            operator: "neq".to_string()
         };
         assert_eq!(cond.evaluate_string_string("aaa".to_string(), "aaa".to_string()), true);
     }
