@@ -517,8 +517,7 @@ class PostGenerator:
             print(e)
             traceback.print_exc()
 
-    def prepare_categories_tags(self, *args, post: Dict, **kwargs) -> tuple[
-        list[dict[str, Any]], list[dict[str, Any]]]:
+    def prepare_categories_tags(self, *args, post: Dict, **kwargs) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         try:
             with self.connection.cursor() as cur:
                 cur.execute(
