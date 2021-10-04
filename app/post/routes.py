@@ -18,7 +18,7 @@ from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
-from app.utilities.db_connection import db_connection_legacy, db_connection
+from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
 
 
@@ -316,6 +316,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
         print(traceback.format_exc())
         print("db error B")
         print(e)
+        connection.close()
         abort(500)
 
     cur.close()
@@ -385,7 +386,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     )
 
 
-def separate_taxonomies(*args, taxonomies, post_taxonomies, **kwargs) -> (List[Dict], List[Dict]):
+def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs) -> (List[Dict], List[Dict]):
     """
     Separates taxonomies to tags and categories
 
@@ -463,7 +464,7 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
                 cur.execute("""SELECT content, section_type, position
                         FROM sloth_post_sections
                         WHERE post = %s
-                        ORDER BY position ASC;""",
+                        ORDER BY position;""",
                             (original_post,))
                 sections = [{
                     "content": "",
@@ -640,34 +641,30 @@ def show_taxonomy(*args, permission_level: int, connection: psycopg.Connection, 
 
 @post.route("/post/<type_id>/formats")
 @authorize_web(0)
-@db_connection_legacy
-def show_formats(*args, permission_level, connection, type_id, **kwargs):
+@db_connection
+def show_formats(*args, permission_level: int, connection: psycopg.Connection, type_id: str, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     lang_id = get_default_language(connection=connection)["uuid"]
 
-    cur = connection.cursor()
-    taxonomy = {}
     try:
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid, slug, display_name, deletable
-                 FROM sloth_post_formats
-                 WHERE post_type = %s"""
-            ),
-            (type_id,)
-        )
-        post_formats = [{
-            "uuid": pt[0],
-            "slug": pt[1],
-            "display_name": pt[2],
-            "deletable": pt[3]
-        } for pt in cur.fetchall()]
+        with connection.cursor() as cur:
+            cur.execute(
+                    """SELECT uuid, slug, display_name, deletable
+                     FROM sloth_post_formats
+                     WHERE post_type = %s""",
+                (type_id,))
+            post_formats = [{
+                "uuid": pt[0],
+                "slug": pt[1],
+                "display_name": pt[2],
+                "deletable": pt[3]
+            } for pt in cur.fetchall()]
     except Exception as e:
         print("db error C")
+        connection.close()
         abort(500)
 
-    cur.close()
     # current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_language = get_default_language(connection=connection)
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
@@ -692,56 +689,45 @@ def show_formats(*args, permission_level, connection, type_id, **kwargs):
 
 @post.route("/api/post/formats", methods=["POST", "PUT"])
 @authorize_web(0)
-@db_connection_legacy
-def save_post_format(*args, permission_level, connection, **kwargs):
+@db_connection
+def save_post_format(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
-    cur = connection.cursor()
     slug_changed = False
     try:
-        if filled['uuid'] != 'new':
-            cur.execute(
-                sql.SQL("""SELECT slug FROM sloth_post_formats WHERE uuid = %s;"""),
-                (filled["uuid"],)
-            )
-            old_slug = cur.fetchone()[0]
-            if filled['slug'] != old_slug:
-                slug_changed = True
+        with connection.cursor() as cur:
+            if filled['uuid'] != 'new':
+                cur.execute("""SELECT slug FROM sloth_post_formats WHERE uuid = %s;""",
+                    (filled["uuid"],))
+                old_slug = cur.fetchone()[0]
+                if filled['slug'] != old_slug:
+                    slug_changed = True
 
-        if slug_changed or filled['uuid'] == 'new':
-            cur.execute(
-                sql.SQL(
-                    """SELECT count(slug) FROM sloth_post_formats 
-                    WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;"""
-                ),
-                (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"])
-            )
-            similar = cur.fetchone()[0]
-            if int(similar) > 0:
-                filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+            if slug_changed or filled['uuid'] == 'new':
+                cur.execute(
+                        """SELECT count(slug) FROM sloth_post_formats 
+                        WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;""",
+                    (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
+                similar = cur.fetchone()[0]
+                if int(similar) > 0:
+                    filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
-        if filled['uuid'] == 'new':
-            cur.execute(
-                sql.SQL(
-                    """INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
-                    VALUES (%s, %s, %s, %s, %s) RETURNING uuid, slug, display_name, deletable;"""
-                ),
-                (str(uuid.uuid4()), filled['slug'], filled["display_name"], filled["post_type_uuid"], True)
-            )
-        else:
-            cur.execute(
-                sql.SQL(
-                    """UPDATE sloth_post_formats SET slug = %s, display_name = %s 
-                    WHERE uuid = %s RETURNING uuid, slug, display_name, deletable;"""
-                ),
-                (filled['slug'], filled["display_name"], filled["uuid"])
-            )
-        raw_result = cur.fetchone()
-        connection.commit()
+            if filled['uuid'] == 'new':
+                cur.execute(
+                        """INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
+                        VALUES (%s, %s, %s, %s, %s) RETURNING uuid, slug, display_name, deletable;""",
+                    (str(uuid.uuid4()), filled['slug'], filled["display_name"], filled["post_type_uuid"], True))
+            else:
+                cur.execute(
+                        """UPDATE sloth_post_formats SET slug = %s, display_name = %s 
+                        WHERE uuid = %s RETURNING uuid, slug, display_name, deletable;""",
+                    (filled['slug'], filled["display_name"], filled["uuid"]))
+            raw_result = cur.fetchone()
+            connection.commit()
     except Exception as e:
         print("db error C")
+        connection.close()
         abort(500)
 
-    cur.close()
     connection.close()
 
     return json.dumps({
@@ -754,28 +740,21 @@ def save_post_format(*args, permission_level, connection, **kwargs):
 
 @post.route("/api/post/formats", methods=["DELETE"])
 @authorize_web(0)
-@db_connection_legacy
-def delete_post_format(*args, permission_level, connection, **kwargs):
+@db_connection
+def delete_post_format(*args, permission_level, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
-    cur = connection.cursor()
     try:
-        cur.execute(
-            sql.SQL(
-                """DELETE FROM sloth_post_formats
-                 WHERE uuid = %s AND deletable = %s"""
-            ),
-            (filled["uuid"], True)
-        )
-        connection.commit()
-        cur.execute(
-            sql.SQL(
-                """SELECT uuid FROM sloth_post_formats
-                 WHERE uuid = %s"""
-            ),
-            (filled["uuid"],)
-        )
+        with connection.close() as cur:
+            cur.execute(
+                    """DELETE FROM sloth_post_formats
+                     WHERE uuid = %s AND deletable = %s""",
+                (filled["uuid"], True))
+            connection.commit()
+            cur.execute(
+                    """SELECT uuid FROM sloth_post_formats
+                     WHERE uuid = %s""",
+                (filled["uuid"],))
         if len(cur.fetchall()) > 0:
-            cur.close()
             connection.close()
             return json.dumps({
                 "uuid": filled["uuid"],
@@ -783,9 +762,9 @@ def delete_post_format(*args, permission_level, connection, **kwargs):
             }), 406
     except Exception as e:
         print("db error C")
+        connection.close()
         abort(500)
 
-    cur.close()
     connection.close()
 
     return json.dumps({
@@ -796,27 +775,22 @@ def delete_post_format(*args, permission_level, connection, **kwargs):
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
-@db_connection_legacy
-def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
+@db_connection
+def show_post_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str, taxonomy_id: str, taxonomy_type: str, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    cur = connection.cursor()
-    temp_taxonomy = []
     try:
-        cur.execute(
-            sql.SQL("""SELECT slug, display_name 
-            FROM sloth_taxonomy WHERE post_type = %s AND uuid = %s"""),
-            [type_id, taxonomy_id]
-        )
-        temp_taxonomy = cur.fetchone()
+        with connection.cursor() as cur:
+            cur.execute("""SELECT slug, display_name 
+                FROM sloth_taxonomy WHERE post_type = %s AND uuid = %s""",
+                        (type_id, taxonomy_id))
+            temp_taxonomy = cur.fetchone()
     except Exception as e:
-        import pdb;
-        pdb.set_trace()
         print("db error C")
+        connection.close()
         abort(500)
 
-    cur.close()
     default_language = get_default_language(connection=connection)
     current_lang, languages = get_languages(connection=connection)
     connection.close()
@@ -841,42 +815,38 @@ def show_post_taxonomy_item(*args, permission_level, connection, type_id, taxono
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["POST", "PUT"])
 @authorize_web(0)
-@db_connection_legacy
-def save_post_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_id, taxonomy_type, **kwargs):
-    cur = connection.cursor()
+@db_connection
+def save_post_taxonomy_item(*args, connection: psycopg.Connection, type_id: str, taxonomy_id: str, taxonomy_type: str, **kwargs):
     filled = request.form
 
     if filled["slug"] or filled["display_name"]:
         redirect(f"/post/{type_id}/taxonomy/{taxonomy_id}?error=missing_data")
     try:
-        cur.execute(
-            sql.SQL("SELECT display_name FROM sloth_taxonomy WHERE uuid = %s;"),
-            [taxonomy_id]
-        )
-        res = cur.fetchall()
-        if len(res) == 0:
-            cur.execute(
-                sql.SQL(
-                    """INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
-                    VALUES (%s, %s, %s, %s, %s, %s);"""
-                ),
-                (taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type, filled["language"])
-            )
-        else:
-            cur.execute(sql.SQL("""UPDATE sloth_taxonomy SET slug = %s, display_name = %s WHERE uuid = %s;"""),
-                        [filled["slug"], filled["display_name"], taxonomy_id])
-        connection.commit()
+        with connection.cursor() as cur:
+            cur.execute("SELECT display_name FROM sloth_taxonomy WHERE uuid = %s;",
+                        (taxonomy_id, ))
+            res = cur.fetchall()
+            if len(res) == 0:
+                cur.execute(
+                        """INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                        VALUES (%s, %s, %s, %s, %s, %s);""",
+                    (taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type, filled["language"]))
+            else:
+                cur.execute("""UPDATE sloth_taxonomy SET slug = %s, display_name = %s WHERE uuid = %s;""",
+                            (filled["slug"], filled["display_name"], taxonomy_id))
+            connection.commit()
     except Exception as e:
+        connection.close()
         return redirect(f"/post/{type_id}/taxonomy/{taxonomy_type}/{taxonomy_id}?error=db")
-    cur.close()
+
     connection.close()
     return redirect(f"/post/{type_id}/taxonomy/{taxonomy_type}/{taxonomy_id}")
 
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/new")
 @authorize_web(0)
-@db_connection_legacy
-def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_type, **kwargs):
+@db_connection
+def create_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str, taxonomy_type: str, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
@@ -903,43 +873,32 @@ def create_taxonomy_item(*args, permission_level, connection, type_id, taxonomy_
 # API
 @post.route("/api/post/media/<lang_id>", methods=["GET"])
 @authorize_rest(0)
-@db_connection_legacy
-def get_media_data(*args, connection, lang_id: str, **kwargs):
-    if connection is None:
-        abort(500)
-
-    cur = connection.cursor()
-    media = []
+@db_connection
+def get_media_data(*args, connection: psycopg.Connection, lang_id: str, **kwargs):
     try:
-        cur.execute(
-            sql.SQL("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
-        )
-        site_url = cur.fetchone()
-        site_url = site_url[0] if len(site_url) > 0 else ""
-        cur.execute(
-            sql.SQL("SELECT uuid, file_path FROM sloth_media")
-        )
-        raw_media = cur.fetchall()
-        media = {medium[0]: {
-            "uuid": medium[0],
-            "filePath": f"{site_url}/{medium[1]}"
-        } for medium in raw_media}
-        cur.execute(
-            sql.SQL(
-                """SELECT media, alt FROM sloth_media_alts
-                           WHERE lang = %s;"""
-            ),
-            (lang_id,)
-        )
-        alts = cur.fetchall()
-        for alt in alts:
-            if media[alt[0]] is not None:
-                media[alt[0]]["alt"] = alt[1]
+        with connection.cursor() as cur:
+            cur.execute("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
+            site_url = cur.fetchone()
+            site_url = site_url[0] if len(site_url) > 0 else ""
+            cur.execute("SELECT uuid, file_path FROM sloth_media")
+            raw_media = cur.fetchall()
+            media = {medium[0]: {
+                "uuid": medium[0],
+                "filePath": f"{site_url}/{medium[1]}"
+            } for medium in raw_media}
+            cur.execute(
+                    """SELECT media, alt FROM sloth_media_alts
+                               WHERE lang = %s;""",
+                (lang_id,))
+            alts = cur.fetchall()
+            for alt in alts:
+                if media[alt[0]] is not None:
+                    media[alt[0]]["alt"] = alt[1]
     except Exception as e:
         print("db error")
+        connection.close()
         abort(500)
 
-    cur.close()
     connection.close()
 
     return json.dumps({"media": list(media.values())})
@@ -948,7 +907,7 @@ def get_media_data(*args, connection, lang_id: str, **kwargs):
 @post.route("/api/post/upload-file", methods=['POST'])
 @authorize_rest(0)
 @db_connection
-def upload_image(*args, file_name, connection: psycopg.Connection, **kwargs):
+def upload_image(*args, file_name: str, connection: psycopg.Connection, **kwargs):
     """
     API endpoint for uploading a file
     TODO check file_name type
