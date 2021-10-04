@@ -4,7 +4,7 @@ import psycopg
 import uuid
 
 from app.authorization.authorize import authorize_rest
-from app.utilities.db_connection import db_connection_legacy
+from app.utilities.db_connection import db_connection
 
 from app.api.taxonomy import taxonomy
 from app.post.routes import separate_taxonomies
@@ -12,7 +12,7 @@ from app.post.routes import separate_taxonomies
 
 @taxonomy.route("/api/taxonomy/category/new", methods=["POST"])
 @authorize_rest(0)
-@db_connection_legacy
+@db_connection
 def create_category(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
 
@@ -41,11 +41,11 @@ def create_category(*args, connection: psycopg.Connection, **kwargs):
         response = make_response(json.dumps({"error": True}))
         response.headers['Content-Type'] = 'application/json'
         code = 500
-
+        connection.close()
         return response, code
 
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
-
+    connection.close()
     response = make_response(json.dumps(categories))
     response.headers['Content-Type'] = 'application/json'
     code = 200

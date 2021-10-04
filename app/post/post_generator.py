@@ -1,10 +1,11 @@
+import psycopg
 from flask import current_app
 from psycopg2 import sql
 from pathlib import Path
 import os
 import threading
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Tuple, Optional, Any
 from datetime import datetime
 import codecs
 from xml.dom import minidom
@@ -16,23 +17,21 @@ import copy
 
 from app.post import get_translations, get_taxonomy_for_post_preped_for_listing
 from app.utilities import get_related_posts
-from app.utilities.db_connection import db_connection_legacy
+from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
+
 
 class PostGenerator:
     runnable = True
     theme_path = ""
     menus = {}
 
-    @db_connection_legacy
-    def __init__(self, *args, connection, **kwargs):
+    @db_connection
+    def __init__(self, *args, connection: psycopg.Connection, **kwargs):
         self.settings = {}
-        if connection is None:
-            self.is_runnable = False
-
         self.connection = connection
         self.config = current_app.config
         self.menus = self.get_menus()
@@ -175,7 +174,8 @@ class PostGenerator:
         self.set_translatable_individual_settings_by_post_type(connection=self.connection, post_type=post_type["uuid"])
         # generate posts
         for post in posts:
-            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path, multiple=True)
+            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
+                               multiple=True)
         # generate archive and RSS if enabled
         if post_type["archive_enabled"]:
             self.generate_archive(posts=posts, post_type=post_type, output_path=output_path, language=language)
@@ -186,13 +186,15 @@ class PostGenerator:
 
         if post_type["categories_enabled"]:
             self.generate_taxonomy(taxonomy=categories, language=language, output_path=output_path,
-                                   post_type=post_type, title=self.settings["category-title"][language["uuid"]]["content"])
+                                   post_type=post_type,
+                                   title=self.settings["category-title"][language["uuid"]]["content"])
 
         if post_type["tags_enabled"]:
             self.generate_taxonomy(taxonomy=tags, language=language, output_path=output_path,
                                    post_type=post_type, title=self.settings["tag-title"][language["uuid"]]["content"])
 
-    def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]], generate_all=False, **kwargs):
+    def generate_posts_for_language(self, *args, language: Dict[str, str], post_types: List[Dict[str, str]],
+                                    generate_all=False, **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
             # path for main language
             output_path = Path(self.config["OUTPUT_PATH"])
@@ -280,7 +282,7 @@ class PostGenerator:
                         INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                         WHERE spl.post = %s;"""
                     ),
-                    (post['uuid'], )
+                    (post['uuid'],)
                 )
                 post["libraries"] = [{
                     "location": lib[0],
@@ -384,14 +386,16 @@ class PostGenerator:
                 "format_uuid": post[17],
                 "format_slug": post[18],
                 "format_name": post[19],
-                "meta_description": post[20] if len(post) >= 21 and post[20] is not None and len(post[20]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
-                "social_description": post[21] if len(post) >= 22 and post[21] is not None and len(post[21]) > 0 else sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+                "meta_description": post[20] if len(post) >= 21 and post[20] is not None and len(post[20]) > 0 else
+                sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+                "social_description": post[21] if len(post) >= 22 and post[21] is not None and len(post[21]) > 0 else
+                sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
                 "sections": sections
             })
 
         return posts
 
-    def prepare_single_post(self, *args, post, regenerate_taxonomies, multiple: bool = False, **kwargs):
+    def prepare_single_post(self, *args, post: Dict, regenerate_taxonomies: List, multiple: bool = False, **kwargs):
         self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
@@ -410,7 +414,8 @@ class PostGenerator:
             # path for other languages
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
             post["related_posts"] = get_related_posts(connection=self.connection, post=post)
-        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path, multiple=multiple)
+        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
+                           multiple=multiple)
 
         if post_type["archive_enabled"]:
             posts = self.get_posts_from_post_type_language(
@@ -457,7 +462,8 @@ class PostGenerator:
             )
             if len(posts) > 0:
                 self.generate_archive(
-                    posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item, title=title
+                    posts=posts, post_type=post_type, output_path=output_path, language=language, taxonomy=item,
+                    title=title
                 )
                 self.generate_rss(
                     output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]),
@@ -465,93 +471,86 @@ class PostGenerator:
                     language=language
                 )
 
-    def clean_taxonomy(self, *args, taxonomies_for_cleanup, **kwargs):
-        cur = self.connection.cursor()
+    def clean_taxonomy(self, *args, taxonomies_for_cleanup: List, **kwargs):
         try:
-            for taxonomy in taxonomies_for_cleanup:
-                cur.execute(
-                    sql.SQL(
+            with self.connection.cursor() as cur:
+                for taxonomy in taxonomies_for_cleanup:
+                    cur.execute(
                         """SELECT st.slug, st.taxonomy_type, sls.uuid, sls.short_name, spt.uuid, spt.slug
-                        FROM sloth_taxonomy AS st
-                        INNER JOIN sloth_language_settings AS sls ON st.lang = sls.uuid
-                        INNER JOIN sloth_post_types spt on st.post_type = spt.uuid
-                        WHERE st.uuid = %s"""
-                    ),
-                    (taxonomy["taxonomy"],)
-                )
-                raw_taxonomy = cur.fetchone()
-                taxonomy["slug"] = raw_taxonomy[0]
-                taxonomy["type"] = raw_taxonomy[1]
-                language = {"short_name": raw_taxonomy[3], "uuid": raw_taxonomy[2]}
-                post_type = {"slug": raw_taxonomy[5], "uuid": raw_taxonomy[4]}
-                if language["uuid"] == self.settings["main_language"]['settings_value']:
-                    # path for main language
-                    posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy["type"],
-                                          taxonomy["slug"])
-                    output_path = Path(self.config["OUTPUT_PATH"])
-                else:
-                    posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"],
-                                          taxonomy["type"], taxonomy["slug"])
-                    output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+                            FROM sloth_taxonomy AS st
+                            INNER JOIN sloth_language_settings AS sls ON st.lang = sls.uuid
+                            INNER JOIN sloth_post_types spt on st.post_type = spt.uuid
+                            WHERE st.uuid = %s""",
+                        (taxonomy["taxonomy"],))
+                    raw_taxonomy = cur.fetchone()
+                    taxonomy["slug"] = raw_taxonomy[0]
+                    taxonomy["type"] = raw_taxonomy[1]
+                    language = {"short_name": raw_taxonomy[3], "uuid": raw_taxonomy[2]}
+                    post_type = {"slug": raw_taxonomy[5], "uuid": raw_taxonomy[4]}
+                    if language["uuid"] == self.settings["main_language"]['settings_value']:
+                        # path for main language
+                        posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"], taxonomy["type"],
+                                              taxonomy["slug"])
+                        output_path = Path(self.config["OUTPUT_PATH"])
+                    else:
+                        posts_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type["slug"],
+                                              taxonomy["type"], taxonomy["slug"])
+                        output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
 
-                if os.path.exists(posts_path_dir):
-                    shutil.rmtree(posts_path_dir)
+                    if os.path.exists(posts_path_dir):
+                        shutil.rmtree(posts_path_dir)
 
-                if taxonomy["type"] == "tag":
-                    title = self.settings["tag-title"][language["uuid"]]["content"]
-                elif taxonomy["type"] == "category":
-                    title = self.settings["category-title"][language["uuid"]]["content"]
-                else:
-                    title = self.settings["archive-title"][language["uuid"]]["content"]
-                self.generate_taxonomy(
-                    taxonomy=(taxonomy,),
-                    language=language,
-                    output_path=output_path,
-                    post_type=post_type,
-                    title=title
-                )
+                    if taxonomy["type"] == "tag":
+                        title = self.settings["tag-title"][language["uuid"]]["content"]
+                    elif taxonomy["type"] == "category":
+                        title = self.settings["category-title"][language["uuid"]]["content"]
+                    else:
+                        title = self.settings["archive-title"][language["uuid"]]["content"]
+                    self.generate_taxonomy(
+                        taxonomy=(taxonomy,),
+                        language=language,
+                        output_path=output_path,
+                        post_type=post_type,
+                        title=title
+                    )
         except Exception as e:
             print(e)
             traceback.print_exc()
-        cur.close()
 
-    def prepare_categories_tags(self, *args, post, **kwargs):
-        cur = self.connection.cursor()
+    def prepare_categories_tags(self, *args, post: Dict, **kwargs) -> tuple[
+        list[dict[str, Any]], list[dict[str, Any]]]:
         try:
-            cur.execute(
-                sql.SQL(
+            with self.connection.cursor() as cur:
+                cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
-                    FROM sloth_post_taxonomies as spt INNER JOIN sloth_taxonomy as st ON spt.taxonomy = st.uuid 
-                    WHERE spt.post = %s;"""
-                ),
-                (post["uuid"],)
-            )
-            taxonomies = cur.fetchall()
+                        FROM sloth_post_taxonomies as spt INNER JOIN sloth_taxonomy as st ON spt.taxonomy = st.uuid 
+                        WHERE spt.post = %s;""",
+                    (post["uuid"],))
+                taxonomies = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-        cur.close()
+
         return self.process_categories_tags(taxonomies=taxonomies)
 
-    def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs):
-        cur = self.connection.cursor()
+    def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs) -> tuple[
+        list[dict[str, Any]], list[dict[str, Any]]]:
         try:
-            cur.execute(
-                sql.SQL(
+            with self.connection.cursor() as cur:
+                cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
-                    FROM sloth_taxonomy as st 
-                    WHERE st.post_type = %s AND st.lang = %s;"""
-                ),
-                (post_type["uuid"], language["uuid"])
-            )
-            taxonomies = cur.fetchall()
+                        FROM sloth_taxonomy as st 
+                        WHERE st.post_type = %s AND st.lang = %s;""",
+                    (post_type["uuid"], language["uuid"]))
+                taxonomies = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-        cur.close()
+
         return self.process_categories_tags(taxonomies=taxonomies) if taxonomies is not None else []
 
-    def process_categories_tags(self, *args, taxonomies, **kwargs):
+    def process_categories_tags(self, *args, taxonomies: List, **kwargs) -> tuple[
+        list[dict[str, Any]], list[dict[str, Any]]]:
         categories = []
         tags = []
         for taxonomy in taxonomies:
@@ -576,11 +575,11 @@ class PostGenerator:
     def generate_post(
             self,
             *args,
-            post,
-            output_path,
-            post_type,
-            language,
-            original_post=None,
+            post: Dict,
+            output_path,  # str or Path
+            post_type: Dict,
+            language: Dict,
+            original_post: Optional[Dict] = None,
             multiple: bool = False,
             **kwargs
     ):
@@ -605,7 +604,8 @@ class PostGenerator:
             languages=self.languages
         )
 
-        translations_filtered = [translation for translation in translations_temp if translation["status"].lower() == 'published']
+        translations_filtered = [translation for translation in translations_temp if
+                                 translation["status"].lower() == 'published']
 
         translations = self.get_translation_links(translations=translations_filtered, post_type=post_type, post=post)
 
@@ -630,7 +630,8 @@ class PostGenerator:
                 else:
                     partial_content_with_forms, temp_add_content_form_hooks = self.get_forms_from_text(
                         copy.deepcopy(section["content"]))
-                    partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(partial_content_with_forms)
+                    partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(
+                        partial_content_with_forms)
                     content_with_forms += partial_content_with_forms
                     content_footnotes.extend(partial_content_footnotes)
                     add_content_form_hooks = add_content_form_hooks or temp_add_content_form_hooks
@@ -695,7 +696,7 @@ class PostGenerator:
                         )
                         break
 
-    def get_post_template(self, *args, post_type, post, language, **kwargs) -> str:
+    def get_post_template(self, *args, post_type: Dict, post: Dict, language: Dict, **kwargs) -> Optional[str]:
         # post type, post format, language
         if os.path.isfile(os.path.join(self.theme_path,
                                        f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.toe.html")):
@@ -706,11 +707,13 @@ class PostGenerator:
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post_type['slug']}-{post['format_slug']}.toe.html")
         # post format, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.toe.html")):
+        elif os.path.isfile(
+                os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post['format_slug']}-{language['short_name']}.toe.html")
         # post type, language
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.toe.html")):
+        elif os.path.isfile(
+                os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{post_type['slug']}-{language['short_name']}.toe.html")
         # post type
@@ -732,12 +735,10 @@ class PostGenerator:
             return f.read()
         return None
 
-    def get_translation_links(self, *args, translations, post_type, post, **kwargs):
+    def get_translation_links(self, *args, translations: List, post_type: Dict, post: Dict, **kwargs):
         # {'uuid': '48ab80ef-b83b-40f7-9dab-c3343bae7d0e', 'long_name': 'English', 'short_name': 'en', 'post': 'fb2e1b26-3361-4239-9b97-aedcde0f57cf'}
         # /<short_name>/<post_type_slug>/<post_slug>
         result = []
-        if translations is None:
-            return result
 
         for translation in translations:
             if post['lang'] != translation['lang_uuid']:
@@ -753,7 +754,7 @@ class PostGenerator:
                     })
         return result
 
-    def generate_archive(self, *args, posts, output_path, post_type, language, taxonomy=None, title = "", **kwargs):
+    def generate_archive(self, *args, posts, output_path, post_type, language, taxonomy=None, title="", **kwargs):
         if len(posts) == 0:
             return
 
@@ -762,7 +763,8 @@ class PostGenerator:
         else:
             archive_path_dir = Path(output_path, post_type["slug"])
 
-        if os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.toe.html")):
+        if os.path.isfile(
+                os.path.join(self.theme_path, f"archive-{post_type['slug']}-{language['short_name']}.toe.html")):
             archive_template_path = os.path.join(self.theme_path,
                                                  f"archive-{post_type['slug']}-{language['short_name']}.toe.html")
         elif os.path.isfile(os.path.join(self.theme_path, f"archive-{post_type['slug']}.toe.html")):
@@ -800,7 +802,8 @@ class PostGenerator:
                         data={
                             "posts": posts[lower: upper],
                             "sitename": self.settings["sitename"][language["uuid"]]["content"],
-                            "title": self.settings["archive-title"][language["uuid"]]["content"] if len(title) == 0 else title,
+                            "title": self.settings["archive-title"][language["uuid"]]["content"] if len(
+                                title) == 0 else title,
                             "site_url": self.settings["site_url"]["settings_value"],
                             "page_name": f"Archive for {post_type['display_name']}",
                             "post_type": post_type,
@@ -818,54 +821,48 @@ class PostGenerator:
 
     def get_menus(self, *args, **kwargs):
         menus = {}
-        cur = self.connection.cursor()
         try:
-            cur.execute(
-                sql.SQL("""SELECT name, uuid FROM sloth_menus""")
-            )
-            menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
-            for menu in menus.keys():
+            with self.connection.cursor() as cur:
                 cur.execute(
-                    sql.SQL("""SELECT title, url FROM sloth_menu_items WHERE menu = %s"""),
-                    [menus[menu]["uuid"]]
+                    sql.SQL("""SELECT name, uuid FROM sloth_menus""")
                 )
-                menus[menu]["items"] = [{ "title": item[0], "url": item[1]} for item in cur.fetchall()]
+                menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
+                for menu in menus.keys():
+                    cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",
+                                (menus[menu]["uuid"],)
+                                )
+                    menus[menu]["items"] = [{"title": item[0], "url": item[1]} for item in cur.fetchall()]
         except Exception as e:
             print(f"PostGenerator.get_menus {e}")
             traceback.print_exc()
 
-        cur.close()
         return menus
 
-    def get_protected_post(self, *args, uuid, **kwargs):
+    def get_protected_post(self, *args, uuid: str, **kwargs):
         post = {}
         try:
-            cur = self.connection.cursor()
-            # This is a rudimentary version
-            cur.execute(
-                sql.SQL("""SELECT title, excerpt, content, thumbnail, lang 
-                FROM sloth_posts WHERE uuid = %s;"""),
-                [uuid]
-            )
-            raw_post = cur.fetchone()
-            post["title"] = raw_post[0]
-            excerpt_forms = self.get_forms_from_text(copy.deepcopy(raw_post[1]))
-            content_forms = self.get_forms_from_text(copy.deepcopy(raw_post[2]))
-            md_parser = MarkdownParser()
-            # TODO
-            post["excerpt"] = md_parser.to_html_string(post["excerpt"], hooks=self.hooks, forms=excerpt_forms)
-            post["content"] = md_parser.to_html_string(post["content"], hooks=self.hooks, forms=content_forms)
-            if raw_post[3] is not None:
-                cur.execute(
-                    sql.SQL("""SELECT sm.file_path, sma.alt 
-                                FROM sloth_media AS sm
-                                 INNER JOIN sloth_media_alts sma on sm.uuid = sma.uuid
-                                 WHERE sm.uuid = %s and sma.lang = %s;"""),
-                    (raw_post[3], raw_post[4])
-                )
-                raw_thumbnail = cur.fetchone()
-                post["thumbnail"] = raw_thumbnail[0]
-                post["thumbnail_alt"] = raw_thumbnail[1]
+            with self.connection.cursor() as cur:
+                # This is a rudimentary version
+                cur.execute("""SELECT title, excerpt, content, thumbnail, lang 
+                    FROM sloth_posts WHERE uuid = %s;""",
+                            (uuid,))
+                raw_post = cur.fetchone()
+                post["title"] = raw_post[0]
+                excerpt_forms = self.get_forms_from_text(copy.deepcopy(raw_post[1]))
+                content_forms = self.get_forms_from_text(copy.deepcopy(raw_post[2]))
+                md_parser = MarkdownParser()
+                # TODO
+                post["excerpt"] = md_parser.to_html_string(post["excerpt"], hooks=self.hooks, forms=excerpt_forms)
+                post["content"] = md_parser.to_html_string(post["content"], hooks=self.hooks, forms=content_forms)
+                if raw_post[3] is not None:
+                    cur.execute("""SELECT sm.file_path, sma.alt 
+                                    FROM sloth_media AS sm
+                                     INNER JOIN sloth_media_alts sma on sm.uuid = sma.uuid
+                                     WHERE sm.uuid = %s and sma.lang = %s;""",
+                                (raw_post[3], raw_post[4]))
+                    raw_thumbnail = cur.fetchone()
+                    post["thumbnail"] = raw_thumbnail[0]
+                    post["thumbnail_alt"] = raw_thumbnail[1]
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -873,12 +870,12 @@ class PostGenerator:
         if os.path.isfile(os.path.join(self.theme_path, "secret.toe.html")):
             with open(os.path.join(self.theme_path, "secret.toe.html"), 'r', encoding="utf-8") as f:
                 protected_template = f.read()
-                return protected_template.render(post=post) # TODO redo this
+                return protected_template.render(post=post)  # TODO redo this
 
         else:
             return post
 
-    def set_footer(self, *args, connection, **kwargs):
+    def set_footer(self, *args, **kwargs):
         # Footer for post
         with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read()))
@@ -889,22 +886,18 @@ class PostGenerator:
     def set_translatable_individual_settings_by_name(
             self,
             *args,
-            connection,
+            connection: psycopg.Connection,
             name: str,
             **kwargs):
-        cur = connection.cursor()
         try:
-            cur.execute(
-                sql.SQL("""SELECT uuid, name, content, lang 
-                FROM sloth_localized_strings WHERE name = %s;"""),
-                [name]
-            )
-            raw_items = cur.fetchall()
+            with connection.cursor() as cur:
+                cur.execute("""SELECT uuid, name, content, lang 
+                    FROM sloth_localized_strings WHERE name = %s;""",
+                            (name,))
+                raw_items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-
-        cur.close()
 
         for item in raw_items:
             if name not in self.settings:
@@ -923,50 +916,43 @@ class PostGenerator:
     def set_translatable_individual_settings_by_post_type(
             self,
             *args,
-            connection,
+            connection: psycopg.Connection,
             post_type: str,
             **kwargs):
-        cur = connection.cursor()
         try:
-            cur.execute(
-                sql.SQL("""SELECT uuid, name, content, lang, post_type 
-                FROM sloth_localized_strings WHERE post_type = %s;"""),
-                [post_type]
-            )
-            raw_items = cur.fetchall()
-            for item in raw_items:
-                if post_type not in self.settings:
-                    self.settings[post_type] = {
-                        item[3]: {
+            with connection.cursor() as cur:
+                cur.execute("""SELECT uuid, name, content, lang, post_type 
+                    FROM sloth_localized_strings WHERE post_type = %s;""",
+                            (post_type,))
+                raw_items = cur.fetchall()
+                for item in raw_items:
+                    if post_type not in self.settings:
+                        self.settings[post_type] = {
+                            item[3]: {
+                                "uuid": item[0],
+                                "content": item[2]
+                            }
+                        }
+                    else:
+                        self.settings[post_type][item[3]] = {
                             "uuid": item[0],
                             "content": item[2]
                         }
-                    }
-                else:
-                    self.settings[post_type][item[3]] = {
-                        "uuid": item[0],
-                        "content": item[2]
-                    }
         except Exception as e:
             print(e)
             traceback.print_exc()
 
-        cur.close()
-
-    def set_individual_settings(self, *args, connection, setting_name: str, alternate_name: str = None, settings_type: str = 'sloth',**kwargs):
-        cur = connection.cursor()
+    def set_individual_settings(self, *args, connection: psycopg.Connection, setting_name: str,
+                                alternate_name: str = None, settings_type: str = 'sloth', **kwargs):
         try:
-            cur.execute(
-                sql.SQL("""SELECT settings_name, settings_value, settings_value_type 
-                                FROM sloth_settings WHERE settings_name = %s AND settings_type = %s"""),
-                [setting_name, settings_type]
-            )
-            raw_items = cur.fetchall()
+            with connection.cursor() as cur:
+                cur.execute("""SELECT settings_name, settings_value, settings_value_type 
+                                    FROM sloth_settings WHERE settings_name = %s AND settings_type = %s""",
+                            (setting_name, settings_type))
+                raw_items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-
-        cur.close()
 
         if alternate_name is None:
             for item in raw_items:
@@ -984,17 +970,13 @@ class PostGenerator:
                 }
 
     def get_languages(self):
-        cur = self.connection.cursor()
         try:
-            cur.execute(
-                sql.SQL("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
-            )
-            raw_items = cur.fetchall()
+            with self.connection.cursor() as cur:
+                cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
+                raw_items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-
-        cur.close()
 
         languages = []
         for item in raw_items:
@@ -1012,32 +994,30 @@ class PostGenerator:
             text = text[:text.find(name)] + text[text.find(name) + len(name):]
         return text
 
-    def get_forms_from_text(self, text: str, remove_only: bool = False) -> str:
+    def get_forms_from_text(self, text: str, remove_only: bool = False) -> Optional[tuple[str, bool]]:
         form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
         # get forms
         forms = {}
         try:
-            cur = self.connection.cursor()
-            for name in form_names:
-                forms[name[len("<(form"):-2].strip()] = []
-                cur.execute(
-                    sql.SQL("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
-                    sff.is_required, sff.label FROM sloth_form_fields AS sff
-                    INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
-                    WHERE sf.name = %s ORDER BY sff.position ASC;"""),
-                    (name[len("<(form"):-2].strip(), )
-                )
-                raw_rows = cur.fetchall()
-                for row in raw_rows:
-                    forms[name[len("<(form"):-2].strip()].append({
-                        "uuid": row[0],
-                        "name": row[1],
-                        "position": row[2],
-                        "is_childless": row[3],
-                        "type": row[4],
-                        "is_required": row[5],
-                        "label": row[6],
-                    })
+            with self.connection.cursor() as cur:
+                for name in form_names:
+                    forms[name[len("<(form"):-2].strip()] = []
+                    cur.execute("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
+                        sff.is_required, sff.label FROM sloth_form_fields AS sff
+                        INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
+                        WHERE sf.name = %s ORDER BY sff.position ASC;""",
+                                (name[len("<(form"):-2].strip(),))
+                    raw_rows = cur.fetchall()
+                    for row in raw_rows:
+                        forms[name[len("<(form"):-2].strip()].append({
+                            "uuid": row[0],
+                            "name": row[1],
+                            "position": row[2],
+                            "is_childless": row[3],
+                            "type": row[4],
+                            "is_required": row[5],
+                            "label": row[6],
+                        })
         except Exception as e:
             print(traceback.format_exc())
             return
@@ -1071,13 +1051,7 @@ class PostGenerator:
         return text, len(form_names) > 0
 
     # delete post files
-    def delete_post_files(self, *args, post_type, post, language, **kwargs):
-        post_type_slug = post_type
-        post_slug = post
-        if type(post) is not str:
-            post_slug = post["slug"]
-        if type(post_type) is not str:
-            post_type_slug = post["slug"]
+    def delete_post_files(self, *args, post_type_slug: str, post_slug: str, language: Dict, **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
             # path for main language
             post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
@@ -1089,7 +1063,7 @@ class PostGenerator:
             shutil.rmtree(post_path_dir)
 
     # delete post type files
-    def delete_post_type_post_files(self, *args, post_type, language, **kwargs):
+    def delete_post_type_post_files(self, *args, post_type: Dict, language: Dict, **kwargs):
         if language["uuid"] == self.settings["main_language"]['settings_value']:
             # path for main language
             posts_path_dir = Path(self.config["OUTPUT_PATH"], post_type["slug"])
@@ -1105,46 +1079,42 @@ class PostGenerator:
             *args,
             output_path: Path,
             post_types: List[Dict[str, str]],
-            language,
+            language: Dict,
             generate_all=False,
             **kwargs
     ):
-        self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path, language=language)
+        self.generate_rss(posts=self.prepare_rss_home_data(language=language), output_path=output_path,
+                          language=language)
         if (generate_all and self.config["OUTPUT_PATH"] == str(output_path)) or not generate_all:
             self.generate_sitemap()
         posts = {}
         try:
-            cur = self.connection.cursor()
-
-            for post_type in post_types:
-                cur.execute(
-                    sql.SQL(
+            with self.connection.cursor() as cur:
+                for post_type in post_types:
+                    cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
-                        (SELECT content FROM sloth_post_sections WHERE position = 0 AND post = sp.uuid), 
-                        sp.publish_date FROM sloth_posts AS sp
-                            WHERE post_type = %s AND post_status = 'published' AND lang = %s
-                            ORDER BY publish_date DESC LIMIT %s"""
-                    ),
-                    (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
-                )
-                raw_items = cur.fetchall()
-                md_parser = MarkdownParser()
-                posts[post_type['slug']] = []
+                            (SELECT content FROM sloth_post_sections WHERE position = 0 AND post = sp.uuid), 
+                            sp.publish_date FROM sloth_posts AS sp
+                                WHERE post_type = %s AND post_status = 'published' AND lang = %s
+                                ORDER BY publish_date DESC LIMIT %s""",
+                        (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
+                    raw_items = cur.fetchall()
+                    md_parser = MarkdownParser()
+                    posts[post_type['slug']] = []
 
-                for item in raw_items:
-                    excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
-                    excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
-                    posts[post_type['slug']].append({
-                        "uuid": item[0],
-                        "title": item[1],
-                        "slug": item[2],
-                        "excerpt": excerpt,
-                        "publish_date": item[4],
-                        "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
-                            "%Y-%m-%d %H:%M"),
-                        "post_type_slug": post_type['slug']
-                    })
-            cur.close()
+                    for item in raw_items:
+                        excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
+                        excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
+                        posts[post_type['slug']].append({
+                            "uuid": item[0],
+                            "title": item[1],
+                            "slug": item[2],
+                            "excerpt": excerpt,
+                            "publish_date": item[4],
+                            "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
+                                "%Y-%m-%d %H:%M"),
+                            "post_type_slug": post_type['slug']
+                        })
         except Exception as e:
             print(390)
             print(e)
@@ -1180,58 +1150,53 @@ class PostGenerator:
                 hooks=self.hooks
             ))
 
-    def prepare_rss_home_data(self, *args, language, **kwargs):
+    def prepare_rss_home_data(self, *args, language: Dict, **kwargs):
         try:
-            cur = self.connection.cursor()
-            cur.execute(
-                sql.SQL("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.css, 
-                         A.js, A.use_theme_css, A.use_theme_js,
-                    A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
-                                FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
-                                INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
-                                WHERE C.archive_enabled = %s AND A.post_status = 'published' AND A.lang = %s
-                                ORDER BY A.publish_date DESC LIMIT %s"""),
-                (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value']))
-            )
+            with self.connection.cursor() as cur:
+                cur.execute("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.css, 
+                             A.js, A.use_theme_css, A.use_theme_js,
+                        A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
+                                    FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
+                                    INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
+                                    WHERE C.archive_enabled = %s AND A.post_status = 'published' AND A.lang = %s
+                                    ORDER BY A.publish_date DESC LIMIT %s""",
+                            (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
 
-            posts = [{
-                "uuid": post[0],
-                "slug": post[1],
-                "author_name": post[2],
-                "author_uuid": post[3],
-                "title": post[4],
-                "css": post[5],
-                "js": post[6],
-                "use_theme_css": post[7],
-                "use_theme_js": post[8],
-                "publish_date": post[9],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date": post[10],
-                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[11],
-                "post_type_slug": post[12]
-            } for post in cur.fetchall()]
+                posts = [{
+                    "uuid": post[0],
+                    "slug": post[1],
+                    "author_name": post[2],
+                    "author_uuid": post[3],
+                    "title": post[4],
+                    "css": post[5],
+                    "js": post[6],
+                    "use_theme_css": post[7],
+                    "use_theme_js": post[8],
+                    "publish_date": post[9],
+                    "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "update_date": post[10],
+                    "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "post_status": post[11],
+                    "post_type_slug": post[12]
+                } for post in cur.fetchall()]
 
-            for post in posts:
-                cur.execute(
-                    sql.SQL(
+                for post in posts:
+                    cur.execute(
                         """SELECT content, section_type, position
-                        FROM sloth_post_sections
-                        WHERE post = %s
-                        ORDER BY position ASC;"""
-                    ),
-                    (post["uuid"],)
-                )
-                sections = [{
-                    "content": section[0],
-                    "type": section[1],
-                    "position": section[2]
-                } for section in cur.fetchall()]
+                            FROM sloth_post_sections
+                            WHERE post = %s
+                            ORDER BY position ASC;""",
+                        (post["uuid"],))
+                    sections = [{
+                        "content": section[0],
+                        "type": section[1],
+                        "position": section[2]
+                    } for section in cur.fetchall()]
 
-                post["excerpt"] = sections[0]["content"]
-                post["content"] = "\n".join([section["content"] for section in sections if section["position"] > 0 and section["content"] is not None])
+                    post["excerpt"] = sections[0]["content"]
+                    post["content"] = "\n".join([section["content"] for section in sections if
+                                                 section["position"] > 0 and section["content"] is not None])
 
-            cur.close()
         except Exception as e:
             print(371)
             print(e)
@@ -1239,7 +1204,8 @@ class PostGenerator:
 
         return posts
 
-    def generate_rss(self, *args, output_path: Path, posts, language, post_markdown: bool = False, **kwargs):
+    def generate_rss(self, *args, output_path: bytes, posts: List, language: Dict, post_markdown: bool = False,
+                     **kwargs):
         doc = minidom.Document()
         root_node = doc.createElement('rss')
 
@@ -1272,7 +1238,7 @@ class PostGenerator:
 
         description = doc.createElement('description')
 
-        description_text = doc.createTextNode( self.settings["description"][language["uuid"]]["content"])
+        description_text = doc.createTextNode(self.settings["description"][language["uuid"]]["content"])
         description.appendChild(description_text)
         channel.appendChild(description)
         # <lastBuildDate>Tue, 27 Aug 2019 07:50:51 +0000</lastBuildDate>
@@ -1364,7 +1330,9 @@ class PostGenerator:
                 else:
                     post["excerpt"], ex_footnotes = md_parser.to_html_string(post["excerpt"])
                     post["content"], con_footnotes = md_parser.to_html_string(post["content"])
-                    content_text = doc.createCDATASection(combine_footnotes(text=f"{post['excerpt']} {post['content']}", footnotes=ex_footnotes.extend(con_footnotes)))
+                    content_text = doc.createCDATASection(combine_footnotes(text=f"{post['excerpt']} {post['content']}",
+                                                                            footnotes=ex_footnotes.extend(
+                                                                                con_footnotes)))
             content.appendChild(content_text)
             post_item.appendChild(content)
             channel.appendChild(post_item)
@@ -1388,132 +1356,126 @@ class PostGenerator:
         root_node.setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
         doc.appendChild(root_node)
 
-        cur = self.connection.cursor()
         try:
-            # Get languages
-            cur.execute(
-                sql.SQL("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-            )
-            main_lang = cur.fetchone()[0]
-            cur.execute(
-                sql.SQL("""SELECT uuid, short_name FROM sloth_language_settings;""")
-            )
-            langs = {lang[0]: {
-                "uuid": lang[0],
-                "path": f"{lang[1]}" if lang[0] != main_lang else "",
-            } for lang in cur.fetchall()}
+            with self.connection.cursor() as cur:
+                # Get languages
+                cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+                main_lang = cur.fetchone()[0]
+                cur.execute("""SELECT uuid, short_name FROM sloth_language_settings;""")
+                langs = {lang[0]: {
+                    "uuid": lang[0],
+                    "path": f"{lang[1]}" if lang[0] != main_lang else "",
+                } for lang in cur.fetchall()}
 
-            #   Get post types
-            cur.execute(
-                sql.SQL("""SELECT uuid, slug FROM sloth_post_types;""")
-            )
-            post_type_slugs = {slug[0] : {
-                "slug": slug[1]
-            } for slug in cur.fetchall()}
-            for lang in langs.keys():
-                home_url = doc.createElement("url")
-                home_loc = doc.createElement("loc")
-                home_loc.appendChild(doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}"))
-                home_url.appendChild(home_loc)
-                home_change_freq = doc.createElement("changefreq")
-                home_change_freq.appendChild(doc.createTextNode("daily"))
-                home_url.appendChild(home_change_freq)
-                home_last_mod = doc.createElement("lastmod")
-                home_last_mod.appendChild(doc.createTextNode(datetime.now().strftime("%Y-%m-%d")))
-                home_url.appendChild(home_last_mod)
-                root_node.appendChild(home_url)
+                #   Get post types
+                cur.execute("""SELECT uuid, slug FROM sloth_post_types;""")
+                post_type_slugs = {slug[0]: {
+                    "slug": slug[1]
+                } for slug in cur.fetchall()}
+                for lang in langs.keys():
+                    home_url = doc.createElement("url")
+                    home_loc = doc.createElement("loc")
+                    home_loc.appendChild(
+                        doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}"))
+                    home_url.appendChild(home_loc)
+                    home_change_freq = doc.createElement("changefreq")
+                    home_change_freq.appendChild(doc.createTextNode("daily"))
+                    home_url.appendChild(home_change_freq)
+                    home_last_mod = doc.createElement("lastmod")
+                    home_last_mod.appendChild(doc.createTextNode(datetime.now().strftime("%Y-%m-%d")))
+                    home_url.appendChild(home_last_mod)
+                    root_node.appendChild(home_url)
 
-                for post_type in post_type_slugs.keys():
-                    if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug']).is_dir():
-                        continue
+                    for post_type in post_type_slugs.keys():
+                        if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug']).is_dir():
+                            continue
+                        pt_url = doc.createElement("url")
+                        pt_loc = doc.createElement("loc")
+                        if len(langs[lang]['path']) == 0:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}"))
+                        else:
+                            pt_loc.appendChild(
+                                doc.createTextNode(
+                                    f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}"))
+                        pt_url.appendChild(pt_loc)
+                        pt_change_freq = doc.createElement("changefreq")
+                        pt_change_freq.appendChild(doc.createTextNode("weekly"))
+                        pt_url.appendChild(pt_change_freq)
+                        root_node.appendChild(pt_url)
+
+                        # get categories per post type
+                        cur.execute("""SELECT slug FROM sloth_taxonomy 
+                            WHERE taxonomy_type = %s AND post_type = %s;""",
+                                    ('category', post_type))
+                        category_slugs = [slug[0] for slug in cur.fetchall()]
+                        for category in category_slugs:
+                            if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'],
+                                        "category",
+                                        category).is_dir():
+                                continue
+                            pt_url = doc.createElement("url")
+                            pt_loc = doc.createElement("loc")
+                            if len(langs[lang]['path']) == 0:
+                                pt_loc.appendChild(
+                                    doc.createTextNode(
+                                        f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
+                            else:
+                                pt_loc.appendChild(
+                                    doc.createTextNode(
+                                        f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
+                            pt_url.appendChild(pt_loc)
+                            pt_change_freq = doc.createElement("changefreq")
+                            pt_change_freq.appendChild(doc.createTextNode("monthly"))
+                            pt_url.appendChild(pt_change_freq)
+                            root_node.appendChild(pt_url)
+                        # get tags per post type
+                        cur.execute("""SELECT slug FROM sloth_taxonomy 
+                                                WHERE taxonomy_type = %s AND post_type = %s;""",
+                                    ('tag', post_type))
+                        tag_slugs = [slug[0] for slug in cur.fetchall()]
+                        for tag in tag_slugs:
+                            if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "tag",
+                                        tag).is_dir():
+                                continue
+                            pt_url = doc.createElement("url")
+                            pt_loc = doc.createElement("loc")
+                            if len(langs[lang]['path']) == 0:
+                                pt_loc.appendChild(
+                                    doc.createTextNode(
+                                        f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
+                            else:
+                                pt_loc.appendChild(
+                                    doc.createTextNode(
+                                        f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
+                            pt_url.appendChild(pt_loc)
+                            pt_change_freq = doc.createElement("changefreq")
+                            pt_change_freq.appendChild(doc.createTextNode("monthly"))
+                            pt_url.appendChild(pt_change_freq)
+                            root_node.appendChild(pt_url)
+                #   Get posts
+                cur.execute("""SELECT lang, slug, post_type, update_date FROM sloth_posts;""")
+                for post in cur.fetchall():
                     pt_url = doc.createElement("url")
                     pt_loc = doc.createElement("loc")
-                    if len(langs[lang]['path']) == 0:
+                    if len(langs[post[0]]['path']) == 0:
                         pt_loc.appendChild(
-                            doc.createTextNode(f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}"))
+                            doc.createTextNode(
+                                f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
                     else:
                         pt_loc.appendChild(
                             doc.createTextNode(
-                                f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}"))
+                                f"{self.settings['site_url']['settings_value']}/{langs[post[0]]['path']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
                     pt_url.appendChild(pt_loc)
                     pt_change_freq = doc.createElement("changefreq")
-                    pt_change_freq.appendChild(doc.createTextNode("weekly"))
+                    pt_change_freq.appendChild(doc.createTextNode("monthly"))
                     pt_url.appendChild(pt_change_freq)
+                    pt_last_mod = doc.createElement("lastmod")
+                    pt_last_mod.appendChild(
+                        doc.createTextNode(datetime.fromtimestamp(post[3] / 1000).strftime("%Y-%m-%d")))
+                    pt_url.appendChild(pt_last_mod)
                     root_node.appendChild(pt_url)
-
-                    # get categories per post type
-                    cur.execute(
-                        sql.SQL("""SELECT slug FROM sloth_taxonomy 
-                        WHERE taxonomy_type = %s AND post_type = %s;"""),
-                        ('category', post_type)
-                    )
-                    category_slugs = [slug[0] for slug in cur.fetchall()]
-                    for category in category_slugs:
-                        if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "category", category).is_dir():
-                            continue
-                        pt_url = doc.createElement("url")
-                        pt_loc = doc.createElement("loc")
-                        if len(langs[lang]['path']) == 0:
-                            pt_loc.appendChild(
-                                doc.createTextNode(
-                                    f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
-                        else:
-                            pt_loc.appendChild(
-                                doc.createTextNode(
-                                    f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/category/{category}"))
-                        pt_url.appendChild(pt_loc)
-                        pt_change_freq = doc.createElement("changefreq")
-                        pt_change_freq.appendChild(doc.createTextNode("monthly"))
-                        pt_url.appendChild(pt_change_freq)
-                        root_node.appendChild(pt_url)
-                    # get tags per post type
-                    cur.execute(
-                        sql.SQL("""SELECT slug FROM sloth_taxonomy 
-                                            WHERE taxonomy_type = %s AND post_type = %s;"""),
-                        ('tag', post_type)
-                    )
-                    tag_slugs = [slug[0] for slug in cur.fetchall()]
-                    for tag in tag_slugs:
-                        if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "tag", tag).is_dir():
-                            continue
-                        pt_url = doc.createElement("url")
-                        pt_loc = doc.createElement("loc")
-                        if len(langs[lang]['path']) == 0:
-                            pt_loc.appendChild(
-                                doc.createTextNode(
-                                    f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
-                        else:
-                            pt_loc.appendChild(
-                                doc.createTextNode(
-                                    f"{self.settings['site_url']['settings_value']}/{langs[lang]['path']}/{post_type_slugs[post_type]['slug']}/tag/{tag}"))
-                        pt_url.appendChild(pt_loc)
-                        pt_change_freq = doc.createElement("changefreq")
-                        pt_change_freq.appendChild(doc.createTextNode("monthly"))
-                        pt_url.appendChild(pt_change_freq)
-                        root_node.appendChild(pt_url)
-            #   Get posts
-            cur.execute(
-                sql.SQL("""SELECT lang, slug, post_type, update_date FROM sloth_posts;""")
-            )
-            for post in cur.fetchall():
-                pt_url = doc.createElement("url")
-                pt_loc = doc.createElement("loc")
-                if len(langs[post[0]]['path']) == 0:
-                    pt_loc.appendChild(
-                        doc.createTextNode(
-                            f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
-                else:
-                    pt_loc.appendChild(
-                        doc.createTextNode(
-                            f"{self.settings['site_url']['settings_value']}/{langs[post[0]]['path']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
-                pt_url.appendChild(pt_loc)
-                pt_change_freq = doc.createElement("changefreq")
-                pt_change_freq.appendChild(doc.createTextNode("monthly"))
-                pt_url.appendChild(pt_change_freq)
-                pt_last_mod = doc.createElement("lastmod")
-                pt_last_mod.appendChild(doc.createTextNode(datetime.fromtimestamp(post[3]/1000).strftime("%Y-%m-%d")))
-                pt_url.appendChild(pt_last_mod)
-                root_node.appendChild(pt_url)
         except Exception as e:
             print(e)
 
