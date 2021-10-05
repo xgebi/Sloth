@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev:build": "docker build -f Dockerfile.dev -t sloth .",
-    "dev:win": "docker run -v %cd%:/app -it sloth -p 5000:5000",
+    "dev:win": "docker run -v %cd%:/app -p 5000:5000 -it sloth",
     "cy:open": "cypress open",
     "cy:run": "docker build -f Dockerfile.tests -t cypress ."
   },
