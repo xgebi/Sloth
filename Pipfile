@@ -17,7 +17,7 @@ requests = "*"
 psycopg2-binary = "*"
 tweepy = "*"
 apscheduler = "*"
-psycopg = {extras = ["binary", "pool"], version = "*"}
+psycopg = {extras = ["pool"], version = "*"}
 pylint = "*"
 
 [requires]
