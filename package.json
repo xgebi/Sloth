@@ -7,10 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "dev:build": "docker build -f Dockerfile.dev -t sloth .",
     "dev:win": "docker run -v %cd%:/app -p 5000:5000 -it sloth",
     "cy:open": "cypress open",
-    "cy:run": "docker build -f Dockerfile.tests -t cypress ."
+    "cy:build": "docker build -t cypress-image .",
+    "cy:run:win": "docker run -v %cd%:/app -p 5000:5000 --env-file env.test.list --name cypress -td cypress-image && docker exec -t cypress ./tests.sh",
+    "cy:test": "cypress run"
   },
   "repository": {
     "type": "git",

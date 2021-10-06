@@ -517,7 +517,7 @@ class PostGenerator:
             print(e)
             traceback.print_exc()
 
-    def prepare_categories_tags(self, *args, post: Dict, **kwargs) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    def prepare_categories_tags(self, *args, post: Dict, **kwargs):
         try:
             with self.connection.cursor() as cur:
                 cur.execute(
@@ -532,8 +532,7 @@ class PostGenerator:
 
         return self.process_categories_tags(taxonomies=taxonomies)
 
-    def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs) -> tuple[
-        list[dict[str, Any]], list[dict[str, Any]]]:
+    def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs):
         try:
             with self.connection.cursor() as cur:
                 cur.execute(
@@ -548,8 +547,7 @@ class PostGenerator:
 
         return self.process_categories_tags(taxonomies=taxonomies) if taxonomies is not None else []
 
-    def process_categories_tags(self, *args, taxonomies: List, **kwargs) -> tuple[
-        list[dict[str, Any]], list[dict[str, Any]]]:
+    def process_categories_tags(self, *args, taxonomies: List, **kwargs):
         categories = []
         tags = []
         for taxonomy in taxonomies:
@@ -993,7 +991,7 @@ class PostGenerator:
             text = text[:text.find(name)] + text[text.find(name) + len(name):]
         return text
 
-    def get_forms_from_text(self, text: str, remove_only: bool = False) -> Optional[tuple[str, bool]]:
+    def get_forms_from_text(self, text: str, remove_only: bool = False):
         form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
         # get forms
         forms = {}
