@@ -7,11 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "dev:win": "docker run -v %cd%:/app -p 5000:5000 -it sloth",
     "cy:open": "cypress open",
-    "cy:build": "docker build -t cypress-image .",
-    "cy:run:win": "docker run -v %cd%:/app -p 5000:5000 --env-file env.test.list --name cypress -td cypress-image && docker exec -t cypress ./tests.sh",
-    "cy:test": "cypress run"
+    "cy:run": "cypress run",
+    "dc:tests:up": "docker-compose -f docker-compose.tests.yml up",
+    "dc:tests:down": "docker-compose -f docker-compose.tests.yml down",
+    "dc:tests": "docker-compose exec web ./tests.sh"
   },
   "repository": {
     "type": "git",
