@@ -12,7 +12,7 @@
     "dc:tests:build": "docker-compose -f docker-compose.tests.yml build",
     "dc:tests:up": "docker-compose -f docker-compose.tests.yml up",
     "dc:tests:down": "docker-compose -f docker-compose.tests.yml down",
-    "dc:tests": "docker-compose exec web ./tests.sh"
+    "dc:tests": "docker-compose -f docker-compose.tests.yml exec web ./tests.sh"
   },
   "repository": {
     "type": "git",

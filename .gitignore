@@ -52,3 +52,6 @@ toes.pyd
 
 *.so
 *.h
+
+/cypress/videos
+/cypress/screenshots

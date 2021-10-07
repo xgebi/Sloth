@@ -115,7 +115,7 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
             if current_app.url_map.bind(host).test(request.args.get("redirect")):
                 response = make_response(redirect(request.args.get("redirect")))
             else:
-                abort(500)
+                response = make_response(redirect("/"))
         else:
             response = make_response(redirect('/dashboard'))
         response.set_cookie('sloth_session', f"{info.display_name}:{info.uuid}:{info.token}")

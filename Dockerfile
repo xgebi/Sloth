@@ -72,6 +72,7 @@ CMD [ "node" ]
 
 RUN apt-get update && \
   apt-get install --no-install-recommends -y \
+  libpq5 \
   libgtk2.0-0 \
   libgtk-3-0 \
   libnotify-dev \

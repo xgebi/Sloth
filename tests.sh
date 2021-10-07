@@ -1,5 +1,5 @@
 #!/bin/sh
-pipenv lock
+pipenv lock --pre
 pipenv install --system --deploy
 if test -f schedule.lock; then
     mv schedule.lock schedule.lock.bak
