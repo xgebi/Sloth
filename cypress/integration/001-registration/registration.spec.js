@@ -10,5 +10,11 @@ describe('Registration page test', () => {
     it('Check h1 & title with text Registration', () => {
         cy.get('h1').should('be.visible');
         cy.get('title').should('contain.text', 'Registration');
-    })
+    });
+
+    // To do fill form and and submit it
+
+    it('Should redirect to login in second registration', () => {
+        cy.url().should('include', 'login')
+    });
 });

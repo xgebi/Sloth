@@ -1,9 +1,6 @@
 import os
-
 import psycopg
-from flask import render_template
-
-from app import Hooks
+from app.toes.hooks import Hooks
 from app.authorization.authorize import authorize_web
 from app.toes.toes import render_toe_from_path
 from app.utilities.db_connection import db_connection

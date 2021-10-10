@@ -1,9 +1,12 @@
 import psycopg
-from flask import request, flash, url_for, current_app, abort, redirect, render_template
+from flask import request, redirect, render_template
 import pytz
-
+from pathlib import Path
+import os
+from app.toes.toes import render_toe_from_path
 from app.utilities.db_connection import db_connection
 from app.registration.Registration import Registration
+from app.toes.hooks import Hooks
 
 from app.registration import registration
 
@@ -11,11 +14,32 @@ from app.registration import registration
 @registration.route('/registration', methods=["GET", "POST"])
 @db_connection
 def registration_steps(*args, connection: psycopg.Connection, **kwargs):
+    if Path(os.path.join(os.getcwd(), 'registration.lock')).is_file():
+        return redirect("/login")
+
     if request.method.upper() == "GET":
-        return render_template("registration.html", registration={}, timezones=pytz.all_timezones)
+        return render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+            template="registration.toe.html",
+            data={
+                "registration": {},
+                "timezones": pytz.all_timezones
+            },
+            hooks=Hooks()
+        )
 
     if connection is None:
-        return render_template("registration.html", registration={}, timezones=pytz.all_timezones, error=True), 500
+        return render_toe_from_path(
+            path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+            template="registration.toe.html",
+            data={
+                "registration": {},
+                "timezones": pytz.all_timezones,
+                "error": True
+
+            },
+            hooks=Hooks()
+        ), 500
     # registration
     user_data = request.form.to_dict()
 
@@ -31,4 +55,13 @@ def registration_steps(*args, connection: psycopg.Connection, **kwargs):
 
     if result.get("error") is not None:
         error = result["error"]
-    return render_template("registration.html", registration={}, timezones=pytz.all_timezones, error=error), status
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="registration.toe.html",
+        data={
+            "registration": {},
+            "timezones": pytz.all_timezones,
+            "error": error
+        },
+        hooks=Hooks()
+    ), status
