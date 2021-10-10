@@ -1,14 +1,14 @@
 <toe:fragment xmlns:toe="https://xgebi.github.io/Sloth/">
     <nav>
         <ul>
-            <li><a href="/dashboard">Dashboard</a>
+            <li class="top-level"><a href="/dashboard">Dashboard</a>
                 <ul>
                     <li><a href="/messages">Messages</a></li>
                     <!--li><a href="/rss">RSS reader</a></li-->
                     <li><a href="/dashboard/analytics">Analytics</a></li>
                 </ul>
             </li>
-            <li toe:for="post_type in post_types">
+            <li class="top-level" toe:for="post_type in post_types">
                 <a toe:href="'/post/' + post_type['uuid']" toe:text="post_type['display_name']"></a>
                 <ul>
                     <li>
@@ -20,14 +20,14 @@
                     <li><a toe:href="'/post/' + post_type['uuid'] + '/formats'" toe:text="'Post Formats'"></a></li>
                 </ul>
             </li>
-            <li><a href="/media">Media</a></li>
-            <li><a href="/mock-endpoints">Mock Endpoints</a></li>
-            <li><a href="/libraries">Libraries</a></li>
-            <li><a href="/post-types">Post Types</a></li>
-            <li><a href="/lists">Lists</a></li>
-            <li><a href="/forms">Forms</a></li>
-            <li><a href="/settings/my-account">My account</a></li>
-            <li toe:if="permission_level gte 1"><a href="/settings">Settings</a>
+            <li class="top-level"><a href="/media">Media</a></li>
+            <li class="top-level"><a href="/mock-endpoints">Mock Endpoints</a></li>
+            <li class="top-level"><a href="/libraries">Libraries</a></li>
+            <li class="top-level"><a href="/post-types">Post Types</a></li>
+            <li class="top-level"><a href="/lists">Lists</a></li>
+            <li class="top-level"><a href="/forms">Forms</a></li>
+            <li class="top-level"><a href="/settings/my-account">My account</a></li>
+            <li class="top-level" toe:if="permission_level gte 1"><a href="/settings">Settings</a>
                 <ul>
                     <li><a href="/settings/users">Users</a></li>
                     <li><a href="/settings/themes">Themes</a>

@@ -1,11 +1,11 @@
 import psycopg
-from flask import request, redirect, render_template
+from flask import request, redirect
 import pytz
 from pathlib import Path
 import os
 from app.toes.toes import render_toe_from_path
 from app.utilities.db_connection import db_connection
-from app.registration.Registration import Registration
+from app.registration.register import Register
 from app.toes.hooks import Hooks
 
 from app.registration import registration
@@ -43,7 +43,7 @@ def registration_steps(*args, connection: psycopg.Connection, **kwargs):
     # registration
     user_data = request.form.to_dict()
 
-    register = Registration(connection)
+    register = Register(connection)
     result = register.initial_settings(filled=user_data)
     # success
     if result.get("state") is not None and result.get("state") == "ok":

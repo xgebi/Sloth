@@ -24,7 +24,7 @@
                                                                       toe:value="registration['admin_url']"/>
             <label for="timezone">Timezone:</label>
             <select id="timezone" name="timezone" value="registration['timezone']">
-                <option toe:for="timezone in timezones" toe:value="timezone" toe:selected="registration['timezone'] eq timezone">{{ timezone }}</option>
+                <option toe:for="timezone in timezones" toe:value="timezone" toe:text="timezone" toe:selected="registration['timezone'] eq timezone"></option>
             </select>
 
             <label for="main-language-long">Main language full name:</label>

@@ -11,7 +11,7 @@ import traceback
 from app.post.post_generator import PostGenerator
 
 
-class Registration:
+class Register:
     connection = {}
 
     def __init__(self, connection: psycopg.connection):
