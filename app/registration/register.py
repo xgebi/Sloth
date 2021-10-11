@@ -44,7 +44,7 @@ class Register:
             return {"error": "Registration can be done only once", "status": 403}
 
         for key, value in filled.items():
-            if filled[key] is None:
+            if filled[key] is None or len(value) == 0:
                 return {"error": "missing", "status": 400}
 
         try:
@@ -57,7 +57,7 @@ class Register:
             return {"error": "database", "status": 500}
 
         if len(items) == 0:
-            if not test_password():
+            if not test_password(filled["password"]):
                 return {"error": "password"}
             user = {"uuid": str(uuid.uuid4()), "username": filled["username"],
                     "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=14)).decode(
@@ -70,23 +70,23 @@ class Register:
                             VALUES (%s, %s, %s, %s, 1)""",
                         (user["uuid"], user["username"], user["username"], user["password"]))
                     cur.execute("INSERT INTO sloth_settings VALUES ('sitename', 'Sitename', 'text', 'sloth', %s)",
-                                (filled.get("sitename"),))
+                                (filled["sitename"],))
                     cur.execute("INSERT INTO sloth_settings VALUES ('site_timezone', 'Timezone', 'text', 'sloth', %s)",
-                                (filled.get("timezone"),))
+                                (filled["timezone"],))
                     cur.execute(
                         "INSERT INTO sloth_settings VALUES ('site_description', 'Description', 'text', 'sloth', '')")
                     cur.execute("INSERT INTO sloth_settings VALUES ('site_url', 'URL', 'text', 'sloth', %s)",
-                                (filled.get("url"),))
+                                (filled["url"],))
                     cur.execute("INSERT INTO sloth_settings VALUES ('api_url', 'URL', 'text', 'sloth', %s)",
-                                (filled.get("admin-url"),))
+                                (filled["admin-url"],))
 
                     cur.execute(
                         "INSERT INTO sloth_settings VALUES ('main_language', 'Main language', 'text', 'sloth', %s)",
-                        (filled.get("main-language-short"),))
+                        (filled["main-language-short"],))
 
                     cur.execute(
                         """INSERT INTO sloth_language_settings VALUES (%s, %s, %s)""",
-                        (str(uuid.uuid4()), filled.get("main-language-short"), filled.get("main-language-long"), ))
+                        (str(uuid.uuid4()), filled["main-language-short"], filled["main-language-long"], ))
 
                     self.connection.commit()
             except Exception as e:

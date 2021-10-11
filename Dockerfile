@@ -45,8 +45,6 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && node --version \
   && npm --version
 
-RUN npm install -g npm@8.0.0
-
 ENV YARN_VERSION 1.22.5
 
 RUN set -ex \

@@ -3,6 +3,11 @@ describe('Registration page test', () => {
         cy.visit('http://localhost:5000');
     });
 
+    it('Should catch missing field error', () => {
+        cy.get('#submit-btn').click();
+        cy.get('.missing').should("be.visible");
+    });
+
     it('Should check registration page is loaded', () => {
         cy.url().should('include', 'registration')
     });
@@ -31,10 +36,46 @@ describe('Registration page test', () => {
         cy.get('#main-language-long').type('English');
     });
 
+    it('Should change timezone', () => {
+        cy.get('#timezone').select('Europe/Tallinn');
+        cy.get('#timezone').should('have.value', 'Europe/Tallinn');
+        cy.get('#timezone').should('not.have.value', 'UTC');
+    })
+
     it('Fill Main Language (short) field', () => {
         cy.get('#main-language-short').clear();
         cy.get('#main-language-short').type('en');
     });
+
+    it('Fill username', () => {
+        cy.get('#admin-name').clear();
+        cy.get('#admin-name').type('admin');
+    })
+
+    it('Should catch weak password field error', () => {
+        cy.get('#admin-password').clear();
+        cy.get('#admin-password').type('admin');
+        cy.get('#submit-btn').click();
+        cy.get('.password').should("be.visible");
+    });
+
+    it('Should register properly', () => {
+        cy.fixture('user').then(user => {
+            const username = user.username;
+            const password = user.password;
+
+            cy.get('#admin-name').clear();
+            cy.get('#admin-name').type(username);
+
+            cy.get('#admin-password').clear();
+            cy.get('#admin-password').type(password);
+
+            cy.get('#submit-btn').click();
+            cy.url().should('include', 'login');
+        });
+    });
+
+
 
     // To do fill form and and submit it
 

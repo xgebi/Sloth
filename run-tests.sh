@@ -8,6 +8,9 @@ fi
 if test -f rss.lock; then
     mv rss.lock rss.lock.bak
 fi
+if test ! -d site_test; then
+  mkdir "site_test"
+fi
 python run.py &
 npm run cy:run
 mv schedule.lock.bak schedule.lock

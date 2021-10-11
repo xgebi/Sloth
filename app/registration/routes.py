@@ -27,13 +27,13 @@ def registration_steps(*args, connection: psycopg.Connection, **kwargs):
             },
             hooks=Hooks()
         )
-
+    user_data = request.form.to_dict()
     if connection is None:
         return render_toe_from_path(
             path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
             template="registration.toe.html",
             data={
-                "registration": {},
+                "registration": user_data,
                 "timezones": pytz.all_timezones,
                 "error": True
 
@@ -41,7 +41,6 @@ def registration_steps(*args, connection: psycopg.Connection, **kwargs):
             hooks=Hooks()
         ), 500
     # registration
-    user_data = request.form.to_dict()
 
     register = Register(connection)
     result = register.initial_settings(filled=user_data)
@@ -59,7 +58,7 @@ def registration_steps(*args, connection: psycopg.Connection, **kwargs):
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="registration.toe.html",
         data={
-            "registration": {},
+            "registration": user_data,
             "timezones": pytz.all_timezones,
             "error": error
         },

@@ -11,23 +11,23 @@
 <body class="gatekeeper">
 <main>
     <h1>Registration</h1>
-    <section toe:if="error eq 'database'" class="error">
+    <section toe:if="error eq 'database'" class="error database">
         There was an error during registration process
     </section>
-    <section toe:if="error eq 'missing'" class="error">
+    <section toe:if="error eq 'missing'" class="error missing">
         Some fields were not filled
     </section>
-    <section toe:if="error eq 'password'" class="error">
+    <section toe:if="error eq 'password'" class="error password">
         Weak password
     </section>
     <section class="registration-items">
         <form action="/registration" method="POST">
             <label for="website-name">Website name:</label> <input type="text" name="sitename" id="website-name"
-                                                                   toe:value="registration['name']"/>
+                                                                   toe:value="registration['sitename']"/>
             <label for="website-url">Website URL:</label> <input type="text" name="url" id="website-url"
                                                                  toe:value="registration['url']"/>
             <label for="admin-url">Administration URL:</label> <input type="text" name="admin-url" id="admin-url"
-                                                                      toe:value="registration['admin_url']"/>
+                                                                      toe:value="registration['admin-url']"/>
             <label for="timezone">Timezone:</label>
             <select id="timezone" name="timezone" value="registration['timezone']">
                 <option toe:for="timezone in timezones" toe:value="timezone" toe:text="timezone" toe:selected="registration['timezone'] eq timezone"></option>
@@ -37,19 +37,19 @@
             <input type="text"
                    name="main-language-long"
                    id="main-language-long"
-                   toe:value="registration['main_language_long']"/>
+                   toe:value="registration['main-language-long']"/>
             <label for="main-language-short">Main language short name:</label>
             <input type="text"
                    name="main-language-short"
                    id="main-language-short"
-                   toe:value="registration['main_language_short']"/>
+                   toe:value="registration['main-language-short']"/>
             <label for="admin-name">Admin username:</label> <input type="text" name="username" id="admin-name"
-                                                                   toe:value="registration['admin_name']"/>
+                                                                   toe:value="registration['username']"/>
             <label for="admin-password">Admin password:</label> <input type="password" name="password"
                                                                        id="admin-password"
-                                                                       toe:value="registration['admin_password']"/>
+                                                                       toe:value="registration['password']"/>
             <span class="button success">
-                <input type="submit" value="Register"/>
+                <input id="submit-btn" type="submit" value="Register"/>
             </span>
         </form>
     </section>
