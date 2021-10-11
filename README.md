@@ -1,5 +1,7 @@
 # SlothCMS
 
+[![e2e tests](https://github.com/xgebi/Sloth/actions/workflows/cypress.yml/badge.svg)](https://github.com/xgebi/Sloth/actions/workflows/cypress.yml)
+
 SlothCMS is an experimental project during which I'd like to learn Python, Rust and VanillaJS and try to design a bigger app all on my own.
 
 To activate this project's virtualenv, run `pipenv shell`.
