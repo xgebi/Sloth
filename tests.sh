@@ -12,7 +12,7 @@ if test -f rss.lock; then
 fi
 python run.py &
 rm -rf node_modules
-npm install
+npm install --unsafe-perm=true --allow-root
 npm run cy:run
 mv schedule.lock.bak schedule.lock
 mv registration.lock.bak registration.lock
