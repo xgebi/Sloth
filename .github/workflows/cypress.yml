@@ -1,4 +1,4 @@
-name: docker-compose-actions-workflow
+name: e2e tests
 on:
   push:
       branches: [ main ]
@@ -11,6 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the stack
-        run: docker-compose -f docker-compose.tests.yml up -d
+        run: docker-compose -f docker-compose.tests.yml up -d --build
       - name: Test
         run: docker-compose -f docker-compose.tests.yml exec web ./tests.sh
