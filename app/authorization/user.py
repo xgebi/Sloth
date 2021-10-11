@@ -5,6 +5,7 @@ from time import time
 import json
 import uuid
 from typing import Tuple, Optional
+import re
 
 from app.utilities.db_connection import db_connection, connect_to_db
 
@@ -30,6 +31,10 @@ class UserInfo:
             "expiryTime": self.expiry_time,
             "permissionsLevel": self.permissions_level,
         })
+
+
+def test_password(password: str):
+    return re.search(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$ %^&*-]).{8,}$", password)
 
 
 class User:
@@ -186,3 +191,4 @@ class User:
             code = 200
 
             return response, code
+

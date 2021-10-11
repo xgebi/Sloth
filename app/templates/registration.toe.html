@@ -11,8 +11,14 @@
 <body class="gatekeeper">
 <main>
     <h1>Registration</h1>
-    <section toe:if="error" class="error">
+    <section toe:if="error eq 'database'" class="error">
         There was an error during registration process
+    </section>
+    <section toe:if="error eq 'missing'" class="error">
+        Some fields were not filled
+    </section>
+    <section toe:if="error eq 'password'" class="error">
+        Weak password
     </section>
     <section class="registration-items">
         <form action="/registration" method="POST">

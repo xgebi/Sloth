@@ -9,7 +9,7 @@ describe('Registration page test', () => {
 
     it('Check h1 & title with text Registration', () => {
         cy.get('h1').should('be.visible');
-        cy.get('title').should('contain.text', 'Registration');
+        cy.title().should('include', 'Registration');
     });
 
     it('Fill Website name field', () => {

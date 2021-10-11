@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 
 from flask import current_app
@@ -8,6 +9,7 @@ import uuid
 import bcrypt
 import traceback
 
+from app.authorization.user import test_password
 from app.post.post_generator import PostGenerator
 
 
@@ -36,14 +38,14 @@ class Register:
         except Exception as e:
             print("ho")
             print(traceback.format_exc())
-            return {"error": "Database connection error", "status": 500}
+            return {"error": "database", "status": 500}
 
         if items[0] > 0:
             return {"error": "Registration can be done only once", "status": 403}
 
         for key, value in filled.items():
             if filled[key] is None:
-                return {"error": "Missing values", "status": 400}
+                return {"error": "missing", "status": 400}
 
         try:
             with self.connection.cursor() as cur:
@@ -52,9 +54,11 @@ class Register:
                 items = cur.fetchall()
         except Exception as e:
             print(traceback.format_exc())
-            return {"error": "Database error", "status": 500}
+            return {"error": "database", "status": 500}
 
         if len(items) == 0:
+            if not test_password():
+                return {"error": "password"}
             user = {"uuid": str(uuid.uuid4()), "username": filled["username"],
                     "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=14)).decode(
                         "utf-8")}
