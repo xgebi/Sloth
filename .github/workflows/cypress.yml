@@ -13,4 +13,4 @@ jobs:
       - name: Build the stack
         run: docker-compose -f docker-compose.tests.yml up -d --build
       - name: Test
-        run: docker-compose -f docker-compose.tests.yml exec web ./tests.sh
+        run: docker-compose -f docker-compose.tests.yml exec -T web ./tests.sh
