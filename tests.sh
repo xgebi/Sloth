@@ -11,6 +11,7 @@ if test -f rss.lock; then
     mv rss.lock rss.lock.bak
 fi
 python run.py &
+ls -al /root/.cache
 rm -rf node_modules
 npm install --unsafe-perm=true --allow-root
 npm run cy:run
