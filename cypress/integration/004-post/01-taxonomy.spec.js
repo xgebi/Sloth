@@ -1,0 +1,3 @@
+describe('Managing taxonomy pages', () => {
+
+})

@@ -33,18 +33,21 @@ class Register:
             result = self.set_tables()
 
             if result.get("error") is not None:
+                self.de_setup()
                 return result
             items = [0]
         except Exception as e:
-            print("ho")
+            self.de_setup()
             print(traceback.format_exc())
             return {"error": "database", "status": 500}
 
         if items[0] > 0:
+            self.de_setup()
             return {"error": "Registration can be done only once", "status": 403}
 
         for key, value in filled.items():
             if filled[key] is None or len(value) == 0:
+                self.de_setup()
                 return {"error": "missing", "status": 400}
 
         try:
@@ -54,10 +57,12 @@ class Register:
                 items = cur.fetchall()
         except Exception as e:
             print(traceback.format_exc())
+            self.de_setup()
             return {"error": "database", "status": 500}
 
         if len(items) == 0:
             if not test_password(filled["password"]):
+                self.de_setup()
                 return {"error": "password"}
             user = {"uuid": str(uuid.uuid4()), "username": filled["username"],
                     "password": bcrypt.hashpw(filled["password"].encode("utf-8"), bcrypt.gensalt(rounds=14)).decode(
@@ -80,13 +85,15 @@ class Register:
                     cur.execute("INSERT INTO sloth_settings VALUES ('api_url', 'URL', 'text', 'sloth', %s)",
                                 (filled["admin-url"],))
 
-                    cur.execute(
-                        "INSERT INTO sloth_settings VALUES ('main_language', 'Main language', 'text', 'sloth', %s)",
-                        (filled["main-language-short"],))
+                    lang_uuid = str(uuid.uuid4())
 
                     cur.execute(
                         """INSERT INTO sloth_language_settings VALUES (%s, %s, %s)""",
-                        (str(uuid.uuid4()), filled["main-language-short"], filled["main-language-long"], ))
+                        (lang_uuid, filled["main-language-short"], filled["main-language-long"],))
+
+                    cur.execute(
+                        "INSERT INTO sloth_settings VALUES ('main_language', 'Main language', 'text', 'sloth', %s)",
+                        (lang_uuid,))
 
                     self.connection.commit()
             except Exception as e:
@@ -144,3 +151,20 @@ class Register:
                     print(traceback.format_exc())
                     return {"error": "Database error", "status": 500}
         return {"state": "ok"}
+
+    def de_setup(self):
+        sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "database", "de-setup")) if
+                os.path.isfile(os.path.join(os.getcwd(), "database", "de-setup", sql_file))]
+
+        with self.connection.cursor() as cur:
+            for filename in sorted(sqls):
+                with open(os.path.join(os.getcwd(), "database", "de-setup", filename)) as f:
+                    script = str(f.read())
+                try:
+                    cur.execute(script)
+                    self.connection.commit()
+                except Exception as e:
+                    print(script)
+                    print(traceback.format_exc())
+                    return {"error": "Database error", "status": 500}
+        return {"state": "reverted"}

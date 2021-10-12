@@ -14,6 +14,7 @@ if test ! -d site_test; then
   mkdir "site_test"
 fi
 python run.py &
+twistd -no web --path=site_test &
 rm -rf node_modules
 npm install --unsafe-perm=true --allow-root
 npm run cy:run

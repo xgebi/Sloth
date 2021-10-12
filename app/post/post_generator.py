@@ -820,9 +820,7 @@ class PostGenerator:
         menus = {}
         try:
             with self.connection.cursor() as cur:
-                cur.execute(
-                    sql.SQL("""SELECT name, uuid FROM sloth_menus""")
-                )
+                cur.execute("""SELECT name, uuid FROM sloth_menus""")
                 menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
                 for menu in menus.keys():
                     cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",
@@ -967,21 +965,21 @@ class PostGenerator:
                 }
 
     def get_languages(self):
+        languages = []
         try:
             with self.connection.cursor() as cur:
                 cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
                 raw_items = cur.fetchall()
+
+                for item in raw_items:
+                    languages.append({
+                        "uuid": item[0],
+                        "long_name": item[1],
+                        "short_name": item[2]
+                    })
         except Exception as e:
             print(e)
             traceback.print_exc()
-
-        languages = []
-        for item in raw_items:
-            languages.append({
-                "uuid": item[0],
-                "long_name": item[1],
-                "short_name": item[2]
-            })
 
         return languages
 

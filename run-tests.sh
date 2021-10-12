@@ -12,6 +12,7 @@ if test ! -d site_test; then
   mkdir "site_test"
 fi
 python run.py &
+twistd -no web --path=site_test &
 npm run cy:run
 mv schedule.lock.bak schedule.lock
 mv registration.lock.bak registration.lock

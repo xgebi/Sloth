@@ -85,13 +85,14 @@ class User:
                     except psycopg.errors.DatabaseError:
                         return None
 
-                return UserInfo(
-                    user_uuid=trimmed_items["uuid"],
-                    display_name=trimmed_items["display_name"],
-                    token=token,
-                    expiry_time=expiry_time * 1000,
-                    permissions_level=trimmed_items["permissions_level"]
-                )
+                    return UserInfo(
+                        user_uuid=trimmed_items["uuid"],
+                        display_name=trimmed_items["display_name"],
+                        token=token,
+                        expiry_time=expiry_time * 1000,
+                        permissions_level=trimmed_items["permissions_level"]
+                    )
+                return None
 
     def authorize_user(self, *args, permissions_level: int, **kwargs) -> Tuple[bool, int]:
         """

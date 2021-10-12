@@ -130,5 +130,6 @@ RUN echo  " node version:    $(node -v) \n" \
   "debian version:  $(cat /etc/debian_version) \n" \
   "user:            $(whoami) \n"
 RUN pip install pipenv
+RUN pip install twisted
 RUN mkdir /app
 WORKDIR /app
