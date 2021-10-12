@@ -75,12 +75,8 @@ describe('Registration page test', () => {
         });
     });
 
-
-
-    // To do fill form and and submit it
-
-    // it('Should redirect to login in second registration', () => {
-    //     cy.visit('http://localhost:5000/registration');
-    //     cy.url().should('include', 'login');
-    // });
+    it('Should redirect to login in second registration', () => {
+        cy.visit('http://localhost:5000/registration');
+        cy.url().should('include', 'login');
+    });
 });

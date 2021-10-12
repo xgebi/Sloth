@@ -1,4 +1,4 @@
-describe('Managing taxonomy pages', () => {
+describe('Messaging pages', () => {
     before(() => {
         cy.login();
     });
