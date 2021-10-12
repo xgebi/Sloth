@@ -122,17 +122,17 @@ class Register:
         sqls = [sql_file for sql_file in os.listdir(os.path.join(os.getcwd(), "database", "setup")) if
                 os.path.isfile(os.path.join(os.getcwd(), "database", "setup", sql_file))]
 
-        cur = self.connection.cursor()
-        for filename in sorted(sqls):
-            with open(os.path.join(os.getcwd(), "database", "setup", filename)) as f:
-                script = str(f.read())
-                try:
-                    cur.execute(script)
-                    self.connection.commit()
-                except Exception as e:
-                    print("hihi")
-                    print(traceback.format_exc())
-                    return {"error": "Database error", "status": 500}
+        with self.connection.cursor() as cur:
+            for filename in sorted(sqls):
+                with open(os.path.join(os.getcwd(), "database", "setup", filename)) as f:
+                    script = str(f.read())
+                    try:
+                        cur.execute(script)
+                        self.connection.commit()
+                    except Exception as e:
+                        print("hihi")
+                        print(traceback.format_exc())
+                        return {"error": "Database error", "status": 500}
         return {"state": "ok"}
 
     def set_data(self):
@@ -150,6 +150,27 @@ class Register:
                     print(script)
                     print(traceback.format_exc())
                     return {"error": "Database error", "status": 500}
+            try:
+                cur.execute("""SELECT name, standalone FROM sloth_localizable_strings;""")
+                localizable = cur.fetchall()
+                cur.execute("""SELECT uuid FROM sloth_post_types;""")
+                post_types = [id[0] for id in cur.fetchall()]
+                for item in localizable:
+                    if item[1]:
+                        cur.execute("""INSERT INTO sloth_localized_strings (uuid, name, content, lang, post_type) 
+                        VALUES (%s, %s, %s,
+                        (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language'), %s)""",
+                                    (str(uuid.uuid4()), item[0], '', None))
+                    else:
+                        for post_type in post_types:
+                            cur.execute("""INSERT INTO sloth_localized_strings (uuid, name, content, lang, post_type) 
+                                                    VALUES (%s, %s, %s,
+                                                    (SELECT settings_value FROM sloth_settings 
+                                                    WHERE settings_name = 'main_language'), %s)""",
+                                        (str(uuid.uuid4()), item[0], '', post_type))
+                self.connection.commit()
+            except Exception:
+                return {"error": "Database error", "status": 500}
         return {"state": "ok"}
 
     def de_setup(self):
