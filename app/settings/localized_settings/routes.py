@@ -2,7 +2,6 @@ import psycopg
 from flask import abort, redirect, request
 import os
 import traceback
-from psycopg2 import sql
 from uuid import uuid4
 
 from app.authorization.authorize import authorize_rest, authorize_web

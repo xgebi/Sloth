@@ -6,11 +6,13 @@ const SOCIAL_DESC = 200;
 
 document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelector("#gallery-opener").addEventListener('click', () => {
-        openGalleryDialog(gallery.images, "gallery");
+        const mediaGallery = document.querySelector("media-gallery");
+        mediaGallery.openModal(listOfMedia);
     });
 
     document.querySelector("#pick-thumbnail").addEventListener('click', () => {
-        openGalleryDialog(gallery.images, "thumbnail");
+        const mediaGallery = document.querySelector("media-gallery");
+        mediaGallery.openModal(listOfMedia, true);
     })
 
     // 2. publish post button

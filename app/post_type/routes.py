@@ -6,7 +6,6 @@ from app.utilities import get_default_language
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.post.post_types import PostTypes
-from psycopg2 import sql
 import json
 import uuid
 

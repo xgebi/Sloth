@@ -213,6 +213,7 @@ def format_post_data_json(post_arr: List) -> List:
             "uuid": post[0],
             "title": post[1],
             "publishDate": post[2],
+            "formattedPublishDate": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "postType": post[3]
         })
     return posts
@@ -231,6 +232,7 @@ def format_post_data(post_arr: List) -> List:
             "uuid": post[0],
             "title": post[1],
             "publish_date": post[2],
+            "formatted_publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
             "post_type": post[3]
         })
     return posts

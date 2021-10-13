@@ -1,10 +1,8 @@
 import psycopg
-from flask import flash, render_template, abort, make_response, request
+from flask import render_template, abort, make_response, request
 import json
-from psycopg2 import sql
 import uuid
 from app.authorization.authorize import authorize_web, authorize_rest
-import datetime
 
 from app.utilities.db_connection import db_connection
 from app.utilities import get_languages, get_default_language

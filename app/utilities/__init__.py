@@ -1,5 +1,4 @@
 import psycopg
-from psycopg2 import sql
 from typing import Tuple, List, Dict, Any, Optional
 import datetime
 import sys
@@ -7,8 +6,7 @@ import sys
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
-def get_languages(*args, connection: psycopg.Connection, lang_id: Optional[str] = "", as_list: Optional[bool] = True, **kwargs) \
-        -> Tuple[Dict[str, Any], List[Dict[str, Any]]] or List[Dict[str, Any]]:
+def get_languages(*args, connection: psycopg.Connection, lang_id: Optional[str] = "", as_list: Optional[bool] = True, **kwargs):
     try:
         with connection.cursor() as cur:
             cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
@@ -65,33 +63,29 @@ def get_related_posts(*args, post, connection, **kwargs):
     cur = connection.cursor()
     if post["original_lang_entry_uuid"] is not None and len(post["original_lang_entry_uuid"]) > 0:
         cur.execute(
-            sql.SQL(
                 """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title,
                  A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
                  A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
-                 WHERE A.uuid = %s OR (A.original_lang_entry_uuid = %s AND A.uuid <> %s);"""),
+                 WHERE A.uuid = %s OR (A.original_lang_entry_uuid = %s AND A.uuid <> %s);""",
             (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"],
              post["uuid"])
         )
     else:
         cur.execute(
-            sql.SQL(
                 """SELECT A.uuid, A.original_lang_entry_uuid, A.lang, A.slug, A.post_type, A.author, A.title, 
                 A.css, A.use_theme_css, A.js, A.use_theme_js, A.thumbnail, A.publish_date, 
                 A.update_date, A.post_status, A.imported, A.import_approved FROM sloth_posts as A 
-                WHERE A.original_lang_entry_uuid = %s;"""),
+                WHERE A.original_lang_entry_uuid = %s;""",
             (post["uuid"],)
         )
     related_posts_raw = cur.fetchall()
     posts = []
     for related_post in related_posts_raw:
         cur.execute(
-            sql.SQL(
                 """SELECT content, section_type, position
                 FROM sloth_post_sections
                 WHERE post = %s
-                ORDER BY position;"""
-            ),
+                ORDER BY position;""",
             (related_post[0],)
         )
         sections = [{
@@ -103,12 +97,10 @@ def get_related_posts(*args, post, connection, **kwargs):
 
     for post in posts:
         cur.execute(
-            sql.SQL(
                 """SELECT sl.location, spl.hook_name
                 FROM sloth_post_libraries AS spl
                 INNER JOIN sloth_libraries sl on sl.uuid = spl.library
-                WHERE spl.post = %s;"""
-            ),
+                WHERE spl.post = %s;""",
             (post["uuid"],)
         )
         post["libraries"] = [{

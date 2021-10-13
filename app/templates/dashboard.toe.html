@@ -10,7 +10,7 @@
         <article toe:for="post in recent_posts">
             <h3><a toe:href="'/post/' + post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
             <div toe:text="'Post type: ' + post['post_type']"></div>
-            <div toe:text="'Published: ' + post['publish_date']"></div>
+            <div toe:text="'Published: ' + post['formatted_publish_date']"></div>
         </article>
     </section>
     <section>
@@ -18,7 +18,7 @@
         <article toe:for="post in upcoming_posts">
             <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
             <div toe:text="'Post type: ' + post['post_type']"></div>
-            <div toe:text="'Published: ' + post['publish_date']"></div>
+            <div toe:text="'Published: ' + post['formatted_publish_date']"></div>
         </article>
     </section>
     <section>
@@ -26,7 +26,7 @@
         <article toe:for="post in drafts">
             <h3><a toe:href="'/post/'+ post['uuid'] + '/edit'" toe:text="post['title']"></a></h3>
             <div toe:text="'Post type: ' + post['post_type']"></div>
-            <div toe:text="'Published: ' + post['publish_date']"></div>
+            <div toe:text="'Published: ' + post['formatted_publish_date']"></div>
         </article>
     </section>
     <section>

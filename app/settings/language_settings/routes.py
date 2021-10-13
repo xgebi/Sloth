@@ -1,6 +1,5 @@
 import psycopg
 from flask import request, abort, make_response
-from psycopg2 import sql
 import json
 import uuid
 import os

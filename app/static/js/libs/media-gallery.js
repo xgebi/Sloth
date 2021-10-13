@@ -1,5 +1,9 @@
 class MediaGallery extends HTMLElement {
     #shadow = null;
+    #language = null;
+    #listOfMedia = null;
+    #currentPage = 0;
+    #pageSize = 12;
 
     constructor() {
         super();
@@ -10,20 +14,34 @@ class MediaGallery extends HTMLElement {
         }
     }
 
-    openModal() {
+    openModal(listOfMedia, isThumbnail = false) {
         if (!this.getAttribute("in-post-editor")) {
             return;
         }
-        const dialog = document.createElement("dialog");
-        this.#shadow.appendChild(dialog);
-        const closeButton = document.createElement("button");
-        closeButton.textContent = "Close";
-        closeButton.addEventListener('click', this.#closeModal);
+        this.#listOfMedia = listOfMedia;
+        let dialog;
+        if (!this.#shadow.querySelector('dialog')) {
+            dialog = document.createElement("dialog");
+            dialog.setAttribute('style', 'height: 100px; width: 100px; background: red;');
+            this.#shadow.appendChild(dialog);
+            dialog.showModal();
+            const closeButton = document.createElement("button");
+            closeButton.textContent = "Close";
+            closeButton.addEventListener('click', this.#closeModal);
+            dialog.appendChild(closeButton);
+        } else {
+            dialog = this.#shadow.querySelector('dialog').showModal();
+        }
+        this.#displayMedia(dialog);
+    }
+
+    #displayMedia(dialog) {
+        const slice = this.#listOfMedia[this.#pageSize * (this.#currentPage - 1), this.#pageSize * (this.#currentPage + 1)];
     }
 
     #closeModal() {
-        this.#shadow.querySelector("dialog")?.removeAttribute("open")
-        this.#shadow.removeChild(this.#shadow.querySelector("dialog"));
+        this.parentElement.close();
+        const shadow = this.parentElement.parentElement;
     }
 
     #renderImages() {

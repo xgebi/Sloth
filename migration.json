@@ -41,5 +41,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "045_add_referrer_column.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "046_create_ban_list.sql"
   }
 ]

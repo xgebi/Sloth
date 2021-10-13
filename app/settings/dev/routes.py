@@ -3,8 +3,7 @@ import os
 from pathlib import Path
 
 import psycopg
-from flask import abort, redirect, make_response, current_app
-from psycopg2 import sql
+from flask import abort, make_response, current_app
 
 from app.authorization.authorize import authorize_web
 from app.post.post_types import PostTypes

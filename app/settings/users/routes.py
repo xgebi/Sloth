@@ -58,9 +58,8 @@ def show_user(*args, permission_level: int, connection: psycopg.Connection, user
     try:
         with connection.cursor() as cur:
             cur.execute(
-                sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
-                [token[1]]
-            )
+                "SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s",
+                (token[1],))
             raw_user = cur.fetchone()
     except Exception as e:
         print("db error")
@@ -92,9 +91,8 @@ def show_my_account(*args, permission_level: int, connection: psycopg.Connection
     try:
         with connection.cursor() as cur:
             cur.execute(
-                sql.SQL("SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s"),
-                [token[1]]
-            )
+                "SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s",
+                (token[1],))
             raw_user = cur.fetchone()
     except Exception as e:
         print("db error")
@@ -124,14 +122,11 @@ def save_user(*args, permission_level: int, connection: psycopg.Connection, user
     if permission_level == 0 and token[1] != user:
         return redirect("/unauthorized")
 
-
     try:
         with connection.cursor() as cur:
             # TODO detect display_name change
-            cur.execute(
-                sql.SQL("UPDATE sloth_users SET display_name = %s, email = %s, permissions_level = %s WHERE uuid = %s"),
-                [filled.get("display_name"), filled.get("email"), int(filled.get("permissions")), user]
-            )
+            cur.execute("UPDATE sloth_users SET display_name = %s, email = %s, permissions_level = %s WHERE uuid = %s",
+                        (filled.get("display_name"), filled.get("email"), int(filled.get("permissions")), user))
             connection.commit()
     except Exception as e:
         print("db error")

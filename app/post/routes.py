@@ -194,9 +194,6 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     temp_thumbnail_info = []
     try:
         with connection.cursor() as cur:
-            cur.execute("""SELECT uuid, file_path FROM sloth_media""")
-            media = cur.fetchall()
-
             media_data = get_media(connection=connection)
 
             cur.execute("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
@@ -372,7 +369,6 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             "token": token,
             "post_type_name": post_type_name,
             "data": data,
-            "media": media,
             "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
             "default_lang": default_lang,
             "languages": translatable,
@@ -381,7 +377,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             "post_formats": post_formats,
             "libs": libs,
             "hook_list": HooksList.list(),
-            "media_data": media_data
+            "media_data": [media_data[key] for key in media_data.keys()]
         }
     )
 
@@ -439,9 +435,8 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
     media = []
     post_type_name = ""
     try:
+        media = get_media(connection=connection)
         with connection.cursor() as cur:
-            cur.execute("SELECT uuid, file_path FROM sloth_media")
-            media = cur.fetchall()
             cur.execute("SELECT display_name FROM sloth_post_types WHERE uuid = %s",
                         (post_type,))
             post_type_name = cur.fetchone()[0]
@@ -534,7 +529,7 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
             "token": token,
             "post_type_name": post_type_name,
             "data": data,
-            "media": media,
+            "media_data": json.dumps([media[key] for key in media.keys()]),
             "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
             "default_lang": default_lang,
             "languages": translatable_languages,

@@ -3,7 +3,6 @@ from typing import List, Dict
 import psycopg
 from flask import abort, request, current_app, make_response
 from werkzeug import utils as w_utils
-from psycopg2 import sql
 import json
 import os
 import re
