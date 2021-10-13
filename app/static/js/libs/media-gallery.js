@@ -4,6 +4,7 @@ class MediaGallery extends HTMLElement {
     #listOfMedia = null;
     #currentPage = 0;
     #pageSize = 12;
+    #thumbnail = false;
 
     constructor() {
         super();
@@ -15,6 +16,10 @@ class MediaGallery extends HTMLElement {
         linkElem.setAttribute('href', '/static/css/media-gallery.css');
         // Attach the created element to the shadow dom
         this.#shadow.appendChild(linkElem);
+
+        if (this.getAttribute('thumbnail')) {
+            this.#thumbnail = true;
+        }
 
         if (!this.getAttribute("in-post-editor")) {
             this.#renderImages();
@@ -35,13 +40,22 @@ class MediaGallery extends HTMLElement {
             closeButton.textContent = "Close";
             closeButton.addEventListener('click', this.#closeModal);
             dialog.appendChild(closeButton);
+            const imageDetail = document.createElement('div');
+            imageDetail.setAttribute('class', 'image-detail');
+            const imageDetailImage = document.createElement('img');
+            const imageDetailSelect = document.createElement('select');
+            const imageDetailButton = document.createElement('button');
+            imageDetail.append(imageDetailImage, imageDetailSelect, imageDetailButton);
+            dialog.appendChild(imageDetail);
         } else {
-            dialog = this.#shadow.querySelector('dialog').showModal();
+            dialog = this.#shadow.querySelector('dialog');
+            dialog.showModal();
         }
         this.#displayMedia(dialog);
     }
 
     #displayMedia(dialog) {
+        dialog.querySelector('.image-detail')?.setAttribute('style', 'display: none;');
         if (dialog.querySelector('.images')) {
             dialog.removeChild(dialog.querySelector('.images'));
         }
@@ -64,6 +78,28 @@ class MediaGallery extends HTMLElement {
             const select = document.createElement('button');
             select.textContent = 'Select';
             figure.appendChild(select);
+            const data = Object.create(slice[i])
+            select.addEventListener('click', () => {
+                console.log(data, this.#thumbnail);
+                if (this.#thumbnail) {
+
+                } else {
+                    dialog.querySelector('.image-detail').setAttribute('style', 'display: block;')
+                    dialog.querySelector('.images').setAttribute('style', 'display: none');
+                    dialog.querySelector('.pagination').setAttribute('style', 'display: none');
+                    const detail = dialog.querySelector('.image-detail');
+                    detail.querySelector('img').setAttribute('src', data.file_url);
+                    while (detail.querySelector('select').lastElementChild) {
+                        detail.querySelector('select').removeChild(detail.querySelector('select').lastElementChild);
+                    }
+                    for (const alt of data.alts) {
+                        const option = document.createElement('option')
+                    }
+                    if (this.getAttribute('in-post-editor')) {
+
+                    }
+                }
+            });
             imagesWrapper.appendChild(figure);
         }
 
