@@ -130,11 +130,11 @@ class MediaGallery extends HTMLElement {
                     buttonClone.textContent = 'Pick thumbnail';
                     buttonClone.addEventListener('click', () => {
                         this.dispatchEvent(new CustomEvent('thumbnail-picked', {
-                             detail: {
-                                 image: detail.querySelector('img').getAttribute('src'),
-                                 alt: detail.querySelector('#alt-holder').textContent,
-                                 uuid: data.uuid,
-                             }
+                            detail: {
+                                image: detail.querySelector('img').getAttribute('src'),
+                                alt: detail.querySelector('#alt-holder').textContent,
+                                uuid: data.uuid,
+                            }
                         }));
                         this.#shadow.querySelector('dialog').close();
                     });
