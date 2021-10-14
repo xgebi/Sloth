@@ -44,3 +44,17 @@ img {
     background: #75D5FF;
     padding: .25rem .5rem;
 }
+
+.image-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.image-detail img {
+    height: auto;
+}
+
+.image-detail section {
+    display: flex;
+    flex-flow: column;
+}
