@@ -5,6 +5,17 @@ const META_DESC = 160;
 const SOCIAL_DESC = 200;
 
 document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelector("media-gallery").addEventListener('thumbnail-picked', (ev) => {
+        console.log(ev.detail);
+        const thumbnailWrapper = document.querySelector('#thumbnail-wrapper');
+        while (thumbnailWrapper.lastElementChild) {
+            thumbnailWrapper.removeChild(thumbnailWrapper.lastElementChild);
+        }
+        const thumbnailImg = document.createElement('img');
+        thumbnailImg.setAttribute('src', ev.detail.image);
+        thumbnailImg.setAttribute('alt', ev.detail.alt);
+        document.querySelector('#thumbnail').setAttribute('value', ev.detail.uuid);
+    });
     document.querySelector("#gallery-opener").addEventListener('click', () => {
         const mediaGallery = document.querySelector("media-gallery");
         mediaGallery.openModal(listOfMedia);
@@ -82,71 +93,6 @@ function calculateLength(length, elementIdName) {
     const textAreaLength = document.querySelector(elementIdName).value.length
     const counter = document.querySelector(`${elementIdName}-counter`)
     counter.textContent = `${textAreaLength} / ${length}`
-}
-
-function openGalleryDialog(data, type) {
-    const dialog = document.querySelector("#modal");
-    dialog.setAttribute('open', '');
-    const copyResult = document.createElement('p');
-    dialog.appendChild(copyResult);
-    const mediaSection = document.createElement('section')
-    gallery.images.forEach((item) => {
-        const wrapper = document.createElement('article');
-        wrapper.setAttribute('style', "width: 100px; height: 100px;");
-        // uuid, file_path, alt
-        const image = document.createElement('img');
-        image.setAttribute('src', item['filePath']);
-        image.setAttribute('alt', item["alt"]);
-        image.setAttribute("loading", "lazy");
-        image.setAttribute('style', "max-width: 100%; max-height: calc(100% - 2rem);");
-        wrapper.appendChild(image);
-
-        const actionButton = document.createElement('button');
-        switch (type) {
-            case "gallery":
-                actionButton.textContent = 'Copy URL'
-                actionButton.addEventListener('click', () => {
-                    copyResult.textContent = '';
-                    navigator.clipboard.writeText(`<img src="${item['filePath']}" alt="${item['alt']}" />`).then(function () {
-                        /* clipboard successfully set */
-                        copyResult.textContent = 'URL copied to clipboard';
-                    }, function () {
-                        /* clipboard write failed */
-                        copyResult.textContent = 'Error copying URL to clipboard';
-                    });
-                });
-                break;
-            case "thumbnail":
-                actionButton.textContent = 'Choose'
-                actionButton.addEventListener('click', () => {
-                    const thumbnailInput = document.querySelector("#thumbnail");
-                    thumbnailInput.setAttribute('value', item["uuid"])
-                    const thumbnailWrapper = document.querySelector("#thumbnail-wrapper");
-                    while (thumbnailWrapper.lastChild) {
-                        thumbnailWrapper.removeChild(thumbnailWrapper.lastChild)
-                    }
-                    const image = document.createElement('img');
-                    image.setAttribute('src', item['filePath']);
-                    image.setAttribute('alt', item['alt']);
-                    thumbnailWrapper.appendChild(image);
-                    dialog.close();
-                });
-                break;
-        }
-        wrapper.appendChild(actionButton);
-
-        mediaSection.appendChild(wrapper);
-    });
-    dialog.appendChild(mediaSection);
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close'
-    closeButton.addEventListener('click', () => {
-        while (dialog.firstChild) {
-            dialog.removeChild(dialog.lastChild);
-        }
-        dialog.removeAttribute('open');
-    });
-    dialog.appendChild(closeButton);
 }
 
 function publishPost() {

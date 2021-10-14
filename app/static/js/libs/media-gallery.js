@@ -129,17 +129,22 @@ class MediaGallery extends HTMLElement {
                 if (this.#thumbnail) {
                     buttonClone.textContent = 'Pick thumbnail';
                     buttonClone.addEventListener('click', () => {
-                        // image
-                        // alt
-                        // emit event
+                        this.dispatchEvent(new CustomEvent('thumbnail-picked', {
+                             detail: {
+                                 image: detail.querySelector('img').getAttribute('src'),
+                                 alt: detail.querySelector('#alt-holder').textContent,
+                                 uuid: data.uuid,
+                             }
+                        }));
+                        this.#shadow.querySelector('dialog').close();
                     });
                 } else {
                     buttonClone.textContent = 'Copy to clipboard and close';
                     buttonClone.addEventListener('click', () => {
-                        // image
-                        // alt
-                        // copy to clipboard
-                        // close
+                        navigator.clipboard.writeText(
+                            `<img src="${detail.querySelector('img').getAttribute('src')}" alt="${detail.querySelector('#alt-holder').textContent}" />`
+                        );
+                        this.#shadow.querySelector('dialog').close();
                     });
                 }
             });
