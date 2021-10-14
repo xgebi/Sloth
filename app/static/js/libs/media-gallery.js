@@ -107,7 +107,6 @@ class MediaGallery extends HTMLElement {
                 dialog.querySelector('.pagination').setAttribute('style', 'display: none');
                 const detail = dialog.querySelector('.image-detail');
                 detail.querySelector('img').setAttribute('src', data.file_url);
-                const secondColumn = document.createElement('section');
 
                 while (detail.querySelector('select').lastElementChild) {
                     detail.querySelector('select').removeChild(detail.querySelector('select').lastElementChild);
@@ -200,38 +199,6 @@ class MediaGallery extends HTMLElement {
 
     #closeModal() {
         this.parentElement.close();
-        const shadow = this.parentElement.parentElement;
-    }
-
-    #renderImages() {
-        let container = document.createElement("div");
-
-
-
-        if (this.#shadow.querySelector("dialog")) {
-            this.#shadow.querySelector("dialog")?.appendChild(container);
-            this.#shadow.querySelector("dialog")?.getAttribute("open")
-        } else {
-            this.#shadow.appendChild(container);
-        }
-
-    }
-
-    #openDetail() {
-
-    }
-
-    #saveDetail() {
-
-    }
-
-    #deleteImage() {
-
-    }
-
-    #pickMedia() {
-        this.dispatchEvent(new CustomEvent('picked', { detail: { image: "" } }));
-        this.#closeModal();
     }
 }
 
