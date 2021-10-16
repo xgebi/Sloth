@@ -982,6 +982,8 @@ class PostGenerator:
         return languages
 
     def remove_form_code(self, text: str) -> str:
+        if text is None:
+            return ""
         form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
         for name in form_names:
             text = text[:text.find(name)] + text[text.find(name) + len(name):]
@@ -1086,7 +1088,7 @@ class PostGenerator:
                 for post_type in post_types:
                     cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
-                            (SELECT content FROM sloth_post_sections WHERE position = 0 AND post = sp.uuid), 
+                            (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
                             sp.publish_date FROM sloth_posts AS sp
                                 WHERE post_type = %s AND post_status = 'published' AND lang = %s
                                 ORDER BY publish_date DESC LIMIT %s""",
@@ -1095,7 +1097,7 @@ class PostGenerator:
                     md_parser = MarkdownParser()
                     posts[post_type['slug']] = []
 
-                    for item in raw_items: # TODO debug this, it seems like there's nothing in here in some cases
+                    for item in raw_items:
                         excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
                         excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
                         posts[post_type['slug']].append({
