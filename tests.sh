@@ -7,6 +7,9 @@ fi
 if test -f registration.lock; then
     mv registration.lock registration.lock.bak
 fi
+if test -f generating.lock; then
+    mv generating.lock rss.lock.bak
+fi
 if test -f rss.lock; then
     mv rss.lock rss.lock.bak
 fi

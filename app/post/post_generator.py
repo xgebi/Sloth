@@ -224,30 +224,26 @@ class PostGenerator:
             taxonomy_uuid: str,
             **kwargs
     ):
-        cur = self.connection.cursor()
         try:
-            cur.execute(
-                sql.SQL(
-                    """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
-                        sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
-                        sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
-                        spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
-                        FROM sloth_post_taxonomies AS spt
-                        INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
-                        INNER JOIN sloth_users AS su ON sp.author = su.uuid
-                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                        WHERE spt.taxonomy = %s AND sp.post_type = %s AND sp.post_status = 'published'
-                        ORDER BY sp.publish_date DESC;"""
-                ),
-                (taxonomy_uuid, post_type_uuid)
-            )
-            raw_items = cur.fetchall()
+            with self.connection.cursor() as cur:
+                cur.execute(
+                        """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
+                            sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
+                            sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
+                            spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
+                            FROM sloth_post_taxonomies AS spt
+                            INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
+                            INNER JOIN sloth_users AS su ON sp.author = su.uuid
+                            INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                            WHERE spt.taxonomy = %s AND sp.post_type = %s AND sp.post_status = 'published'
+                            ORDER BY sp.publish_date DESC;""",
+                    (taxonomy_uuid, post_type_uuid))
+                raw_items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
-            return False
+            return []
 
-        cur.close()
         return self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
 
     def get_posts_from_post_type_language(
@@ -258,42 +254,37 @@ class PostGenerator:
             post_type_slug: str,
             **kwargs
     ):
-        cur = self.connection.cursor()
+
         try:
-            cur.execute(
-                sql.SQL("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
-                         sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
-                         sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
-                         spf.slug, spf.display_name, sp.meta_description, sp.twitter_description
-                                    FROM sloth_posts AS sp 
-                                    INNER JOIN sloth_users AS su ON sp.author = su.uuid
-                                    INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                                    WHERE sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published' 
-                                    ORDER BY sp.publish_date DESC;"""),
-                (post_type_uuid, language_uuid)
-            )
-            raw_items = cur.fetchall()
-            posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
-            for post in posts:
-                cur.execute(
-                    sql.SQL(
-                        """SELECT sl.location, spl.hook_name
-                        FROM sloth_post_libraries AS spl
-                        INNER JOIN sloth_libraries sl on sl.uuid = spl.library
-                        WHERE spl.post = %s;"""
-                    ),
-                    (post['uuid'],)
-                )
-                post["libraries"] = [{
-                    "location": lib[0],
-                    "hook_name": lib[1]
-                } for lib in cur.fetchall()]
+            with self.connection.cursor() as cur:
+                cur.execute("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
+                             sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
+                             sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
+                             spf.slug, spf.display_name, sp.meta_description, sp.twitter_description
+                                        FROM sloth_posts AS sp 
+                                        INNER JOIN sloth_users AS su ON sp.author = su.uuid
+                                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                                        WHERE sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published' 
+                                        ORDER BY sp.publish_date DESC;""",
+                    (post_type_uuid, language_uuid))
+                raw_items = cur.fetchall()
+                posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
+                for post in posts:
+                    cur.execute(
+                            """SELECT sl.location, spl.hook_name
+                            FROM sloth_post_libraries AS spl
+                            INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+                            WHERE spl.post = %s;""",
+                        (post['uuid'],))
+                    post["libraries"] = [{
+                        "location": lib[0],
+                        "hook_name": lib[1]
+                    } for lib in cur.fetchall()]
         except Exception as e:
             print(e)
             traceback.print_exc()
             return []
 
-        cur.close()
         return posts
 
     def process_posts(
@@ -310,47 +301,39 @@ class PostGenerator:
             thumbnail = None
             thumbnail_alt = None
 
-            cur = self.connection.cursor()
             try:
-                if post[16] is not None:
-                    cur.execute(
-                        sql.SQL("""SELECT sm.file_path, sma.alt 
-                        FROM sloth_media as sm 
-                        INNER JOIN sloth_media_alts sma on sma.media = sm.uuid
-                        WHERE sm.uuid = %s AND sma.lang = %s;"""),
-                        (post[14], post[16])
-                    )
-                    raw_thumbnail = cur.fetchone()
-                    if raw_thumbnail and len(raw_thumbnail) == 2:
-                        thumbnail = raw_thumbnail[0]
-                        thumbnail_alt = raw_thumbnail[1]
+                with self.connection.cursor() as cur:
+                    if post[16] is not None:
+                        cur.execute("""SELECT sm.file_path, sma.alt 
+                            FROM sloth_media as sm 
+                            INNER JOIN sloth_media_alts sma on sma.media = sm.uuid
+                            WHERE sm.uuid = %s AND sma.lang = %s;""",
+                                    (post[14], post[16]))
+                        raw_thumbnail = cur.fetchone()
+                        if raw_thumbnail and len(raw_thumbnail) == 2:
+                            thumbnail = raw_thumbnail[0]
+                            thumbnail_alt = raw_thumbnail[1]
 
-                if post[15]:
-                    cur.execute(
-                        sql.SQL(
+                    if post[15]:
+                        cur.execute(
                             """SELECT lang, slug FROM sloth_posts 
-                            WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);"""
-                        ),
-                        (post[15], post[15], post[0])
-                    )
-                    temp_language_variants = cur.fetchall()
-                else:
-                    temp_language_variants = []
+                            WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);""",
+                            (post[15], post[15], post[0]))
+                        temp_language_variants = cur.fetchall()
+                    else:
+                        temp_language_variants = []
 
-                cur.execute(
-                    sql.SQL(
+                    cur.execute(
                         """SELECT content, section_type, position
                         FROM sloth_post_sections
                         WHERE post = %s
-                        ORDER BY position ASC;"""
-                    ),
-                    (post[0],)
-                )
-                sections = [{
-                    "content": section[0],
-                    "type": section[1],
-                    "position": section[2]
-                } for section in cur.fetchall()]
+                        ORDER BY position ASC;""",
+                        (post[0],))
+                    sections = [{
+                        "content": section[0],
+                        "type": section[1],
+                        "position": section[2]
+                    } for section in cur.fetchall()]
             except Exception as e:
                 print(e)
                 traceback.print_exc()
@@ -386,14 +369,27 @@ class PostGenerator:
                 "format_uuid": post[17],
                 "format_slug": post[18],
                 "format_name": post[19],
-                "meta_description": post[20] if len(post) >= 21 and post[20] is not None and len(post[20]) > 0 else
-                sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
-                "social_description": post[21] if len(post) >= 22 and post[21] is not None and len(post[21]) > 0 else
-                sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+                "meta_description": self.prepare_meta_descriptions(sections=sections, post=post),
+                "social_description": self.prepare_social_descriptions(sections=sections, post=post),
                 "sections": sections
             })
 
         return posts
+
+    def prepare_meta_descriptions(self, sections: List, post: Dict) -> str:
+        if len(post) >= 21 and post[20] is not None and len(post[20]) > 0:
+            return post[20]
+        if len(sections) > 0:
+            return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
+        return ''
+
+    def prepare_social_descriptions(self, sections: List, post: Dict) -> str:
+        if len(post) >= 22 and post[21] is not None and len(post[21]) > 0:
+            return post[21]
+        if len(sections) > 0:
+            return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
+        return ''
+
 
     def prepare_single_post(self, *args, post: Dict, regenerate_taxonomies: List, multiple: bool = False, **kwargs):
         self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
@@ -617,7 +613,9 @@ class PostGenerator:
             md_parser = MarkdownParser()
             i = 0
             content_with_forms = ""
+            excerpt_with_forms = ""
             add_content_form_hooks = False
+            add_excerpt_form_hooks = False
             content_footnotes = []
             for section in post["sections"]:
                 if i == 0:
@@ -1097,7 +1095,7 @@ class PostGenerator:
                     md_parser = MarkdownParser()
                     posts[post_type['slug']] = []
 
-                    for item in raw_items:
+                    for item in raw_items: # TODO debug this, it seems like there's nothing in here in some cases
                         excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
                         excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
                         posts[post_type['slug']].append({
@@ -1188,7 +1186,7 @@ class PostGenerator:
                         "position": section[2]
                     } for section in cur.fetchall()]
 
-                    post["excerpt"] = sections[0]["content"]
+                    post["excerpt"] = sections[0]["content"] if len(sections) > 0 else ""
                     post["content"] = "\n".join([section["content"] for section in sections if
                                                  section["position"] > 0 and section["content"] is not None])
 
@@ -1303,6 +1301,7 @@ class PostGenerator:
 
             content = doc.createElement('content:encoded')
             md_parser = MarkdownParser()
+            content_text = doc.createCDATASection("")
             if "sections" in post:
                 if not post_markdown:
                     footnotes = []
