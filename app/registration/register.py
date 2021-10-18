@@ -22,6 +22,7 @@ class Register:
     def initial_settings(self, *args, filled: Dict = {}, **kwargs):
         registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
         if registration_lock_file.is_file():
+            print("Registration locked")
             return {"error": "Registration locked", "status": 403}
 
         try:
@@ -43,6 +44,7 @@ class Register:
 
         if items[0] > 0:
             self.de_setup()
+            print("Registration can be done only once")
             return {"error": "Registration can be done only once", "status": 403}
 
         for key, value in filled.items():
@@ -116,6 +118,7 @@ class Register:
 
         self.connection.close()
 
+        print("Registration can be done only once")
         return {"error": "Registration can be done only once", "status": 403}
 
     def set_tables(self):

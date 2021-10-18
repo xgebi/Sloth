@@ -17,6 +17,8 @@ if test ! -d site_test; then
   mkdir "site_test"
 fi
 python run.py &
+killall twistd
+rm twistd.pid
 twistd -no web --path=site_test &
 rm -rf node_modules
 npm install --unsafe-perm=true --allow-root

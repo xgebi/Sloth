@@ -31,6 +31,7 @@ describe('Login page test', () => {
             cy.get('#password').type(user.password);
             cy.get('#login-btn').click();
             cy.url().should('include', 'dashboard');
+            cy.get('.error').should('have.length', 0);
         });
     });
 });

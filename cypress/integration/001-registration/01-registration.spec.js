@@ -79,4 +79,11 @@ describe('Registration page test', () => {
         cy.visit('http://localhost:5000/registration');
         cy.url().should('include', 'login');
     });
+
+    it('Visit generated page', () => {
+        cy.wait(10000);
+        cy.visit('http://localhost:8080');
+        cy.get('h1').should('have.length', 1);
+        cy.wait(2000);
+    })
 });

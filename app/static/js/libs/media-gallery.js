@@ -20,10 +20,6 @@ class MediaGallery extends HTMLElement {
         if (this.getAttribute('thumbnail')) {
             this.#thumbnail = true;
         }
-
-        if (!this.getAttribute("in-post-editor")) {
-            this.#renderImages();
-        }
     }
 
     openModal(listOfMedia, isThumbnail = false) {

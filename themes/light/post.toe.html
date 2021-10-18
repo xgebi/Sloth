@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title toe:text="post['title']">Title</title>
+            <link toe:if="post['use_theme_css']" href="/assets/styles.css" rel="stylesheet"/>
+            <link toe:if="post['css']" href="style.css" rel="stylesheet"/>
+            <link href="/assets/prism.css" rel="stylesheet"/>
+            <meta name="description" toe:attr-content="post['meta_description']"/>
+</head>
+
+<body>
+	<main id="content">
+    <article>
+        <toe:fragment toe:if="post['imported']">
+            <div toe:if="not post['approved']">
+                This post was imported and is awaiting clean up.
+            </div>
+        </toe:fragment>
+        <img toe:if="post['thumbnail']" toe:src="'/' + post['thumbnail']" toe:alt="post['thumbnail_alt']" class="thumbnail"/>
+        <h1 toe:text="post['title']"></h1>
+        <p toe:text="'Published on ' + post['publish_date_formatted']"></p>
+        <div toe:if="translations | length gt 0">
+            Available in:
+            <ul>
+                <li toe:for="translation in translations"><a toe:href="translation['link']"
+                                                             toe:text="translation['language']"></a></li>
+            </ul>
+        </div>
+        <toe:fragment toe:content="post['excerpt']"/>
+        <toe:fragment toe:content="post['content']"/>
+    </article>
+</main>
+
+	<toe:footer />
+</body>
+
+</html>

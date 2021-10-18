@@ -14,6 +14,8 @@ fi
 if test ! -d site_test; then
   mkdir "site_test"
 fi
+killall twistd
+rm twistd.pid
 python run.py &
 twistd -no web --path=site_test &
 npm run cy:run
