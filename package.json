@@ -30,9 +30,10 @@
     "prettier": "^2.4.1"
   },
   "devDependencies": {
+    "cypress": "^8.6.0",
+    "cypress-file-upload": "^5.0.8",
     "glob-parent": ">=5.1.2",
     "gulp": "^4.0.2",
-    "gulp-shell": "^0.8.0",
-    "cypress": "^8.4.1"
+    "gulp-shell": "^0.8.0"
   }
 }

@@ -4,7 +4,7 @@ class MediaUploader extends HTMLElement {
 
     constructor() {
         super();
-        this.#shadow = this.attachShadow({mode: 'closed'});
+        this.#shadow = this.attachShadow({mode: 'open'});
         const linkElem = document.createElement('link');
         linkElem.setAttribute('rel', 'stylesheet');
         linkElem.setAttribute('href', '/static/css/media-uploader.css');
@@ -15,11 +15,16 @@ class MediaUploader extends HTMLElement {
 
     open() {
         let dialog = this.#shadow.querySelector("dialog");
+        if (!dialog) {
+            dialog = document.createElement("dialog");
+        } else {
+            while (dialog.lastElementChild) {
+                dialog.removeChild(dialog.lastElementChild);
+            }
+        }
         if (dialog?.getAttribute("open")) {
             return;
         }
-
-        dialog = document.createElement("dialog");
 
         const fileLabel = document.createElement('label');
         fileLabel.setAttribute('for', 'file-upload');
@@ -52,6 +57,7 @@ class MediaUploader extends HTMLElement {
 
         const uploadButton = document.createElement('button');
         uploadButton.textContent = "Upload file";
+        uploadButton.setAttribute('id', 'upload-button');
         uploadButton.addEventListener('click', () => {
             this.#uploadFile();
             this.#close(dialog);
@@ -60,6 +66,7 @@ class MediaUploader extends HTMLElement {
 
         const closeButton = document.createElement('button');
         closeButton.textContent = "Close dialog";
+        closeButton.setAttribute('id', 'close-button');
         closeButton.addEventListener('click', () => {
             this.#close(dialog);
         });
@@ -74,10 +81,7 @@ class MediaUploader extends HTMLElement {
     }
 
     #close() {
-        const dialog = this.#shadow.querySelector("dialog");
-        dialog.removeAttribute("open");
-        this.#shadow.removeChild(dialog);
-
+        this.#shadow.querySelector("dialog").close();
     }
 
     #uploadFile() {
