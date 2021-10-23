@@ -14,6 +14,7 @@ import math
 import traceback
 import re
 import copy
+import html
 
 from app.post import get_translations, get_taxonomy_for_post_preped_for_listing
 from app.utilities import get_related_posts
@@ -302,18 +303,12 @@ class PostGenerator:
             thumbnail_alt = None
 
             try:
-                with self.connection.cursor() as cur:
-                    if post[16] is not None:
-                        cur.execute("""SELECT sm.file_path, sma.alt 
-                            FROM sloth_media as sm 
-                            INNER JOIN sloth_media_alts sma on sma.media = sm.uuid
-                            WHERE sm.uuid = %s AND sma.lang = %s;""",
-                                    (post[14], post[16]))
-                        raw_thumbnail = cur.fetchone()
-                        if raw_thumbnail and len(raw_thumbnail) == 2:
-                            thumbnail = raw_thumbnail[0]
-                            thumbnail_alt = raw_thumbnail[1]
+                thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post[14], post[16])
+                thumbnail = post[14]
+                thumbnail_path = thumbnail_path
+                thumbnail_alt = html.escape(thumbnail_alt)
 
+                with self.connection.cursor() as cur:
                     if post[15]:
                         cur.execute(
                             """SELECT lang, slug FROM sloth_posts 
@@ -362,6 +357,7 @@ class PostGenerator:
                 "approved": post[13],
                 "imported": post[12],
                 "thumbnail": thumbnail,
+                "thumbnail_path": thumbnail_path,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
                 "original_lang_entry_uuid": post[15],
@@ -410,6 +406,11 @@ class PostGenerator:
             # path for other languages
             output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
             post["related_posts"] = get_related_posts(connection=self.connection, post=post)
+
+        thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post["thumbnail"], language["uuid"])
+        post["thumbnail_path"] = thumbnail_path
+        post["thumbnail_alt"] = html.escape(thumbnail_alt)
+
         self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
                            multiple=multiple)
 
@@ -690,6 +691,20 @@ class PostGenerator:
                             multiple=multiple
                         )
                         break
+
+    def get_thumbnail_information(self, thumbnail_uuid: str, language: str) -> (str, str):
+        if thumbnail_uuid is None:
+            return "", ""
+        try:
+            with self.connection.cursor() as cur:
+                cur.execute("""SELECT sm.file_path, sma.alt FROM sloth_media as sm
+                    INNER JOIN sloth_media_alts as sma on sm.uuid = sma.media
+                    WHERE sm.uuid = %s AND sma.lang = %s;""",
+                            (thumbnail_uuid, language))
+                return cur.fetchone()
+        except Exception as e:
+            print(e)
+        return "", ""
 
     def get_post_template(self, *args, post_type: Dict, post: Dict, language: Dict, **kwargs) -> Optional[str]:
         # post type, post format, language
