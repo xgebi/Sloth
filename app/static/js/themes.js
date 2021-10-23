@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const regenerateAllButton = document.querySelector("#regenerate-all-button");
+
+    if (regenerateAllButton.getAttribute("disabled")) {
+        regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, document.querySelectorAll("#regenerate-all-button"));
+    }
+
     regenerateAllButton.addEventListener('click', function () {
         fetch('/api/post/regenerate-all', {
             method: 'POST',
@@ -12,7 +17,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             body: JSON.stringify({regenerateAll: true})
         }).then(response => {
             if (response.ok) {
-                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, document.querySelectorAll("#regenerate-all-button"))
+                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, document.querySelectorAll("#regenerate-all-button"));
                 return response.json()
             }
             throw `${response.status}: ${response.statusText}`
