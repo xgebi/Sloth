@@ -615,23 +615,31 @@ class PostGenerator:
             i = 0
             content_with_forms = ""
             excerpt_with_forms = ""
+            partial_content_footnotes = ""
             add_content_form_hooks = False
-            add_excerpt_form_hooks = False
             content_footnotes = []
             for section in post["sections"]:
                 if i == 0:
-                    excerpt_with_forms, add_excerpt_form_hooks = self.get_forms_from_text(
-                        copy.deepcopy(section["content"]))
-                    i += 1
+                    if section["type"] == "form":
+                        excerpt_with_forms = ""
+                        content_with_forms += self.get_form(section["content"])
+                        add_content_form_hooks = True
+                        i += 2
+                    else:
+                        excerpt_with_forms = copy.deepcopy(section["content"])
+                        i += 1
                 else:
-                    partial_content_with_forms, temp_add_content_form_hooks = self.get_forms_from_text(
-                        copy.deepcopy(section["content"]))
-                    partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(
-                        partial_content_with_forms)
+                    if section["type"] == "form":
+                        add_content_form_hooks = True
+                        partial_content_with_forms = self.get_form(section["content"])
+                    else:
+                        partial_content_with_forms = copy.deepcopy(section["content"])
+                        partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(
+                            partial_content_with_forms)
                     content_with_forms += partial_content_with_forms
                     content_footnotes.extend(partial_content_footnotes)
-                    add_content_form_hooks = add_content_form_hooks or temp_add_content_form_hooks
-            if add_excerpt_form_hooks or add_content_form_hooks:
+
+            if add_content_form_hooks:
                 post["has_form"] = True
                 with open(Path(__file__).parent / "../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
                     self.hooks.footer.append(Hook(content=fi.read(), condition="post['has_form']"))
@@ -996,69 +1004,55 @@ class PostGenerator:
 
         return languages
 
-    def remove_form_code(self, text: str) -> str:
-        if text is None:
-            return ""
-        form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
-        for name in form_names:
-            text = text[:text.find(name)] + text[text.find(name) + len(name):]
-        return text
-
-    def get_forms_from_text(self, text: str, remove_only: bool = False):
-        form_names = re.findall('<\(form [a-zA-Z0-9 \-\_]+\)>', text)
-        # get forms
-        forms = {}
+    def get_form(self, name: str):
+        # get form
+        form = []
         try:
             with self.connection.cursor() as cur:
-                for name in form_names:
-                    forms[name[len("<(form"):-2].strip()] = []
-                    cur.execute("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
-                        sff.is_required, sff.label FROM sloth_form_fields AS sff
-                        INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
-                        WHERE sf.name = %s ORDER BY sff.position ASC;""",
-                                (name[len("<(form"):-2].strip(),))
-                    raw_rows = cur.fetchall()
-                    for row in raw_rows:
-                        forms[name[len("<(form"):-2].strip()].append({
-                            "uuid": row[0],
-                            "name": row[1],
-                            "position": row[2],
-                            "is_childless": row[3],
-                            "type": row[4],
-                            "is_required": row[5],
-                            "label": row[6],
-                        })
+                cur.execute("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
+                    sff.is_required, sff.label FROM sloth_form_fields AS sff
+                    INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
+                    WHERE sf.name = %s ORDER BY sff.position;""",
+                            (name,))
+                raw_rows = cur.fetchall()
+                for row in raw_rows:
+                    form.append({
+                        "uuid": row[0],
+                        "name": row[1],
+                        "position": row[2],
+                        "is_childless": row[3],
+                        "type": row[4],
+                        "is_required": row[5],
+                        "label": row[6],
+                    })
         except Exception as e:
             print(traceback.format_exc())
             return
 
-        for form_name in form_names:
-            form_key = form_name[len("<(form"):-2].strip()
-            # build form
-            form_text = f"<form class='sloth-form' data-form=\"{name[len('<(form'):-2].strip()}\">"
-            for field in forms[form_key]:
-                form_text += f"<div><label for=\"{field['name']}\">"
-                is_required = ""
-                if field['is_required']:
-                    is_required = "required"
-                if field['type'] == "submit":
-                    form_text += f"<input type='submit' value='{field['label']}' />"
-                elif field['type'] == "checkbox":
-                    form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' {is_required} /> {field['label']}</label>"
+        # build form
+        form_text = f"<form class='sloth-form' data-form=\"{name[len('<(form'):-2].strip()}\">"
+        for field in form:
+            form_text += f"<div><label for=\"{field['name']}\">"
+            is_required = ""
+            if field['is_required']:
+                is_required = "required"
+            if field['type'] == "submit":
+                form_text += f"<input type='submit' value='{field['label']}' />"
+            elif field['type'] == "checkbox":
+                form_text += f"<input type='checkbox' name='{field['name']}' id='{field['name']}' {is_required} /> {field['label']}</label>"
+            else:
+                form_text += f"{field['label']}</label><br />"
+                if field['type'] == 'textarea':
+                    form_text += f"<textarea name='{field['name']}' id='{field['name']}' {is_required}></textarea>"
+                elif field['type'] == 'select':
+                    form_text += f"<select name='{field['name']}' id='{field['name']}' {is_required}></select>"
                 else:
-                    form_text += f"{field['label']}</label><br />"
-                    if field['type'] == 'textarea':
-                        form_text += f"<textarea name='{field['name']}' id='{field['name']}' {is_required}></textarea>"
-                    elif field['type'] == 'select':
-                        form_text += f"<select name='{field['name']}' id='{field['name']}' {is_required}></select>"
-                    else:
-                        form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' {is_required} />"
-                form_text += "</div>"
-            form_text += f"<input type='text' style='display: none' name='spam-catcher' class='spam-catcher' />"
-            form_text += "</form>"
-            # add form to the text
-            text = f"{text[:text.find(form_name)]} {form_text} {text[text.find(form_name) + len(form_name):]}"
-        return text, len(form_names) > 0
+                    form_text += f"<input type='{field['type']}' name='{field['name']}' id='{field['name']}' {is_required} />"
+            form_text += "</div>"
+        form_text += f"<input type='text' style='display: none' name='spam-catcher' class='spam-catcher' />"
+        form_text += "</form>"
+
+        return form_text
 
     # delete post files
     def delete_post_files(self, *args, post_type_slug: str, post_slug: str, language: Dict, **kwargs):
@@ -1113,8 +1107,7 @@ class PostGenerator:
                     posts[post_type['slug']] = []
 
                     for item in raw_items:
-                        excerpt = self.remove_form_code(text=copy.deepcopy(item[3]))
-                        excerpt, excerpt_footnotes = md_parser.to_html_string(excerpt)
+                        excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
                         posts[post_type['slug']].append({
                             "uuid": item[0],
                             "title": item[1],

@@ -165,6 +165,7 @@ class PostEditor extends HTMLElement {
                 position: i
             })
         }
+        console.log(sections);
         return sections;
     }
 
