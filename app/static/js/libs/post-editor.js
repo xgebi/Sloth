@@ -87,13 +87,15 @@ class PostEditor extends HTMLElement {
         if (original) {
             section.setAttribute("class", "with-translation")
         }
-        const textAreaDiv = document.createElement("div");
-        const textArea = document.createElement("textarea");
+        const div = document.createElement("div");
         section.appendChild(label);
-        textArea.textContent = text;
-        textArea.addEventListener("input", this.#onInput, false);
-        textAreaDiv.appendChild(textArea);
-        section.appendChild(textAreaDiv);
+        if (type === 'form') {
+            div.appendChild(this.#createInput(text));
+            section.appendChild(div);
+        } else {
+            div.appendChild(this.#createTextArea(text));
+            section.appendChild(div);
+        }
 
         if (original?.length > 0) {
             const divOriginal = document.createElement("div");
@@ -108,13 +110,26 @@ class PostEditor extends HTMLElement {
         textOption.setAttribute("selected", "");
         textOption.textContent = "Text";
         select.appendChild(textOption);
+        const formOption = document.createElement("option");
+        formOption.setAttribute("value", "form");
+        formOption.textContent = "Form";
+        select.appendChild(formOption);
+        select.addEventListener('change', (ev) => {
+            const toBeReplaced = div.querySelector(".content")
+            if (ev.target.value === 'form') {
+                div.replaceChild(this.#createInput(toBeReplaced.value), toBeReplaced);
+            } else {
+                div.replaceChild(this.#createTextArea(toBeReplaced.value), toBeReplaced);
+            }
+            div.style.height = `${div.querySelector(".content").scrollHeight}px`;
+        });
         section.appendChild(select);
 
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Delete section";
         deleteButton.addEventListener('click', (event) => {
             if (window.confirm("Do you really want to delete the section?")) {
-              event.target.parentNode.parentNode.removeChild(event.target.parentNode);
+                event.target.parentNode.parentNode.removeChild(event.target.parentNode);
             }
         });
         section.appendChild(deleteButton);
@@ -122,12 +137,30 @@ class PostEditor extends HTMLElement {
         return section;
     }
 
+    #createInput(text) {
+        const input = document.createElement("input");
+        input.setAttribute("class", "content");
+        input.setAttribute("value", text);
+        input.setAttribute("style", "width: 100%;");
+        console.log(input);
+        return input;
+    }
+
+    #createTextArea(text) {
+        const textArea = document.createElement("textarea");
+        textArea.setAttribute("class", "content");
+        textArea.setAttribute("style", "width: 100%; height: 100%;");
+        textArea.textContent = text;
+        textArea.addEventListener("input", this.#onInput, false);
+        return textArea;
+    }
+
     getSections() {
         const sections = [];
         const sectionElements = this.sectionsHolder.children;
         for (let i = 0; i < sectionElements.length; i++) {
             sections.push({
-                content: sectionElements[i].querySelector("textarea").value,
+                content: sectionElements[i].querySelector(".content").value,
                 type: sectionElements[i].querySelector("select").value,
                 position: i
             })
