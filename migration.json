@@ -46,5 +46,10 @@
     "type": "sql",
     "folder": "setup",
     "file": "046_create_ban_list.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "047_add_form_to_sloth_post_section_type.sql"
   }
 ]

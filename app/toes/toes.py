@@ -793,7 +793,7 @@ class VariableScope:
                                 resolved_name = int(names[i])
                             except:
                                 resolved_name = self.find_variable(names[i], original_scope=original_scope)
-                        if resolved_name in res or (len(res) > 0 and res[resolved_name] is not None):
+                        if resolved_name in res or (resolved_name is int and len(res) > resolved_name and res[resolved_name] is not None):
                             res = res[resolved_name]
                         elif original_scope is not None:
                             return original_scope.find_variable(variable_name=variable_name)

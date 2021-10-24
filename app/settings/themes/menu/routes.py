@@ -108,9 +108,9 @@ def save_menu(*args, connection: psycopg.Connection, **kwargs):
     try:
         with connection.cursor() as cur:
             if filled["uuid"].startswith("new-"):
-                cur.execute("""INSERT INTO sloth_menus VALUES (%s, %s)
+                cur.execute("""INSERT INTO sloth_menus (uuid, name, lang) VALUES (%s, %s, %s)
                                 RETURNING name, uuid;""",
-                            (str(uuid.uuid4()), filled["name"]))
+                            (str(uuid.uuid4()), filled["name"], filled['language']))
             else:
                 cur.execute("""UPDATE sloth_menus SET name = %s WHERE uuid = %s
                     RETURNING name, uuid;""",
