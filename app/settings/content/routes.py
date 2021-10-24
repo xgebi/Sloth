@@ -6,6 +6,7 @@ from werkzeug import utils as w_utils
 import json
 import os
 import re
+import uuid
 from xml.dom import minidom
 import dateutil.parser
 from uuid import uuid4
@@ -222,6 +223,9 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
                                 VALUES (%s, %s, %s, True, True, True) RETURNING slug, uuid""",
                                 (str(uuid4()), re.sub(r'\s+', '-', post_type), post_type))
                     returned = cur.fetchone()
+                    cur.execute("""INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
+                                VALUES (%s, %s, %s, %s, %s)""",
+                                (str(uuid.uuid4()), "none", "None", returned[1], False))
                     connection.commit()
                     post_types[returned[0]] = returned[1]
                     existing_tags[returned[1]] = []

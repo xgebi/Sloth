@@ -146,6 +146,9 @@ def create_post_type(*args, connection: psycopg.Connection, post_type_id: str, *
                          True if "tags_enabled" in new_post_type else False,
                          True if "categories_enabled" in new_post_type else False,
                          True if "archive_enabled" in new_post_type else False))
+            cur.execute("""INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
+            VALUES (%s, %s, %s, %s, %s)""",
+                        (str(uuid.uuid4()), "none", "None", post_type_id, False))
             connection.commit()
     except Exception as e:
         print(e)

@@ -493,7 +493,7 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
             post_libs = []
     except Exception as e:
         connection.close()
-        print("db error A")
+        print(e)
         abort(500)
 
     connection.close()

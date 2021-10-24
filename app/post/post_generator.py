@@ -1098,7 +1098,7 @@ class PostGenerator:
                     cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
                             (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
-                            sp.publish_date FROM sloth_posts AS sp
+                            sp.publish_date, sp.thumbnail FROM sloth_posts AS sp
                                 WHERE post_type = %s AND post_status = 'published' AND lang = %s
                                 ORDER BY publish_date DESC LIMIT %s""",
                         (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
@@ -1107,6 +1107,16 @@ class PostGenerator:
                     posts[post_type['slug']] = []
 
                     for item in raw_items:
+                        thumbnail_alt = None
+                        thumbnail_path = None
+                        if item[5] is not None:
+                            cur.execute("""SELECT file_path, alt FROM sloth_media as sm
+                                            INNER JOIN sloth_media_alts AS sma ON sma.media = sm.uuid
+                                            WHERE sma.lang = %s AND sm.uuid = %s;""",
+                                        (language['uuid'], item[5]))
+                            res = cur.fetchone()
+                            thumbnail_path = res[0]
+                            thumbnail_alt = res[1]
                         excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
                         posts[post_type['slug']].append({
                             "uuid": item[0],
@@ -1116,7 +1126,9 @@ class PostGenerator:
                             "publish_date": item[4],
                             "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
                                 "%Y-%m-%d %H:%M"),
-                            "post_type_slug": post_type['slug']
+                            "post_type_slug": post_type['slug'],
+                            "thumbnail_path": thumbnail_path,
+                            "thumbnail_alt": thumbnail_alt
                         })
         except Exception as e:
             print(390)
