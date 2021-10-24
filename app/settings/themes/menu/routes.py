@@ -24,7 +24,6 @@ def show_menus(*args, permission_level: int, connection: psycopg.Connection, **k
         connection.close()
         abort(500)
 
-    connection.close()
     return return_menu_language(permission_level=permission_level, connection=connection, lang_id=main_lang)
 
 
@@ -53,12 +52,10 @@ def return_menu_language(*args, permission_level: int, connection: psycopg.Conne
         connection.close()
         abort(500)
 
-    connection.close()
     result = [{
         "uuid": item[0],
         "name": item[1]
     } for item in temp_result]
-    cur.close()
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_lang = get_default_language(connection=connection)
 
@@ -74,14 +71,14 @@ def return_menu_language(*args, permission_level: int, connection: psycopg.Conne
     )
 
 
-@menu.route("/api/settings/themes/menu/<menu>")
+@menu.route("/api/settings/themes/menu/<menu_str>")
 @authorize_rest(0)
 @db_connection
 def get_menu(*args, connection: psycopg.Connection, menu_str: str, **kwargs):
     try:
         with connection.cursor() as cur:
             cur.execute("""SELECT uuid, title, type, url, position FROM sloth_menu_items WHERE menu = %s;""",
-                        (menu, ))
+                        (menu_str, ))
             temp_result = cur.fetchall()
     except Exception as e:
         print(e)

@@ -6,7 +6,7 @@ import sys
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 
-def get_languages(*args, connection: psycopg.Connection, lang_id: Optional[str] = "", as_list: Optional[bool] = True, **kwargs):
+def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_list: bool = True, **kwargs):
     try:
         with connection.cursor() as cur:
             cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")

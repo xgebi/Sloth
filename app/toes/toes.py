@@ -789,8 +789,11 @@ class VariableScope:
                                 and names[i].find("+") == -1:
                             resolved_name = names[i][1: -1]
                         else:
-                            resolved_name = self.find_variable(names[i], original_scope=original_scope)
-                        if resolved_name in res:
+                            try:
+                                resolved_name = int(names[i])
+                            except:
+                                resolved_name = self.find_variable(names[i], original_scope=original_scope)
+                        if resolved_name in res or (len(res) > 0 and res[resolved_name] is not None):
                             res = res[resolved_name]
                         elif original_scope is not None:
                             return original_scope.find_variable(variable_name=variable_name)
