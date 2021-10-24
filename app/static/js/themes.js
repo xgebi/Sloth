@@ -2,8 +2,34 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const regenerateAllButton = document.querySelector("#regenerate-all-button");
 
     if (regenerateAllButton.getAttribute("disabled")) {
-        regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, document.querySelectorAll("#regenerate-all-button"));
+        regenerationCheckInterval = setInterval(
+            checkRegenerationLock,
+            1000,
+            [
+                document.querySelector("#regenerate-all-button"),
+                document.querySelector("#refresh-assets-button")
+            ]
+        );
     }
+    document.querySelector("#refresh-assets-button").addEventListener('click', function () {
+        fetch('/api/post/refresh-assets', {
+            method: 'POST',
+            headers: {
+                'authorization': document.cookie
+                    .split(';')
+                    .find(row => row.trim().startsWith('sloth_session'))
+                    .split('=')[1]
+            },
+            body: JSON.stringify({regenerateAll: true})
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    });
 
     regenerateAllButton.addEventListener('click', function () {
         fetch('/api/post/regenerate-all', {

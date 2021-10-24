@@ -1285,6 +1285,24 @@ def regenerate_all(*args, connection: psycopg.Connection, **kwargs):
 
     return json.dumps({"generating": True})
 
+@post.route("/api/post/refresh-assets", methods=["POST", "PUT"])
+@authorize_rest(0)
+@db_connection
+def refresh_assets(*args, connection: psycopg.Connection, **kwargs):
+    """
+    API endpoint to trigger regenerating all blog content
+
+    :param args:
+    :param connection:
+    :param kwargs:
+    :return:
+    """
+
+    gen = PostGenerator(connection=connection)
+    gen.refresh_assets()
+
+    return json.dumps({"refreshed": True})
+
 
 @post.route("/api/post/secret", methods=["POST"])
 @db_connection
