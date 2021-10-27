@@ -657,6 +657,7 @@ class PostGenerator:
                     "sitename": self.settings["sitename"][language["uuid"]]["content"],
                     "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                     "site_url": self.settings["site_url"]["settings_value"],
+                    "post_url": f"{self.settings['site_url']['settings_value']}/{post_type['slug']}/{post['slug']}",
                     "menus": self.menus,
                     "translations": translations,
                     "is_home": False,

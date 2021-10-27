@@ -111,6 +111,7 @@ function setupNewMenu(menuData, name, uuid) {
 }
 
 function moveItemUp(event) {
+    debugger;
     const index = getRowIndex(event.currentTarget.dataset["uuid"]);
     const rows = document.querySelector("#menu-items tbody").children;
     if (index > 0) {
@@ -119,6 +120,7 @@ function moveItemUp(event) {
 }
 
 function moveItemDown(event) {
+    debugger;
     console.log("down");
     const index = getRowIndex(event.currentTarget.dataset["uuid"]);
     const rows = document.querySelector("#menu-items tbody").children;
@@ -142,6 +144,7 @@ function saveMenu() {
     const items = {
         uuid: document.querySelector("#name").dataset["uuid"],
         name: document.querySelector("#name").value,
+        language: document.querySelector("h2").dataset["language"],
         items: []
     }
     for (let i = 0; i < rows.length; i++) {
@@ -175,7 +178,7 @@ function saveMenu() {
             document.querySelector(`#menu-${data["uuid"]} .menu-name`).textContent = data["name"];
         } else {
             const row = document.createElement('tr');
-            row.setAttribute("id", `#menu-${data["uuid"]}`);
+            row.setAttribute("id", `menu-${data["uuid"]}`);
             const nameColumn = document.createElement('td');
             nameColumn.setAttribute("class", "menu-name");
             nameColumn.textContent = data["name"];
@@ -222,7 +225,7 @@ function deleteMenu() {
             menuWrapper.removeChild(menuWrapper.lastChild);
         }
     } else {
-        fetch(`/settings/themes/menu/delete`, {
+        fetch(`/api/settings/themes/menu/delete`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
