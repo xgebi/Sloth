@@ -1,5 +1,5 @@
 import psycopg
-from flask import render_template, abort, make_response, request
+from flask import escape, abort, make_response, request
 import json
 import uuid
 import os
@@ -154,7 +154,7 @@ def save_menu(*args, connection: psycopg.Connection, **kwargs):
 def delete_menu(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
     if not filled["menu"] or len(filled["menu"]) == 0:
-        response = make_response(json.dumps({"menuDeleted": filled["menu"]}))
+        response = make_response(escape(json.dumps({"menuDeleted": filled["menu"]})))
         response.headers['Content-Type'] = 'application/json'
         return response, 400
 
@@ -171,6 +171,6 @@ def delete_menu(*args, connection: psycopg.Connection, **kwargs):
         abort(500)
 
     connection.close()
-    response = make_response(json.dumps({"menuDeleted": filled["menu"]}))
+    response = make_response(escape(json.dumps({"menuDeleted": filled["menu"]})))
     response.headers['Content-Type'] = 'application/json'
     return response, 204
