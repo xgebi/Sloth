@@ -9,7 +9,7 @@ from typing import List, Dict
 import threading
 
 import psycopg
-from flask import request, current_app, abort, redirect, render_template
+from flask import request, current_app, abort, redirect, render_template, escape
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.post import post, get_translations
@@ -751,10 +751,10 @@ def delete_post_format(*args, permission_level, connection: psycopg.Connection, 
                 (filled["uuid"],))
         if len(cur.fetchall()) > 0:
             connection.close()
-            return json.dumps({
+            return escape(json.dumps({
                 "uuid": filled["uuid"],
                 "deleted": False
-            }), 406
+            })), 406
     except Exception as e:
         print("db error C")
         connection.close()
@@ -762,10 +762,10 @@ def delete_post_format(*args, permission_level, connection: psycopg.Connection, 
 
     connection.close()
 
-    return json.dumps({
+    return escape(json.dumps({
         "uuid": filled["uuid"],
         "deleted": True
-    }), 204
+    })), 204
 
 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
