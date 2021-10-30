@@ -118,7 +118,12 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
                 response = make_response(redirect("/"))
         else:
             response = make_response(redirect('/dashboard'))
-        response.set_cookie('sloth_session', f"{info.display_name}:{info.uuid}:{info.token}")
+        response.set_cookie(
+            key='sloth_session',
+            value=f"{info.display_name}:{info.uuid}:{info.token}",
+            secure=True,
+            samesite='Strict'
+        )
         return response
     else:
         banned["attempts"] += 1
