@@ -64,6 +64,7 @@ class PostEditor extends HTMLElement {
             textArea.style.width = "100%";
             textArea.style.height = "100%";
             textArea.parentElement.style.height = `${textArea.scrollHeight}px`;
+            textArea.focus();
         });
         article.appendChild(addSectionButton);
         shadow.appendChild(article);
