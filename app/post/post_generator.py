@@ -824,7 +824,7 @@ class PostGenerator:
                             "title": self.settings["archive-title"][language["uuid"]]["content"] if len(
                                 title) == 0 else title,
                             "site_url": self.settings["site_url"]["settings_value"],
-                            "page_name": f"Archive for {post_type['display_name']}",
+                            "page_name": f"{self.settings['archive-title'][language['uuid']]['content']} {post_type['display_name']}",
                             "post_type": post_type,
                             "sloth_api_url": self.settings["sloth_api_url"]["settings_value"],
                             "menus": self.menus,
