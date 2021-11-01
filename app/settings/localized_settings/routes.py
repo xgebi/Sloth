@@ -100,15 +100,14 @@ def change_localized_settings(*args, permission_level: int, connection: psycopg.
 
         localizable = [{"name": item[0], "standalone": item[1]} for item in cur.fetchall()]
         cur.execute("""SELECT uuid, post_type, name, lang, content FROM sloth_localized_strings;""")
-        localized = {f"{item[2]}_{item[1]}_{item[3]}": {
+        localized = {f"{item[2]}{'_' + item[1] if item[1] is not None else ''}_{item[3]}": {
             "uuid": item[0],
             "post_type": item[1],
             "name": item[2],
             "lang": item[3],
             "content": item[4]
         } for item in cur.fetchall()}
-        to_update = []
-        to_insert = []
+
         for item in data:
             identifiers = item.split("_")
             updated = {
@@ -120,16 +119,8 @@ def change_localized_settings(*args, permission_level: int, connection: psycopg.
             # 'post-type-tag-title_' + post_type['uuid'] + '_' + lang['uuid']
             if item in localized:
                 updated["uuid"] = localized[item]["uuid"]
-                to_update.append(updated)
                 cur.execute("""UPDATE sloth_localized_strings SET content = %s WHERE uuid = %s;""",
                             (updated["content"], updated["uuid"]))
-            else:
-                updated["uuid"] = str(uuid4())
-                to_insert.append(updated)
-                cur.execute("""INSERT INTO sloth_localized_strings (uuid, post_type, name, lang, content) VALUES 
-                        (%s, %s, %s, %s, %s);""",
-                            (updated["uuid"], updated["post_type"], updated["name"], updated["lang"],
-                             updated["content"]))
         connection.commit()
     except Exception as e:
         print(traceback.format_exc())

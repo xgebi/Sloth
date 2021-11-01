@@ -51,5 +51,9 @@
     "type": "sql",
     "folder": "setup",
     "file": "047_add_form_to_sloth_post_section_type.sql"
+  },
+  {
+    "type": "py",
+    "file": "localized_strings_cleanup"
   }
 ]
