@@ -24,7 +24,6 @@ function checkRegenerationLock(disabledItems) {
         }
         throw `${response.status}: ${response.statusText}`
     }).then(result => {
-        console.log(result);
         if (!result["generating"]) {
             clearInterval(regenerationCheckInterval);
             disabledItems.forEach(button => button.removeAttribute("disabled"));

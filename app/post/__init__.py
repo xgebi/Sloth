@@ -68,6 +68,7 @@ def get_taxonomy_for_post_preped_for_listing(connection: psycopg.Connection, uui
 
     for taxonomy in all_taxonomies:
         thing = {
+            "slug": taxonomy[0],
             "display_name": taxonomy[1],
             "url": f"{prefix}{taxonomy[2]}/{taxonomy[0]}"
         }

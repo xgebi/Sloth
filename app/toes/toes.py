@@ -235,7 +235,10 @@ class Toe:
             for condition in conditions:
                 processed_class = self.process_css_class_condition(condition=condition.strip())
                 classes += f" {processed_class}" if processed_class is not None else ""
-        new_tree_node.set_attribute('class', classes)
+        else:
+            classes += self.current_scope.find_variable(cond_attr)
+        if len(classes) > 0:
+            new_tree_node.set_attribute('class', classes)
 
     def process_conditional_attributes(self, new_tree_node: Node, cond_attr: str, attr_name: str):
         if self.process_condition(condition=cond_attr):

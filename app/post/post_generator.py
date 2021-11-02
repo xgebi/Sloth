@@ -664,7 +664,7 @@ class PostGenerator:
                     "is_post": True,
                     "language": language["uuid"],
                     "categories": categories,
-                    "tags": tags
+                    "tags": tags,
                 },
                 hooks=self.hooks,
                 base_path=self.theme_path
@@ -1099,11 +1099,21 @@ class PostGenerator:
                     cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
                             (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
-                            sp.publish_date, sp.thumbnail FROM sloth_posts AS sp
-                                WHERE post_type = %s AND post_status = 'published' AND lang = %s
-                                ORDER BY publish_date DESC LIMIT %s""",
-                        (post_type['uuid'], language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
+                            sp.publish_date, sp.thumbnail 
+                            FROM sloth_posts AS sp
+                            WHERE post_type = %s AND post_status = 'published' AND lang = %s AND pinned = %s
+                            ORDER BY publish_date DESC LIMIT %s""",
+                        (post_type['uuid'], language['uuid'], True, int(self.settings['number_rss_posts']['settings_value'])))
                     raw_items = cur.fetchall()
+                    if int(self.settings['number_rss_posts']['settings_value']) - len(raw_items) > 0:
+                        cur.execute(
+                            """SELECT sp.uuid, sp.title, sp.slug, 
+                                (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
+                                sp.publish_date, sp.thumbnail FROM sloth_posts AS sp
+                                    WHERE post_type = %s AND post_status = 'published' AND lang = %s  AND pinned = %s
+                                    ORDER BY publish_date DESC LIMIT %s""",
+                            (post_type['uuid'], language['uuid'], False, int(self.settings['number_rss_posts']['settings_value']) - len(raw_items)))
+                        raw_items.extend(cur.fetchall())
                     md_parser = MarkdownParser()
                     posts[post_type['slug']] = []
 
@@ -1119,6 +1129,17 @@ class PostGenerator:
                             thumbnail_path = res[0]
                             thumbnail_alt = res[1]
                         excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
+
+                        categories, tags = get_taxonomy_for_post_preped_for_listing(
+                            connection=self.connection,
+                            uuid=item[0],
+                            main_language=self.settings['main_language'],
+                            language=language
+                        )
+                        classes = " ".join(
+                            [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
+                                                                                           in tags])
+
                         posts[post_type['slug']].append({
                             "uuid": item[0],
                             "title": item[1],
@@ -1129,7 +1150,8 @@ class PostGenerator:
                                 "%Y-%m-%d %H:%M"),
                             "post_type_slug": post_type['slug'],
                             "thumbnail_path": thumbnail_path,
-                            "thumbnail_alt": thumbnail_alt
+                            "thumbnail_alt": thumbnail_alt,
+                            "classes": classes,
                         })
         except Exception as e:
             print(390)

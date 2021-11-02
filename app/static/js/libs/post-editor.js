@@ -143,7 +143,6 @@ class PostEditor extends HTMLElement {
         input.setAttribute("class", "content");
         input.setAttribute("value", text);
         input.setAttribute("style", "width: 100%;");
-        console.log(input);
         return input;
     }
 
@@ -166,7 +165,6 @@ class PostEditor extends HTMLElement {
                 position: i
             })
         }
-        console.log(sections);
         return sections;
     }
 

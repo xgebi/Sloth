@@ -148,6 +148,10 @@ select {
     grid-column: 2 / 3;
 }
 
+.post-edit .post-pinned {
+    flex-direction: row;
+}
+
 .post-edit #thumbnail-wrapper img {
     width: 16rem;
 }

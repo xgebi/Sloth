@@ -199,7 +199,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             cur.execute("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
                  sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
                  sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
-                 sp.meta_description, sp.twitter_description
+                 sp.meta_description, sp.twitter_description, sp.pinned
                         FROM sloth_posts AS sp 
                         INNER JOIN sloth_users AS B ON sp.author = B.uuid 
                         INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
@@ -356,7 +356,8 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
         "meta_description": raw_post[20],
         "social_description": raw_post[21],
         "libraries": post_libs,
-        "original_post": raw_post[16]
+        "original_post": raw_post[16],
+        "pinned": raw_post[22],
     }
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -1017,13 +1018,13 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 
                     cur.execute("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
                         title, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
-                        original_lang_entry_uuid, post_format, meta_description, twitter_description) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                        original_lang_entry_uuid, post_format, meta_description, twitter_description, pinned) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                                 (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
                                  filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
                                  filled["original_post"] if "original_post" in filled else "", filled["post_format"],
-                                 filled["meta_description"], filled["social_description"]))
+                                 filled["meta_description"], filled["social_description"]), filled["pinned"])
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
                                                                  tags=matched_tags)
@@ -1032,13 +1033,15 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     # when editting this don't forget that last item needs to be uuid
                     cur.execute("""UPDATE sloth_posts SET slug = %s, title = %s, css = %s, js = %s,
                          thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
-                         password = %s, post_format = %s, meta_description = %s, twitter_description = %s WHERE uuid = %s;""",
+                         password = %s, post_format = %s, meta_description = %s, twitter_description = %s,
+                          pinned = %s WHERE uuid = %s;""",
                                 (filled["slug"], filled["title"], filled["css"], filled["js"],
                                  filled["thumbnail"] if filled["thumbnail"] != "None" else None,
                                  filled["publish_date"] if filled["publish_date"] is not None else publish_date,
                                  str(time() * 1000), filled["post_status"], filled["approved"],
                                  filled["password"] if "password" in filled else None, filled["post_format"],
-                                 filled["meta_description"], filled["social_description"], filled["uuid"]))
+                                 filled["meta_description"], filled["social_description"], filled["pinned"],
+                                 filled["uuid"]))
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
                                                                  tags=matched_tags)
@@ -1063,7 +1066,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 cur.execute("""SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, 
                                         sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
                                         sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
-                                        sp.twitter_description, spf.uuid, spf.slug, spf.display_name
+                                        sp.twitter_description, spf.uuid, spf.slug, spf.display_name, sp.pinned
                                         FROM sloth_posts as sp 
                                         INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
                                         WHERE sp.uuid = %s;""",

@@ -143,7 +143,8 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
         "format_uuid": raw_post[19] if len(raw_post) >= 20 and raw_post[19] is not None else None,
         "format_slug": raw_post[20] if len(raw_post) >= 21 and raw_post[20] is not None else None,
         "format_name": raw_post[21] if len(raw_post) >= 22 and raw_post[21] is not None else None,
-        "sections": sections
+        "sections": sections,
+        "pinned": raw_post[22] if len(raw_post) >= 23 and raw_post[22] is not None else None,
     }
 
     return result

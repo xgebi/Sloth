@@ -55,5 +55,10 @@
   {
     "type": "py",
     "file": "localized_strings_cleanup"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "048_add_pinned_column_to_sloth_posts.sql"
   }
 ]

@@ -218,6 +218,7 @@ function collectValues() {
         });
     }
     post["libs"] = libs;
+    post["pinned"] =  document.querySelector("#post-pinned-check").checked;
     return post;
 }
 

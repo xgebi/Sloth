@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
             throw `${response.status}: ${response.statusText}`
         }).then(result => {
-            console.log(result);
+
         }).catch(error => {
             console.error('Error:', error);
         });
