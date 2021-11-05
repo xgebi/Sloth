@@ -185,7 +185,7 @@ def keep_logged_in(*args, permission_level, **kwargs):
     return json.dumps({"loggedIn": True})
 
 
-@login.route("/api/login")
+@login.route("/api/login", methods=['POST'])
 def api_login() -> Tuple[str, int]:
     """
     API endpoint that processes logging in
