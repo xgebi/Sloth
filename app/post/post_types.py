@@ -31,6 +31,28 @@ class PostTypes:
                 "archive_enabled": item[5]
             } for item in raw_items]
 
+    def get_post_type_list_as_json(self, connection: psycopg.Connection):
+        with connection.cursor() as cur:
+            raw_items = []
+            try:
+                cur.execute(
+                    """SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
+                            FROM sloth_post_types"""
+                )
+                raw_items = cur.fetchall()
+            except psycopg.errors.DatabaseError as e:
+                abort(500)
+            cur.close()
+
+            return [{
+                "uuid": item[0],
+                "slug": item[1],
+                "displayName": item[2],
+                "tagsEnabled": item[3],
+                "categoriesEnabled": item[4],
+                "archiveEnabled": item[5]
+            } for item in raw_items]
+
     def get_post_type(self, connection, post_type_id):
         try:
             with connection.cursor() as cur:

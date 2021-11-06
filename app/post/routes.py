@@ -75,6 +75,33 @@ def show_posts_list(*args, permission_level: int, connection: psycopg.Connection
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
 
+@post.route("/api/post/<post_type>")
+@authorize_rest(0)
+@db_connection
+def get_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, **kwargs):
+    """
+    Gets a list of posts for default language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param kwargs:
+    :return:
+    """
+    lang_id = ""
+    try:
+        with connection.cursor() as cur:
+            cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
+            lang_id = cur.fetchone()[0]
+    except Exception as e:
+        print(e)
+        connection.close()
+        abort(500)
+
+    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
+                            lang_id=lang_id)
+
 
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)

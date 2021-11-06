@@ -196,3 +196,14 @@ def delete_post_type(*args, connection: psycopg.Connection, **kwargs):
         connection.close()
 
     return json.dumps({"deleted": True})
+
+
+@post_type.route("/api/post-types")
+@authorize_rest(0)
+@db_connection
+def get_post_types(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    post_types = PostTypes()
+    post_types_result = post_types.get_post_type_list_as_json(connection)
+    connection.close()
+
+    return json.dumps(post_types_result), 200
