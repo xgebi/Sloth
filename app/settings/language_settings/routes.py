@@ -22,9 +22,6 @@ def show_language_settings(*args, permission_level: int, connection: psycopg.Con
 
     try:
         with connection.cursor() as cur:
-            cur.execute("""SELECT settings_value from sloth_settings WHERE settings_name = %s""",
-                        ('main_language', ))
-            default_language = cur.fetchone()[0]
             cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings""")
             temp_languages = cur.fetchall()
     except Exception as e:
@@ -41,7 +38,7 @@ def show_language_settings(*args, permission_level: int, connection: psycopg.Con
             "uuid": lang[0],
             "short_name": lang[1],
             "long_name": lang[2],
-            "default": lang[0] == default_language
+            "default": lang[0] == default_lang
         })
 
     return render_toe_from_path(
@@ -126,3 +123,26 @@ def delete_language(*args, connection: psycopg.Connection, lang_id: str, **kwarg
 
     response.headers['Content-Type'] = 'application/json'
     return response, code
+
+
+@language_settings.route("/api/languages", methods=['GET'])
+@authorize_rest(0)
+@db_connection
+def get_language_list(*args, connection: psycopg.Connection, **kwargs):
+    try:
+        with connection.cursor() as cur:
+            cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings;""")
+            res = [{
+                "uuid": lang[0],
+                "longName": lang[1],
+                "shortName": lang[2],
+                "default": False
+            } for lang in cur.fetchall()]
+            default_lang = get_default_language(connection=connection)
+            for lang in res:
+                if lang["uuid"] == default_lang["uuid"]:
+                    lang["default"] = True
+            return json.dumps(res), 200
+    except Exception as e:
+        print(e)
+        return json.dumps({"error": "Cannot fetch languages"}), 500

@@ -75,10 +75,10 @@ def show_posts_list(*args, permission_level: int, connection: psycopg.Connection
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
 
-@post.route("/api/post/<post_type>")
+@post.route("/api/post/<post_type>/<language>")
 @authorize_rest(0)
 @db_connection
-def get_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, **kwargs):
+def get_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, language: str, **kwargs):
     """
     Gets a list of posts for default language
 
@@ -86,21 +86,31 @@ def get_posts_list(*args, permission_level: int, connection: psycopg.Connection,
     :param permission_level:
     :param connection:
     :param post_type:
+    :param language:
     :param kwargs:
     :return:
     """
-    lang_id = ""
     try:
         with connection.cursor() as cur:
-            cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-            lang_id = cur.fetchone()[0]
+            cur.execute("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, A.post_type,
+                            A.lang
+                            FROM sloth_posts AS A 
+                            WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC""",
+                        (post_type, language))
+            raw_items = cur.fetchall()
+            return json.dumps([{
+                "uuid": item[0],
+                "title": item[1],
+                "publishDate": item[2],
+                "updateDate": item[3],
+                "postStatus": item[4],
+                "postType": item[5],
+                "language": item[6],
+            } for item in raw_items])
     except Exception as e:
         print(e)
         connection.close()
         abort(500)
-
-    return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
-                            lang_id=lang_id)
 
 
 @post.route("/post/<post_type>/<lang_id>")
