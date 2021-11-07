@@ -571,17 +571,20 @@ class Toe:
         # resolve variable
         resolved = []
         for idx in range(len(sides)):
-            if sides[idx][0] == "'":
-                resolved.append(sides[idx][1: len(sides[idx]) - 1])
-            else:
-                try:
-                    resolved.append(float(sides[idx]))
-                except ValueError:
-                    resolved_var = self.current_scope.find_variable(sides[idx])
-                    if resolved_var is not None:
-                        resolved.append(resolved_var)
-                    else:
-                        return False
+            try:
+                if sides[idx][0] == "'":
+                    resolved.append(sides[idx][1: len(sides[idx]) - 1])
+                else:
+                    try:
+                        resolved.append(float(sides[idx]))
+                    except ValueError:
+                        resolved_var = self.current_scope.find_variable(sides[idx])
+                        if resolved_var is not None:
+                            resolved.append(resolved_var)
+                        else:
+                            return False
+            except Exception as e:
+                print(e)
 
         if " gte " in condition["value"]:
             return float(resolved[0]) >= float(resolved[1])

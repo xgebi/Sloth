@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const regenerateAllButton = document.querySelector("#regenerate-all-button");
 
-    if (regenerateAllButton.getAttribute("disabled")) {
+    if (regenerateAllButton.hasAttributes("disabled")) {
         regenerationCheckInterval = setInterval(
             checkRegenerationLock,
             1000,
