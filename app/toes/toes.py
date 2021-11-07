@@ -585,6 +585,7 @@ class Toe:
                             return False
             except Exception as e:
                 print(e)
+                print(sides[idx])
 
         if " gte " in condition["value"]:
             return float(resolved[0]) >= float(resolved[1])
