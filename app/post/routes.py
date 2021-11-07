@@ -466,6 +466,40 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
     :param kwargs:
     :return:
     """
+
+    data = prepare_data_new_post(connection=connection, post_type=post_type, lang_id=lang_id)
+    data["permission_level"] = permission_level
+    data["token"] = request.cookies.get('sloth_session')
+
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="post-edit.toe.html",
+        hooks=Hooks(),
+        data=data
+    )
+
+
+@post.route("/api/post/<post_type>/new/<lang_id>")
+@authorize_rest(0)
+@db_connection
+def get_post_new(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str, **kwargs):
+    """
+    Renders pages for a new post in a language
+
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_type:
+    :param lang_id:
+    :param kwargs:
+    :return:
+    """
+    data = prepare_data_new_post(connection=connection, post_type=post_type, lang_id=lang_id)
+    data["permission_level"] = permission_level
+    return json.dumps(data), 200
+
+
+def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_id: str):
     original_post = request.args.get('original');
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
@@ -481,7 +515,7 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
             cur.execute("SELECT unnest(enum_range(NULL::sloth_post_status))")
             temp_post_statuses = cur.fetchall()
             cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
-                                            WHERE post_type = %s AND lang = %s""",
+                                                WHERE post_type = %s AND lang = %s""",
                         (post_type, lang_id))
             raw_all_taxonomies = cur.fetchall()
             current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
@@ -495,9 +529,9 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
                     languages=languages
                 )
                 cur.execute("""SELECT content, section_type, position
-                        FROM sloth_post_sections
-                        WHERE post = %s
-                        ORDER BY position;""",
+                            FROM sloth_post_sections
+                            WHERE post = %s
+                            ORDER BY position;""",
                             (original_post,))
                 sections = [{
                     "content": "",
@@ -521,7 +555,7 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
             default_format = cur.fetchone()[0]
 
             cur.execute("""SELECT uuid, name, version, location 
-                    FROM sloth_libraries;""")
+                        FROM sloth_libraries;""")
             libs = [{
                 "uuid": lib[0],
                 "name": lib[1],
@@ -554,30 +588,21 @@ def show_post_new(*args, permission_level: int, connection: psycopg.Connection, 
         "sections": sections,
     }
 
-    token = request.cookies.get('sloth_session')
-
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="post-edit.toe.html",
-        hooks=Hooks(),
-        data={
-            "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "token": token,
-            "post_type_name": post_type_name,
-            "data": data,
-            "media_data": json.dumps([media[key] for key in media.keys()]),
-            "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
-            "default_lang": default_lang,
-            "languages": translatable_languages,
-            "translations": translations,
-            "current_lang_id": data["lang"],
-            "post_formats": post_formats,
-            "libs": libs,
-            "hook_list": HooksList.list()
-        }
-    )
+    return {
+        "title": f"Add new {post_type_name}" if data["new"] else f"Edit {post_type_name}",
+        "post_types": post_types_result,
+        "post_type_name": post_type_name,
+        "data": data,
+        "media_data": json.dumps([media[key] for key in media.keys()]),
+        "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
+        "default_lang": default_lang,
+        "languages": translatable_languages,
+        "translations": translations,
+        "current_lang_id": data["lang"],
+        "post_formats": post_formats,
+        "libs": libs,
+        "hook_list": HooksList.list()
+    }
 
 
 @post.route("/post/<type_id>/taxonomy")
