@@ -860,18 +860,24 @@ class PostGenerator:
         try:
             with self.connection.cursor() as cur:
                 # This is a rudimentary version
-                cur.execute("""SELECT title, excerpt, content, thumbnail, lang 
+                cur.execute("""SELECT title, thumbnail, lang 
                     FROM sloth_posts WHERE uuid = %s;""",
                             (uuid,))
                 raw_post = cur.fetchone()
+                cur.execute("""SELECT content FROM sloth_post_sections WHERE post = %s AND section_type = 'text' ORDER BY position;""", (uuid, ))
+                sections = cur.fetchall()
                 post["title"] = raw_post[0]
-                excerpt_forms = self.get_forms_from_text(copy.deepcopy(raw_post[1]))
-                content_forms = self.get_forms_from_text(copy.deepcopy(raw_post[2]))
                 md_parser = MarkdownParser()
-                # TODO
-                post["excerpt"] = md_parser.to_html_string(post["excerpt"], hooks=self.hooks, forms=excerpt_forms)
-                post["content"] = md_parser.to_html_string(post["content"], hooks=self.hooks, forms=content_forms)
-                if raw_post[3] is not None:
+                post["full_content"] = ""
+                footnotes = []
+                for section in sections:
+                    section_content, section_footnotes = md_parser.to_html_string(section[0])
+                    post["full_content"] += section_content
+                    footnotes.extend(section_footnotes)
+
+                post["full_content"] = combine_footnotes(text=post["full_content"], footnotes=footnotes)
+
+                if raw_post[1] is not None:
                     cur.execute("""SELECT sm.file_path, sma.alt 
                                     FROM sloth_media AS sm
                                      INNER JOIN sloth_media_alts sma on sm.uuid = sma.uuid

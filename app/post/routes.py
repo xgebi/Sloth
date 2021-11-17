@@ -1086,7 +1086,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                                  filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
                                  filled["original_post"] if "original_post" in filled else "", filled["post_format"],
-                                 filled["meta_description"], filled["social_description"]), filled["pinned"])
+                                 filled["meta_description"], filled["social_description"], filled["pinned"]))
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
                                                                  tags=matched_tags)
