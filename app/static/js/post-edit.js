@@ -100,8 +100,9 @@ function publishPost() {
     if (!values) {
         return;
     }
-    values["post_status"] = "published";
-    console.log(values);
+    if (values["post_status"] !== "protected") {
+        values["post_status"] = "published";
+    }
     savePost(values);
 }
 

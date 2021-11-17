@@ -1054,7 +1054,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 # get user
                 author = request.headers.get('authorization').split(":")[1]
 
-                if filled["post_status"] == 'published' and filled["publish_date"] is None:
+                if (filled["post_status"] == 'published' and filled["publish_date"] is None) or (filled["post_status"] == 'protected' and filled["publish_date"] is None):
                     publish_date = str(time() * 1000)
                 elif filled["post_status"] == 'scheduled':
                     publish_date = filled["publish_date"]
@@ -1176,23 +1176,24 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 
                 if filled["post_status"] == 'protected':
                     # get post type slug
-                    cur.execute("""SELECT slug FROM sloth_post_types WHERE uuid = %s;""",
+                    cur.execute("""SELECT slug, uuid FROM sloth_post_types WHERE uuid = %s;""",
                                 (generatable_post["post_type"],))
-                    post_type_slug = cur.fetchone()
+                    post_type = cur.fetchone()
                     cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;""",
                                 (generatable_post["lang"],))
                     language_raw = cur.fetchone()
                     # get post slug
                     gen = PostGenerator()
                     gen.delete_post_files(
-                        post_type=post_type_slug[0],
-                        post=generatable_post["slug"],
+                        post_type_slug=post_type[0],
+                        post_slug=generatable_post["slug"],
                         language={
                             "uuid": language_raw[0],
                             "short_name": language_raw[1],
                             "long_name": language_raw[2]
                         }
                     )
+                    gen.run(clean_protected=True, post=generatable_post)
     except Exception:
         print(traceback.format_exc())
         return json.dumps({"error": "Error saving post"}), 500

@@ -72,6 +72,7 @@ class PostGenerator:
     def run(
             self,
             *args, post: Dict = {},
+            clean_protected=False,
             post_type: str = "",
             everything: bool = True,
             regenerate_taxonomies: List = [],
@@ -100,11 +101,21 @@ class PostGenerator:
         with open(os.path.join(os.getcwd(), 'generating.lock'), 'w') as f:
             f.write("generation locked")
 
-        if len(post.keys()) > 0:
+        if len(post.keys()) > 0 and not clean_protected:
             t = threading.Thread(
                 target=self.prepare_single_post,
                 kwargs=dict(
                     post=post,
+                    regenerate_taxonomies=regenerate_taxonomies,
+                    multiple=multiple
+                )
+            )
+        elif len(post.keys()) > 0 and clean_protected:
+            t = threading.Thread(
+                target=self.prepare_single_post,
+                kwargs=dict(
+                    post=post,
+                    clean_protected=clean_protected,
                     regenerate_taxonomies=regenerate_taxonomies,
                     multiple=multiple
                 )
@@ -228,7 +239,7 @@ class PostGenerator:
         try:
             with self.connection.cursor() as cur:
                 cur.execute(
-                        """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
+                    """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
                             sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
                             sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
                             spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
@@ -267,12 +278,12 @@ class PostGenerator:
                                         INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
                                         WHERE sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published' 
                                         ORDER BY sp.publish_date DESC;""",
-                    (post_type_uuid, language_uuid))
+                            (post_type_uuid, language_uuid))
                 raw_items = cur.fetchall()
                 posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
                 for post in posts:
                     cur.execute(
-                            """SELECT sl.location, spl.hook_name
+                        """SELECT sl.location, spl.hook_name
                             FROM sloth_post_libraries AS spl
                             INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                             WHERE spl.post = %s;""",
@@ -386,8 +397,8 @@ class PostGenerator:
             return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
         return ''
 
-
-    def prepare_single_post(self, *args, post: Dict, regenerate_taxonomies: List, multiple: bool = False, **kwargs):
+    def prepare_single_post(self, *args, post: Dict, regenerate_taxonomies: List, multiple: bool = False,
+                            clean_protected=False, **kwargs):
         self.clean_taxonomy(taxonomies_for_cleanup=regenerate_taxonomies)
         post_types_object = PostTypes()
         post_types = post_types_object.get_post_type_list(self.connection)
@@ -411,8 +422,9 @@ class PostGenerator:
         post["thumbnail_path"] = thumbnail_path
         post["thumbnail_alt"] = html.escape(thumbnail_alt)
 
-        self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
-                           multiple=multiple)
+        if not clean_protected:
+            self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
+                               multiple=multiple)
 
         if post_type["archive_enabled"]:
             posts = self.get_posts_from_post_type_language(
@@ -864,7 +876,9 @@ class PostGenerator:
                     FROM sloth_posts WHERE uuid = %s;""",
                             (uuid,))
                 raw_post = cur.fetchone()
-                cur.execute("""SELECT content FROM sloth_post_sections WHERE post = %s AND section_type = 'text' ORDER BY position;""", (uuid, ))
+                cur.execute(
+                    """SELECT content FROM sloth_post_sections WHERE post = %s AND section_type = 'text' ORDER BY position;""",
+                    (uuid,))
                 sections = cur.fetchall()
                 post["title"] = raw_post[0]
                 md_parser = MarkdownParser()
@@ -1109,7 +1123,8 @@ class PostGenerator:
                             FROM sloth_posts AS sp
                             WHERE post_type = %s AND post_status = 'published' AND lang = %s AND pinned = %s
                             ORDER BY publish_date DESC LIMIT %s""",
-                        (post_type['uuid'], language['uuid'], True, int(self.settings['number_rss_posts']['settings_value'])))
+                        (post_type['uuid'], language['uuid'], True,
+                         int(self.settings['number_rss_posts']['settings_value'])))
                     raw_items = cur.fetchall()
                     if int(self.settings['number_rss_posts']['settings_value']) - len(raw_items) > 0:
                         cur.execute(
@@ -1118,7 +1133,8 @@ class PostGenerator:
                                 sp.publish_date, sp.thumbnail FROM sloth_posts AS sp
                                     WHERE post_type = %s AND post_status = 'published' AND lang = %s  AND pinned = %s
                                     ORDER BY publish_date DESC LIMIT %s""",
-                            (post_type['uuid'], language['uuid'], False, int(self.settings['number_rss_posts']['settings_value']) - len(raw_items)))
+                            (post_type['uuid'], language['uuid'], False,
+                             int(self.settings['number_rss_posts']['settings_value']) - len(raw_items)))
                         raw_items.extend(cur.fetchall())
                     md_parser = MarkdownParser()
                     posts[post_type['slug']] = []
