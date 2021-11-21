@@ -6,6 +6,7 @@ use std::sync::Arc;
 use pyo3::types::PyDict;
 use postgres_types::{ToSql, FromSql};
 use std::collections::hash_map::RandomState;
+use std::hash::Hash;
 use crate::shared::{Hooks, Hook};
 
 #[derive(Debug)]
@@ -15,14 +16,33 @@ struct Setting {
     value_type: SlothSettingsType,
 }
 
+#[derive(Debug)]
 struct TranslatableSettingItem {
     name: String,
     content: String,
     lang: String
 }
 
+#[derive(Debug)]
 struct TranslatableSetting {
     setting: HashMap<String, TranslatableSettingItem>
+}
+
+#[derive(Debug)]
+struct Menu {
+
+}
+
+#[derive(Debug)]
+struct MenuItem {
+
+}
+
+#[derive(Debug)]
+struct Language {
+    uuid: String,
+    long_name: String,
+    short_name: String,
 }
 
 #[derive(Debug, ToSql, FromSql)]
@@ -47,9 +67,9 @@ pub(crate) fn prepare_single_post(conn: &mut Client, uuid: &PyDict, theme_path: 
     };
 
     // get menus
-    get_menus(conn);
+    let menus = get_menus(conn);
     // get languages
-    get_languages(conn);
+    let languages = get_languages(conn);
     // set footer
     get_footer(conn);
     // set theme
@@ -184,10 +204,16 @@ fn set_translatable_setting(conn: &mut Client, name: String) -> TranslatableSett
     let mut translatable_settings = TranslatableSetting {
         setting: HashMap::new()
     };
-    for row in conn.query("SELECT name, content, lang
-                FROM sloth_localized_strings WHERE name = %s;",
-                          &[&name],
-    ).unwrap() {
+
+    let rows = conn.query("SELECT name, content, lang
+                FROM sloth_localized_strings WHERE name = $1;",
+                          &[&name]);
+
+    if let Err(e) = rows {
+        return translatable_settings
+    }
+
+    for row in rows.unwrap() {
         let item = TranslatableSettingItem {
             name: row.get("name"),
             content: row.get("content"),
@@ -199,12 +225,26 @@ fn set_translatable_setting(conn: &mut Client, name: String) -> TranslatableSett
     translatable_settings
 }
 
-fn get_menus(conn: &mut Client) {
-
+fn get_menus(conn: &mut Client) -> HashMap<String, Vec<Row>> {
+    let mut menus: HashMap<String, Vec<Row>> = HashMap::new();
+    let menu_rows = conn.query("SELECT name, uuid FROM sloth_menus;", &[]);
+    if let Err(e) = menu_rows {
+        return menus;
+    }
+    for menu_row in menu_rows.unwrap() {
+        let menu_items = conn.query("SELECT title, url FROM sloth_menu_items WHERE menu = $1", &[&menu_row.get("uuid")]);
+        if let Err(e) = menu_items {
+            continue;
+        }
+        menus.insert(menu_row.get("name").unwrap(), menu_items.unwrap());
+    }
+    menus
 }
 
-fn get_languages(conn: &mut Client) {
+fn get_languages(conn: &mut Client) -> Vec<Language> {
+    let mut languages: Vec<Language> = Vec::new();
 
+    languages
 }
 
 fn get_footer(conn: &mut Client) {

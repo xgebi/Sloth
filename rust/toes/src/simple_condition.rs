@@ -100,7 +100,8 @@ impl SimpleCondition {
         } else if regs.int_re.is_match(rhs.as_str()) {
             self.evaluate_int_int(resolved_lhs, &rhs.parse::<i64>().unwrap(),)
         } else if regs.float_re.is_match(rhs.as_str()) {
-            self.evaluate_int_float(resolved_lhs, &rhs.parse::<f64>().unwrap())
+            let lhs: f64 = resolved_lhs.clone() as f64;
+            self.evaluate_float_float(&lhs, &rhs.parse::<f64>().unwrap())
         } else if regs.single_str.is_match(rhs.as_str()) {
             false
         } else if regs.double_str.is_match(rhs.as_str()) {
@@ -140,25 +141,6 @@ impl SimpleCondition {
         }
     }
 
-    fn evaluate_int_float(&self, resolved_lhs: &i64, resolved_rhs: &f64) -> bool {
-        let lhs = resolved_lhs as &f64;
-        if self.operator.eq(&String::from("gte")) {
-            lhs >= resolved_rhs
-        } else if self.operator.eq(&String::from("gt")) {
-            lhs > resolved_rhs
-        } else if self.operator.eq(&String::from("lte")) {
-            lhs <= resolved_rhs
-        } else if self.operator.eq(&String::from("lt")) {
-            lhs < resolved_rhs
-        } else if self.operator.eq(&String::from("eq")) {
-            lhs == resolved_rhs
-        } else if self.operator.eq(&String::from("neq")) {
-            lhs != resolved_rhs
-        } else {
-            false
-        }
-    }
-
     fn evaluate_int_string(resolved_lhs: i64, resolved_rhs: String) -> bool {
         false
     }
@@ -186,7 +168,7 @@ impl SimpleCondition {
         }
     }
 
-    fn evaluate_float_float(&self, resolved_lhs: f64, resolved_rhs: f64) -> bool {
+    fn evaluate_float_float(&self, resolved_lhs: &f64, resolved_rhs: &f64) -> bool {
         if self.operator.eq(&String::from("gte")) {
             resolved_lhs >= resolved_rhs
         } else if self.operator.eq(&String::from("gt")) {

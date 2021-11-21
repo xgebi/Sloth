@@ -854,7 +854,7 @@ class PostGenerator:
         menus = {}
         try:
             with self.connection.cursor() as cur:
-                cur.execute("""SELECT name, uuid FROM sloth_menus""")
+                cur.execute("""SELECT name, uuid FROM sloth_menus;""")
                 menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
                 for menu in menus.keys():
                     cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",

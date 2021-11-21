@@ -4,64 +4,64 @@ use crate::variable_scope::VariableScope;
 use unicode_segmentation::UnicodeSegmentation;
 use regex::Regex;
 
-struct Condition<'a> {
-    value: Vec<&'a str>,
-    processed: bool
-}
-
-fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bool {
-    if condition.to_lowercase() == "true" {
-        return true;
-    } else if condition.to_lowercase() == "false" {
-        return false;
-    }
-
-    let mut condition = Condition {
-        value: condition.graphemes(true).collect::<Vec<&str>>(),
-        processed: false
-    };
-
-    let mut parenthesis_depth: u16 = 0;
-    let mut inside_quotes: bool = false;
-    let mut temp_start: usize = usize::MIN;
-    for i in 0..condition.value.len() {
-        match condition.value[i] {
-            "\"" => {
-                if condition.value[i - 1] != "\\" {
-                    inside_quotes = !inside_quotes
-                }
-            },
-            "\'" => {
-                if condition.value[i - 1] != "\\" {
-                    inside_quotes = !inside_quotes
-                }
-            },
-            "(" => {
-                if !inside_quotes {
-                    parenthesis_depth += 1;
-                }
-            },
-            ")" => {
-                if !inside_quotes {
-                    parenthesis_depth -= 1;
-                }
-            },
-            " " => {
-
-            },
-            _ => {
-
-            }
-        }
-    }
-
-    condition.processed = true;
-    false
-}
-
-fn solve_condition(condition: Condition, variable_scope: Rc<VariableScope>) -> bool {
-    false
-}
+// struct Condition<'a> {
+//     value: Vec<&'a str>,
+//     processed: bool
+// }
+//
+// fn process_condition(condition: String, variable_scope: Rc<VariableScope>) -> bool {
+//     if condition.to_lowercase() == "true" {
+//         return true;
+//     } else if condition.to_lowercase() == "false" {
+//         return false;
+//     }
+//
+//     let mut condition = Condition {
+//         value: condition.graphemes(true).collect::<Vec<&str>>(),
+//         processed: false
+//     };
+//
+//     let mut parenthesis_depth: u16 = 0;
+//     let mut inside_quotes: bool = false;
+//     let mut temp_start: usize = usize::MIN;
+//     for i in 0..condition.value.len() {
+//         match condition.value[i] {
+//             "\"" => {
+//                 if condition.value[i - 1] != "\\" {
+//                     inside_quotes = !inside_quotes
+//                 }
+//             },
+//             "\'" => {
+//                 if condition.value[i - 1] != "\\" {
+//                     inside_quotes = !inside_quotes
+//                 }
+//             },
+//             "(" => {
+//                 if !inside_quotes {
+//                     parenthesis_depth += 1;
+//                 }
+//             },
+//             ")" => {
+//                 if !inside_quotes {
+//                     parenthesis_depth -= 1;
+//                 }
+//             },
+//             " " => {
+//
+//             },
+//             _ => {
+//
+//             }
+//         }
+//     }
+//
+//     condition.processed = true;
+//     false
+// }
+//
+// fn solve_condition(condition: Condition, variable_scope: Rc<VariableScope>) -> bool {
+//     false
+// }
 
 #[cfg(test)]
 mod tests {
