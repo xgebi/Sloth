@@ -29,16 +29,35 @@ struct TranslatableSetting {
 }
 
 #[derive(Debug)]
-struct Menu {
+struct Menu<'a> {
+    name: &'a String,
+    uuid: &'a String,
+    items: Vec<MenuItem>
+}
 
+impl<'a> Menu<'a> {
+    fn new(name: &'a String, uuid: &'a String) -> Self {
+        Self {
+            name,
+            uuid,
+            items: Vec::new()
+        }
+    }
 }
 
 #[derive(Debug)]
 struct MenuItem {
-
+    title: String,
+    url: String
 }
 
-#[derive(Debug)]
+impl MenuItem {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Debug, FromSql)]
 struct Language {
     uuid: String,
     long_name: String,
@@ -236,6 +255,7 @@ fn get_menus(conn: &mut Client) -> HashMap<String, Vec<Row>> {
         if let Err(e) = menu_items {
             continue;
         }
+        let a = menu_row.get("name");
         menus.insert(menu_row.get("name").unwrap(), menu_items.unwrap());
     }
     menus

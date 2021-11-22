@@ -344,7 +344,7 @@ class Toe:
                 if item[0] == "'":
                     result += item[1: len(item) - 1]
                 else:
-                    resolved_value = self.current_scope.find_variable(item)
+                    resolved_value = self.current_scope.find_variable(item.strip())
                     result += str(resolved_value) if resolved_value is not None else ""
 
             return result

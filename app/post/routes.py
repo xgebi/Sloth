@@ -156,8 +156,8 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
     try:
         with connection.cursor() as cur:
             cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""", (post_type,))
-
-            post_type_info["name"] = cur.fetchall()[0][0]
+            res = cur.fetchall()
+            post_type_info["name"] = res[0][0]
             cur.execute("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                 WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC""",

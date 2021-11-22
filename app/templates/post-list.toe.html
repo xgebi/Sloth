@@ -7,7 +7,7 @@
     <h1 toe:text="'List of ' + post_type['name']"></h1>
     <p>
     Other languages:
-        <a toe:for="lang in languages" toe:href="'/post/' +  post_type['uuid'] + '/' + lang['uuid']" toe:text="lang['long_name'] + ' '" ></a>
+        <a toe:for="lang in languages" toe:href="'/post/' + post_type['uuid'] + '/' + lang['uuid']" toe:text="lang['long_name']" ></a>
     </p>
 
 <p><a toe:href="'/post/' + post_type['uuid'] + '/new/' + current_lang['uuid']" toe:text="'Add new ' + post_type['name']"></a></p>
