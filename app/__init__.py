@@ -1,10 +1,14 @@
 # app/__init__.py
+import threading
+
 from flask import Flask, request, redirect
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 from uuid import uuid4
+from datetime import datetime
+import time
 # from flask_apscheduler import APScheduler
 #from app.rss.rss_job import check_rss_updates
 # from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
@@ -54,6 +58,15 @@ def create_app():  # dev, test, or prod
     #         check_rss_updates()
     #
     # scheduler.start()
+
+    def schedule():
+        print(f"Scheduled at {datetime.now() }")
+        time.sleep(60)
+
+    t = threading.Thread(
+        target=schedule
+    )
+    t.start()
 
     @app.before_request
     def before_first_request():

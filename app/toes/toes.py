@@ -118,6 +118,7 @@ class Toe:
             return None
 
         for node in self.tree.children:
+            # This is incorrect, it ignores <html toe:lang="current_lang['short_name']">
             if node.get_name() == "html":
                 for sub_html_node in node.children:
                     self.process_subtree(self.current_new_tree_node, sub_html_node)
