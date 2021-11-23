@@ -60,8 +60,9 @@ def create_app():  # dev, test, or prod
     # scheduler.start()
 
     def schedule():
-        print(f"Scheduled at {datetime.now() }")
-        time.sleep(60)
+        while True:
+            print(f"Scheduled at {datetime.now() }")
+            time.sleep(60)
 
     t = threading.Thread(
         target=schedule
