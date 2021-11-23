@@ -1,10 +1,12 @@
-from app.scheduler.scheduler import Scheduler
-from app.scheduler.GenerationQueueJob import GenerationQueueJob
+from datetime import datetime
+import time
 
 
-class ScheduledJobs:
-    scheduler = {}
+def publish_posts():
+    while True:
+        print(f"Scheduled at {datetime.now()}")
+        time.sleep(60)
 
-    def __init__(self):
-        self.scheduler = Scheduler()
-        self.scheduler.register_job(job=GenerationQueueJob(interval=1))
+
+def post_to_twitter():
+    pass

@@ -7,11 +7,7 @@ from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 from uuid import uuid4
-from datetime import datetime
-import time
-# from flask_apscheduler import APScheduler
-#from app.rss.rss_job import check_rss_updates
-# from app.post.posts_jobs import scheduled_posts_job, post_to_twitter
+from app.scheduler import publish_posts
 
 from app.toes.hooks import Hooks, Hook
 
@@ -39,33 +35,8 @@ def create_app():  # dev, test, or prod
 
     bcrypt.init_app(app)
 
-    # scheduler = BackgroundScheduler()
-    # scheduler.init_app(app)
-    #
-    # @scheduler.task('interval', id='check_scheduled_posts', seconds=60, misfire_grace_time=900)
-    # def scheduled_job():
-    #     with app.app_context():
-    #         scheduled_posts_job()
-    #
-    # @scheduler.task('interval', id='post_to_twitter', seconds=60, misfire_grace_time=900)
-    # def twitter_job():
-    #     with app.app_context():
-    #         post_to_twitter()
-    #
-    # @scheduler.task('interval', id='check_rss', hour=1, misfire_grace_time=900)
-    # def rss_job():
-    #     with app.app_context():
-    #         check_rss_updates()
-    #
-    # scheduler.start()
-
-    def schedule():
-        while True:
-            print(f"Scheduled at {datetime.now() }")
-            time.sleep(60)
-
     t = threading.Thread(
-        target=schedule
+        target=publish_posts()
     )
     t.start()
 
