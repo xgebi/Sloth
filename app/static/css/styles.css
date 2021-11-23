@@ -160,6 +160,10 @@ select {
     background: var(--light-grey);
 }
 
+.other-languages-list a {
+    display: inline-block;
+}
+
 #settings-options {
     display: grid;
     grid-template-columns: minmax(16rem, 1fr) minmax(25rem, 1fr);

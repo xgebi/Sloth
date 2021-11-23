@@ -5,8 +5,8 @@
 <toe:import file="nav.toe.html"/>
 <main>
     <h1 toe:text="'List of ' + post_type['name']"></h1>
-    <p>
-    Other languages:
+    <p class="other-languages-list">
+        Other languages:
         <a toe:for="lang in languages" toe:href="'/post/' + post_type['uuid'] + '/' + lang['uuid']" toe:text="lang['long_name']" ></a>
     </p>
 
