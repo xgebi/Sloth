@@ -207,6 +207,14 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
     )
 
 
+@post.route("/api/post/<post_id>/edit")
+@authorize_rest(0)
+@db_connection
+def get_post_data(*args, permission_level: int, connection: psycopg.Connection, post_id: str, **kwargs):
+    print("Hello?")
+    return json.dumps({"post": "loaded" })
+
+
 @post.route("/post/<post_id>/edit")
 @authorize_web(0)
 @db_connection

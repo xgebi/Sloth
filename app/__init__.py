@@ -35,10 +35,10 @@ def create_app():  # dev, test, or prod
 
     bcrypt.init_app(app)
 
-    t = threading.Thread(
-        target=publish_posts()
-    )
-    t.start()
+    # t = threading.Thread(
+    #     target=publish_posts()
+    # )
+    # t.start()
 
     @app.before_request
     def before_first_request():
