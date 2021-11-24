@@ -35,11 +35,6 @@ def create_app():  # dev, test, or prod
 
     bcrypt.init_app(app)
 
-    # t = threading.Thread(
-    #     target=publish_posts()
-    # )
-    # t.start()
-
     @app.before_request
     def before_first_request():
         registration_lock_file = Path(os.path.join(os.getcwd(), 'registration.lock'))
@@ -131,5 +126,10 @@ def create_app():  # dev, test, or prod
 
     from app.lists import lists
     app.register_blueprint(lists)
+
+    t = threading.Thread(
+        target=publish_posts
+    )
+    t.start()
 
     return app
