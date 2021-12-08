@@ -9,4 +9,6 @@ def publish_posts():
 
 
 def post_to_twitter():
-    pass
+    while True:
+        print(f"Scheduled at {datetime.now()}")
+        time.sleep(60)

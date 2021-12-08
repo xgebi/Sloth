@@ -21,4 +21,4 @@ version = "0.14.2"
 features = ["extension-module"]
 
 [dev-dependencies]
-mockall = "0.10.2"
+mocktopus = "0.7.11"

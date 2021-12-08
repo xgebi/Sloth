@@ -127,9 +127,15 @@ def create_app():  # dev, test, or prod
     from app.lists import lists
     app.register_blueprint(lists)
 
-    t = threading.Thread(
-        target=publish_posts
-    )
-    t.start()
+    if app.config["SCHEDULERS_ENABLED"]:
+        post_scheduler = threading.Thread(
+            target=publish_posts
+        )
+        post_scheduler.start()
+
+        twitter_scheduler = threading.Thread(
+            target=publish_posts
+        )
+        twitter_scheduler.start()
 
     return app

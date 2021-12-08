@@ -75,10 +75,12 @@ def show_posts_list(*args, permission_level: int, connection: psycopg.Connection
     return return_post_list(permission_level=permission_level, connection=connection, post_type=post_type,
                             lang_id=lang_id)
 
+
 @post.route("/api/post/<post_type>/<language>")
 @authorize_rest(0)
 @db_connection
-def get_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, language: str, **kwargs):
+def get_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str, language: str,
+                   **kwargs):
     """
     Gets a list of posts for default language
 
@@ -116,7 +118,8 @@ def get_posts_list(*args, permission_level: int, connection: psycopg.Connection,
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)
 @db_connection
-def show_posts_list_language(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str, **kwargs):
+def show_posts_list_language(*args, permission_level: int, connection: psycopg.Connection, post_type: str, lang_id: str,
+                             **kwargs):
     """
     Renders list of post for a language
 
@@ -188,7 +191,8 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
         })
     # List of {{post_type["name"]}}
     post_type_display_name = \
-    [post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0]['display_name']
+        [post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0][
+            'display_name']
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="post-list.toe.html",
@@ -210,9 +214,54 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 @post.route("/api/post/<post_id>/edit")
 @authorize_rest(0)
 @db_connection
-def get_post_data(*args, permission_level: int, connection: psycopg.Connection, post_id: str, **kwargs):
-    print("Hello?")
-    return json.dumps({"post": "loaded" })
+def get_post_edit(*args, permission_level: int, connection: psycopg.Connection, post_id: str, **kwargs):
+    """
+    Gets data for post_id
+    :param args:
+    :param permission_level:
+    :param connection:
+    :param post_id:
+    :param kwargs:
+    :return:
+    """
+    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+        connection=connection, post_id=post_id)
+    publish_datetime = datetime.datetime.fromtimestamp(raw_post[7] / 1000) if raw_post[7] else None
+    data = {
+        "uuid": post_id,
+        "title": raw_post[0],
+        "slug": raw_post[1],
+        "sections": sections,
+        "css": raw_post[2],
+        "useThemeCss": raw_post[3],
+        "js": raw_post[4],
+        "useThemeJs": raw_post[5],
+        "thumbnailPath": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
+        "thumbnailUuid": raw_post[6] if raw_post[6] is not None else "",
+        "thumbnailAlt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
+        "publishDate": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
+        "publishTime": publish_datetime.strftime("%H:%M") if publish_datetime else None,
+        "updateDate": raw_post[8],
+        "status": raw_post[9],
+        "displayName": raw_post[10],
+        "postType": raw_post[11],
+        "imported": raw_post[12],
+        "approved": raw_post[13],
+        "password": raw_post[14],
+        "lang": raw_post[15],
+        "categories": categories,
+        "tags": tags,
+        "formatUuid": raw_post[17],
+        "formatSlug": raw_post[18],
+        "formatName": raw_post[19],
+        "metaDescription": raw_post[20],
+        "socialDescription": raw_post[21],
+        "libraries": post_libs,
+        "originalPost": raw_post[16],
+        "pinned": raw_post[22],
+    }
+
+    return json.dumps(data)
 
 
 @post.route("/post/<post_id>/edit")
@@ -233,7 +282,73 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    media = []
+    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(connection=connection, post_id=post_id)
+
+    default_lang = get_default_language(connection=connection)
+    connection.close()
+
+    token = request.cookies.get('sloth_session')
+
+    publish_datetime = datetime.datetime.fromtimestamp(raw_post[7] / 1000) if raw_post[7] else None
+
+    data = {
+        "uuid": post_id,
+        "title": raw_post[0],
+        "slug": raw_post[1],
+        "sections": json.dumps(sections),
+        "css": raw_post[2],
+        "use_theme_css": raw_post[3],
+        "js": raw_post[4],
+        "use_theme_js": raw_post[5],
+        "thumbnail_path": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
+        "thumbnail_uuid": raw_post[6] if raw_post[6] is not None else "",
+        "thumbnail_alt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
+        "publish_date": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
+        "publish_time": publish_datetime.strftime("%H:%M") if publish_datetime else None,
+        "update_date": raw_post[8],
+        "status": raw_post[9],
+        "display_name": raw_post[10],
+        "post_type": raw_post[11],
+        "imported": raw_post[12],
+        "approved": raw_post[13],
+        "password": raw_post[14],
+        "lang": raw_post[15],
+        "categories": categories,
+        "tags": tags,
+        "format_uuid": raw_post[17],
+        "format_slug": raw_post[18],
+        "format_name": raw_post[19],
+        "meta_description": raw_post[20],
+        "social_description": raw_post[21],
+        "libraries": post_libs,
+        "original_post": raw_post[16],
+        "pinned": raw_post[22],
+    }
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="post-edit.toe.html",
+        hooks=Hooks(),
+        data={
+            "title": f"Add new {post_type_name}" if "new" in data else f"Edit {post_type_name}",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "token": token,
+            "post_type_name": post_type_name,
+            "data": data,
+            "post_statuses": post_statuses,
+            "default_lang": default_lang,
+            "languages": translatable,
+            "translations": translations,
+            "current_lang_id": data["lang"],
+            "post_formats": post_formats,
+            "libs": libs,
+            "hook_list": HooksList.list(),
+            "media_data": [media_data[key] for key in media_data.keys()]
+        }
+    )
+
+
+def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs):
     post_type_name = ""
     raw_post = {}
     temp_thumbnail_info = []
@@ -242,13 +357,13 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             media_data = get_media(connection=connection)
 
             cur.execute("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
-                 sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
-                 sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
-                 sp.meta_description, sp.twitter_description, sp.pinned
-                        FROM sloth_posts AS sp 
-                        INNER JOIN sloth_users AS B ON sp.author = B.uuid 
-                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                        WHERE sp.uuid = %s""",
+                     sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
+                     sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
+                     sp.meta_description, sp.twitter_description, sp.pinned
+                            FROM sloth_posts AS sp 
+                            INNER JOIN sloth_users AS B ON sp.author = B.uuid 
+                            INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
+                            WHERE sp.uuid = %s""",
                         (post_id,))
             raw_post = cur.fetchone()
             if raw_post is None:
@@ -258,11 +373,11 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             post_type_name = cur.fetchone()[0]
 
             cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
-                                    WHERE post_type = %s AND lang = %s""",
+                                        WHERE post_type = %s AND lang = %s""",
                         (raw_post[11], raw_post[15]))
             raw_all_taxonomies = cur.fetchall()
             cur.execute("""SELECT taxonomy FROM sloth_post_taxonomies
-                                            WHERE post = %s""",
+                                                WHERE post = %s""",
                         (post_id,))
             raw_post_taxonomies = cur.fetchall()
             cur.execute("""SELECT unnest(enum_range(NULL::sloth_post_status))"""
@@ -305,7 +420,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
             } for pf in cur.fetchall()]
 
             cur.execute("""SELECT uuid, name, version, location 
-                    FROM sloth_libraries;""")
+                        FROM sloth_libraries;""")
             libs = [{
                 "uuid": lib[0],
                 "name": lib[1],
@@ -313,9 +428,9 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
                 "location": lib[3]
             } for lib in cur.fetchall()]
             cur.execute("""SELECT sl.uuid, sl.name, sl.version, spl.hook_name
-                    FROM sloth_post_libraries AS spl
-                    INNER JOIN sloth_libraries sl on spl.library = sl.uuid
-                    WHERE spl.post = %s;""",
+                        FROM sloth_post_libraries AS spl
+                        INNER JOIN sloth_libraries sl on spl.library = sl.uuid
+                        WHERE spl.post = %s;""",
                         (post_id,))
             post_libs = [{
                 "uuid": lib[0],
@@ -324,9 +439,9 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
                 "hook": lib[3]
             } for lib in cur.fetchall()]
             cur.execute("""SELECT content, section_type, position
-                    FROM sloth_post_sections
-                    WHERE post = %s
-                    ORDER BY position ASC;""",
+                        FROM sloth_post_sections
+                        WHERE post = %s
+                        ORDER BY position ASC;""",
                         (post_id,))
             sections = [{
                 "content": section[0],
@@ -336,9 +451,9 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
 
             if raw_post[16]:
                 cur.execute("""SELECT content, section_type, position
-                        FROM sloth_post_sections
-                        WHERE post = %s
-                        ORDER BY position ASC;""",
+                            FROM sloth_post_sections
+                            WHERE post = %s
+                            ORDER BY position ASC;""",
                             (raw_post[16],))
                 translated_sections = cur.fetchall()
                 while len(sections) < len(translated_sections):
@@ -352,80 +467,15 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
                     for trans_section in translated_sections:
                         if section["position"] == trans_section[2]:
                             section["original"] = trans_section[0]
-
-            sections = json.dumps(sections)
     except Exception as e:
         print(traceback.format_exc())
         print("db error B")
         print(e)
         connection.close()
         abort(500)
-
-    cur.close()
-    default_lang = get_default_language(connection=connection)
-    connection.close()
-
-    token = request.cookies.get('sloth_session')
-
-    publish_datetime = datetime.datetime.fromtimestamp(raw_post[7] / 1000) if raw_post[7] else None
-
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
-
-    data = {
-        "uuid": post_id,
-        "title": raw_post[0],
-        "slug": raw_post[1],
-        "sections": sections,
-        "css": raw_post[2],
-        "use_theme_css": raw_post[3],
-        "js": raw_post[4],
-        "use_theme_js": raw_post[5],
-        "thumbnail_path": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
-        "thumbnail_uuid": raw_post[6] if raw_post[6] is not None else "",
-        "thumbnail_alt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
-        "publish_date": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
-        "publish_time": publish_datetime.strftime("%H:%M") if publish_datetime else None,
-        "update_date": raw_post[8],
-        "status": raw_post[9],
-        "display_name": raw_post[10],
-        "post_type": raw_post[11],
-        "imported": raw_post[12],
-        "approved": raw_post[13],
-        "password": raw_post[14],
-        "lang": raw_post[15],
-        "categories": categories,
-        "tags": tags,
-        "format_uuid": raw_post[17],
-        "format_slug": raw_post[18],
-        "format_name": raw_post[19],
-        "meta_description": raw_post[20],
-        "social_description": raw_post[21],
-        "libraries": post_libs,
-        "original_post": raw_post[16],
-        "pinned": raw_post[22],
-    }
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="post-edit.toe.html",
-        hooks=Hooks(),
-        data={
-            "title": f"Add new {post_type_name}" if "new" in data else f"Edit {post_type_name}",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "token": token,
-            "post_type_name": post_type_name,
-            "data": data,
-            "post_statuses": [item for sublist in temp_post_statuses for item in sublist],
-            "default_lang": default_lang,
-            "languages": translatable,
-            "translations": translations,
-            "current_lang_id": data["lang"],
-            "post_formats": post_formats,
-            "libs": libs,
-            "hook_list": HooksList.list(),
-            "media_data": [media_data[key] for key in media_data.keys()]
-        }
-    )
+    post_statuses = [item for sublist in temp_post_statuses for item in sublist]
+    return raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
 
 
 def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs) -> (List[Dict], List[Dict]):
@@ -638,7 +688,8 @@ def show_post_taxonomy_main_lang(*args, permission_level: int, connection: psyco
 @post.route("/post/<type_id>/taxonomy/<lang_id>")
 @authorize_web(0)
 @db_connection
-def show_post_taxonomy(*args, permission_level: int, connection: psycopg.Connection, type_id: str, lang_id: str, **kwargs):
+def show_post_taxonomy(*args, permission_level: int, connection: psycopg.Connection, type_id: str, lang_id: str,
+                       **kwargs):
     """
     Renders a list of taxonomies for a language
 
@@ -681,7 +732,7 @@ def show_taxonomy(*args, permission_level: int, connection: psycopg.Connection, 
             for taxonomy_type in taxonomy_types:
                 cur.execute("""SELECT uuid, display_name 
                     FROM sloth_taxonomy WHERE post_type = %s AND taxonomy_type = %s AND lang = %s""",
-                    (type_id, taxonomy_type, lang_id))
+                            (type_id, taxonomy_type, lang_id))
                 taxonomy[taxonomy_type] = cur.fetchall()
     except Exception as e:
         print("db error C")
@@ -716,7 +767,7 @@ def show_formats(*args, permission_level: int, connection: psycopg.Connection, t
     try:
         with connection.cursor() as cur:
             cur.execute(
-                    """SELECT uuid, slug, display_name, deletable
+                """SELECT uuid, slug, display_name, deletable
                      FROM sloth_post_formats
                      WHERE post_type = %s""",
                 (type_id,))
@@ -763,14 +814,14 @@ def save_post_format(*args, connection: psycopg.Connection, **kwargs):
         with connection.cursor() as cur:
             if filled['uuid'] != 'new':
                 cur.execute("""SELECT slug FROM sloth_post_formats WHERE uuid = %s;""",
-                    (filled["uuid"],))
+                            (filled["uuid"],))
                 old_slug = cur.fetchone()[0]
                 if filled['slug'] != old_slug:
                     slug_changed = True
 
             if slug_changed or filled['uuid'] == 'new':
                 cur.execute(
-                        """SELECT count(slug) FROM sloth_post_formats 
+                    """SELECT count(slug) FROM sloth_post_formats 
                         WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;""",
                     (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
                 similar = cur.fetchone()[0]
@@ -779,12 +830,12 @@ def save_post_format(*args, connection: psycopg.Connection, **kwargs):
 
             if filled['uuid'] == 'new':
                 cur.execute(
-                        """INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
+                    """INSERT INTO sloth_post_formats (uuid, slug, display_name, post_type, deletable) 
                         VALUES (%s, %s, %s, %s, %s) RETURNING uuid, slug, display_name, deletable;""",
                     (str(uuid.uuid4()), filled['slug'], filled["display_name"], filled["post_type_uuid"], True))
             else:
                 cur.execute(
-                        """UPDATE sloth_post_formats SET slug = %s, display_name = %s 
+                    """UPDATE sloth_post_formats SET slug = %s, display_name = %s 
                         WHERE uuid = %s RETURNING uuid, slug, display_name, deletable;""",
                     (filled['slug'], filled["display_name"], filled["uuid"]))
             raw_result = cur.fetchone()
@@ -812,12 +863,12 @@ def delete_post_format(*args, permission_level, connection: psycopg.Connection, 
     try:
         with connection.close() as cur:
             cur.execute(
-                    """DELETE FROM sloth_post_formats
+                """DELETE FROM sloth_post_formats
                      WHERE uuid = %s AND deletable = %s""",
                 (filled["uuid"], True))
             connection.commit()
             cur.execute(
-                    """SELECT uuid FROM sloth_post_formats
+                """SELECT uuid FROM sloth_post_formats
                      WHERE uuid = %s""",
                 (filled["uuid"],))
         if len(cur.fetchall()) > 0:
@@ -842,7 +893,8 @@ def delete_post_format(*args, permission_level, connection: psycopg.Connection, 
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["GET"])
 @authorize_web(0)
 @db_connection
-def show_post_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str, taxonomy_id: str, taxonomy_type: str, **kwargs):
+def show_post_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str,
+                            taxonomy_id: str, taxonomy_type: str, **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
@@ -882,7 +934,8 @@ def show_post_taxonomy_item(*args, permission_level: int, connection: psycopg.Co
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/<taxonomy_id>", methods=["POST", "PUT"])
 @authorize_web(0)
 @db_connection
-def save_post_taxonomy_item(*args, connection: psycopg.Connection, type_id: str, taxonomy_id: str, taxonomy_type: str, **kwargs):
+def save_post_taxonomy_item(*args, connection: psycopg.Connection, type_id: str, taxonomy_id: str, taxonomy_type: str,
+                            **kwargs):
     filled = request.form
 
     if filled["slug"] or filled["display_name"]:
@@ -890,11 +943,11 @@ def save_post_taxonomy_item(*args, connection: psycopg.Connection, type_id: str,
     try:
         with connection.cursor() as cur:
             cur.execute("SELECT display_name FROM sloth_taxonomy WHERE uuid = %s;",
-                        (taxonomy_id, ))
+                        (taxonomy_id,))
             res = cur.fetchall()
             if len(res) == 0:
                 cur.execute(
-                        """INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                    """INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
                         VALUES (%s, %s, %s, %s, %s, %s);""",
                     (taxonomy_id, filled["slug"], filled["display_name"], type_id, taxonomy_type, filled["language"]))
             else:
@@ -912,7 +965,8 @@ def save_post_taxonomy_item(*args, connection: psycopg.Connection, type_id: str,
 @post.route("/post/<type_id>/taxonomy/<taxonomy_type>/new")
 @authorize_web(0)
 @db_connection
-def create_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str, taxonomy_type: str, **kwargs):
+def create_taxonomy_item(*args, permission_level: int, connection: psycopg.Connection, type_id: str, taxonomy_type: str,
+                         **kwargs):
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
     default_language = get_default_language(connection=connection)
@@ -953,7 +1007,7 @@ def get_media_data(*args, connection: psycopg.Connection, lang_id: str, **kwargs
                 "filePath": f"{site_url}/{medium[1]}"
             } for medium in raw_media}
             cur.execute(
-                    """SELECT media, alt FROM sloth_media_alts
+                """SELECT media, alt FROM sloth_media_alts
                                WHERE lang = %s;""",
                 (lang_id,))
             alts = cur.fetchall()
@@ -1062,7 +1116,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 # get user
                 author = request.headers.get('authorization').split(":")[1]
 
-                if (filled["post_status"] == 'published' and filled["publish_date"] is None) or (filled["post_status"] == 'protected' and filled["publish_date"] is None):
+                if (filled["post_status"] == 'published' and filled["publish_date"] is None) or (
+                        filled["post_status"] == 'protected' and filled["publish_date"] is None):
                     publish_date = str(time() * 1000)
                 elif filled["post_status"] == 'scheduled':
                     publish_date = filled["publish_date"]
@@ -1226,7 +1281,7 @@ def sort_out_post_taxonomies(*args, connection: psycopg.Connection, article: Dic
         with connection.cursor() as cur:
             categories = article["categories"]
             cur.execute("""SELECT uuid, taxonomy FROM sloth_post_taxonomies WHERE post = %s;""",
-                (article["uuid"],))
+                        (article["uuid"],))
             raw_taxonomies = cur.fetchall()
             taxonomies = [{
                 "uuid": taxonomy[0],
@@ -1244,16 +1299,16 @@ def sort_out_post_taxonomies(*args, connection: psycopg.Connection, article: Dic
 
             for taxonomy in for_deletion:
                 cur.execute("""DELETE FROM sloth_post_taxonomies WHERE uuid = %s""",
-                    (taxonomy["uuid"],))
+                            (taxonomy["uuid"],))
                 taxonomies.remove(taxonomy)
             connection.commit()
 
             for category in categories:
                 cur.execute("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)""",
-                    (str(uuid.uuid4()), article["uuid"], category))
+                            (str(uuid.uuid4()), article["uuid"], category))
             for tag in tags:
                 cur.execute("""INSERT INTO sloth_post_taxonomies (uuid, post, taxonomy) VALUES (%s, %s, %s)""",
-                    (str(uuid.uuid4()), article["uuid"], tag["uuid"]))
+                            (str(uuid.uuid4()), article["uuid"], tag["uuid"]))
             connection.commit()
     except Exception:
         return []
@@ -1332,7 +1387,7 @@ def delete_taxonomy(*args, connection: psycopg.Connection, taxonomy_id: str, **k
     try:
         with connection.cursor() as cur:
             cur.execute("DELETE FROM sloth_taxonomy WHERE uuid = %s;",
-                        (taxonomy_id, ))
+                        (taxonomy_id,))
             connection.commit()
     except Exception as e:
         connection.close()
@@ -1358,6 +1413,7 @@ def regenerate_all(*args, connection: psycopg.Connection, **kwargs):
     gen.run()
 
     return json.dumps({"generating": True})
+
 
 @post.route("/api/post/refresh-assets", methods=["POST", "PUT"])
 @authorize_rest(0)
