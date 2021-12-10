@@ -1150,25 +1150,9 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 
                 cur.execute("""DELETE from sloth_post_sections WHERE post = %s;""",
                             (filled["uuid"],))
-                for section in filled["sections"]:
-                    cur.execute("""INSERT INTO sloth_post_sections VALUES (%s, %s, %s, %s, %s)""",
-                                (str(uuid.uuid4()), filled["uuid"], section["content"], section["type"],
-                                 section["position"]))
-                connection.commit()
-
                 cur.execute(build_post_query(uuid=True), (filled["uuid"],))
                 saved_post = cur.fetchone()
-                cur.execute(
-                    """SELECT content, section_type, position
-                    FROM sloth_post_sections
-                    WHERE post = %s
-                    ORDER BY position ASC;""",
-                    (filled["uuid"],))
-                sections = [{
-                    "content": section[0],
-                    "type": section[1],
-                    "position": section[2]
-                } for section in cur.fetchall()]
+                sections = process_sections(connection, filled["sections"], filled["uuid"])
 
                 generatable_post = parse_raw_post(saved_post, sections=sections)
                 cur.execute(
@@ -1227,7 +1211,35 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
     return json.dumps(result)
 
 
+def process_sections(connection: psycopg.Connection, sections: List, post_uuid: str) -> List:
+    with connection.cursor() as cur:
+        for section in sections:
+            cur.execute("""INSERT INTO sloth_post_sections VALUES (%s, %s, %s, %s, %s)""",
+                        (str(uuid.uuid4()), post_uuid, section["content"], section["type"],
+                         section["position"]))
+        connection.commit()
+
+        cur.execute(
+            """SELECT content, section_type, position
+            FROM sloth_post_sections
+            WHERE post = %s
+            ORDER BY position;""",
+            (post_uuid,))
+        processed_sections = [{
+            "content": section[0],
+            "type": section[1],
+            "position": section[2]
+        } for section in cur.fetchall()]
+        return processed_sections
+
+
 def generate_publish_date(status: str, date: str | None) -> str | None:
+    """
+
+    :param status:
+    :param date:
+    :return:
+    """
     if (status == 'published' and date is None) or (
             status == 'protected' and date is None):
         return str(time() * 1000)
