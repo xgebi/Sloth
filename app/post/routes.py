@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import json
 import os
@@ -20,6 +22,7 @@ from app.toes.toes import render_toe_from_path
 from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
+from app.post.post_query_builder import build_post_query
 
 
 # import toes
@@ -282,7 +285,8 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(connection=connection, post_id=post_id)
+    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+        connection=connection, post_id=post_id)
 
     default_lang = get_default_language(connection=connection)
     connection.close()
@@ -1081,48 +1085,12 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 lang = cur.fetchone()[0]
             else:
                 lang = filled["lang"]
-
-                # process tags
-                cur.execute("""SELECT uuid, slug, display_name, post_type, taxonomy_type 
-                            FROM sloth_taxonomy 
-                            WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
-                            (filled["post_type_uuid"], lang))
-                existing_tags = cur.fetchall()
-
-                existing_tags_slugs = [slug[1] for slug in existing_tags]
-                # refactoring candidate:
-                matched_tags = []
-                new_tags = []
-                for tag in filled["tags"]:
-                    if tag["slug"] in existing_tags_slugs:
-                        if tag["uuid"] == "added":
-                            for et in existing_tags:
-                                if et[1] == tag["slug"]:
-                                    tag["uuid"] = et[0]
-                                    break
-                        matched_tags.append(tag)
-                    else:
-                        tag["uuid"] = str(uuid.uuid4())
-                        new_tags.append(tag)
-
-                for new_tag in new_tags:
-                    cur.execute("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
-                                    VALUES (%s, %s, %s, %s, 'tag', %s);""",
-                                (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], filled["post_type_uuid"],
-                                 filled["lang"]))
-                    matched_tags.append(new_tag)
-
-                connection.commit()
+                matched_tags = process_taxonomy(connection=connection, post_tags=filled["tags"], post_type_uuid=filled["post_type_uuid"], lang=lang)
                 # get user
                 author = request.headers.get('authorization').split(":")[1]
 
-                if (filled["post_status"] == 'published' and filled["publish_date"] is None) or (
-                        filled["post_status"] == 'protected' and filled["publish_date"] is None):
-                    publish_date = str(time() * 1000)
-                elif filled["post_status"] == 'scheduled':
-                    publish_date = filled["publish_date"]
-                elif filled['post_status'] == 'draft':
-                    publish_date = None
+                publish_date = generate_publish_date(status=filled["post_status"], date=filled["publish_date"])
+
                 # save post
                 if filled["new"] and str(filled["new"]).lower() != 'none':
                     unique_post = False
@@ -1188,14 +1156,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                                  section["position"]))
                 connection.commit()
 
-                cur.execute("""SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, 
-                                        sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, sp.update_date, 
-                                        sp.post_status, sp.imported, sp.import_approved, sp.meta_description, 
-                                        sp.twitter_description, spf.uuid, spf.slug, spf.display_name, sp.pinned
-                                        FROM sloth_posts as sp 
-                                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                                        WHERE sp.uuid = %s;""",
-                            (filled["uuid"],))
+                cur.execute(build_post_query(uuid=True), (filled["uuid"],))
                 saved_post = cur.fetchone()
                 cur.execute(
                     """SELECT content, section_type, position
@@ -1264,6 +1225,58 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
     result["saved"] = True
     result["postType"] = generatable_post["post_type"]
     return json.dumps(result)
+
+
+def generate_publish_date(status: str, date: str | None) -> str | None:
+    if (status == 'published' and date is None) or (
+            status == 'protected' and date is None):
+        return str(time() * 1000)
+    if status == 'scheduled':
+        return date
+
+    return None
+
+
+def process_taxonomy(connection: psycopg.Connection, post_tags: List, post_type_uuid: str, lang: str) -> List:
+    """
+
+    :param connection:
+    :param post_tags:
+    :param post_type_uuid:
+    :param lang:
+    :return:
+    """
+    with connection.cursor() as cur:
+        cur.execute("""SELECT uuid, slug, display_name, post_type, taxonomy_type 
+                                    FROM sloth_taxonomy 
+                                    WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
+                    (post_type_uuid, lang))
+        existing_tags = cur.fetchall()
+
+        existing_tags_slugs = [slug[1] for slug in existing_tags]
+
+        matched_tags = []
+        new_tags = []
+        for tag in post_tags:
+            if tag["slug"] in existing_tags_slugs:
+                if tag["uuid"] == "added":
+                    for et in existing_tags:
+                        if et[1] == tag["slug"]:
+                            tag["uuid"] = et[0]
+                            break
+                matched_tags.append(tag)
+            else:
+                tag["uuid"] = str(uuid.uuid4())
+                new_tags.append(tag)
+
+        for new_tag in new_tags:
+            cur.execute("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
+                                            VALUES (%s, %s, %s, %s, 'tag', %s);""",
+                        (new_tag["uuid"], new_tag["slug"], new_tag["displayName"], post_type_uuid, lang))
+            matched_tags.append(new_tag)
+
+        connection.commit()
+        return matched_tags
 
 
 def sort_out_post_taxonomies(*args, connection: psycopg.Connection, article: Dict, tags: List, **kwargs) -> List:
