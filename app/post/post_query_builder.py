@@ -22,13 +22,13 @@ INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format""".strip()
         where.append("sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published'")
         order_by.append("sp.publish_date DESC")
     if published_in_taxonomy_per_post_type:
-        "\n".join([query, "INNER JOIN sloth_post_taxonomies AS spt ON sp.uuid = spt.post"])
+        query = "\n".join([query, "INNER JOIN sloth_post_taxonomies AS spt ON sp.uuid = spt.post"])
         where.append("spt.taxonomy = %s AND sp.post_type = %s AND sp.post_status = 'published'")
         order_by.append("sp.publish_date DESC")
 
     if len(where) > 0:
         query = f"{query}\nWHERE {'AND'.join(where)}"
     if len(order_by) > 0:
-        query = f"{query}\nORDER BY {', '.join(where)}"
+        query = f"{query}\nORDER BY {', '.join(order_by)}"
 
     return f"{query};"
