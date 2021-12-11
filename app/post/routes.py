@@ -359,16 +359,8 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
     try:
         with connection.cursor() as cur:
             media_data = get_media(connection=connection)
-
-            cur.execute("""SELECT sp.title, sp.slug, sp.css, sp.use_theme_css, sp.js, sp.use_theme_js,
-                     sp.thumbnail, sp.publish_date, sp.update_date, sp.post_status, B.display_name, sp.post_type, sp.imported, 
-                     sp.import_approved, sp.password, sp.lang, sp.original_lang_entry_uuid, spf.uuid, spf.slug, spf.display_name,
-                     sp.meta_description, sp.twitter_description, sp.pinned
-                            FROM sloth_posts AS sp 
-                            INNER JOIN sloth_users AS B ON sp.author = B.uuid 
-                            INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                            WHERE sp.uuid = %s""",
-                        (post_id,))
+            build_post_query(uuid=True)
+            cur.execute(build_post_query(uuid=True), (post_id,))
             raw_post = cur.fetchone()
             if raw_post is None:
                 return redirect('/post/nothing')
