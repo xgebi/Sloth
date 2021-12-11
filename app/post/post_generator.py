@@ -23,6 +23,7 @@ from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
+from app.post.post_query_builder import build_post_query
 
 
 class PostGenerator:
@@ -238,18 +239,7 @@ class PostGenerator:
     ):
         try:
             with self.connection.cursor() as cur:
-                cur.execute(
-                    """SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
-                            sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
-                            sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
-                            spf.slug, spf.display_name, sp.meta_description, sp.twitter_description 
-                            FROM sloth_post_taxonomies AS spt
-                            INNER JOIN sloth_posts AS sp ON spt.post = sp.uuid
-                            INNER JOIN sloth_users AS su ON sp.author = su.uuid
-                            INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                            WHERE spt.taxonomy = %s AND sp.post_type = %s AND sp.post_status = 'published'
-                            ORDER BY sp.publish_date DESC;""",
-                    (taxonomy_uuid, post_type_uuid))
+                cur.execute(build_post_query(published_in_taxonomy_per_post_type=True), (taxonomy_uuid, post_type_uuid))
                 raw_items = cur.fetchall()
         except Exception as e:
             print(e)
@@ -269,16 +259,7 @@ class PostGenerator:
 
         try:
             with self.connection.cursor() as cur:
-                cur.execute("""SELECT sp.uuid, sp.slug, su.display_name, su.uuid, sp.title, sp.css, 
-                             sp.js, sp.use_theme_css, sp.use_theme_js, sp.publish_date, sp.update_date, sp.post_status, 
-                             sp.imported, sp.import_approved, sp.thumbnail, sp.original_lang_entry_uuid, sp.lang, spf.uuid, 
-                             spf.slug, spf.display_name, sp.meta_description, sp.twitter_description
-                                        FROM sloth_posts AS sp 
-                                        INNER JOIN sloth_users AS su ON sp.author = su.uuid
-                                        INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format
-                                        WHERE sp.post_type = %s AND sp.lang = %s AND sp.post_status = 'published' 
-                                        ORDER BY sp.publish_date DESC;""",
-                            (post_type_uuid, language_uuid))
+                cur.execute(build_post_query(published_per_post_type=True), (post_type_uuid, language_uuid))
                 raw_items = cur.fetchall()
                 posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
                 for post in posts:
