@@ -1,8 +1,5 @@
 import psycopg
-from flask import Blueprint
 from typing import List, Dict
-
-post = Blueprint('post', __name__, template_folder='templates')
 
 
 def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List, **kwargs):
@@ -78,6 +75,3 @@ def get_taxonomy_for_post_preped_for_listing(connection: psycopg.Connection, uui
             categories.append(thing)
 
     return categories, tags
-
-
-from app.post import routes

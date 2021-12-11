@@ -6,8 +6,8 @@ from uuid import uuid4
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.utilities.db_connection import db_connection
-from app.utilities import get_default_language, get_languages
-from app.post.post_types import PostTypes
+from app.utilities.utilities import get_default_language, get_languages
+from app.back_office.post.post_types import PostTypes
 from app.toes.toes import render_toe_from_path
 from app.toes.hooks import Hooks
 

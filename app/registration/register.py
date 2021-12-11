@@ -10,7 +10,7 @@ import bcrypt
 import traceback
 
 from app.authorization.user import test_password
-from app.post.post_generator import PostGenerator
+from app.back_office.post.post_generator import PostGenerator
 
 
 class Register:

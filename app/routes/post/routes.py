@@ -14,15 +14,16 @@ import psycopg
 from flask import request, current_app, abort, redirect, render_template, escape
 
 from app.authorization.authorize import authorize_rest, authorize_web
-from app.post import post, get_translations
-from app.post.post_generator import PostGenerator
-from app.post.post_types import PostTypes
+from app.routes.post import post
+from app.back_office.post.post_utilities import get_translations
+from app.back_office.post.post_generator import PostGenerator
+from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
-from app.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
+from app.utilities.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
-from app.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query
 
 
 # import toes

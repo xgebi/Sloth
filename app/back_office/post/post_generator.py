@@ -16,14 +16,14 @@ import re
 import copy
 import html
 
-from app.post import get_translations, get_taxonomy_for_post_preped_for_listing
-from app.utilities import get_related_posts
+from app.back_office.post.post_utilities import get_translations, get_taxonomy_for_post_preped_for_listing
+from app.utilities.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
-from app.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query
 
 
 class PostGenerator:

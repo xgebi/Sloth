@@ -2,7 +2,7 @@ from flask import abort, make_response, request
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.hooks import Hooks
 from app.utilities.db_connection import db_connection
-from app.utilities import get_default_language
+from app.utilities.utilities import get_default_language
 import json
 import re
 import datetime
@@ -13,7 +13,7 @@ from time import time
 import psycopg
 from typing import Tuple, List, Dict, Optional
 
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 from app.toes.toes import render_toe_from_path
 from app.dashboard import dashboard
 

@@ -1,11 +1,11 @@
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 from app.toes.toes import render_toe_from_path
 from flask import abort, make_response, request
 from datetime import datetime, timedelta, date
 from app.authorization.authorize import authorize_web
 from app.toes.hooks import Hooks
 from app.utilities.db_connection import db_connection
-from app.utilities import get_default_language
+from app.utilities.utilities import get_default_language
 import traceback
 import os
 import json

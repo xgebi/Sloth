@@ -1,11 +1,11 @@
 import psycopg
 from flask import request, abort, redirect, render_template
 
-from app.post.post_generator import PostGenerator
-from app.utilities import get_default_language
+from app.back_office.post.post_generator import PostGenerator
+from app.utilities.utilities import get_default_language
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 import json
 import uuid
 

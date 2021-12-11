@@ -3,9 +3,9 @@ from flask import request, abort, make_response
 import json
 import uuid
 import os
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 from app.authorization.authorize import authorize_rest, authorize_web
-from app.utilities import get_default_language
+from app.utilities.utilities import get_default_language
 from app.utilities.db_connection import db_connection
 from app.toes.toes import render_toe_from_path
 from app.toes.hooks import Hooks

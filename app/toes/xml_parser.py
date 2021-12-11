@@ -9,7 +9,7 @@ from app.toes.processing_node import ProcessingNode
 from app.toes.directive_node import DirectiveNode
 from app.toes.toes_exceptions import XMLParsingException
 
-from app.utilities import positive_min
+from app.utilities.utilities import positive_min
 
 
 class STATES(enum.Enum):

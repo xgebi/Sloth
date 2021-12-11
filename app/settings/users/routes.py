@@ -5,7 +5,7 @@ from psycopg2 import sql
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 
 from app.settings.users import settings_users
 

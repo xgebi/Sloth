@@ -1,5 +1,5 @@
 import unittest
-from app.utilities import positive_min, parse_raw_post
+from app.utilities.utilities import positive_min
 from app.utilities.utility_exceptions import NoPositiveMinimumException
 
 

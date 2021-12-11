@@ -1,5 +1,5 @@
 import unittest
-from app.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query
 
 
 class PostQueryBuilderTests(unittest.TestCase):

@@ -1,10 +1,10 @@
 import psycopg
-from typing import Tuple, List, Dict, Any, Optional
+from typing import Dict, Any
 import datetime
 import sys
 
 from app.utilities.utility_exceptions import NoPositiveMinimumException
-from app.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query
 
 
 def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_list: bool = True, **kwargs):
@@ -128,10 +128,8 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
         "post_status": raw_post[14],
         "imported": raw_post[15],
         "approved": raw_post[16],
-        "meta_description": raw_post[17] if raw_post[17] is not None and len(raw_post[17]) > 0 else sections[0]["content"][
-                                   :161 if len(sections[0]) > 161 else len(sections[0]["content"])],
-        "social_description": raw_post[18] if raw_post[18] is not None and len(raw_post[18]) > 0 else sections[0]["content"][
-                                   :161 if len(sections[0]) > 161 else len(sections[0]["content"])],
+        "meta_description": prepare_description(char_limit=161, description=raw_post[17], section=sections[0]),
+        "social_description": prepare_description(char_limit=161, description=raw_post[18], section=sections[0]),
         "format_uuid": raw_post[19],
         "format_slug": raw_post[20],
         "format_name": raw_post[21],
@@ -140,6 +138,14 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
     }
 
     return result
+
+
+def prepare_description(char_limit: int, description: str, section: Dict) -> str:
+    if description is not None and len(description) > 0:
+        return description
+    if len(section["content"]) > char_limit:
+        return section["content"][:char_limit]
+    return section["content"]
 
 
 def positive_min(*args, floats: bool = False) -> int or float:

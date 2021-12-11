@@ -1,9 +1,9 @@
 import psycopg
 from flask import abort, make_response, request, current_app
 from app.utilities.db_connection import db_connection
-from app.utilities import get_default_language, get_languages
+from app.utilities.utilities import get_default_language, get_languages
 from app.authorization.authorize import authorize_web, authorize_rest
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 from uuid import uuid4
 from time import time
 import datetime

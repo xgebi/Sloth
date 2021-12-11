@@ -8,8 +8,8 @@ from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.toes import render_toe_from_path
 
 from app.utilities.db_connection import db_connection
-from app.utilities import get_languages, get_default_language
-from app.post.post_types import PostTypes
+from app.utilities.utilities import get_languages, get_default_language
+from app.back_office.post.post_types import PostTypes
 
 from app.settings.themes.menu import menu
 

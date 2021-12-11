@@ -4,16 +4,16 @@ import os
 import json
 from pathlib import Path
 
-from app.post.post_generator import PostGenerator
+from app.back_office.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web, authorize_rest
 from app.toes.toes import render_toe_from_path
 from app.toes.hooks import Hooks
 
-from app.post.post_types import PostTypes
+from app.back_office.post.post_types import PostTypes
 
 from app.settings import settings
-from app.utilities import get_default_language, get_languages
+from app.utilities.utilities import get_default_language, get_languages
 
 
 @settings.route("/settings")
