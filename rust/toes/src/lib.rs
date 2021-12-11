@@ -12,7 +12,7 @@ use std::error::Error;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyList};
 use postgres::{Client, NoTls};
-use crate::post::prepare_post;
+use crate::post::post::prepare_post;
 
 #[pymodule]
 fn toes(py: Python, m: &PyModule) -> PyResult<()> {
@@ -32,7 +32,7 @@ fn parse_markdown_to_html(template: String) -> String {
 fn generate_post(
     connection_dict: &PyDict,
     working_directory_path: String,
-    post: &PyDict,
+    python_post: &PyDict,
     theme_path: String,
     output_path: String,
     clean_taxonomy: Option<Vec<String>>
@@ -42,8 +42,11 @@ fn generate_post(
         println!("lock failed");
         return;
     }
+
+    let post_data = post::post_struct::Post::new(python_post);
+
     if let Ok(mut conn) = created_connection(connection_dict) {
-        prepare_post(conn, post);
+        prepare_post(conn, post_data);
     }
 
     unlock_generation(&working_directory_path);

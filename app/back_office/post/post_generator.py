@@ -330,6 +330,7 @@ class PostGenerator:
                 "lang": temp[0],
                 "slug": temp[1]
             } for temp in temp_language_variants]
+
             posts.append({
                 "uuid": post[0],
                 "slug": post[1],

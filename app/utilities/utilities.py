@@ -106,7 +106,7 @@ def get_related_posts(*args, post, connection, **kwargs):
 
 
 def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
-    result = {
+    return {
         "uuid": raw_post[0],
         "original_lang_entry_uuid": raw_post[1],
         "lang": raw_post[2],
@@ -135,9 +135,9 @@ def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
         "format_name": raw_post[21],
         "sections": sections,
         "pinned": raw_post[22],
+        "author_display_name": raw_post[23],
+        "password": raw_post[24],
     }
-
-    return result
 
 
 def prepare_description(char_limit: int, description: str, section: Dict) -> str:

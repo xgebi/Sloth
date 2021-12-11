@@ -64,7 +64,7 @@ def create_app():  # dev, test, or prod
     from app.registration import registration
     app.register_blueprint(registration)
 
-    from app.login import login
+    from app.routes.login import login
     app.register_blueprint(login)
 
     from app.dashboard import dashboard
@@ -94,7 +94,7 @@ def create_app():  # dev, test, or prod
     from app.site import site
     app.register_blueprint(site)
 
-    from app.post_type import post_type
+    from app.routes.post_type import post_type
     app.register_blueprint(post_type)
 
     from app.forms import forms

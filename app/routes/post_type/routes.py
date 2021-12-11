@@ -9,7 +9,7 @@ from app.back_office.post.post_types import PostTypes
 import json
 import uuid
 
-from app.post_type import post_type
+from app.routes.post_type import post_type
 
 
 @post_type.route("/post-types")

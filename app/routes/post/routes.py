@@ -438,19 +438,20 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
             cur.execute("""SELECT content, section_type, position
                         FROM sloth_post_sections
                         WHERE post = %s
-                        ORDER BY position ASC;""",
+                        ORDER BY position;""",
                         (post_id,))
             sections = [{
                 "content": section[0],
+                "original": "",
                 "type": section[1],
-                "position": section[2]
+                "position": section[2],
             } for section in cur.fetchall()]
 
             if raw_post[16]:
                 cur.execute("""SELECT content, section_type, position
                             FROM sloth_post_sections
                             WHERE post = %s
-                            ORDER BY position ASC;""",
+                            ORDER BY position;""",
                             (raw_post[16],))
                 translated_sections = cur.fetchall()
                 while len(sections) < len(translated_sections):
