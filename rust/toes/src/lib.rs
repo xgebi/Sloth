@@ -52,7 +52,6 @@ fn generate_post(
     unlock_generation(&working_directory_path);
 }
 
-#[mockable]
 fn lock_generation(mut working_directory_path: &String) -> i8 {
     let file_path = std::path::Path::new(working_directory_path).join("generating.lock");
     if file_path.exists() {

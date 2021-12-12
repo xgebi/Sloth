@@ -1,3 +1,4 @@
+use pyo3::PyAny;
 use pyo3::types::PyDict;
 
 #[derive(Default, Debug)]
@@ -44,7 +45,10 @@ impl Post {
         Post {
             uuid: data.get_item("uuid").unwrap().to_string(),
             slug: data.get_item("slug").unwrap().to_string(),
-            author_display_name: data.get_item("author_display_name").unwrap_or_else("").to_string(),
+            author_display_name: match data.get_item("author_display_name") {
+                None => { "".to_string() }
+                Some(a) => { a.to_string() }
+            },
             author_uuid: data.get_item("author").unwrap().to_string(),
             title: data.get_item("title").unwrap_or_else("").to_string(),
             css: data.get_item("css").unwrap_or_else("").to_string(),
