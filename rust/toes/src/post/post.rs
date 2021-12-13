@@ -30,23 +30,25 @@ pub(crate) fn prepare_settings(connection: Client) {
 fn get_menus(conn: &mut Client) -> HashMap<&String, Menu> {
     let mut menus: HashMap<&String, Menu> = HashMap::new();
     let menu_rows = conn.query("SELECT name, uuid FROM sloth_menus;", &[]);
-    if let Err(e) = menu_rows {
-        return menus;
-    }
-    for menu_row in menu_rows.unwrap() {
-        let name: &str = menu_row.get("name");
-        let uuid: &str = menu_row.get("uuid");
-        let mut menu = Menu::new(&name.to_string(), &uuid.to_string());
-        let menu_items = conn.query("SELECT title, url FROM sloth_menu_items WHERE menu = $1", &[&menu.name]);
-        match menu_items {
-            Err(_) => {
-                continue;
-            }
-            Ok(items) => {
-                menu.set_item(items);
+    match menu_rows {
+        Err(e) => { }
+        Ok(rows) => {
+            for menu_row in rows {
+                let name: &str = menu_row.get("name");
+                let uuid: &str = menu_row.get("uuid");
+                let mut menu = Menu::new(&name.to_string(), &uuid.to_string());
+                let menu_items = conn.query("SELECT title, url FROM sloth_menu_items WHERE menu = $1", &[&menu.name]);
+                match menu_items {
+                    Err(_) => {
+                        continue;
+                    }
+                    Ok(items) => {
+                        menu.set_item(items);
+                    }
+                }
+                menus.insert(menu.name, menu);
             }
         }
-        menus.insert(menu.name, menu);
     }
     menus
 }

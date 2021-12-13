@@ -2,26 +2,26 @@ use std::collections::HashMap;
 use postgres::Row;
 use postgres_types::{ToSql, FromSql};
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct Setting {
     name: String,
     value: String,
     value_type: SlothSettingsType,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct TranslatableSettingItem {
     name: String,
     content: String,
     lang: String
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct TranslatableSetting {
     setting: HashMap<String, TranslatableSettingItem>
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct Menu<'a> {
     pub(crate) name: &'a String,
     pub(crate) uuid: &'a String,

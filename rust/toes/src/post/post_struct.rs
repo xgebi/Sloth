@@ -1,7 +1,8 @@
-use pyo3::{IntoPy, PyAny};
-use pyo3::types::{PyBool, PyDict, PyFloat};
+use pyo3::{IntoPy, PyAny, PyDowncastError};
+use pyo3::callback::IntoPyCallbackOutput;
+use pyo3::types::{PyBool, PyDict, PyFloat, PyList};
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 struct PostSection<'a> {
     content: &'a String,
     original: &'a String,
@@ -9,7 +10,7 @@ struct PostSection<'a> {
     position: u16,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct Post<'a> {
     uuid: &'a String,
     slug: &'a String,
@@ -65,14 +66,20 @@ impl<'a> Post<'a> {
             use_theme_css: match data.get_item("use_theme_css") {
                 None => { true }
                 Some(a) => {
-                    let Ok(temp) = a.downcast::<PyBool>();
-                    temp.is_true()
+                    match a.downcast::<PyBool>() {
+                        Ok(temp) => { temp.is_true() }
+                        Err(_) => { true }
+                    }
                 }
             },
             use_theme_js: match data.get_item("use_theme_js") {
                 None => { true }
-                Some(a) => { let Ok(temp) = a.downcast::<PyBool>();
-                    temp.is_true() }
+                Some(a) => {
+                    match a.downcast::<PyBool>() {
+                        Ok(temp) => { temp.is_true() }
+                        Err(_) => { true }
+                    }
+                }
             },
             publish_date: match data.get_item("publish_date") {
                 None => { 0.0 }
@@ -106,15 +113,19 @@ impl<'a> Post<'a> {
             imported: match data.get_item("imported") {
                 None => { false }
                 Some(a) => {
-                    let Ok(temp) = a.downcast::<PyBool>();
-                    temp.is_true()
+                    match a.downcast::<PyBool>() {
+                        Ok(temp) => { temp.is_true() }
+                        Err(_) => { true }
+                    }
                 }
             },
             import_approved: match data.get_item("import_approved") {
                 None => { false }
                 Some(a) => {
-                    let Ok(temp) = a.downcast::<PyBool>();
-                    temp.is_true()
+                    match a.downcast::<PyBool>() {
+                        Ok(temp) => { temp.is_true() }
+                        Err(_) => { true }
+                    }
                 }
             },
             thumbnail: match data.get_item("thumbnail"){
@@ -144,14 +155,21 @@ impl<'a> Post<'a> {
                 None => { Vec::new() as Vec<PostSection> }
                 Some(a) => {
                     // PyList
-                    a as Vec<PostSection>
+                    if let Ok(b) = a.downcast::<PyList>() {
+                        for item in b.into_iter() {
+
+                        }
+                    }
+                    Vec::new() as Vec<PostSection>
                 }
             },
             pinned: match data.get_item("pinned") {
                 None => { false }
                 Some(a) => {
-                    let Ok(temp) = a.downcast::<PyBool>();
-                    temp.is_true()
+                    match a.downcast::<PyBool>() {
+                        Ok(temp) => { temp.is_true() }
+                        Err(_) => { true }
+                    }
                 }
             },
             password: match data.get_item("password") {
