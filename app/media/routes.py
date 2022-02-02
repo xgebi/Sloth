@@ -111,7 +111,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
         ))
         code = 500
     now = datetime.now()
-    filename = image.filename
+    filename = w_utils.secure_filename(image.filename)
     index = 1
     if not os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year))):
         os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year)))
@@ -119,17 +119,17 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month))):
         os.makedirs(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month)))
     while os.path.exists(
-            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename))):
+            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename)):
         if filename[:filename.rfind('.')].endswith(f"-{index - 1}"):
             filename = f"{filename[:filename.rfind('-')]}-{index}{filename[filename.rfind('.'):]}"
         else:
             filename = f"{filename[:filename.rfind('.')]}-{index}{filename[filename.rfind('.'):]}"
         index += 1
 
-    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename)),
+    with open(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename),
               'wb') as f:
         image.save(
-            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), w_utils.secure_filename(filename)))
+            os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))
 
     try:
         with connection.cursor() as cur:
