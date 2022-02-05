@@ -6,6 +6,7 @@ use mocktopus::macros::mockable;
 mod markdown;
 mod toes;
 mod post;
+mod repositories;
 
 use std::io::Write;
 use std::error::Error;

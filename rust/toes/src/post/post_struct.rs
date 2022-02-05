@@ -14,9 +14,9 @@ struct PostSection<'a> {
 pub(crate) struct Post<'a> {
     uuid: &'a String,
     slug: &'a String,
-    author_display_name: &'a String,
+    author_display_name: String,
     author_uuid: &'a String,
-    title: &'a String,
+    title: String,
     css: &'a String,
     js: &'a String,
     use_theme_css: bool,
@@ -47,13 +47,13 @@ impl<'a> Post<'a> {
             uuid: &data.get_item("uuid").unwrap().to_string(),
             slug: &data.get_item("slug").unwrap().to_string(),
             author_display_name: match data.get_item("author_display_name") {
-                None => { &"".to_string() }
-                Some(a) => { &a.to_string() }
+                None => { "".to_string() }
+                Some(a) => { a.to_string() }
             },
             author_uuid: &data.get_item("author").unwrap().to_string(),
             title: match data.get_item("title") {
-                None => { &"".to_string() }
-                Some(a) => { &a.to_string() }
+                None => { "".to_string() }
+                Some(a) => { a.to_string() }
             },
             css: match data.get_item("css") {
                 None => { &"".to_string() }

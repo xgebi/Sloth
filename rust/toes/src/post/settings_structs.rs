@@ -22,22 +22,22 @@ pub(crate) struct TranslatableSetting {
 }
 
 #[derive(Debug)]
-pub(crate) struct Menu<'a> {
-    pub(crate) name: &'a String,
-    pub(crate) uuid: &'a String,
+pub(crate) struct Menu {
+    pub(crate) name: String,
+    pub(crate) uuid: String,
     pub(crate) items: Vec<MenuItem>
 }
 
-impl<'a> Menu<'a> {
-    pub(crate) fn new(name: &'a String, uuid: &'a String) -> Self {
-        Self {
+impl Menu {
+    pub(crate) fn new(name: String, uuid: String) -> Menu {
+        Menu {
             name,
             uuid,
             items: Vec::new()
         }
     }
 
-    pub(crate) fn set_item(self, items: Vec<Row>) {
+    pub(crate) fn set_item(self, items: &Vec<Row>) {
         for item in items {
 
         }
