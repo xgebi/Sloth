@@ -2,8 +2,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::common::HtmlNode::HtmlNode;
 
 enum ListType {
-    numbered,
-    bulleted
+    Numbered,
+    Bulleted
 }
 
 struct ListInfo<'a> {
@@ -15,13 +15,28 @@ struct ListInfo<'a> {
 
 impl ListInfo<'a> {
     fn new(indent: Option<u8>, level: u16, list_type: ListType, parent: Option<&'a ListInfo<'a>>) -> Self {
-        let list_level: i16 = if parent.is_none() { -1 } else { parent.unwrap().level + 1 };
+        let list_level: i16 = if parent.is_none() { 0 } else { parent.unwrap().level + 1 };
         Self {
             indent: indent.unwrap_or(2),
             level: list_level,
             list_type,
             parent
         }
+    }
+}
+
+struct Footnote {
+    index: u32,
+    footnote: String
+}
+
+struct Footnotes {
+    footnotes: Vec<Footnote>
+}
+
+impl Footnotes {
+    fn combine_footnotes(self) -> String {
+        todo!()
     }
 }
 
