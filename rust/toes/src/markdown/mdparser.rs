@@ -1,3 +1,4 @@
+use std::ops::Add;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::common::HtmlNode::HtmlNode;
 
@@ -35,8 +36,16 @@ struct Footnotes {
 }
 
 impl Footnotes {
-    fn combine_footnotes(self) -> String {
-        todo!()
+    fn combine_footnotes(mut self, text: String) -> String {
+        if self.footnotes.is_empty() {
+            return text
+        }
+        self.footnotes.sort_by_key(|f| { f.index });
+        let mut result = format!("{}<h2>Footnotes</h2><ol>", text);
+        for footnote in self.footnotes {
+            result.add(footnote.footnote.as_str());
+        }
+        result
     }
 }
 
