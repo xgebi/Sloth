@@ -1,3 +1,4 @@
+#![feature(in_band_lifetimes)]
 #![cfg_attr(test, feature(proc_macro_hygiene))]
 
 #[cfg(test)]
