@@ -1,6 +1,6 @@
 use std::ops::Add;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::common::HtmlNode::HtmlNode;
+use crate::common::html_node::HtmlNode;
 
 enum ListType {
     Numbered,
@@ -43,7 +43,7 @@ impl Footnotes {
         self.footnotes.sort_by_key(|f| { f.index });
         let mut result = format!("{}<h2>Footnotes</h2><ol>", text);
         for footnote in self.footnotes {
-            result.add(footnote.footnote.as_str());
+            result = result.add(footnote.footnote.as_str());
         }
         result
     }

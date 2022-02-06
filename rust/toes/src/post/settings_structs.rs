@@ -45,7 +45,7 @@ impl Menu {
 }
 
 #[derive(Default, Debug)]
-struct MenuItem {
+pub(crate) struct MenuItem {
     title: String,
     url: String
 }

@@ -1,2 +1,2 @@
-pub(crate) mod HtmlNode;
-pub(crate) mod ToeNode;
+pub(crate) mod html_node;
+pub(crate) mod toe_node;
