@@ -7,6 +7,7 @@ mod markdown;
 mod toes;
 mod post;
 mod repositories;
+mod common;
 
 use std::io::Write;
 use std::error::Error;

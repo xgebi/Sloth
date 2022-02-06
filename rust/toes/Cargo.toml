@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 bench = false
 
 [dependencies]
-unicode-segmentation = "1.7.1"
+unicode-segmentation = "1.8.0"
 postgres = "0.19.1"
 postgres-types = { version = "0.2.1", features = ["derive"] }
 regex = "1.5.4"
