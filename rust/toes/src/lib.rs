@@ -93,3 +93,13 @@ fn created_connection(connection_dict: &PyDict) -> Result<Client, postgres::Erro
     let mut client = Client::connect(&*connection_string, NoTls)?;
     Ok(client)
 }
+
+// This is for generating multiple files
+//
+// #[pyfunction]
+// fn rust_sleep(py: Python) -> PyResult<&PyAny> {
+//     pyo3_asyncio::tokio::future_into_py(py, async {
+//         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+//         Ok(())
+//     })
+// }
