@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List, Dict
 
 
 def build_post_query(uuid: bool = False, scheduled: bool = False, published_per_post_type: bool = False,
@@ -44,3 +45,33 @@ INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format""".strip()
         query = f"{query}\nORDER BY {', '.join(order_by)}"
 
     return f"{query};"
+
+
+def normalize_post_from_query(post: List) -> Dict:
+    return {
+        "post_uuid": post[0],
+        "original_lang_entry_uuid": post[1],
+        "lang": post[2],
+        "slug": post[3],
+        "post_type": post[4],
+        "author": post[5],
+        "title": post[6],
+        "css": post[7],
+        "use_theme_css": post[8],
+        "js": post[9],
+        "use_theme_js": post[10],
+        "thumbnail": post[11],
+        "publish_date": post[12],
+        "update_date": post[13],
+        "post_status": post[14],
+        "imported": post[15],
+        "import_approved": post[16],
+        "meta_description": post[17],
+        "twitter_description": post[18],
+        "post_format_uuid": post[19],
+        "post_format_slug": post[20],
+        "post_format_name": post[21],
+        "pinned": post[22],
+        "author_name": post[23],
+        "password": post[24]
+    }

@@ -23,7 +23,7 @@ from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
-from app.back_office.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
 
 
 class PostGenerator:
@@ -240,13 +240,13 @@ class PostGenerator:
         try:
             with self.connection.cursor() as cur:
                 cur.execute(build_post_query(published_in_taxonomy_per_post_type=True), (taxonomy_uuid, post_type_uuid))
-                raw_items = cur.fetchall()
+                items = [normalize_post_from_query(post) for post in cur.fetchall()]
         except Exception as e:
             print(e)
             traceback.print_exc()
             return []
 
-        return self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
+        return self.process_posts(items=items, post_type_slug=post_type_slug)
 
     def get_posts_from_post_type_language(
             self,
@@ -283,29 +283,23 @@ class PostGenerator:
     def process_posts(
             self,
             *args,
-            raw_items,
+            items,
             post_type_slug: str,
             **kwargs
     ):
-
         posts = []
-
-        for post in raw_items:
-            thumbnail = None
-            thumbnail_alt = None
-
+        for post in items:
             try:
-                thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post[14], post[16])
-                thumbnail = post[14]
+                thumbnail_path, thumbnail_alt = self.get_thumbnail_information(thumbnail_uuid=post["thumbnail"], language=post["lang"])
                 thumbnail_path = thumbnail_path
                 thumbnail_alt = html.escape(thumbnail_alt)
 
                 with self.connection.cursor() as cur:
-                    if post[15]:
+                    if post["original_lang_entry_uuid"]:
                         cur.execute(
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);""",
-                            (post[15], post[15], post[0]))
+                            (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"], post["post_uuid"]))
                         temp_language_variants = cur.fetchall()
                     else:
                         temp_language_variants = []
@@ -314,8 +308,8 @@ class PostGenerator:
                         """SELECT content, section_type, position
                         FROM sloth_post_sections
                         WHERE post = %s
-                        ORDER BY position ASC;""",
-                        (post[0],))
+                        ORDER BY position;""",
+                        (post["post_uuid"],))
                     sections = [{
                         "content": section[0],
                         "type": section[1],
@@ -331,6 +325,7 @@ class PostGenerator:
                 "slug": temp[1]
             } for temp in temp_language_variants]
 
+            # TODO redo this according to adjusting existing item
             posts.append({
                 "uuid": post[0],
                 "slug": post[1],
@@ -349,7 +344,6 @@ class PostGenerator:
                 "post_type_slug": post_type_slug,
                 "approved": post[13],
                 "imported": post[12],
-                "thumbnail": thumbnail,
                 "thumbnail_path": thumbnail_path,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
@@ -363,7 +357,7 @@ class PostGenerator:
                 "sections": sections
             })
 
-        return posts
+        return items
 
     def prepare_meta_descriptions(self, sections: List, post: Dict) -> str:
         if len(post) >= 21 and post[20] is not None and len(post[20]) > 0:
@@ -635,7 +629,7 @@ class PostGenerator:
 
             if add_content_form_hooks:
                 post["has_form"] = True
-                with open(Path(__file__).parent / "../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
+                with open(Path(__file__).parent / "../../templates/send-message.toe.html", 'r', encoding="utf-8") as fi:
                     self.hooks.footer.append(Hook(content=fi.read(), condition="post['has_form']"))
             else:
                 post["has_form"] = False
@@ -896,10 +890,10 @@ class PostGenerator:
 
     def set_footer(self, *args, **kwargs):
         # Footer for post
-        with open(Path(__file__).parent / "../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
+        with open(Path(__file__).parent / "../../templates/analytics.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read()))
 
-        with open(Path(__file__).parent / "../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
+        with open(Path(__file__).parent / "../../templates/secret-script.toe.html", 'r', encoding="utf-8") as f:
             self.hooks.footer.append(Hook(content=f.read(), condition="is_home"))
 
     def set_translatable_individual_settings_by_name(
