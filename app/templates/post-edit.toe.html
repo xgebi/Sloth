@@ -8,15 +8,15 @@
         <h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
         <h1 class="full-width" toe:if="not data['new']" toe:text="'Edit ' + post_type_name"></h1>
         <span
-                toe:if="data['original_post']"
+                toe:if="data['original_lang_entry_uuid']"
                 id="uuid"
                 class="hidden"
                 toe:data-new="data['new']"
                 toe:data-uuid="data['uuid']"
                 toe:data-posttype-uuid="data['post_type']"
-                toe:data-original-post="data['original_post']"></span>
+                toe:data-original-post="data['original_lang_entry_uuid']"></span>
         <span
-                toe:if="not data['original_post']"
+                toe:if="not data['original_lang_entry_uuid']"
                 id="uuid"
                 class="hidden"
                 toe:data-new="data['new']"

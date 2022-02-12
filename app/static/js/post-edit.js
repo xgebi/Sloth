@@ -169,7 +169,7 @@ function collectValues() {
     post["uuid"] = document.querySelector("#uuid").dataset["uuid"];
     post["post_type_uuid"] = document.querySelector("#uuid").dataset["posttypeUuid"];
     post["new"] = document.querySelector("#uuid").dataset["new"];
-    post["original_post"] = document.querySelector("#uuid").dataset["originalPost"];
+    post["original_lang_entry_uuid"] = document.querySelector("#uuid").dataset["originalPost"];
     post["title"] = document.querySelector("#title").value;
     if (post["title"].length === 0) {
         return false;
@@ -233,32 +233,36 @@ function savePost(values) {
         headers: {
             'Content-Type': 'application/json',
             'authorization': document.cookie
-                .split(';')
-                .find(row => row.trim().startsWith('sloth_session'))
-                .split('=')[1]
+              .split(';')
+              .find(row => row.trim().startsWith('sloth_session'))
+              .split('=')[1]
         },
         body: JSON.stringify(values)
     })
-        .then(response => {
-            if (response.ok) {
-                return response.json()
-            }
-            throw `${response.status}: ${response.statusText}`
-        })
-        .then(data => {
-            if (window.location.pathname.indexOf("/new/") >= 0) {
-                window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
-            } else if (values["createTranslation"]) {
-                window.location.replace(
-                `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${values['uuid']}`
-            );
-            } else {
-                regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, metadataButtons)
-            }
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+      .then(response => {
+          if (response.ok) {
+              return response.json()
+          }
+          throw `${response.status}: ${response.statusText}`
+      })
+      .then(data => {
+          if (window.location.pathname.indexOf("/new/") >= 0) {
+              window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
+          } else if (values["createTranslation"]) {
+              let original = values['uuid'];
+              if (values['original_lang_entry_uuid'].length > 0) {
+                  original = values['original_lang_entry_uuid'];
+              }
+              window.location.replace(
+                `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${original}`
+              );
+          } else {
+              regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, metadataButtons)
+          }
+      })
+      .catch((error) => {
+          console.error('Error:', error);
+      });
 }
 
 function saveCreatePost(values) {
@@ -284,8 +288,12 @@ function saveCreatePost(values) {
             throw `${response.status}: ${response.statusText}`
         })
         .then(data => {
+            let original = values['uuid'];
+            if (values['original_lang_entry_uuid'].length > 0) {
+                original = values['original_lang_entry_uuid'];
+            }
             window.location.replace(
-                `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${values['uuid']}`
+                `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${original}`
             );
         })
         .catch((error) => {

@@ -74,14 +74,13 @@ def get_related_posts(*args, post, connection, **kwargs):
         )
     related_posts = [normalize_post_from_query(post) for post in cur.fetchall()]
 
-    posts = []
     for related_post in related_posts:
         cur.execute(
             """SELECT content, section_type, position
                 FROM sloth_post_sections
                 WHERE post = %s
                 ORDER BY position;""",
-            (related_post[0],)
+            (related_post["uuid"],)
         )
         sections = [{
             "content": section[0],
@@ -94,7 +93,7 @@ def get_related_posts(*args, post, connection, **kwargs):
             "sections": sections,
         })
 
-    for post in posts:
+    for post in related_posts:
         cur.execute(
             """SELECT sl.location, spl.hook_name
                 FROM sloth_post_libraries AS spl
@@ -107,7 +106,7 @@ def get_related_posts(*args, post, connection, **kwargs):
             "hook_name": lib[1]
         } for lib in cur.fetchall()]
     cur.close()
-    return posts
+    return related_posts
 
 
 def prepare_description(char_limit: int, description: str, section: Dict) -> str:

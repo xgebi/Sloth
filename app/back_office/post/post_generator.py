@@ -653,7 +653,12 @@ class PostGenerator:
                         if lang['uuid'] == self.settings["main_language"]['settings_value']:
                             loc_output_path = Path(self.config["OUTPUT_PATH"])
                         else:
-                            loc_output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
+                            short_name = ""
+                            for translation in translations_filtered:
+                                if translation["lang_uuid"] == related_post["lang"]:
+                                    short_name = translation["short_name"]
+
+                            loc_output_path = Path(self.config["OUTPUT_PATH"], short_name)
                         self.generate_post(
                             post=related_post,
                             output_path=loc_output_path,

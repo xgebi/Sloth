@@ -566,7 +566,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
         "uuid": uuid.uuid4(),
         "post_type": post_type,
         "lang": lang_id,
-        "original_post": original_post,
+        "original_lang_entry_uuid": original_post,
         "post_format_uuid": default_format,
         "libraries": post_libs,
         "categories": categories,
@@ -1040,7 +1040,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                                 (filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
                                  filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
-                                 filled["original_post"] if "original_post" in filled else "", filled["post_format"],
+                                 filled["original_lang_entry_uuid"] if "original_lang_entry_uuid" in filled else "", filled["post_format"],
                                  filled["meta_description"], filled["twitter_description"], filled["pinned"]))
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
