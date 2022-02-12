@@ -4,7 +4,7 @@ import datetime
 import sys
 
 from app.utilities.utility_exceptions import NoPositiveMinimumException
-from app.back_office.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
 
 
 def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_list: bool = True, **kwargs):
@@ -72,7 +72,8 @@ def get_related_posts(*args, post, connection, **kwargs):
             build_post_query(original_other_language_versions=True),
             (post["uuid"],)
         )
-    related_posts_raw = cur.fetchall()
+    related_posts_raw = [normalize_post_from_query(post) for post in cur.fetchall()]
+
     posts = []
     for related_post in related_posts_raw:
         cur.execute(

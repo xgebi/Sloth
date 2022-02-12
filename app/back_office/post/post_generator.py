@@ -260,8 +260,8 @@ class PostGenerator:
         try:
             with self.connection.cursor() as cur:
                 cur.execute(build_post_query(published_per_post_type=True), (post_type_uuid, language_uuid))
-                raw_items = cur.fetchall()
-                posts = self.process_posts(raw_items=raw_items, post_type_slug=post_type_slug)
+                items = [normalize_post_from_query(post) for post in cur.fetchall()]
+                posts = self.process_posts(items=items, post_type_slug=post_type_slug)
                 for post in posts:
                     cur.execute(
                         """SELECT sl.location, spl.hook_name
@@ -325,33 +325,13 @@ class PostGenerator:
                 "slug": temp[1]
             } for temp in temp_language_variants]
 
-            # TODO redo this according to adjusting existing item
-            posts.append({
-                "uuid": post[0],
-                "slug": post[1],
-                "author_name": post[2],
-                "author_uuid": post[3],
-                "title": post[4],
-                "css": post[5],
-                "js": post[6],
-                "use_theme_css": post[7],
-                "use_theme_js": post[8],
-                "publish_date": post[9],
-                "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "updated_date": post[10],
-                "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "post_status": post[11],
+            post.update({
+                "publish_date_formatted": datetime.fromtimestamp(float(post["publish_date"]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                "update_date_formatted": datetime.fromtimestamp(float(post["updated_date"]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "post_type_slug": post_type_slug,
-                "approved": post[13],
-                "imported": post[12],
                 "thumbnail_path": thumbnail_path,
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
-                "original_lang_entry_uuid": post[15],
-                "lang": post[16],
-                "format_uuid": post[17],
-                "format_slug": post[18],
-                "format_name": post[19],
                 "meta_description": self.prepare_meta_descriptions(sections=sections, post=post),
                 "social_description": self.prepare_social_descriptions(sections=sections, post=post),
                 "sections": sections
@@ -360,15 +340,15 @@ class PostGenerator:
         return items
 
     def prepare_meta_descriptions(self, sections: List, post: Dict) -> str:
-        if len(post) >= 21 and post[20] is not None and len(post[20]) > 0:
-            return post[20]
+        if "meta_description" in post and post["meta_description"] is not None and len(post["meta_description"]) > 0:
+            return post["meta_description"]
         if len(sections) > 0:
             return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
         return ''
 
     def prepare_social_descriptions(self, sections: List, post: Dict) -> str:
-        if len(post) >= 22 and post[21] is not None and len(post[21]) > 0:
-            return post[21]
+        if "twitter_description" in post and post["twitter_description"] is not None and len(post["twitter_description"]) > 0:
+            return post["twitter_description"]
         if len(sections) > 0:
             return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
         return ''

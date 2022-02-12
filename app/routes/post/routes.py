@@ -23,7 +23,7 @@ from app.toes.toes import render_toe_from_path
 from app.utilities.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
-from app.back_office.post.post_query_builder import build_post_query
+from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
 
 
 # import toes
@@ -360,18 +360,17 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
     try:
         with connection.cursor() as cur:
             media_data = get_media(connection=connection)
-            build_post_query(uuid=True)
             cur.execute(build_post_query(uuid=True), (post_id,))
-            raw_post = cur.fetchone()
+            normed_post = normalize_post_from_query(cur.fetchone())
             if raw_post is None:
                 return redirect('/post/nothing')
             cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""",
-                        (raw_post[11],))
+                        (normed_post["post_type"],))
             post_type_name = cur.fetchone()[0]
 
             cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
                                         WHERE post_type = %s AND lang = %s""",
-                        (raw_post[11], raw_post[15]))
+                        (normed_post["post_type"], normed_post["lang"]))
             raw_all_taxonomies = cur.fetchall()
             cur.execute("""SELECT taxonomy FROM sloth_post_taxonomies
                                                 WHERE post = %s""",
@@ -389,16 +388,16 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                         FROM sloth_media AS sm 
                         INNER JOIN sloth_media_alts sma on sm.uuid = sma.media
                         WHERE sm.uuid=%s AND sma.lang = %s""",
-                    (raw_post[6], raw_post[15]))
+                    (normed_post["thumbnail"], normed_post["lang"]))
                 temp_thumbnail_info = cur.fetchone()
-            current_lang, languages = get_languages(connection=connection, lang_id=raw_post[15])
+            current_lang, languages = get_languages(connection=connection, lang_id=normed_post["lang"])
             translatable = []
 
-            if raw_post[16]:
+            if normed_post["original_entry_uuid"]:
                 translations, translatable = get_translations(
                     connection=connection,
                     post_uuid="",
-                    original_entry_uuid=raw_post[16],
+                    original_entry_uuid=normed_post["original_entry_uuid"],
                     languages=languages
                 )
             else:
@@ -409,7 +408,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                     languages=languages
                 )
             cur.execute("""SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s""",
-                        (raw_post[11],))
+                        (normed_post["post_type"],))
             post_formats = [{
                 "uuid": pf[0],
                 "slug": pf[1],
@@ -447,12 +446,12 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                 "position": section[2],
             } for section in cur.fetchall()]
 
-            if raw_post[16]:
+            if normed_post["original_lang_entry_uuid"]:
                 cur.execute("""SELECT content, section_type, position
                             FROM sloth_post_sections
                             WHERE post = %s
                             ORDER BY position;""",
-                            (raw_post[16],))
+                            (normed_post["original_lang_entry_uuid"],))
                 translated_sections = cur.fetchall()
                 while len(sections) < len(translated_sections):
                     sections.append({
@@ -1145,9 +1144,9 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 cur.execute("""DELETE from sloth_post_sections WHERE post = %s;""",
                             (filled["uuid"],))
                 cur.execute(build_post_query(uuid=True), (filled["uuid"],))
-                saved_post = cur.fetchone()
+                saved_post = normalize_post_from_query(cur.fetchone())
                 sections = process_sections(connection, filled["sections"], filled["uuid"])
-
+                # TODO need to think about this a bit more
                 generatable_post = parse_raw_post(saved_post, sections=sections)
                 cur.execute(
                     """SELECT sl.location, spl.hook_name
