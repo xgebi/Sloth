@@ -1,7 +1,6 @@
 from typing import Dict
 import bcrypt
 import psycopg
-from flask import current_app
 
 from app.repositories.user_repository import repository_get_user_by_id, repository_update_password, \
     repository_get_password
@@ -21,7 +20,7 @@ def get_user_by_id(connection: psycopg.Connection, uuid: str) -> Dict:
 
 
 def update_password(connection: psycopg.Connection, uuid: str, password: str) -> bool:
-    password_hash = bcrypt.hashpw(password=password.encode('utf8'), salt=bcrypt.gensalt())
+    password_hash = bcrypt.hashpw(password=password.encode('utf8'), salt=bcrypt.gensalt()).decode('utf-8')
     return repository_update_password(connection=connection, uuid=uuid, password_hash=password_hash)
 
 
