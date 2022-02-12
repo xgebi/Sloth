@@ -22,7 +22,7 @@
         </toe:fragment>
         <img toe:if="post['thumbnail']" toe:src="'/' + post['thumbnail']" toe:alt="post['thumbnail_alt']" class="thumbnail"/>
         <h1 toe:text="post['title']"></h1>
-        <p toe:text="'Published on ' + post['publish_date_formatted']"></p>
+        <p toe:text="'Published on ' + post['publish_timedate_formatted']"></p>
         <div toe:if="translations | length gt 0">
             Available in:
             <ul>

@@ -287,7 +287,6 @@ class PostGenerator:
             post_type_slug: str,
             **kwargs
     ):
-        posts = []
         for post in items:
             try:
                 thumbnail_path, thumbnail_alt = self.get_thumbnail_information(thumbnail_uuid=post["thumbnail"], language=post["lang"])
@@ -299,7 +298,7 @@ class PostGenerator:
                         cur.execute(
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);""",
-                            (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"], post["post_uuid"]))
+                            (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"], post["uuid"]))
                         temp_language_variants = cur.fetchall()
                     else:
                         temp_language_variants = []
@@ -309,7 +308,7 @@ class PostGenerator:
                         FROM sloth_post_sections
                         WHERE post = %s
                         ORDER BY position;""",
-                        (post["post_uuid"],))
+                        (post["uuid"],))
                     sections = [{
                         "content": section[0],
                         "type": section[1],
@@ -326,8 +325,6 @@ class PostGenerator:
             } for temp in temp_language_variants]
 
             post.update({
-                "publish_date_formatted": datetime.fromtimestamp(float(post["publish_date"]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                "update_date_formatted": datetime.fromtimestamp(float(post["updated_date"]) / 1000).strftime("%Y-%m-%d %H:%M"),
                 "post_type_slug": post_type_slug,
                 "thumbnail_path": thumbnail_path,
                 "thumbnail_alt": thumbnail_alt,
@@ -686,18 +683,18 @@ class PostGenerator:
     def get_post_template(self, *args, post_type: Dict, post: Dict, language: Dict, **kwargs) -> Optional[str]:
         # post type, post format, language
         if os.path.isfile(os.path.join(self.theme_path,
-                                       f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.toe.html")):
+                                       f"post-{post_type['slug']}-{post['post_format_slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}-{language['short_name']}.toe.html")
+                                              f"post-{post_type['slug']}-{post['post_format_slug']}-{language['short_name']}.toe.html")
         # post type, post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['format_slug']}.toe.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['post_format_slug']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post_type['slug']}-{post['format_slug']}.toe.html")
+                                              f"post-{post_type['slug']}-{post['post_format_slug']}.toe.html")
         # post format, language
         elif os.path.isfile(
-                os.path.join(self.theme_path, f"post-{post['format_slug']}-{language['short_name']}.toe.html")):
+                os.path.join(self.theme_path, f"post-{post['post_format_slug']}-{language['short_name']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}-{language['short_name']}.toe.html")
+                                              f"post-{post['post_format_slug']}-{language['short_name']}.toe.html")
         # post type, language
         elif os.path.isfile(
                 os.path.join(self.theme_path, f"post-{post_type['slug']}-{language['short_name']}.toe.html")):
@@ -712,9 +709,9 @@ class PostGenerator:
             post_template_path = os.path.join(self.theme_path,
                                               f"post-{language['short_name']}.toe.html")
         # post format
-        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['format_slug']}.toe.html")):
+        elif os.path.isfile(os.path.join(self.theme_path, f"post-{post['post_format_slug']}.toe.html")):
             post_template_path = os.path.join(self.theme_path,
-                                              f"post-{post['format_slug']}.toe.html")
+                                              f"post-{post['post_format_slug']}.toe.html")
         else:
             post_template_path = Path(self.theme_path, "post.toe.html")
 
@@ -1124,7 +1121,7 @@ class PostGenerator:
                             "slug": item[2],
                             "excerpt": excerpt,
                             "publish_date": item[4],
-                            "publish_date_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
+                            "publish_timedate_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
                                 "%Y-%m-%d %H:%M"),
                             "post_type_slug": post_type['slug'],
                             "thumbnail_path": thumbnail_path,
@@ -1189,7 +1186,7 @@ class PostGenerator:
                     "use_theme_css": post[7],
                     "use_theme_js": post[8],
                     "publish_date": post[9],
-                    "publish_date_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "publish_timedate_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
                     "update_date": post[10],
                     "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
                     "post_status": post[11],

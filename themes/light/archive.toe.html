@@ -21,7 +21,7 @@
             <a toe:if="current_page_number gt 0" toe:href="'../' + post['slug']" toe:text="post['title']"></a>
             <a toe:if="current_page_number eq 0" toe:href="post['slug']" toe:text="post['title']"></a>
         </h2>
-        <p toe:text="'Published on ' + post['publish_date_formatted']"></p>
+        <p toe:text="'Published on ' + post['publish_timedate_formatted']"></p>
     </article>
 
     <toe:create var="previous" value="current_page_number"/>

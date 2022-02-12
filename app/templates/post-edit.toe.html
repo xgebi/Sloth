@@ -126,7 +126,7 @@
             </toe:fragment>
             <toe:fragment toe:if="data['imported']">
                 <label for="import_approved">Imported post approved:</label>
-                <input type="checkbox" id="import_approved" toe:checked="data['approved']"/>
+                <input type="checkbox" id="import_approved" toe:checked="data['import_approved']"/>
             </toe:fragment>
             <toe:fragment toe:if="data['status'] eq 'draft'">
                 <button id="save-draft">Save draft</button>
@@ -194,7 +194,7 @@
                     <input type="radio"
                            toe:id="pf['slug']"
                            toe:value="pf['uuid']"
-                           toe:checked="data['format_uuid'] eq pf['uuid']"
+                           toe:checked="data['post_format_uuid'] eq pf['uuid']"
                            name="post-format"/>
                     <label toe:attr-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
                 </toe:fragment>

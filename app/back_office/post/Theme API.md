@@ -26,7 +26,7 @@
     * for writer this is an indicator that theme's styles should/shouldn't be used
 * `publish_date`
     * timestamp of publishing date
-* `publish_date_formatted`
+* `publish_date_formatted`, `publish_date_formatted`, `publish_timedate_formatted`
     * formatted publishing date
 * `updated_date`
     * timestamp of update date

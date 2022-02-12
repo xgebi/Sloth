@@ -229,44 +229,10 @@ def get_post_edit(*args, permission_level: int, connection: psycopg.Connection, 
     :param kwargs:
     :return:
     """
-    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+    post_data, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
         connection=connection, post_id=post_id)
-    publish_datetime = datetime.datetime.fromtimestamp(raw_post[7] / 1000) if raw_post[7] else None
-    data = {
-        "uuid": post_id,
-        "title": raw_post[0],
-        "slug": raw_post[1],
-        "sections": sections,
-        "css": raw_post[2],
-        "useThemeCss": raw_post[3],
-        "js": raw_post[4],
-        "useThemeJs": raw_post[5],
-        "thumbnailPath": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
-        "thumbnailUuid": raw_post[6] if raw_post[6] is not None else "",
-        "thumbnailAlt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
-        "publishDate": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
-        "publishTime": publish_datetime.strftime("%H:%M") if publish_datetime else None,
-        "updateDate": raw_post[8],
-        "status": raw_post[9],
-        "displayName": raw_post[10],
-        "postType": raw_post[11],
-        "imported": raw_post[12],
-        "approved": raw_post[13],
-        "password": raw_post[14],
-        "lang": raw_post[15],
-        "categories": categories,
-        "tags": tags,
-        "formatUuid": raw_post[17],
-        "formatSlug": raw_post[18],
-        "formatName": raw_post[19],
-        "metaDescription": raw_post[20],
-        "socialDescription": raw_post[21],
-        "libraries": post_libs,
-        "originalPost": raw_post[16],
-        "pinned": raw_post[22],
-    }
 
-    return json.dumps(data)
+    return json.dumps(post_data)
 
 
 @post.route("/post/<post_id>/edit")
@@ -287,7 +253,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+    post_data, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
         connection=connection, post_id=post_id)
 
     default_lang = get_default_language(connection=connection)
@@ -295,57 +261,22 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
 
     token = request.cookies.get('sloth_session')
 
-    publish_datetime = datetime.datetime.fromtimestamp(raw_post[7] / 1000) if raw_post[7] else None
-
-    data = {
-        "uuid": post_id,
-        "title": raw_post[0],
-        "slug": raw_post[1],
-        "sections": json.dumps(sections),
-        "css": raw_post[2],
-        "use_theme_css": raw_post[3],
-        "js": raw_post[4],
-        "use_theme_js": raw_post[5],
-        "thumbnail_path": temp_thumbnail_info[1] if len(temp_thumbnail_info) >= 2 else None,
-        "thumbnail_uuid": raw_post[6] if raw_post[6] is not None else "",
-        "thumbnail_alt": temp_thumbnail_info[0] if len(temp_thumbnail_info) > 0 else None,
-        "publish_date": publish_datetime.strftime("%Y-%m-%d") if publish_datetime else None,
-        "publish_time": publish_datetime.strftime("%H:%M") if publish_datetime else None,
-        "update_date": raw_post[8],
-        "status": raw_post[9],
-        "display_name": raw_post[10],
-        "post_type": raw_post[11],
-        "imported": raw_post[12],
-        "approved": raw_post[13],
-        "password": raw_post[14],
-        "lang": raw_post[15],
-        "categories": categories,
-        "tags": tags,
-        "format_uuid": raw_post[17],
-        "format_slug": raw_post[18],
-        "format_name": raw_post[19],
-        "meta_description": raw_post[20],
-        "twitter_description": raw_post[21],
-        "libraries": post_libs,
-        "original_post": raw_post[16],
-        "pinned": raw_post[22],
-    }
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="post-edit.toe.html",
         hooks=Hooks(),
         data={
-            "title": f"Add new {post_type_name}" if "new" in data else f"Edit {post_type_name}",
+            "title": f"Add new {post_type_name}" if "new" in post_data else f"Edit {post_type_name}",
             "post_types": post_types_result,
             "permission_level": permission_level,
             "token": token,
             "post_type_name": post_type_name,
-            "data": data,
+            "data": post_data,
             "post_statuses": post_statuses,
             "default_lang": default_lang,
             "languages": translatable,
             "translations": translations,
-            "current_lang_id": data["lang"],
+            "current_lang_id": post_data["lang"],
             "post_formats": post_formats,
             "libs": libs,
             "hook_list": HooksList.list(),
@@ -393,11 +324,11 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
             current_lang, languages = get_languages(connection=connection, lang_id=normed_post["lang"])
             translatable = []
 
-            if normed_post["original_entry_uuid"]:
+            if "original_lang_entry_uuid" in normed_post and normed_post["original_lang_entry_uuid"] is not None:
                 translations, translatable = get_translations(
                     connection=connection,
                     post_uuid="",
-                    original_entry_uuid=normed_post["original_entry_uuid"],
+                    original_entry_uuid=normed_post["original_lang_entry_uuid"],
                     languages=languages
                 )
             else:
@@ -472,7 +403,8 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
         abort(500)
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
-    return normed_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
+    normed_post.update({"sections": sections})
+    return normed_post, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
 
 
 def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs) -> (List[Dict], List[Dict]):
@@ -636,7 +568,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
         "post_type": post_type,
         "lang": lang_id,
         "original_post": original_post,
-        "format_uuid": default_format,
+        "post_format_uuid": default_format,
         "libraries": post_libs,
         "categories": categories,
         "tags": tags,
@@ -1147,8 +1079,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 saved_post = normalize_post_from_query(cur.fetchone())
                 sections = process_sections(connection, filled["sections"], filled["uuid"])
                 saved_post.update({
-                    "meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
-                    "twitter_description": prepare_description(char_limit=161, description=post["twitter_description"], section=sections[0]),
+                    "meta_description": prepare_description(char_limit=161, description=saved_post["meta_description"], section=sections[0]),
+                    "twitter_description": prepare_description(char_limit=161, description=saved_post["twitter_description"], section=sections[0]),
                     "sections": sections,
                 })
                 cur.execute(
