@@ -324,10 +324,10 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
             current_lang, languages = get_languages(connection=connection, lang_id=normed_post["lang"])
             translatable = []
 
-            if "original_lang_entry_uuid" in normed_post and normed_post["original_lang_entry_uuid"] is not None:
+            if "original_lang_entry_uuid" in normed_post and normed_post["original_lang_entry_uuid"] is not None and len(normed_post["original_lang_entry_uuid"]) > 0:
                 translations, translatable = get_translations(
                     connection=connection,
-                    post_uuid="",
+                    post_uuid=normed_post["uuid"],
                     original_entry_uuid=normed_post["original_lang_entry_uuid"],
                     languages=languages
                 )
