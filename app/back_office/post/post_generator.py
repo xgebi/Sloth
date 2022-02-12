@@ -21,7 +21,7 @@ from app.toes.toes import render_toe_from_string
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
-from app.services.post_services import get_translations, get_taxonomy_for_post_preped_for_listing
+from app.services.post_services import get_translations, get_taxonomy_for_post_prepped_for_listing
 
 
 class PostGenerator:
@@ -566,7 +566,7 @@ class PostGenerator:
 
         translations = self.get_translation_links(translations=translations_filtered, post_type=post_type, post=post)
 
-        categories, tags = get_taxonomy_for_post_preped_for_listing(
+        categories, tags = get_taxonomy_for_post_prepped_for_listing(
             connection=self.connection,
             uuid=post['uuid'],
             main_language=self.settings['main_language'],
@@ -1103,7 +1103,7 @@ class PostGenerator:
                             thumbnail_alt = res[1]
                         excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
 
-                        categories, tags = get_taxonomy_for_post_preped_for_listing(
+                        categories, tags = get_taxonomy_for_post_prepped_for_listing(
                             connection=self.connection,
                             uuid=item[0],
                             main_language=self.settings['main_language'],

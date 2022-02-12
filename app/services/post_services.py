@@ -4,12 +4,14 @@ from typing import List, Dict
 from app.repositories.post_repositories import get_other_translations, get_translation_for_original
 
 
-def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List, **kwargs):
+def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List,
+                     **kwargs):
     try:
         with connection.cursor() as cur:
             translatable = []
             if original_entry_uuid is not None and len(original_entry_uuid) > 0:
-                temp_translations = get_other_translations(cur=cur, original_entry_uuid=original_entry_uuid, post_uuid=post_uuid)
+                temp_translations = get_other_translations(cur=cur, original_entry_uuid=original_entry_uuid,
+                                                           post_uuid=post_uuid)
             else:
                 temp_translations = get_translation_for_original(cur=cur, post_uuid=post_uuid)
             translations = {translation[1]: {
@@ -20,7 +22,8 @@ def get_translations(*args, connection: psycopg.Connection, post_uuid: str, orig
             } for translation in temp_translations}
             translated_languages = []
             for language in languages:
-                if language['uuid'] in translations.keys():  # temp translations is uuid + lang, not list of languages!!!
+                # temp translations is uuid + lang, not list of languages!!!
+                if language['uuid'] in translations.keys():
                     translated_languages.append({
                         'lang_uuid': language['uuid'],
                         'post_uuid': translations[language["uuid"]]["uuid"],
@@ -38,7 +41,8 @@ def get_translations(*args, connection: psycopg.Connection, post_uuid: str, orig
         return [], []
 
 
-def get_taxonomy_for_post_preped_for_listing(connection: psycopg.Connection, uuid: str, main_language: Dict, language: Dict) -> (List, List):
+def get_taxonomy_for_post_prepped_for_listing(connection: psycopg.Connection, uuid: str, main_language: Dict,
+                                              language: Dict) -> (List, List):
     if main_language['settings_value'] == language['uuid']:
         prefix = '/'
     else:
@@ -46,12 +50,13 @@ def get_taxonomy_for_post_preped_for_listing(connection: psycopg.Connection, uui
 
     try:
         with connection.cursor() as cur:
-            cur.execute("""SELECT st.slug, st.display_name, st.taxonomy_type
+            cur.execute(
+                """SELECT st.slug, st.display_name, st.taxonomy_type
                     FROM sloth_post_taxonomies AS spt
                     INNER JOIN sloth_taxonomy AS st
                     ON st.uuid = spt.taxonomy
                     WHERE spt.post = %s;""",
-                (uuid, )
+                (uuid,)
             )
             all_taxonomies = cur.fetchall()
     except Exception as e:
