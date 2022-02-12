@@ -1,20 +1,17 @@
 import psycopg
 from typing import List, Dict
 
+from app.repositories.post_repositories import get_other_translations, get_translation_for_original
+
 
 def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List, **kwargs):
     try:
         with connection.cursor() as cur:
             translatable = []
             if original_entry_uuid is not None and len(original_entry_uuid) > 0:
-                cur.execute("""SELECT uuid, lang, slug, post_status FROM sloth_posts 
-                            WHERE (original_lang_entry_uuid=%s AND uuid <> %s) OR (uuid = %s)""",
-                    (original_entry_uuid, post_uuid, original_entry_uuid))
+                temp_translations = get_other_translations(cur=cur, original_entry_uuid=original_entry_uuid, post_uuid=post_uuid)
             else:
-                cur.execute("""SELECT uuid, lang, slug, post_status FROM sloth_posts WHERE original_lang_entry_uuid=%s""",
-                    (post_uuid,)
-                )
-            temp_translations = cur.fetchall()
+                temp_translations = get_translation_for_original(cur=cur, post_uuid=post_uuid)
             translations = {translation[1]: {
                 "uuid": translation[0],
                 "lang": translation[1],

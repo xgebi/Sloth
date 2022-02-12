@@ -1,22 +1,19 @@
 import psycopg
 from flask import current_app
-from psycopg2 import sql
 from pathlib import Path
 import os
 import threading
 import shutil
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Optional
 from datetime import datetime
 import codecs
 from xml.dom import minidom
 import time
 import math
 import traceback
-import re
 import copy
 import html
 
-from app.back_office.post.post_utilities import get_translations, get_taxonomy_for_post_preped_for_listing
 from app.utilities.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
@@ -24,6 +21,7 @@ from app.toes.toes import render_toe_from_string
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
+from app.services.post_services import get_translations, get_taxonomy_for_post_preped_for_listing
 
 
 class PostGenerator:

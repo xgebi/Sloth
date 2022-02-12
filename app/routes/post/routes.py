@@ -15,13 +15,12 @@ from flask import request, current_app, abort, redirect, render_template, escape
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.routes.post import post
-from app.back_office.post.post_utilities import get_translations
+from app.services.post_services import get_translations
 from app.back_office.post.post_generator import PostGenerator
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
-from app.utilities.utilities import get_languages, get_default_language, get_related_posts, \
-    get_connection_dict, prepare_description
+from app.utilities.utilities import get_languages, get_default_language, get_related_posts, prepare_description
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
