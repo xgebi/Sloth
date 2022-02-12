@@ -108,11 +108,16 @@ class PostEditor extends HTMLElement {
         const select = document.createElement("select");
         const textOption = document.createElement("option");
         textOption.setAttribute("value", "text");
-        textOption.setAttribute("selected", "");
         textOption.textContent = "Text";
+        if (type === 'text') {
+            textOption.setAttribute("selected", "");
+        }
         select.appendChild(textOption);
         const formOption = document.createElement("option");
         formOption.setAttribute("value", "form");
+        if (type === 'form') {
+            formOption.setAttribute("selected", "");
+        }
         formOption.textContent = "Form";
         select.appendChild(formOption);
         select.addEventListener('change', (ev) => {
