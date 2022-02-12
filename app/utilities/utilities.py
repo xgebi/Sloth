@@ -72,10 +72,10 @@ def get_related_posts(*args, post, connection, **kwargs):
             build_post_query(original_other_language_versions=True),
             (post["uuid"],)
         )
-    related_posts_raw = [normalize_post_from_query(post) for post in cur.fetchall()]
+    related_posts = [normalize_post_from_query(post) for post in cur.fetchall()]
 
     posts = []
-    for related_post in related_posts_raw:
+    for related_post in related_posts:
         cur.execute(
             """SELECT content, section_type, position
                 FROM sloth_post_sections
@@ -88,7 +88,11 @@ def get_related_posts(*args, post, connection, **kwargs):
             "type": section[1],
             "position": section[2]
         } for section in cur.fetchall()]
-        parse_raw_post(related_post, sections=sections)
+        related_post.update({
+            "meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
+            "twitter_description": prepare_description(char_limit=161, description=post["twitter_description"], section=sections[0]),
+            "sections": sections,
+        })
 
     for post in posts:
         cur.execute(
@@ -104,14 +108,6 @@ def get_related_posts(*args, post, connection, **kwargs):
         } for lib in cur.fetchall()]
     cur.close()
     return posts
-
-
-def parse_raw_post(post, sections) -> Dict[str, str] or Any:
-    return {
-        "meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
-        "twitter_description": prepare_description(char_limit=161, description=post["twitter_description"], section=sections[0]),
-        "sections": sections,
-    }
 
 
 def prepare_description(char_limit: int, description: str, section: Dict) -> str:

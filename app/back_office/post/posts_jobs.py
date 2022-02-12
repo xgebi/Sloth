@@ -1,11 +1,10 @@
 import os
 from pathlib import Path
 from datetime import datetime
-from app.utilities.utilities import parse_raw_post
 from app.back_office.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 
-
+# TODO refactor this completely
 @db_connection
 def scheduled_posts_job(*args, connection, **kwargs):
     if Path(os.path.join(os.getcwd(), 'schedule.lock')).is_file():
@@ -48,7 +47,7 @@ def scheduled_posts_job(*args, connection, **kwargs):
         os.remove(Path(os.path.join(os.getcwd(), 'schedule.lock')))
         gen = PostGenerator(connection=connection)
         for raw_post in raw_posts:
-            post = parse_raw_post(raw_post)
+            post = {} #parse_raw_post(raw_post)
             post['post_status'] = "published"
             post["libraries"] = libraries[post["uuid"]]
             gen.run(post=post, multiple=True)

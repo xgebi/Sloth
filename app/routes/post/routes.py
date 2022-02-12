@@ -20,7 +20,8 @@ from app.back_office.post.post_generator import PostGenerator
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, HooksList
 from app.toes.toes import render_toe_from_path
-from app.utilities.utilities import get_languages, get_default_language, parse_raw_post, get_related_posts, get_connection_dict
+from app.utilities.utilities import get_languages, get_default_language, get_related_posts, \
+    get_connection_dict, prepare_description
 from app.utilities.db_connection import db_connection
 from app.media.routes import get_media
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
@@ -1145,23 +1146,26 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 cur.execute(build_post_query(uuid=True), (filled["uuid"],))
                 saved_post = normalize_post_from_query(cur.fetchone())
                 sections = process_sections(connection, filled["sections"], filled["uuid"])
-                # TODO need to think about this a bit more
-                generatable_post = parse_raw_post(saved_post, sections=sections)
+                saved_post.update({
+                    "meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
+                    "twitter_description": prepare_description(char_limit=161, description=post["twitter_description"], section=sections[0]),
+                    "sections": sections,
+                })
                 cur.execute(
                     """SELECT sl.location, spl.hook_name
                     FROM sloth_post_libraries AS spl
                     INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                     WHERE spl.post = %s;""",
                     (filled["uuid"],))
-                generatable_post["libraries"] = [{
+                saved_post["libraries"] = [{
                     "location": lib[0],
                     "hook_name": lib[1]
                 } for lib in cur.fetchall()]
-                generatable_post["related_posts"] = get_related_posts(post=generatable_post, connection=connection)
+                saved_post["related_posts"] = get_related_posts(post=saved_post, connection=connection)
                 # get post
                 if filled["post_status"] == 'published':
                     gen = PostGenerator(connection=connection)
-                    gen.run(post=generatable_post, regenerate_taxonomies=taxonomy_to_clean)
+                    gen.run(post=saved_post, regenerate_taxonomies=taxonomy_to_clean)
                     # (threading.Thread(
                     #     target=toes.generate_post,
                     #     args=[
@@ -1177,29 +1181,29 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                 if filled["post_status"] == 'protected':
                     # get post type slug
                     cur.execute("""SELECT slug, uuid FROM sloth_post_types WHERE uuid = %s;""",
-                                (generatable_post["post_type"],))
+                                (saved_post["post_type"],))
                     post_type = cur.fetchone()
                     cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;""",
-                                (generatable_post["lang"],))
+                                (saved_post["lang"],))
                     language_raw = cur.fetchone()
                     # get post slug
                     gen = PostGenerator()
                     gen.delete_post_files(
                         post_type_slug=post_type[0],
-                        post_slug=generatable_post["slug"],
+                        post_slug=saved_post["slug"],
                         language={
                             "uuid": language_raw[0],
                             "short_name": language_raw[1],
                             "long_name": language_raw[2]
                         }
                     )
-                    gen.run(clean_protected=True, post=generatable_post)
+                    gen.run(clean_protected=True, post=saved_post)
     except Exception:
         print(traceback.format_exc())
         return json.dumps({"error": "Error saving post"}), 500
 
     result["saved"] = True
-    result["postType"] = generatable_post["post_type"]
+    result["postType"] = saved_post["post_type"]
     return json.dumps(result)
 
 
