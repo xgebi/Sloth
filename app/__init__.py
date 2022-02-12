@@ -85,6 +85,9 @@ def create_app():  # dev, test, or prod
     from app.settings.content import content
     app.register_blueprint(content)
 
+    from app.settings.users import settings_users
+    app.register_blueprint(settings_users)
+
     from app.routes.post import post
     app.register_blueprint(post)
 

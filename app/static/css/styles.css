@@ -193,6 +193,11 @@ p.dangerzone {
     vertical-align: top;
 }
 
+.sloth-form section {
+    display: flex;
+    flex-flow: column;
+}
+
 /* Sloth Editor */
 .sloth-editor {
     width: 80ch;

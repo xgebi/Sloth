@@ -1,7 +1,11 @@
+import os
+
 import psycopg
 from flask import request, current_app, abort, redirect, render_template
-from psycopg2 import sql
 
+from app.toes.hooks import Hooks
+from app.services.user_service import get_user_by_id, verify_password, update_password
+from app.toes.toes import render_toe_from_path
 from app.utilities.db_connection import db_connection
 from app.authorization.authorize import authorize_web
 
@@ -76,7 +80,7 @@ def show_user(*args, permission_level: int, connection: psycopg.Connection, user
         "permissions_level": raw_user[4]
     }
 
-    return render_template("user.html", post_types=post_types_result, permission_level=permission_level, user=user)
+    return render_template("user.toe.html", post_types=post_types_result, permission_level=permission_level, user=user)
 
 
 @settings_users.route("/settings/my-account")
@@ -89,27 +93,24 @@ def show_my_account(*args, permission_level: int, connection: psycopg.Connection
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
-            cur.execute(
-                "SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s",
-                (token[1],))
-            raw_user = cur.fetchone()
+        user = get_user_by_id(connection, token[1])
     except Exception as e:
         print("db error")
         connection.close()
         abort(500)
 
     connection.close()
-
-    user = {
-        "uuid": raw_user[0],
-        "username": raw_user[1],
-        "display_name": raw_user[2],
-        "email": raw_user[3],
-        "permissions_level": raw_user[4]
-    }
-
-    return render_template("user.html", post_types=post_types_result, permission_level=permission_level, user=user)
+    return render_toe_from_path(
+        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+        template="user.toe.html",
+        data={
+            "title": "My account",
+            "post_types": post_types_result,
+            "permission_level": permission_level,
+            "user": user
+        },
+        hooks=Hooks()
+    )
 
 
 @settings_users.route("/settings/users/<user>/save", methods=["POST"])
@@ -138,4 +139,17 @@ def save_user(*args, permission_level: int, connection: psycopg.Connection, user
         return redirect("/settings/my-account")
     return redirect(f"/settings/users/{user}")
 
-# TODO change password
+
+@settings_users.route("/settings/password-change/", methods=["POST"])
+@authorize_web(0)
+@db_connection
+def change_password(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
+    token = request.cookies.get('sloth_session').split(":")
+    filled = request.form
+
+    if verify_password(connection=connection, uuid=token[1], password=filled["old-password"]):
+        if update_password(connection=connection, uuid=token[1], password=filled["new-password"]):
+            connection.close()
+            return redirect("/settings/my-account")
+    connection.close()
+    return redirect("/settings/my-account?err=passwordupdate")
