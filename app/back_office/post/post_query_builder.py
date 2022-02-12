@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import datetime
 from typing import List, Dict
 
 
@@ -47,7 +49,9 @@ INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format""".strip()
     return f"{query};"
 
 
-def normalize_post_from_query(post: List) -> Dict:
+def normalize_post_from_query(post: List) -> Dict | None:
+    if len(post) == 0:
+        return None
     return {
         "post_uuid": post[0],
         "original_lang_entry_uuid": post[1],
@@ -62,7 +66,11 @@ def normalize_post_from_query(post: List) -> Dict:
         "use_theme_js": post[10],
         "thumbnail": post[11],
         "publish_date": post[12],
+        "publish_date_formatted": datetime.datetime.fromtimestamp(float(post[12]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if post[12] is not None else None,
         "update_date": post[13],
+        "update_date_formatted": datetime.datetime.fromtimestamp(float(post[13]) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if post[13] is not None else None,
         "post_status": post[14],
         "imported": post[15],
         "import_approved": post[16],

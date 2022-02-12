@@ -333,7 +333,7 @@ class PostGenerator:
                 "thumbnail_alt": thumbnail_alt,
                 "language_variants": language_variants,
                 "meta_description": self.prepare_meta_descriptions(sections=sections, post=post),
-                "social_description": self.prepare_social_descriptions(sections=sections, post=post),
+                "twitter_description": self.prepare_twitter_descriptions(sections=sections, post=post),
                 "sections": sections
             })
 
@@ -346,7 +346,7 @@ class PostGenerator:
             return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
         return ''
 
-    def prepare_social_descriptions(self, sections: List, post: Dict) -> str:
+    def prepare_twitter_descriptions(self, sections: List, post: Dict) -> str:
         if "twitter_description" in post and post["twitter_description"] is not None and len(post["twitter_description"]) > 0:
             return post["twitter_description"]
         if len(sections) > 0:

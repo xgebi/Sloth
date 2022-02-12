@@ -324,7 +324,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
         "format_slug": raw_post[18],
         "format_name": raw_post[19],
         "meta_description": raw_post[20],
-        "social_description": raw_post[21],
+        "twitter_description": raw_post[21],
         "libraries": post_libs,
         "original_post": raw_post[16],
         "pinned": raw_post[22],
@@ -355,14 +355,13 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
 
 def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs):
     post_type_name = ""
-    raw_post = {}
     temp_thumbnail_info = []
     try:
         with connection.cursor() as cur:
             media_data = get_media(connection=connection)
             cur.execute(build_post_query(uuid=True), (post_id,))
             normed_post = normalize_post_from_query(cur.fetchone())
-            if raw_post is None:
+            if normed_post is None:
                 return redirect('/post/nothing')
             cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""",
                         (normed_post["post_type"],))
@@ -379,7 +378,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
             cur.execute("""SELECT unnest(enum_range(NULL::sloth_post_status))"""
                         )
             temp_post_statuses = cur.fetchall()
-            if raw_post[6] is not None:
+            if normed_post["thumbnail"] is not None:
                 cur.execute(
                     """SELECT sma.alt, 
                     concat(
@@ -472,7 +471,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
         abort(500)
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
-    return raw_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
+    return normed_post, sections, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
 
 
 def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs) -> (List[Dict], List[Dict]):
@@ -1110,7 +1109,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                                  filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
                                  filled["post_status"], lang, filled["password"] if "password" in filled else None,
                                  filled["original_post"] if "original_post" in filled else "", filled["post_format"],
-                                 filled["meta_description"], filled["social_description"], filled["pinned"]))
+                                 filled["meta_description"], filled["twitter_description"], filled["pinned"]))
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
                                                                  tags=matched_tags)
@@ -1126,7 +1125,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                                  filled["publish_date"] if filled["publish_date"] is not None else publish_date,
                                  str(time() * 1000), filled["post_status"], filled["approved"],
                                  filled["password"] if "password" in filled else None, filled["post_format"],
-                                 filled["meta_description"], filled["social_description"], filled["pinned"],
+                                 filled["meta_description"], filled["twitter_description"], filled["pinned"],
                                  filled["uuid"]))
                     connection.commit()
                     taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,

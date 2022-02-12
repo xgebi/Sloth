@@ -209,7 +209,7 @@ function collectValues() {
         }
     });
     post["meta_description"] = document.querySelector("#meta-description").value;
-    post["social_description"] = document.querySelector("#social-description").value;
+    post["twitter_description"] = document.querySelector("#social-description").value;
     const libraryList = document.querySelector("#library-list");
     const libs = [];
     for (let lib of libraryList.children) {

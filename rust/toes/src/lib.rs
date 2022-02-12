@@ -29,9 +29,12 @@ fn parse_markdown_to_html(template: PyString) -> String {
 #[pyfunction]
 fn parse_toe_to_html_file(
     working_directory_path: PyString,
-    python_post: &PyDict,
+    python_post: PyDict,
     theme_path: PyString,
-    output_path: PyString) {
+    output_path: PyString,
+    settings: PyDict,
+    menus: PyDict,
+) {
     todo!()
 }
 

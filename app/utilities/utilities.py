@@ -106,38 +106,11 @@ def get_related_posts(*args, post, connection, **kwargs):
     return posts
 
 
-def parse_raw_post(raw_post, sections) -> Dict[str, str] or Any:
+def parse_raw_post(post, sections) -> Dict[str, str] or Any:
     return {
-        "uuid": raw_post[0],
-        "original_lang_entry_uuid": raw_post[1],
-        "lang": raw_post[2],
-        "slug": raw_post[3],
-        "post_type": raw_post[4],
-        "author": raw_post[5],
-        "title": raw_post[6],
-        "css": raw_post[7],
-        "use_theme_css": raw_post[8],
-        "js": raw_post[9],
-        "use_theme_js": raw_post[10],
-        "thumbnail": raw_post[11],
-        "publish_date": raw_post[12],
-        "publish_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[12]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[12] is not None else None,
-        "update_date": raw_post[13],
-        "update_date_formatted": datetime.datetime.fromtimestamp(float(raw_post[13]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if raw_post[13] is not None else None,
-        "post_status": raw_post[14],
-        "imported": raw_post[15],
-        "approved": raw_post[16],
-        "meta_description": prepare_description(char_limit=161, description=raw_post[17], section=sections[0]),
-        "social_description": prepare_description(char_limit=161, description=raw_post[18], section=sections[0]),
-        "format_uuid": raw_post[19],
-        "format_slug": raw_post[20],
-        "format_name": raw_post[21],
+        "meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
+        "twitter_description": prepare_description(char_limit=161, description=post["twitter_description"], section=sections[0]),
         "sections": sections,
-        "pinned": raw_post[22],
-        "author_display_name": raw_post[23],
-        "password": raw_post[24],
     }
 
 

@@ -56,5 +56,5 @@
     * post format's name
 * `meta_description`
     * description that goes to `<meta name="description" />`
-* `social_description`
+* `twitter_description`
     * description for social media, similar to `meta_description'
