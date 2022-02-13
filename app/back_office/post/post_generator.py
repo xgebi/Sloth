@@ -745,6 +745,20 @@ class PostGenerator:
         if len(posts) == 0:
             return
 
+        # TODO good enough for now
+        for post in posts:
+            categories, tags = get_taxonomy_for_post_prepped_for_listing(
+                connection=self.connection,
+                uuid=post['uuid'],
+                main_language=self.settings['main_language'],
+                language=language,
+                post_type_slug=post_type['slug']
+            )
+            post.update({
+                "categories": categories,
+                "tags": tags
+            })
+
         if taxonomy:
             archive_path_dir = Path(output_path, post_type["slug"], taxonomy["type"], taxonomy["slug"])
         else:
@@ -1075,7 +1089,7 @@ class PostGenerator:
                     cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
                             (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
-                            sp.publish_date, sp.thumbnail 
+                            sp.publish_date, sp.thumbnail, sp.pinned
                             FROM sloth_posts AS sp
                             WHERE post_type = %s AND post_status = 'published' AND lang = %s AND pinned = %s
                             ORDER BY publish_date DESC LIMIT %s""",
@@ -1086,7 +1100,8 @@ class PostGenerator:
                         cur.execute(
                             """SELECT sp.uuid, sp.title, sp.slug, 
                                 (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
-                                sp.publish_date, sp.thumbnail FROM sloth_posts AS sp
+                                sp.publish_date, sp.thumbnail, sp.pinned 
+                                FROM sloth_posts AS sp
                                     WHERE post_type = %s AND post_status = 'published' AND lang = %s  AND pinned = %s
                                     ORDER BY publish_date DESC LIMIT %s""",
                             (post_type['uuid'], language['uuid'], False,
@@ -1118,7 +1133,9 @@ class PostGenerator:
                         classes = " ".join(
                             [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
                                                                                            in tags])
-
+                        if item[6]:
+                            classes += " pinned"
+                            classes = classes.strip()
                         posts[post_type['slug']].append({
                             "uuid": item[0],
                             "title": item[1],
