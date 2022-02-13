@@ -288,7 +288,7 @@ class PostGenerator:
         for post in items:
             try:
                 thumbnail_path, thumbnail_alt = self.get_thumbnail_information(thumbnail_uuid=post["thumbnail"], language=post["lang"])
-                thumbnail_path = thumbnail_path
+                thumbnail_path = f"/{thumbnail_path}"
                 thumbnail_alt = html.escape(thumbnail_alt)
 
                 with self.connection.cursor() as cur:
@@ -370,7 +370,7 @@ class PostGenerator:
             post["related_posts"] = get_related_posts(connection=self.connection, post=post)
 
         thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post["thumbnail"], language["uuid"])
-        post["thumbnail_path"] = thumbnail_path
+        post["thumbnail_path"] = f"/{thumbnail_path}"
         post["thumbnail_alt"] = html.escape(thumbnail_alt)
 
         if not clean_protected:
@@ -1104,7 +1104,7 @@ class PostGenerator:
                                             WHERE sma.lang = %s AND sm.uuid = %s;""",
                                         (language['uuid'], item[5]))
                             res = cur.fetchone()
-                            thumbnail_path = res[0]
+                            thumbnail_path = f"/{res[0]}"
                             thumbnail_alt = res[1]
                         excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
 
