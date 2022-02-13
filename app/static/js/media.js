@@ -1,7 +1,7 @@
 let images = [];
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    document.querySelector("#open-modal").addEventListener('click', openModal);
+    document.querySelector("#open-modal").addEventListener('click', openMediaUploadModal);
 
     const deleteButtons = document.querySelectorAll(".delete-button");
     for (const button of deleteButtons) {
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     })
 });
 
-function openModal() {
+function openMediaUploadModal() {
     const mediaUploader = document.querySelector("media-uploader");
     mediaUploader.languages = languages;
     mediaUploader.open();
@@ -47,12 +47,9 @@ function renderImages(media) {
 
 
 function deleteButton(event) {
-    const dialog = document.querySelector("#modal");
-    dialog.showModal();
-
-    const image = document.createElement("img");
-    image.setAttribute("src", event.target.dataset["filePath"]);
-    dialog.appendChild(image);
+    debugger;
+    const dialog = document.querySelector("remove-media-modal");
+    dialog.open(event.target.dataset["filePath"], event.target.dataset["alt"], event.target.dataset["uuid"]);
 
 
     const deleteButton = document.createElement('button');

@@ -720,7 +720,6 @@ class PostGenerator:
 
         with open(post_template_path, 'r', encoding="utf-8") as f:
             return f.read()
-        return None
 
     def get_translation_links(self, *args, translations: List, post_type: Dict, post: Dict, **kwargs):
         # {'uuid': '48ab80ef-b83b-40f7-9dab-c3343bae7d0e', 'long_name': 'English', 'short_name': 'en', 'post': 'fb2e1b26-3361-4239-9b97-aedcde0f57cf'}

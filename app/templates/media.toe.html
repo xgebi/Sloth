@@ -4,26 +4,28 @@
 <body class="inner-city">
 <toe:import file="nav.toe.html"/>
 <main>
-    <h1>List of media</h1>
-    <button id="open-modal">Upload file</button>
-    <section class="media-gallery" id="media-gallery">
-        <article toe:for="medium in media">
-            <img toe:src="medium['file_url']" />
-            <p toe:for="alt in medium['alts']" toe:text="'Alt (' + alt['lang'] + '): ' + alt['alt']">
-            </p>
-            <button toe:data-uuid="medium['uuid']" toe:data-file-path="medium['file_url']"
-                    class="delete-button">Delete
-            </button>
-        </article>
-
-    </section>
-    <media-uploader></media-uploader>
+  <h1>List of media</h1>
+  <button id="open-modal">Upload file</button>
+  <section class="media-gallery" id="media-gallery">
+    <article toe:for="medium in media">
+      <img toe:src="medium['file_url']" />
+      <p toe:for="alt in medium['alts']" toe:text="'Alt (' + alt['lang'] + '): ' + alt['alt']">
+      </p>
+      <button toe:data-uuid="medium['uuid']" toe:data-file-path="medium['file_url']"
+              toe:data-alt="medium['alts'][0]['alt']"
+              class="delete-button">Delete
+      </button>
+    </article>
+  </section>
+  <media-uploader></media-uploader>
+  <remove-media-modal></remove-media-modal>
 </main>
 <script toe:inline-js>
-    const languages = JSON.parse('<( languages | json )>');
-    const media = <( json_media )>;
+  const languages = JSON.parse('<( languages | json )>');
+  const media = <( json_media )>;
 </script>
 <script src="/static/js/libs/media-uploader.js"></script>
+<script src="/static/js/libs/remove-media-modal.js"></script>
 <script src="/static/js/media.js"></script>
 </body>
 </html>

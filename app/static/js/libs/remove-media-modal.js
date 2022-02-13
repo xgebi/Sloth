@@ -1,0 +1,92 @@
+class RemoveMediaModal extends HTMLElement {
+    #languages = []
+    #shadow = {}
+
+    constructor() {
+        super();
+        this.#shadow = this.attachShadow({mode: 'open'});
+        const linkElem = document.createElement('link');
+        linkElem.setAttribute('rel', 'stylesheet');
+        linkElem.setAttribute('href', '/static/css/remove-media-modal.css');
+
+        // Attach the created element to the shadow dom
+        this.#shadow.appendChild(linkElem);
+    }
+
+    open(filePath, alt, uuid) {
+        let dialog = this.#shadow.querySelector("dialog");
+        if (!dialog) {
+            dialog = document.createElement("dialog");
+        } else {
+            while (dialog.lastElementChild) {
+                dialog.removeChild(dialog.lastElementChild);
+            }
+        }
+        if (dialog?.getAttribute("open")) {
+            return;
+        }
+
+        const image = document.createElement("img");
+        image.setAttribute("src", filePath);
+        image.setAttribute("alt", alt);
+        dialog.appendChild(image);
+
+        const closeButton = document.createElement('button');
+        closeButton.textContent = "Close dialog";
+        closeButton.setAttribute('id', 'close-button');
+        closeButton.addEventListener('click', () => {
+            this.#close(dialog);
+        });
+        dialog.appendChild(closeButton);
+
+        this.#shadow.appendChild(dialog);
+        dialog.showModal();
+    }
+
+    #close() {
+        this.#shadow.querySelector("dialog").close();
+    }
+
+    #deleteFile(uuid) {
+        const formData = new FormData();
+        const fileField = this.#shadow.querySelector('#file-upload');
+        const altFields = this.#shadow.querySelectorAll(".alt-input");
+
+        const alts = [];
+        altFields.forEach(alt => {
+            alts.push({
+                lang_uuid: alt.dataset["lang"],
+                text: alt.value
+            })
+        });
+
+        formData.append('alt', JSON.stringify(alts));
+        formData.append('image', fileField.files[0]);
+
+        fetch('/api/media/delete-file', {
+            method: 'POST',
+            headers: {
+                'authorization': document.cookie
+                    .split(';')
+                    .find(row => row.trim().startsWith('sloth_session'))
+                    .split('=')[1]
+            },
+            body: JSON.stringify({
+                uuid: uuid,
+            })
+        }).then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+            throw `${response.status}: ${response.statusText}`
+        }).then(result => {
+            this.dispatchEvent(new CustomEvent('deleted', {
+                detail: result["media"]
+            }));
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+customElements.define('remove-media-modal', RemoveMediaModal);
