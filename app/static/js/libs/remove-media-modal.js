@@ -31,6 +31,14 @@ class RemoveMediaModal extends HTMLElement {
         image.setAttribute("alt", alt);
         dialog.appendChild(image);
 
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = "Delete image";
+        deleteButton.setAttribute('id', 'close-button');
+        deleteButton.addEventListener('click', () => {
+            this.#deleteFile(uuid)
+        });
+        dialog.appendChild(deleteButton);
+
         const closeButton = document.createElement('button');
         closeButton.textContent = "Close dialog";
         closeButton.setAttribute('id', 'close-button');
@@ -48,23 +56,8 @@ class RemoveMediaModal extends HTMLElement {
     }
 
     #deleteFile(uuid) {
-        const formData = new FormData();
-        const fileField = this.#shadow.querySelector('#file-upload');
-        const altFields = this.#shadow.querySelectorAll(".alt-input");
-
-        const alts = [];
-        altFields.forEach(alt => {
-            alts.push({
-                lang_uuid: alt.dataset["lang"],
-                text: alt.value
-            })
-        });
-
-        formData.append('alt', JSON.stringify(alts));
-        formData.append('image', fileField.files[0]);
-
         fetch('/api/media/delete-file', {
-            method: 'POST',
+            method: 'DELETE',
             headers: {
                 'authorization': document.cookie
                     .split(';')
@@ -83,6 +76,7 @@ class RemoveMediaModal extends HTMLElement {
             this.dispatchEvent(new CustomEvent('deleted', {
                 detail: result["media"]
             }));
+            this.#shadow.querySelector("dialog").close();
         }).catch(error => {
             console.error('Error:', error);
         });

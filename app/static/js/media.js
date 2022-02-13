@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
         console.log(event);
         renderImages(Object.values(event.detail));
     })
+
+    document.querySelector("remove-media-modal").addEventListener('deleted', (event) => {
+        renderImages(Object.values(event.detail));
+    })
 });
 
 function openMediaUploadModal() {
@@ -47,39 +51,6 @@ function renderImages(media) {
 
 
 function deleteButton(event) {
-    debugger;
     const dialog = document.querySelector("remove-media-modal");
     dialog.open(event.target.dataset["filePath"], event.target.dataset["alt"], event.target.dataset["uuid"]);
-
-
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete file'
-    deleteButton.addEventListener('click', () => {
-        closeModal(dialog);
-        fetch('/api/media/delete-file', {
-            method: 'DELETE',
-            headers: {
-                'authorization': document.cookie
-                    .split(';')
-                    .find(row => row.trim().startsWith('sloth_session'))
-                    .split('=')[1]
-            },
-            body: JSON.stringify({uuid: event.target.dataset["uuid"]})
-        }).then(response => {
-            if (response.ok) {
-                return response.json()
-            }
-            throw `${response.status}: ${response.statusText}`
-        }).then(result => {
-            renderImages(result["media"]);
-        }).catch(error => {
-            console.error('Error:', error);
-        });
-    });
-    dialog.appendChild(deleteButton);
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Keep file'
-    closeButton.addEventListener('click', () => closeModal(dialog));
-    dialog.appendChild(closeButton);
 }
