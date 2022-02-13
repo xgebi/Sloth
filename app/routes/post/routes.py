@@ -228,7 +228,7 @@ def get_post_edit(*args, permission_level: int, connection: psycopg.Connection, 
     :param kwargs:
     :return:
     """
-    post_data, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+    post_data, libs, media_data, post_libs, temp_thumbnail_info, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
         connection=connection, post_id=post_id)
 
     return json.dumps(post_data)
@@ -252,7 +252,7 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
     post_types = PostTypes()
     post_types_result = post_types.get_post_type_list(connection)
 
-    post_data, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+    post_data, libs, media_data, post_libs, temp_thumbnail_info, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
         connection=connection, post_id=post_id)
 
     default_lang = get_default_language(connection=connection)
@@ -402,8 +402,12 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
         abort(500)
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
     post_statuses = [item for sublist in temp_post_statuses for item in sublist]
-    normed_post.update({"sections": sections})
-    return normed_post, libs, media_data, post_libs, temp_thumbnail_info, categories, tags, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
+    normed_post.update({
+        "sections": sections,
+        "tags": tags,
+        "categories": categories
+    })
+    return normed_post, libs, media_data, post_libs, temp_thumbnail_info, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses
 
 
 def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs) -> (List[Dict], List[Dict]):

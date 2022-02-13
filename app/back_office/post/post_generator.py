@@ -570,7 +570,8 @@ class PostGenerator:
             connection=self.connection,
             uuid=post['uuid'],
             main_language=self.settings['main_language'],
-            language=language
+            language=language,
+            post_type_slug=post_type["slug"]
         )
 
         with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
@@ -1111,7 +1112,8 @@ class PostGenerator:
                             connection=self.connection,
                             uuid=item[0],
                             main_language=self.settings['main_language'],
-                            language=language
+                            language=language,
+                            post_type_slug=post_type['slug']
                         )
                         classes = " ".join(
                             [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
@@ -1129,6 +1131,8 @@ class PostGenerator:
                             "thumbnail_path": thumbnail_path,
                             "thumbnail_alt": thumbnail_alt,
                             "classes": classes,
+                            "categories": categories,
+                            "tags": tags
                         })
         except Exception as e:
             print(390)

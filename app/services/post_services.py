@@ -42,11 +42,11 @@ def get_translations(*args, connection: psycopg.Connection, post_uuid: str, orig
 
 
 def get_taxonomy_for_post_prepped_for_listing(connection: psycopg.Connection, uuid: str, main_language: Dict,
-                                              language: Dict) -> (List, List):
+                                              language: Dict, post_type_slug: str) -> (List, List):
     if main_language['settings_value'] == language['uuid']:
-        prefix = '/'
+        prefix = f'/{post_type_slug}/'
     else:
-        prefix = f"/{language['short_name']}/"
+        prefix = f"/{language['short_name']}/{post_type_slug}/"
 
     try:
         with connection.cursor() as cur:
