@@ -2,6 +2,7 @@ import os
 import json
 import psycopg
 import importlib
+import uuid
 from typing import Dict
 from pathlib import Path
 
@@ -33,6 +34,21 @@ if os.path.isfile("migration.json"):
     with psycopg.connect(
             f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_URL}:{DATABASE_PORT}/{DATABASE_NAME}"
     ) as con:
+        with con.cursor() as cur:
+            cur.execute("""SELECT EXISTS (
+                                SELECT FROM 
+                                    pg_tables
+                                WHERE 
+                                    schemaname = 'public' AND 
+                                    tablename  = 'migrations'
+                                );""")
+            migration_table_exists = cur.fetchone()[0]
+            if not migration_table_exists:
+                cur.execute("""CREATE TABLE IF NOT EXISTS migrations (
+                                    uuid varchar(200) PRIMARY KEY,
+                                    migration text
+                                );""")
+                con.commit()
         migrations = []
         with open("migration.json") as migrations_file:
             migrations = json.load(migrations_file)
@@ -54,16 +70,19 @@ if os.path.isfile("migration.json"):
                 if migration['file'] in content:
                     continue
 
-            if migration["type"] == "sql":
-                execute_sql_scripts(con, migration)
-            if migration["type"] == "py":
-                execute_python_scripts(con, migration)
-            print(f"Processed {migration['file']}")
+            with con.cursor() as cur:
+                cur.execute("""SELECT * FROM migrations WHERE migration = %s""", (f"{migration['type']}-{migration['file']}",))
+                migration_exists = cur.fetchall()
+            if len(migration_exists) == 0:
+                if migration["type"] == "sql":
+                    execute_sql_scripts(con, migration)
+                if migration["type"] == "py":
+                    execute_python_scripts(con, migration)
+                print(f"Processed {migration['file']}")
 
-            if os.environ['FLASK_ENV'] == "production":
-                migrated_path = os.path.join(os.getcwd(), "migrated")
-                with open(migrated_path, 'a') as f:
-                    f.write(f"{migration['file']}\n")
+            with con.cursor() as cur:
+                cur.execute("""INSERT INTO migrations (uuid, migration) VALUES (%s, %s)""", (str(uuid.uuid4()), f"{migration['type']}-{migration['file']}"))
+                con.commit()
 
     if os.environ["FLASK_ENV"] != "development":
         os.remove("migration.json")
