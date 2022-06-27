@@ -288,7 +288,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
     post_type_name = ""
     temp_thumbnail_info = []
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             media_data = get_media(connection=connection)
             cur.execute(build_post_query(uuid=True), (post_id,))
             normed_post = normalize_post_from_query(cur.fetchone())
@@ -296,7 +296,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                 return redirect('/post/nothing')
             cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""",
                         (normed_post["post_type"],))
-            post_type_name = cur.fetchone()[0]
+            post_type_name = cur.fetchone()['display_name']
 
             cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
                                         WHERE post_type = %s AND lang = %s""",
@@ -340,18 +340,18 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
             cur.execute("""SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s""",
                         (normed_post["post_type"],))
             post_formats = [{
-                "uuid": pf[0],
-                "slug": pf[1],
-                "display_name": pf[2]
+                "uuid": pf['uuid'],
+                "slug": pf['slug'],
+                "display_name": pf['display_name']
             } for pf in cur.fetchall()]
 
             cur.execute("""SELECT uuid, name, version, location 
                         FROM sloth_libraries;""")
             libs = [{
-                "uuid": lib[0],
-                "name": lib[1],
-                "version": lib[2],
-                "location": lib[3]
+                "uuid": lib['uuid'],
+                "name": lib['name'],
+                "version": lib['version'],
+                "location": lib['location']
             } for lib in cur.fetchall()]
             cur.execute("""SELECT sl.uuid, sl.name, sl.version, spl.hook_name
                         FROM sloth_post_libraries AS spl
@@ -359,10 +359,10 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                         WHERE spl.post = %s;""",
                         (post_id,))
             post_libs = [{
-                "uuid": lib[0],
-                "name": lib[1],
-                "version": lib[2],
-                "hook": lib[3]
+                "uuid": lib['uuid'],
+                "name": lib['name'],
+                "version": lib['version'],
+                "hook": lib['hook_name']
             } for lib in cur.fetchall()]
             cur.execute("""SELECT content, section_type, position
                         FROM sloth_post_sections
@@ -370,10 +370,10 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                         ORDER BY position;""",
                         (post_id,))
             sections = [{
-                "content": section[0],
+                "content": section['content'],
                 "original": "",
-                "type": section[1],
-                "position": section[2],
+                "type": section['section_type'],
+                "position": section['position'],
             } for section in cur.fetchall()]
 
             if normed_post["original_lang_entry_uuid"]:
@@ -387,13 +387,13 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                     sections.append({
                         "content": "",
                         "original": "",
-                        "type": translated_sections[len(sections)][1],
+                        "type": translated_sections[len(sections)]['section_type'],
                         "position": len(sections)
                     })
                 for section in sections:
                     for trans_section in translated_sections:
-                        if section["position"] == trans_section[2]:
-                            section["original"] = trans_section[0]
+                        if section["position"] == trans_section['position']:
+                            section["original"] = trans_section['content']
     except Exception as e:
         print(traceback.format_exc())
         print("db error B")
@@ -423,19 +423,16 @@ def separate_taxonomies(*args, taxonomies: List, post_taxonomies: List, **kwargs
     categories = []
     tags = []
 
-    flat_post_taxonomies = [pt[0] for pt in post_taxonomies]
+    flat_post_taxonomies = [pt['taxonomy'] for pt in post_taxonomies]
 
-    for raw_taxonomy in taxonomies:
-        taxonomy = {
-            "uuid": raw_taxonomy[0],
-            "display_name": raw_taxonomy[1],
-            "type": raw_taxonomy[2],
-            "selected": True if raw_taxonomy[0] in flat_post_taxonomies else False,
-            "slug": raw_taxonomy[3]
-        }
-        if taxonomy["type"] == 'category':
+    for taxonomy in taxonomies:
+        taxonomy.update({
+            "selected": True if taxonomy['uuid'] in flat_post_taxonomies else False,
+        })
+
+        if taxonomy["taxonomy_type"] == 'category':
             categories.append(taxonomy)
-        elif taxonomy["type"] == 'tag':
+        elif taxonomy["taxonomy_type"] == 'tag':
             tags.append(taxonomy)
 
     return categories, tags

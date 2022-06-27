@@ -1,6 +1,6 @@
 import psycopg
 from flask import abort
-from psycopg2 import sql
+from psycopg import sql
 
 
 class PostTypes:

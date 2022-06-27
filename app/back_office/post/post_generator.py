@@ -236,7 +236,7 @@ class PostGenerator:
             **kwargs
     ):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(build_post_query(published_in_taxonomy_per_post_type=True), (taxonomy_uuid, post_type_uuid))
                 items = [normalize_post_from_query(post) for post in cur.fetchall()]
         except Exception as e:
@@ -256,7 +256,7 @@ class PostGenerator:
     ):
 
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(build_post_query(published_per_post_type=True), (post_type_uuid, language_uuid))
                 items = [normalize_post_from_query(post) for post in cur.fetchall()]
                 posts = self.process_posts(items=items, post_type_slug=post_type_slug)
@@ -897,7 +897,7 @@ class PostGenerator:
             name: str,
             **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, name, content, lang 
                     FROM sloth_localized_strings WHERE name = %s;""",
                             (name,))
@@ -909,15 +909,15 @@ class PostGenerator:
         for item in raw_items:
             if name not in self.settings:
                 self.settings[name] = {
-                    item[3]: {
-                        "uuid": item[0],
-                        "content": item[2]
+                    item['lang']: {
+                        "uuid": item['uuid'],
+                        "content": item['content']
                     }
                 }
             else:
-                self.settings[name][item[3]] = {
-                    "uuid": item[0],
-                    "content": item[2]
+                self.settings[name][item['lang']] = {
+                    "uuid": item['uuid'],
+                    "content": item['content']
                 }
 
     def set_translatable_individual_settings_by_post_type(
@@ -927,7 +927,7 @@ class PostGenerator:
             post_type: str,
             **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, name, content, lang, post_type 
                     FROM sloth_localized_strings WHERE post_type = %s;""",
                             (post_type,))
@@ -935,15 +935,15 @@ class PostGenerator:
                 for item in raw_items:
                     if post_type not in self.settings:
                         self.settings[post_type] = {
-                            item[3]: {
-                                "uuid": item[0],
-                                "content": item[2]
+                            item['lang']: {
+                                "uuid": item['uuid'],
+                                "content": item['content']
                             }
                         }
                     else:
-                        self.settings[post_type][item[3]] = {
-                            "uuid": item[0],
-                            "content": item[2]
+                        self.settings[post_type][item['lang']] = {
+                            "uuid": item['uuid'],
+                            "content": item['content']
                         }
         except Exception as e:
             print(e)

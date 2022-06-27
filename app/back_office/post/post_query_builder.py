@@ -49,39 +49,18 @@ INNER JOIN sloth_post_formats spf on spf.uuid = sp.post_format""".strip()
     return f"{query};"
 
 
-def normalize_post_from_query(post: List) -> Dict | None:
-    if len(post) == 0:
+def normalize_post_from_query(post: Dict) -> Dict | None:
+    if len(post.keys()) == 0:
         return None
-    return {
-        "uuid": post[0],
-        "original_lang_entry_uuid": post[1],
-        "lang": post[2],
-        "slug": post[3],
-        "post_type": post[4],
-        "author": post[5],
-        "title": post[6],
-        "css": post[7],
-        "use_theme_css": post[8],
-        "js": post[9],
-        "use_theme_js": post[10],
-        "thumbnail": post[11],
-        "publish_date": post[12],
-        "publish_timedate_formatted": datetime.datetime.fromtimestamp(float(post[12]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if post[12] is not None else None,
-        "publish_date_formatted": datetime.datetime.fromtimestamp(float(post[12]) / 1000).strftime("%Y-%m-%d") if post[12] else None,
-        "publish_time_formatted": datetime.datetime.fromtimestamp(float(post[12]) / 1000).strftime("%H:%M") if post[12] else None,
-        "update_date": post[13],
-        "update_date_formatted": datetime.datetime.fromtimestamp(float(post[13]) / 1000).strftime(
-            "%Y-%m-%d %H:%M") if post[13] is not None else None,
-        "status": post[14],
-        "imported": post[15],
-        "import_approved": post[16],
-        "meta_description": post[17],
-        "twitter_description": post[18],
-        "post_format_uuid": post[19],
-        "post_format_slug": post[20],
-        "post_format_name": post[21],
-        "pinned": post[22],
-        "author_name": post[23],
-        "password": post[24]
-    }
+    post.update({
+        "publish_timedate_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if post['publish_date'] is not None else None,
+        "publish_date_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d") if post['publish_date'] else None,
+        "publish_time_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%H:%M") if post['publish_date'] else None,
+        "update_timedate_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime(
+            "%Y-%m-%d %H:%M") if post['update_date'] is not None else None,
+        "update_date_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d") if post['update_date'] else None,
+        "update_time_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%H:%M") if post['update_date'] else None,
+    })
+
+    return post
