@@ -306,7 +306,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
                                                 WHERE post = %s""",
                         (post_id,))
             raw_post_taxonomies = cur.fetchall()
-            cur.execute("""SELECT unnest(enum_range(NULL::sloth_post_status))"""
+            cur.execute("""SELECT unnest(enum_range(NULL::sloth_post_status)) as status"""
                         )
             temp_post_statuses = cur.fetchall()
             if normed_post["thumbnail"] is not None:
@@ -401,7 +401,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
         connection.close()
         abort(500)
     categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
-    post_statuses = [item for sublist in temp_post_statuses for item in sublist]
+    post_statuses = [item['status'] for item in temp_post_statuses]
     normed_post.update({
         "sections": sections,
         "tags": tags,
@@ -1008,7 +1008,6 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     while filled["new"] and not unique_post:
                         cur.execute("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s",
                                     (filled["uuid"],))
-                        res = cur.fetchone()
                         if cur.fetchone()['count'] != 0:
                             filled["uuid"] = str(uuid.uuid4())
                         else:

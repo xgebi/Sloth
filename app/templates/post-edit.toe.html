@@ -143,7 +143,7 @@
                 </toe:fragment>
             </toe:fragment>
             <toe:fragment
-                    toe:if="data['status'] eq 'published' or data['status'] eq 'scheduled' or data['status'] eq 'protected'">
+                    toe:if="data['post_status'] eq 'published' or data['post_status'] eq 'scheduled' or data['post_status'] eq 'protected'">
                 <button id="update-button">Update post</button>
                 <select id="create-lang" toe:if="languages | length neq 0">
                     <option value="" selected>---</option>

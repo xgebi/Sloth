@@ -425,7 +425,7 @@ class PostGenerator:
 
     def clean_taxonomy(self, *args, taxonomies_for_cleanup: List, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur: # TODO debug this
                 for taxonomy in taxonomies_for_cleanup:
                     cur.execute(
                         """SELECT st.slug, st.taxonomy_type, sls.uuid, sls.short_name, spt.uuid, spt.slug
@@ -471,7 +471,7 @@ class PostGenerator:
 
     def prepare_categories_tags(self, *args, post: Dict, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
                         FROM sloth_post_taxonomies as spt INNER JOIN sloth_taxonomy as st ON spt.taxonomy = st.uuid 
@@ -486,7 +486,7 @@ class PostGenerator:
 
     def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
                         FROM sloth_taxonomy as st 
@@ -503,22 +503,10 @@ class PostGenerator:
         categories = []
         tags = []
         for taxonomy in taxonomies:
-            if taxonomy[1] == 'category':
-                categories.append({
-                    "uuid": taxonomy[0],
-                    "type": taxonomy[1],
-                    "slug": taxonomy[2],
-                    "display_name": taxonomy[3],
-                    "lang": taxonomy[4]
-                })
-            elif taxonomy[1] == 'tag':
-                tags.append({
-                    "uuid": taxonomy[0],
-                    "type": taxonomy[1],
-                    "slug": taxonomy[2],
-                    "display_name": taxonomy[3],
-                    "lang": taxonomy[4]
-                })
+            if taxonomy['taxonomy_type'] == 'category':
+                categories.append(taxonomy)
+            elif taxonomy['taxonomy_type'] == 'tag':
+                tags.append(taxonomy)
         return categories, tags
 
     def generate_post(
@@ -666,7 +654,7 @@ class PostGenerator:
         if thumbnail_uuid is None:
             return "", ""
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor() as cur: # Here the empty arguments make sense
                 cur.execute("""SELECT sm.file_path, sma.alt FROM sloth_media as sm
                     INNER JOIN sloth_media_alts as sma on sm.uuid = sma.media
                     WHERE sm.uuid = %s AND sma.lang = %s;""",
@@ -815,14 +803,14 @@ class PostGenerator:
     def get_menus(self, *args, **kwargs):
         menus = {}
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT name, uuid FROM sloth_menus;""")
-                menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
+                menus = {menu['uuid']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in cur.fetchall()}
                 for menu in menus.keys():
                     cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",
                                 (menus[menu]["uuid"],)
                                 )
-                    menus[menu]["items"] = [{"title": item[0], "url": item[1]} for item in cur.fetchall()]
+                    menus[menu]["items"] = cur.fetchall()
         except Exception as e:
             print(f"PostGenerator.get_menus {e}")
             traceback.print_exc()
