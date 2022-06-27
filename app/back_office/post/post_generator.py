@@ -267,10 +267,7 @@ class PostGenerator:
                             INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                             WHERE spl.post = %s;""",
                         (post['uuid'],))
-                    post["libraries"] = [{
-                        "location": lib[0],
-                        "hook_name": lib[1]
-                    } for lib in cur.fetchall()]
+                    post["libraries"] = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()

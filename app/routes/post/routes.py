@@ -495,16 +495,16 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
     post_type_name = ""
     try:
         media = get_media(connection=connection)
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("SELECT display_name FROM sloth_post_types WHERE uuid = %s",
                         (post_type,))
-            post_type_name = cur.fetchone()[0]
+            post_type_name = cur.fetchone()['display_name']
             cur.execute("SELECT unnest(enum_range(NULL::sloth_post_status))")
             temp_post_statuses = cur.fetchall()
             cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
                                                 WHERE post_type = %s AND lang = %s""",
                         (post_type, lang_id))
-            raw_all_taxonomies = cur.fetchall()
+            all_taxonomies = cur.fetchall()
             current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
             default_lang = get_default_language(connection=connection)
             sections = []
@@ -520,35 +520,21 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
                             WHERE post = %s
                             ORDER BY position;""",
                             (original_post,))
-                sections = [{
-                    "content": "",
-                    "original": section[0],
-                    "type": section[1],
-                    "position": section[2],
-                } for section in cur.fetchall()]
+                sections = cur.fetchall()
             else:
                 translatable_languages = languages
                 translations = []
             cur.execute("""SELECT uuid, slug, display_name FROM sloth_post_formats WHERE post_type = %s""",
                         (post_type,))
-            post_formats = [{
-                "uuid": pf[0],
-                "slug": pf[1],
-                "display_name": pf[2]
-            } for pf in cur.fetchall()]
+            post_formats = cur.fetchall()
 
             cur.execute("""SELECT uuid FROM sloth_post_formats WHERE post_type = %s AND deletable = %s """,
                         (post_type, False))
-            default_format = cur.fetchone()[0]
+            default_format = cur.fetchone()['uuid']
 
             cur.execute("""SELECT uuid, name, version, location 
                         FROM sloth_libraries;""")
-            libs = [{
-                "uuid": lib[0],
-                "name": lib[1],
-                "version": lib[2],
-                "location": lib[3]
-            } for lib in cur.fetchall()]
+            libs = cur.fetchall()
             post_libs = []
     except Exception as e:
         connection.close()
@@ -557,7 +543,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
 
     connection.close()
 
-    categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=[])
+    categories, tags = separate_taxonomies(taxonomies=all_taxonomies, post_taxonomies=[])
     sections = json.dumps(sections)
     data = {
         "new": True,
@@ -1004,10 +990,10 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
     filled["thumbnail"] = filled["thumbnail"] if len(filled["thumbnail"]) > 0 else None
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             if "lang" not in filled:
                 cur.execute("SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';")
-                lang = cur.fetchone()[0]
+                lang = cur.fetchone()['settings_value']
             else:
                 lang = filled["lang"]
                 matched_tags = process_taxonomy(connection=connection, post_tags=filled["tags"], post_type_uuid=filled["post_type_uuid"], lang=lang)
@@ -1022,7 +1008,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     while filled["new"] and not unique_post:
                         cur.execute("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s",
                                     (filled["uuid"],))
-                        if cur.fetchone()[0] != 0:
+                        res = cur.fetchone()
+                        if cur.fetchone()['count'] != 0:
                             filled["uuid"] = str(uuid.uuid4())
                         else:
                             unique_post = True
@@ -1030,7 +1017,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     cur.execute(
                         "SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;",
                         (f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
-                    similar = cur.fetchone()[0]
+                    similar = cur.fetchone()['count']
                     if int(similar) > 0:
                         filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
 
@@ -1089,10 +1076,7 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                     WHERE spl.post = %s;""",
                     (filled["uuid"],))
-                saved_post["libraries"] = [{
-                    "location": lib[0],
-                    "hook_name": lib[1]
-                } for lib in cur.fetchall()]
+                saved_post["libraries"] = cur.fetchall()
                 saved_post["related_posts"] = get_related_posts(post=saved_post, connection=connection)
                 # get post
                 if filled["post_status"] == 'published':
@@ -1117,17 +1101,13 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
                     post_type = cur.fetchone()
                     cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings WHERE uuid = %s;""",
                                 (saved_post["lang"],))
-                    language_raw = cur.fetchone()
+                    language = cur.fetchone()
                     # get post slug
                     gen = PostGenerator()
                     gen.delete_post_files(
-                        post_type_slug=post_type[0],
+                        post_type_slug=post_type['slug'],
                         post_slug=saved_post["slug"],
-                        language={
-                            "uuid": language_raw[0],
-                            "short_name": language_raw[1],
-                            "long_name": language_raw[2]
-                        }
+                        language=language
                     )
                     gen.run(clean_protected=True, post=saved_post)
     except Exception:
