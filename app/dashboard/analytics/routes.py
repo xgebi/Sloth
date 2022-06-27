@@ -31,7 +31,7 @@ def show_dashboard(*args, permission_level: int, connection: psycopg.Connection,
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             today = datetime.today()
             first_day = (today - timedelta(days=6, hours=today.hour, minutes=today.minute, seconds=today.second,
                                            microseconds=today.microsecond))
@@ -40,36 +40,29 @@ def show_dashboard(*args, permission_level: int, connection: psycopg.Connection,
                     FROM sloth_analytics WHERE last_visit > %s ORDER BY last_visit DESC""",
                         (seven_days_time_stamp,))
             temp_last_seven_days = [{
-                "uuid": item[0],
-                "pathname": item[1],
-                "lastVisit": item[2],
-                "browser": item[3],
-                "browserVersion": item[4],
+                "uuid": item['uuid'],
+                "pathname": item['pathname'],
+                "lastVisit": item['last_visit'],
+                "browser": item['browser'],
+                "browserVersion": item['browser_version'],
             } for item in cur.fetchall()]
 
             cur.execute(
                 """
-                    SELECT pathname, count(uuid) 
+                    SELECT pathname, count(uuid) as count 
                     FROM sloth_analytics 
                     GROUP BY pathname 
                     ORDER BY count(uuid) DESC""")
-            most_visited = json.dumps([{
-                "pathname": item[0],
-                "count": item[1]
-            } for item in cur.fetchall()])
+            most_visited = json.dumps(cur.fetchall())
 
             cur.execute("""
-                    SELECT browser, browser_version, count(*)
+                    SELECT browser, browser_version, count(*) as count
                     FROM sloth_analytics
                     WHERE browser IS NOT NULL
                     GROUP BY browser, browser_version
                     ORDER BY count(*) DESC;
                     """)
-            browser_data = json.dumps([{
-                "browser": item[0],
-                "version": item[1],
-                "count": item[2]
-            } for item in cur.fetchall()])
+            browser_data = json.dumps(cur.fetchall())
     except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())
         connection.close()
@@ -130,24 +123,21 @@ def get_pages_in_time_data(*args, permission_level: int, connection: psycopg.Con
         abort(500)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             if period.lower() != "all":
                 cur.execute("""
-                        SELECT pathname, count(uuid) 
+                        SELECT pathname, count(uuid) as count
                         FROM sloth_analytics 
                         WHERE last_visit > %s
                         GROUP BY pathname 
                         ORDER BY count(uuid) DESC""",
                             (time_stamp,))
             else:
-                cur.execute("""SELECT pathname, count(uuid) 
+                cur.execute("""SELECT pathname, count(uuid)  as count
                         FROM sloth_analytics 
                         GROUP BY pathname 
                         ORDER BY count(uuid) DESC""")
-        most_visited = json.dumps([{
-            "pathname": item[0],
-            "count": item[1]
-        } for item in cur.fetchall()])
+        most_visited = json.dumps(cur.fetchall())
         response = make_response(most_visited)
         code = 200
     except psycopg.errors.DatabaseError as e:

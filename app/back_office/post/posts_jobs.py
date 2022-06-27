@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 from datetime import datetime
+
+import psycopg
+
 from app.back_office.post.post_generator import PostGenerator
 from app.utilities.db_connection import db_connection
 
@@ -14,7 +17,7 @@ def scheduled_posts_job(*args, connection, **kwargs):
 
     if not Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""
                         SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title,
                                 sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, 
@@ -31,14 +34,11 @@ def scheduled_posts_job(*args, connection, **kwargs):
                             FROM sloth_post_libraries AS spl
                             INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                             WHERE spl.post = %s;""",
-                                (post[0],))
-                    libraries[post[0]] = [{
-                        "location": lib[0],
-                        "hook_name": lib[1]
-                    } for lib in cur.fetchall()]
+                                (post['uuid'],))
+                    libraries[post['uuid']] = cur.fetchall()
 
                     cur.execute("""UPDATE sloth_posts SET post_status = 'published' WHERE uuid = %s;""",
-                                (post[0],))
+                                (post['uuid'],))
                 connection.commit()
         except Exception as e:
             connection.close()

@@ -66,30 +66,30 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
     :return:
     """
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
-                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                """SELECT A.uuid, A.title, A.publish_date as date, B.display_name 
                     FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
                     WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;""",
                 ('published',)
             )
-            raw_recent_posts = cur.fetchall()
+            recent_posts = cur.fetchall()
 
             cur.execute(
-                """SELECT A.uuid, A.title, A.publish_date, B.display_name 
+                """SELECT A.uuid, A.title, A.publish_date as date, B.display_name 
                     FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
                     WHERE post_status = %s ORDER BY A.publish_date LIMIT 10;""",
                 ('scheduled',)
             )
-            raw_upcoming_posts = cur.fetchall()
+            upcoming_posts = cur.fetchall()
 
             cur.execute(
-                """SELECT A.uuid, A.title, A.update_date, B.display_name 
+                """SELECT A.uuid, A.title, A.update_date as date, B.display_name 
                     FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
                     WHERE post_status = %s ORDER BY A.update_date DESC LIMIT 10;""",
                 ('draft',)
             )
-            raw_drafts = cur.fetchall()
+            drafts = cur.fetchall()
 
             cur.execute(
                 """SELECT uuid, sent_date, status 
@@ -103,24 +103,24 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 
     messages = []
     if to_json:
-        recent_posts = format_post_data_json(raw_recent_posts)
-        upcoming_posts = format_post_data_json(raw_upcoming_posts)
-        drafts = format_post_data_json(raw_drafts)
+        recent_posts = format_post_data_json(recent_posts)
+        upcoming_posts = format_post_data_json(upcoming_posts)
+        drafts = format_post_data_json(drafts)
         for msg in raw_messages:
             messages.append({
-                "uuid": msg[0],
-                "sentDate": datetime.datetime.fromtimestamp(float(msg[1]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-                "status": msg[2]
+                "uuid": msg['uuid'],
+                "sentDate": datetime.datetime.fromtimestamp(float(msg['sent_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+                "status": msg['status']
             })
     else:
-        recent_posts = format_post_data(raw_recent_posts)
-        upcoming_posts = format_post_data(raw_upcoming_posts)
-        drafts = format_post_data(raw_drafts)
+        recent_posts = format_post_data(recent_posts)
+        upcoming_posts = format_post_data(upcoming_posts)
+        drafts = format_post_data(drafts)
         for msg in raw_messages:
             messages.append({
-                "uuid": msg[0],
-                "sent_date": datetime.datetime.fromtimestamp(float(msg[1]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-                "status": msg[2]
+                "uuid": msg['uuid'],
+                "sent_date": datetime.datetime.fromtimestamp(float(msg['sent_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+                "status": msg['status']
             })
 
     return recent_posts, upcoming_posts, drafts, messages
@@ -210,11 +210,11 @@ def format_post_data_json(post_arr: List) -> List:
     posts = []
     for post in post_arr:
         posts.append({
-            "uuid": post[0],
-            "title": post[1],
-            "publishDate": post[2],
-            "formattedPublishDate": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-            "postType": post[3]
+            "uuid": post['uuid'],
+            "title": post['title'],
+            "publishDate": post['date'],
+            "formattedPublishDate": datetime.datetime.fromtimestamp(float(post['date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+            # "postType": post[3] # TODO investigate this, it makes no sense
         })
     return posts
 
