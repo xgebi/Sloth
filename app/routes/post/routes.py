@@ -1166,14 +1166,14 @@ def process_taxonomy(connection: psycopg.Connection, post_tags: List, post_type_
     :param lang:
     :return:
     """
-    with connection.cursor() as cur:
+    with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
         cur.execute("""SELECT uuid, slug, display_name, post_type, taxonomy_type 
                                     FROM sloth_taxonomy 
                                     WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
                     (post_type_uuid, lang))
         existing_tags = cur.fetchall()
 
-        existing_tags_slugs = [slug[1] for slug in existing_tags]
+        existing_tags_slugs = [slug['slug'] for slug in existing_tags]
 
         matched_tags = []
         new_tags = []

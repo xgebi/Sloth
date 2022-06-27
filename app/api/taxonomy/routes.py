@@ -17,12 +17,12 @@ def create_category(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT COUNT(display_name) FROM sloth_taxonomy WHERE post_type = %s AND display_name = %s""",
                         (filled["postType"], filled["categoryName"]))
-            temp = cur.fetchone()
-            if temp[0] > 0:
-                filled["slug"] = f"{filled['slug']}-{temp[0] + 1}"
+            count = cur.fetchone()['count']
+            if count > 0:
+                filled["slug"] = f"{filled['slug']}-{count + 1}"
             cur.execute("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type, lang) 
                 VALUES (%s, %s, %s, %s, %s, %s);""",
                         (str(uuid.uuid4()), filled["slug"], filled["categoryName"], filled["postType"], "category",
@@ -32,11 +32,11 @@ def create_category(*args, connection: psycopg.Connection, **kwargs):
                                             WHERE post_type = %s AND lang = %s""",
                         (filled["postType"], filled["lang"])
                         )
-            raw_all_taxonomies = cur.fetchall()
+            all_taxonomies = cur.fetchall()
             cur.execute("""SELECT taxonomy FROM sloth_post_taxonomies WHERE post = %s""",
                         (None,)
                         )
-            raw_post_taxonomies = cur.fetchall()
+            post_taxonomies = cur.fetchall()
     except Exception as e:
         response = make_response(json.dumps({"error": True}))
         response.headers['Content-Type'] = 'application/json'
@@ -44,7 +44,7 @@ def create_category(*args, connection: psycopg.Connection, **kwargs):
         connection.close()
         return response, code
 
-    categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
+    categories, tags = separate_taxonomies(taxonomies=all_taxonomies, post_taxonomies=post_taxonomies)
     connection.close()
     response = make_response(json.dumps(categories))
     response.headers['Content-Type'] = 'application/json'

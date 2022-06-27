@@ -949,43 +949,36 @@ class PostGenerator:
     def set_individual_settings(self, *args, connection: psycopg.Connection, setting_name: str,
                                 alternate_name: str = None, settings_type: str = 'sloth', **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT settings_name, settings_value, settings_value_type 
                                     FROM sloth_settings WHERE settings_name = %s AND settings_type = %s""",
                             (setting_name, settings_type))
-                raw_items = cur.fetchall()
+                items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
 
         if alternate_name is None:
-            for item in raw_items:
-                self.settings[str(item[0])] = {
-                    "settings_name": item[0],
-                    "settings_value": item[1],
-                    "settings_value_type": item[2]
+            for item in items:
+                self.settings[str(item['settings_name'])] = {
+                    "settings_name": item['settings_name'],
+                    "settings_value": item['settings_value'],
+                    "settings_value_type": item['settings_value_type']
                 }
         else:
-            for item in raw_items:
+            for item in items:
                 self.settings[alternate_name] = {
-                    "settings_name": item[0],
-                    "settings_value": item[1],
-                    "settings_value_type": item[2]
+                    "settings_name": item['settings_name'],
+                    "settings_value": item['settings_value'],
+                    "settings_value_type": item['settings_value_type']
                 }
 
     def get_languages(self):
         languages = []
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
-                raw_items = cur.fetchall()
-
-                for item in raw_items:
-                    languages.append({
-                        "uuid": item[0],
-                        "long_name": item[1],
-                        "short_name": item[2]
-                    })
+                languages = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()

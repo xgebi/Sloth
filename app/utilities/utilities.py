@@ -61,7 +61,7 @@ def get_default_language(*args, connection: psycopg.Connection, **kwargs) -> Dic
 
 
 def get_related_posts(*args, post, connection, **kwargs):
-    cur = connection.cursor()
+    cur = connection.cursor(row_factory=psycopg.rows.dict_row)
     if post["original_lang_entry_uuid"] is not None and len(post["original_lang_entry_uuid"]) > 0:
         cur.execute(
             build_post_query(other_language_versions_only=True),
