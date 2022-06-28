@@ -19,9 +19,9 @@ from app.settings.themes.menu import menu
 @db_connection
 def show_menus(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-            main_lang = cur.fetchone()[0]
+            main_lang = cur.fetchone()['settings_value']
     except Exception as e:
         print(e)
         connection.close()
@@ -44,21 +44,17 @@ def return_menu_language(*args, permission_level: int, connection: psycopg.Conne
     temp_result = []
     temp_menu_types = []
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, name FROM sloth_menus WHERE lang = %s;""",
                         (lang_id, ))
-            temp_result = cur.fetchall()
-            cur.execute("""SELECT unnest(enum_range(NULL::sloth_menu_item_types))""")
-            temp_menu_types = cur.fetchall()
+            result = cur.fetchall()
+            cur.execute("""SELECT unnest(enum_range(NULL::sloth_menu_item_types)) as types""")
+            menu_types = cur.fetchall()
     except Exception as e:
         print(e)
         connection.close()
         abort(500)
 
-    result = [{
-        "uuid": item[0],
-        "name": item[1]
-    } for item in temp_result]
     current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
     default_lang = get_default_language(connection=connection)
 
@@ -70,7 +66,7 @@ def return_menu_language(*args, permission_level: int, connection: psycopg.Conne
             "post_types": post_types_result,
             "permission_level": permission_level,
             "menus": result,
-            "item_types": [item for sublist in temp_menu_types for item in sublist],
+            "item_types": [item['types'] for item in menu_types],
             "default_lang": default_lang,
             "languages": languages,
             "current_lang": current_lang,
@@ -84,25 +80,15 @@ def return_menu_language(*args, permission_level: int, connection: psycopg.Conne
 @db_connection
 def get_menu(*args, connection: psycopg.Connection, menu_str: str, **kwargs):
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, title, type, url, position FROM sloth_menu_items WHERE menu = %s;""",
                         (menu_str, ))
-            temp_result = cur.fetchall()
+            result = cur.fetchall()
     except Exception as e:
         print(e)
         connection.close()
         abort(500)
     connection.close()
-
-    result = []
-    for item in temp_result:
-        result.append({
-            "uuid": item[0],
-            "title": item[1],
-            "type": item[2],
-            "url": item[3],
-            "position": item[4]
-        })
 
     return json.dumps(result), 200, {'Content-Type': 'application/json'}
 
@@ -114,7 +100,7 @@ def save_menu(*args, connection: psycopg.Connection, **kwargs):
     filled = json.loads(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             if filled["uuid"].startswith("new-"):
                 cur.execute("""INSERT INTO sloth_menus (uuid, name, lang) VALUES (%s, %s, %s)
                                 RETURNING name, uuid;""",
@@ -124,11 +110,7 @@ def save_menu(*args, connection: psycopg.Connection, **kwargs):
                     RETURNING name, uuid;""",
                             (filled["name"], filled["uuid"]))
             connection.commit()
-            temp_result = cur.fetchone()
-            result = {
-                "name": temp_result[0],
-                "uuid": temp_result[1]
-            }
+            result = cur.fetchone()
             for item in filled["items"]:
                 if item["uuid"].startswith("new-"):
                     cur.execute("""INSERT INTO sloth_menu_items VALUES (%s, %s, %s, %s, %s, %s);""",

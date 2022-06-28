@@ -160,13 +160,13 @@ def process_attachments(items: List, connection: psycopg.Connection, import_coun
                 file_path = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText \
                     if info.getElementsByTagName('wp:meta_value')[0].firstChild is not None else ""
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""INSERT INTO sloth_media (uuid, file_path, wp_id) VALUES (%s, %s, %s) RETURNING uuid""",
                             (str(uuid4()),
                              f"sloth-content/{file_path}",
                              f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}")
                             )
-                uuid = cur.fetchone()[0]
+                uuid = cur.fetchone()['uuid']
                 cur.execute("""INSERT INTO sloth_media_alts (uuid, media, lang, alt) 
                         VALUES (%s, %s, 
                         (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language'), 
