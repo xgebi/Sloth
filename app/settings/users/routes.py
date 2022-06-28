@@ -23,25 +23,17 @@ def show_users_list(*args, permission_level: int, connection: psycopg.Connection
 
     raw_users = []
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 "SELECT uuid, username, display_name FROM sloth_users"
             )
-            raw_users = cur.fetchall()
+            user_list = cur.fetchall()
     except Exception as e:
         print("db error")
         connection.close()
         abort(500)
 
     connection.close()
-
-    user_list = []
-    for user in raw_users:
-        user_list.append({
-            "uuid": user[0],
-            "username": user[1],
-            "display_name": user[2]
-        })
 
     return render_template("users-list.html", post_types=post_types_result, permission_level=permission_level,
                            user_list=user_list)
@@ -60,25 +52,17 @@ def show_user(*args, permission_level: int, connection: psycopg.Connection, user
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 "SELECT uuid, username, display_name, email, permissions_level FROM sloth_users WHERE uuid = %s",
                 (token[1],))
-            raw_user = cur.fetchone()
+            user = cur.fetchone()
     except Exception as e:
         print("db error")
         connection.close()
         abort(500)
 
     connection.close()
-
-    user = {
-        "uuid": raw_user[0],
-        "username": raw_user[1],
-        "display_name": raw_user[2],
-        "email": raw_user[3],
-        "permissions_level": raw_user[4]
-    }
 
     return render_template("user.toe.html", post_types=post_types_result, permission_level=permission_level, user=user)
 

@@ -7,19 +7,14 @@ from app.repositories.post_repositories import get_other_translations, get_trans
 def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List,
                      **kwargs):
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             translatable = []
             if original_entry_uuid is not None and len(original_entry_uuid) > 0:
-                temp_translations = get_other_translations(cur=cur, original_entry_uuid=original_entry_uuid,
+                translations = get_other_translations(cur=cur, original_entry_uuid=original_entry_uuid,
                                                            post_uuid=post_uuid)
             else:
-                temp_translations = get_translation_for_original(cur=cur, post_uuid=post_uuid)
-            translations = {translation[1]: {
-                "uuid": translation[0],
-                "lang": translation[1],
-                "slug": translation[2],
-                "status": translation[3]
-            } for translation in temp_translations}
+                translations = get_translation_for_original(cur=cur, post_uuid=post_uuid)
+            translations = {translation['lang']: translation for translation in translations}
             translated_languages = []
             for language in languages:
                 # temp translations is uuid + lang, not list of languages!!!
@@ -49,7 +44,7 @@ def get_taxonomy_for_post_prepped_for_listing(connection: psycopg.Connection, uu
         prefix = f"/{language['short_name']}/{post_type_slug}/"
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 """SELECT st.slug, st.display_name, st.taxonomy_type
                     FROM sloth_post_taxonomies AS spt
@@ -66,14 +61,12 @@ def get_taxonomy_for_post_prepped_for_listing(connection: psycopg.Connection, uu
     tags = []
 
     for taxonomy in all_taxonomies:
-        thing = {
-            "slug": taxonomy[0],
-            "display_name": taxonomy[1],
-            "url": f"{prefix}{taxonomy[2]}/{taxonomy[0]}"
-        }
-        if taxonomy[2] == "tag":
-            tags.append(thing)
-        elif taxonomy[2] == "category":
-            categories.append(thing)
+        taxonomy.update({
+            "url": f"{prefix}{taxonomy['taxonomy_type']}/{taxonomy['slug']}"
+        })
+        if taxonomy['taxonomy_type'] == "tag":
+            tags.append(taxonomy)
+        elif taxonomy['taxonomy_type'] == "category":
+            categories.append(taxonomy)
 
     return categories, tags
