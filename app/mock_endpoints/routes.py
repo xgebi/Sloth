@@ -217,7 +217,7 @@ def get_endpoint(*args, connection: psycopg.Connection, path: str, **kwargs):
             cur.execute("""SELECT data, content_type FROM sloth_mock_endpoints WHERE path = %s;""",
                         (path,))
             temp_result = cur.fetchone()
-            if temp_result is not None and len(temp_result.keys()) >= 1:
+            if temp_result is not None:
                 result = temp_result['date']
                 content_type = temp_result['content_type']
             else:
