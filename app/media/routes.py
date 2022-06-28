@@ -132,7 +132,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path""",
                         (
                             str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename),
@@ -142,7 +142,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             connection.commit()
             for alt in alts:
                 cur.execute("""INSERT INTO sloth_media_alts VALUES (%s, %s, %s, %s)""",
-                            (str(uuid.uuid4()), file[0], alt["lang_uuid"], alt["text"])
+                            (str(uuid.uuid4()), file['uuid'], alt["lang_uuid"], alt["text"])
                             )
             connection.commit()
             cur.close()

@@ -937,7 +937,7 @@ def upload_image(*args, file_name: str, connection: psycopg.Connection, **kwargs
         f.write(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("INSERT INTO sloth_media VALUES (%s, %s, %s) RETURNING uuid, file_path",
                         (str(uuid.uuid4()), os.path.join("sloth-content", file_name), ""))
             file = cur.fetchone()
@@ -948,7 +948,7 @@ def upload_image(*args, file_name: str, connection: psycopg.Connection, **kwargs
 
     connection.close()
 
-    return json.dumps({"media": file}), 201
+    return json.dumps(file), 201
 
 
 @post.route("/api/post", methods=['POST'])
