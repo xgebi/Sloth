@@ -174,7 +174,7 @@ def create_draft(*args, connection: psycopg.Connection, **kwargs):
     slug = re.sub('[^0-9a-zA-Z\-]+', '', slug)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""INSERT INTO sloth_posts (uuid, title, slug, content, post_type, post_status, update_date, lang) 
                     VALUES (%s, %s, %s, %s, %s, 'draft', %s, 
                     (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language'))""",
@@ -184,9 +184,9 @@ def create_draft(*args, connection: psycopg.Connection, **kwargs):
             cur.execute("SELECT uuid, title, publish_date, post_type FROM sloth_posts WHERE post_status = %s LIMIT 10",
                         ('draft', )
                         )
-            raw_drafts = cur.fetchall()
+            drafts = cur.fetchall()
         response = make_response(json.dumps({
-            "drafts": format_post_data(raw_drafts)
+            "drafts": format_post_data(drafts)
         }))
         code = 200
     except Exception as e:
@@ -226,13 +226,11 @@ def format_post_data(post_arr: List) -> List:
         :param post_arr:
         :return:
         """
-    posts = []
-    for post in post_arr:
-        posts.append({
-            "uuid": post[0],
-            "title": post[1],
-            "publish_date": post[2],
-            "formatted_publish_date": datetime.datetime.fromtimestamp(float(post[2]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-            "post_type": post[3]
-        })
+    posts = [{
+            "uuid": post['uuid'],
+            "title": post['title'],
+            "publish_date": post['publish_date'],
+            "formatted_publish_date": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+            "post_type": post['post_type']
+        } for post in post_arr]
     return posts
