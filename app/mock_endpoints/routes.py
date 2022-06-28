@@ -33,22 +33,15 @@ def show_endpoints_list(*args, permission_level: int, connection: psycopg.Connec
     languages = get_languages(connection=connection, as_list=True)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, path FROM sloth_mock_endpoints ORDER BY path DESC;""")
-            temp_endpoints_list = cur.fetchall()
+            endpoints_list = cur.fetchall()
     except Exception as e:
         print(e)
         connection.close()
         abort(500)
 
-    default_language = get_default_language(connection=connection)
     connection.close()
-    endpoints_list = []
-    for endpoint in temp_endpoints_list:
-        endpoints_list.append({
-            "uuid": endpoint[0],
-            "path": endpoint[1]
-        })
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -75,10 +68,10 @@ def show_endpoint(*args, permission_level: int, connection: psycopg.Connection, 
     languages = get_languages(connection=connection, as_list=True)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, path, data, content_type FROM sloth_mock_endpoints WHERE uuid = %s""",
                         (endpoint,))
-            temp_endpoint_result = cur.fetchone()
+            endpoint_result = cur.fetchone()
     except Exception as e:
         print(e)
         connection.close()
@@ -86,13 +79,9 @@ def show_endpoint(*args, permission_level: int, connection: psycopg.Connection, 
 
     connection.close()
 
-    endpoint_result = {
-        "uuid": temp_endpoint_result[0],
-        "path": temp_endpoint_result[1],
-        "data": temp_endpoint_result[2],
-        "content_type": temp_endpoint_result[3],
+    endpoint_result.update({
         "new": False
-    }
+    })
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -224,13 +213,13 @@ def get_endpoint(*args, connection: psycopg.Connection, path: str, **kwargs):
         abort(500)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT data, content_type FROM sloth_mock_endpoints WHERE path = %s;""",
                         (path,))
             temp_result = cur.fetchone()
-            if temp_result is not None and len(temp_result) >= 1:
-                result = temp_result[0]
-                content_type = temp_result[1]
+            if temp_result is not None and len(temp_result.keys()) >= 1:
+                result = temp_result['date']
+                content_type = temp_result['content_type']
             else:
                 result = json.dumps({"error": "Missing data"})
     except Exception as e:

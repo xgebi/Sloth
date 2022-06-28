@@ -33,18 +33,15 @@ def show_forms(*args, permission_level: int, connection: psycopg.Connection, **k
     default_language = get_default_language(connection=connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             langs = get_languages(connection=connection, as_list=False)
 
             cur.execute(
-                """SELECT uuid, name, lang FROM sloth_forms;"""
+                """SELECT uuid, name, lang as lang_id FROM sloth_forms;"""
             )
-            forms_list = [{
-                "uuid": form[0],
-                "name": form[1],
-                "lang_id": form[2],
-                "lang_name": langs[form[2]]["long_name"]
-            } for form in cur.fetchall()]
+            forms_list = [form.update({
+                "lang_name": langs[form['lang_id']]["long_name"]
+            }) for form in cur.fetchall()]
 
     except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())
@@ -84,7 +81,7 @@ def show_form(*args, permission_level: int, connection: psycopg.Connection, form
     default_language = get_default_language(connection=connection)
     languages = get_languages(connection=connection)
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 """SELECT uuid, name, lang
                     FROM sloth_forms WHERE uuid = %s;""",
@@ -97,22 +94,15 @@ def show_form(*args, permission_level: int, connection: psycopg.Connection, form
                 form_name = ""
             else:
                 is_new = False
-                form_language = raw_form[2]
-                form_name = raw_form[1]
+                form_language = raw_form['lang']
+                form_name = raw_form['name']
 
             cur.execute("""SELECT uuid, name, position, is_childless, type, is_required, label
                     FROM sloth_form_fields WHERE form = %s;""",
                         (form_id,)
                         )
 
-            fields = [{
-                "uuid": field[0],
-                "name": field[1],
-                "position": field[2],
-                "type": field[4],
-                "is_required": field[5],
-                "label": field[6]
-            } for field in cur.fetchall()]
+            fields = cur.fetchall()
             fields.sort(key=lambda form: form.get("position"))
 
     except psycopg.errors.DatabaseError as e:
@@ -157,7 +147,7 @@ def save_form(*args, permission_level: int, connection: psycopg.Connection, form
     filled = json.loads(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""DELETE FROM sloth_form_fields WHERE form = %s;""",
                         (form_id,)
                         )

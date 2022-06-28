@@ -33,7 +33,7 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, sent_date, status 
                 FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
             raw_messages = cur.fetchall()
@@ -45,11 +45,9 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
     languages = get_languages(connection=connection)
     connection.close()
 
-    message_list = [{
-        "uuid": message[0],
-        "sent_date": datetime.datetime.fromtimestamp(float(message[1]) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-        "status": message[2]
-    } for message in raw_messages]
+    message_list = [message.update({
+        "sent_date": datetime.datetime.fromtimestamp(float(message['sent_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+    }) for message in raw_messages]
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
@@ -84,7 +82,7 @@ def show_message(*args, permission_level: int, connection: psycopg.Connection, m
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT sent_date, status FROM sloth_messages WHERE uuid = %s""", (msg,))
             raw_message = cur.fetchone()
             cur.execute("""SELECT name, value FROM sloth_message_fields WHERE message = %s""", (msg,))
@@ -103,11 +101,11 @@ def show_message(*args, permission_level: int, connection: psycopg.Connection, m
     connection.close()
 
     message = {
-        "sent_date": datetime.datetime.fromtimestamp(float(raw_message[0]) / 1000.0).strftime("%Y-%m-%d"),
-        "status": raw_message[1].strip(),
+        "sent_date": datetime.datetime.fromtimestamp(float(raw_message['sent_date']) / 1000.0).strftime("%Y-%m-%d"),
+        "status": raw_message['status'].strip(),
         "items": [{
-            "name": item[0].strip(),
-            "value": item[1].strip()
+            "name": item['name'].strip(),
+            "value": item['value'].strip()
         } for item in raw_message_fields]
     }
 
