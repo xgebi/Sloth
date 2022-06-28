@@ -92,9 +92,9 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
     alts = json.loads(request.form["alt"])
     code = -1
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'allowed_extensions';""")
-            allowed_exts = cur.fetchone()[0]
+            allowed_exts = cur.fetchone()['settings_value']
             cur.close()
             ext = image.filename[image.filename.rfind(".") + 1:].lower()
             mime_ext = image.mimetype[image.mimetype.rfind("/") + 1:].lower()
@@ -132,7 +132,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", str(now.year), str(now.month), filename))
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""INSERT INTO sloth_media VALUES (%s, %s, %s, %s) RETURNING uuid, file_path""",
                         (
                             str(uuid.uuid4()), os.path.join("sloth-content", str(now.year), str(now.month), filename),
@@ -142,7 +142,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
             connection.commit()
             for alt in alts:
                 cur.execute("""INSERT INTO sloth_media_alts VALUES (%s, %s, %s, %s)""",
-                            (str(uuid.uuid4()), file[0], alt["lang_uuid"], alt["text"])
+                            (str(uuid.uuid4()), file['uuid'], alt["lang_uuid"], alt["text"])
                             )
             connection.commit()
             cur.close()
@@ -172,13 +172,13 @@ def delete_item(*args, connection: psycopg.Connection, **kwargs):
     file_data = json.loads(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT file_path FROM sloth_media WHERE uuid = %s""",
                         (file_data["uuid"], ))
-            temp_file_path = cur.fetchone()
-            if len(temp_file_path) == 1:
-                if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0])):
-                    os.remove(os.path.join(current_app.config["OUTPUT_PATH"], temp_file_path[0]))
+            file_path = cur.fetchone()
+            if file_path is not None:
+                if os.path.exists(os.path.join(current_app.config["OUTPUT_PATH"], file_path['file_path'])):
+                    os.remove(os.path.join(current_app.config["OUTPUT_PATH"], file_path['file_path']))
 
             cur.execute("""UPDATE sloth_posts SET thumbnail = %s WHERE thumbnail = %s;""",
                         (None, file_data["uuid"], ))
@@ -210,19 +210,19 @@ def get_media(*args, connection: psycopg.Connection, **kwargs):
     :return:
     """
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'""")
-            temp_site_url = cur.fetchone()
-            if len(temp_site_url) != 1:
+            site_url = cur.fetchone()
+            if site_url is None:
                 return []
-            site_url = temp_site_url[0]
+            site_url = site_url['settings_value']
             cur.execute("""SELECT uuid, file_path FROM sloth_media ORDER BY added_date DESC""")
-            raw_media = cur.fetchall()
+            fetched_media = cur.fetchall()
             media_data = {}
-            for medium in raw_media:
-                path_fragment = '/'.join(medium[1].split('\\'))
-                media_data[medium[0]] = {
-                    "uuid": medium[0],
+            for medium in fetched_media:
+                path_fragment = '/'.join(medium['file_path'].split('\\'))
+                media_data[medium['uuid']] = {
+                    "uuid": medium['uuid'],
                     "file_url": f"{site_url}/{path_fragment}",
                     "file_path": f"{current_app.config['OUTPUT_PATH']}/{path_fragment}",
                     "alts": []
@@ -234,11 +234,11 @@ def get_media(*args, connection: psycopg.Connection, **kwargs):
                             ON sma.lang = sls.uuid;""")
             raw_alts = cur.fetchall()
             for alt in raw_alts:
-                if alt[0] in media_data:
-                    media_data[alt[0]]["alts"].append({
-                        "lang_uuid": alt[1],
-                        "alt": alt[2],
-                        "lang": alt[3]
+                if alt['media'] in media_data:
+                    media_data[alt['media']]["alts"].append({
+                        "lang_uuid": alt['lang'],
+                        "alt": alt['alt'],
+                        "lang": alt['long_name']
                     })
     except psycopg.errors.DatabaseError as e:
         print(traceback.format_exc())

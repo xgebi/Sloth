@@ -32,7 +32,7 @@ def show_localized_settings(*args, permission_level: int, connection: psycopg.Co
     default_lang = get_default_language(connection=connection)
     languages = get_languages(connection=connection)
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT sls.uuid, sls.name, s.standalone, sls.content, sls.lang, sls.post_type, spt.display_name, sls2.short_name
                     FROM sloth_localized_strings AS sls 
                     INNER JOIN sloth_post_types spt on spt.uuid = sls.post_type
@@ -54,15 +54,15 @@ def show_localized_settings(*args, permission_level: int, connection: psycopg.Co
     standalone_strings = {}
     post_type_strings = {}
     for item in raw_standalone_strings:
-        if item[1] not in standalone_strings:
-            standalone_strings[item[1]] = {}
-        standalone_strings[item[1]][item[4]] = item[3]
+        if item['name'] not in standalone_strings:
+            standalone_strings[item['name']] = {}
+        standalone_strings[item['name']][item['lang']] = item['content']
     for item in raw_post_type_strings:
-        if item[5] not in post_type_strings:
-            post_type_strings[item[5]] = {}
-        if item[1] not in post_type_strings[item[5]]:
-            post_type_strings[item[5]][item[1]] = {}
-        post_type_strings[item[5]][item[1]][item[4]] = item[3]
+        if item['post_type'] not in post_type_strings:
+            post_type_strings[item['post_type']] = {}
+        if item['name'] not in post_type_strings[item['post_type']]:
+            post_type_strings[item['post_type']][item['name']] = {}
+        post_type_strings[item['post_type']][item['name']][item['lang']] = item['content']
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
         template="localization.toe.html",

@@ -35,14 +35,9 @@ def show_libraries(permission_level: int, connection: psycopg.Connection):
     default_language = get_default_language(connection=connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, name, version, location FROM sloth_libraries;""")
-            libs = [{
-                "uuid": lib[0],
-                "name": lib[1],
-                "version": lib[2],
-                "location": lib[3]
-            } for lib in cur.fetchall()]
+            libs = cur.fetchall()
 
     except psycopg.errors.DatabaseError:
         print(traceback.format_exc())
@@ -129,11 +124,11 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
     lib_to_delete = json.loads(request.data)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT location FROM sloth_libraries WHERE uuid = %s;""",
                         (lib_to_delete["uuid"],)
                         )
-            location = cur.fetchone()[0]
+            location = cur.fetchone()['location']
             cur.execute("""DELETE FROM sloth_post_libraries WHERE library = %s;""",
                         (lib_to_delete["uuid"],)
                         )

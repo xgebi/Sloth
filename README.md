@@ -31,7 +31,7 @@ toes.generate_all()
 
 
 ## Requirements
-- Python 3.8
+- Python 3.10
 - PostgreSQL 12
 - Rust 1.54.0
 - (optional, recommended) Gunicorn
@@ -46,7 +46,7 @@ toes.generate_all()
 
 ### Bucket list
 - multilingual blog ✅
-- rss reader 
+- rss reader ❌
 - post scheduler 
 - twitter integration 
 - post formats ✅

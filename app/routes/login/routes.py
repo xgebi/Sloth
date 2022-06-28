@@ -70,20 +70,14 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
     else:
         ip = request.remote_addr
 
-    with connection.cursor() as cur:
+    with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
         cur.execute("""
-        SELECT banned_until, attempts, time_period FROM sloth_ban_list 
+        SELECT ip, banned_until, attempts, time_period FROM sloth_ban_list 
         WHERE ip = %s;""",
                     (ip,)
                     )
-        banned_raw = cur.fetchone()
-        if banned_raw is not None:
-            banned = {
-                "ip": ip,
-                "banned_until": banned_raw[0],
-                "attempts": banned_raw[1],
-                "time_period": banned_raw[2],
-            }
+        banned = cur.fetchone()
+        if banned is not None:
             if banned["banned_until"] > time.time() * 1000:
                 return redirect("/login/error")
         else:
@@ -105,11 +99,11 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
 
     # if good redirect to dashboard
     if info is not None:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""DELETE FROM sloth_ban_list WHERE ip = %s""", (ip,))
             connection.commit()
             cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = %s;""", ("api_url",))
-            host = cur.fetchone()[0]
+            host = cur.fetchone()['settings_value']
 
         if request.args.get("redirect"):
             if current_app.url_map.bind(host).test(request.args.get("redirect")):

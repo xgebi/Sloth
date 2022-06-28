@@ -9,7 +9,7 @@ from app.back_office.post.post_query_builder import build_post_query, normalize_
 
 def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_list: bool = True, **kwargs):
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
             temp_languages = cur.fetchall()
     except Exception as e:
@@ -17,33 +17,17 @@ def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_l
         return ()
 
     if len(lang_id) != 0:
-        languages = [{
-            "uuid": lang[0],
-            "long_name": lang[1],
-            "short_name": lang[2]
-        } for lang in temp_languages if lang[0] != lang_id]
-        current_lang = [{
-            "uuid": lang[0],
-            "long_name": lang[1],
-            "short_name": lang[2]
-        } for lang in temp_languages if lang[0] == lang_id][0]
+        languages = [lang for lang in temp_languages if lang[0] != lang_id]
+        current_lang = [lang for lang in temp_languages if lang[0] == lang_id][0]
 
         return current_lang, languages
     if as_list:
-        return [{
-            "uuid": lang[0],
-            "long_name": lang[1],
-            "short_name": lang[2]
-        } for lang in temp_languages]
-    return {lang[0]: {
-        "uuid": lang[0],
-        "long_name": lang[1],
-        "short_name": lang[2]
-    } for lang in temp_languages}
+        return temp_languages
+    return {lang['uuid']: lang for lang in temp_languages}
 
 
 def get_default_language(*args, connection: psycopg.Connection, **kwargs) -> Dict[str, str]:
-    with connection.cursor() as cur:
+    with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
         try:
             cur.execute(
                 """SELECT uuid, long_name FROM sloth_language_settings 
@@ -54,14 +38,11 @@ def get_default_language(*args, connection: psycopg.Connection, **kwargs) -> Dic
             print(e)
             return {}
 
-        return {
-            "uuid": main_language[0],
-            "long_name": main_language[1]
-        }
+        return main_language
 
 
 def get_related_posts(*args, post, connection, **kwargs):
-    cur = connection.cursor()
+    cur = connection.cursor(row_factory=psycopg.rows.dict_row)
     if post["original_lang_entry_uuid"] is not None and len(post["original_lang_entry_uuid"]) > 0:
         cur.execute(
             build_post_query(other_language_versions_only=True),

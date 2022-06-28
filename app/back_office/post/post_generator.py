@@ -236,7 +236,7 @@ class PostGenerator:
             **kwargs
     ):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(build_post_query(published_in_taxonomy_per_post_type=True), (taxonomy_uuid, post_type_uuid))
                 items = [normalize_post_from_query(post) for post in cur.fetchall()]
         except Exception as e:
@@ -256,7 +256,7 @@ class PostGenerator:
     ):
 
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(build_post_query(published_per_post_type=True), (post_type_uuid, language_uuid))
                 items = [normalize_post_from_query(post) for post in cur.fetchall()]
                 posts = self.process_posts(items=items, post_type_slug=post_type_slug)
@@ -267,10 +267,7 @@ class PostGenerator:
                             INNER JOIN sloth_libraries sl on sl.uuid = spl.library
                             WHERE spl.post = %s;""",
                         (post['uuid'],))
-                    post["libraries"] = [{
-                        "location": lib[0],
-                        "hook_name": lib[1]
-                    } for lib in cur.fetchall()]
+                    post["libraries"] = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -291,15 +288,15 @@ class PostGenerator:
                 thumbnail_path = f"/{thumbnail_path}"
                 thumbnail_alt = html.escape(thumbnail_alt)
 
-                with self.connection.cursor() as cur:
+                with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                     if post["original_lang_entry_uuid"]:
                         cur.execute(
                             """SELECT lang, slug FROM sloth_posts 
                             WHERE uuid = %s OR (original_lang_entry_uuid = %s AND uuid <> %s);""",
                             (post["original_lang_entry_uuid"], post["original_lang_entry_uuid"], post["uuid"]))
-                        temp_language_variants = cur.fetchall()
+                        language_variants = cur.fetchall()
                     else:
-                        temp_language_variants = []
+                        language_variants = []
 
                     cur.execute(
                         """SELECT content, section_type, position
@@ -308,19 +305,14 @@ class PostGenerator:
                         ORDER BY position;""",
                         (post["uuid"],))
                     sections = [{
-                        "content": section[0],
-                        "type": section[1],
-                        "position": section[2]
+                        "content": section['content'],
+                        "type": section['section_type'],
+                        "position": section['position']
                     } for section in cur.fetchall()]
             except Exception as e:
                 print(e)
                 traceback.print_exc()
                 return
-
-            language_variants = [{
-                "lang": temp[0],
-                "slug": temp[1]
-            } for temp in temp_language_variants]
 
             post.update({
                 "post_type_slug": post_type_slug,
@@ -433,7 +425,7 @@ class PostGenerator:
 
     def clean_taxonomy(self, *args, taxonomies_for_cleanup: List, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur: # TODO debug this
                 for taxonomy in taxonomies_for_cleanup:
                     cur.execute(
                         """SELECT st.slug, st.taxonomy_type, sls.uuid, sls.short_name, spt.uuid, spt.slug
@@ -479,7 +471,7 @@ class PostGenerator:
 
     def prepare_categories_tags(self, *args, post: Dict, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
                         FROM sloth_post_taxonomies as spt INNER JOIN sloth_taxonomy as st ON spt.taxonomy = st.uuid 
@@ -494,7 +486,7 @@ class PostGenerator:
 
     def prepare_categories_tags_post_type(self, *args, post_type, language, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(
                     """SELECT st.uuid, st.taxonomy_type, st.slug, st.display_name, st.lang
                         FROM sloth_taxonomy as st 
@@ -511,22 +503,10 @@ class PostGenerator:
         categories = []
         tags = []
         for taxonomy in taxonomies:
-            if taxonomy[1] == 'category':
-                categories.append({
-                    "uuid": taxonomy[0],
-                    "type": taxonomy[1],
-                    "slug": taxonomy[2],
-                    "display_name": taxonomy[3],
-                    "lang": taxonomy[4]
-                })
-            elif taxonomy[1] == 'tag':
-                tags.append({
-                    "uuid": taxonomy[0],
-                    "type": taxonomy[1],
-                    "slug": taxonomy[2],
-                    "display_name": taxonomy[3],
-                    "lang": taxonomy[4]
-                })
+            if taxonomy['taxonomy_type'] == 'category':
+                categories.append(taxonomy)
+            elif taxonomy['taxonomy_type'] == 'tag':
+                tags.append(taxonomy)
         return categories, tags
 
     def generate_post(
@@ -674,7 +654,7 @@ class PostGenerator:
         if thumbnail_uuid is None:
             return "", ""
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor() as cur: # Here the empty arguments make sense
                 cur.execute("""SELECT sm.file_path, sma.alt FROM sloth_media as sm
                     INNER JOIN sloth_media_alts as sma on sm.uuid = sma.media
                     WHERE sm.uuid = %s AND sma.lang = %s;""",
@@ -823,14 +803,14 @@ class PostGenerator:
     def get_menus(self, *args, **kwargs):
         menus = {}
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT name, uuid FROM sloth_menus;""")
-                menus = {menu[0]: {"items": [], "uuid": menu[1], "name": menu[0]} for menu in cur.fetchall()}
+                menus = {menu['uuid']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in cur.fetchall()}
                 for menu in menus.keys():
                     cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",
                                 (menus[menu]["uuid"],)
                                 )
-                    menus[menu]["items"] = [{"title": item[0], "url": item[1]} for item in cur.fetchall()]
+                    menus[menu]["items"] = cur.fetchall()
         except Exception as e:
             print(f"PostGenerator.get_menus {e}")
             traceback.print_exc()
@@ -838,38 +818,37 @@ class PostGenerator:
         return menus
 
     def get_protected_post(self, *args, uuid: str, **kwargs):
-        post = {}
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 # This is a rudimentary version
                 cur.execute("""SELECT title, thumbnail, lang 
                     FROM sloth_posts WHERE uuid = %s;""",
                             (uuid,))
-                raw_post = cur.fetchone()
+                post = cur.fetchone()
                 cur.execute(
                     """SELECT content FROM sloth_post_sections WHERE post = %s AND section_type = 'text' ORDER BY position;""",
                     (uuid,))
                 sections = cur.fetchall()
-                post["title"] = raw_post[0]
+
                 md_parser = MarkdownParser()
                 post["full_content"] = ""
                 footnotes = []
                 for section in sections:
-                    section_content, section_footnotes = md_parser.to_html_string(section[0])
+                    section_content, section_footnotes = md_parser.to_html_string(section['content'])
                     post["full_content"] += section_content
                     footnotes.extend(section_footnotes)
 
                 post["full_content"] = combine_footnotes(text=post["full_content"], footnotes=footnotes)
 
-                if raw_post[1] is not None:
+                if post['thumbnail'] is not None:
                     cur.execute("""SELECT sm.file_path, sma.alt 
                                     FROM sloth_media AS sm
                                      INNER JOIN sloth_media_alts sma on sm.uuid = sma.uuid
                                      WHERE sm.uuid = %s and sma.lang = %s;""",
-                                (raw_post[3], raw_post[4]))
+                                (post['thumbnail'], post['lang']))
                     raw_thumbnail = cur.fetchone()
-                    post["thumbnail"] = raw_thumbnail[0]
-                    post["thumbnail_alt"] = raw_thumbnail[1]
+                    post["thumbnail"] = raw_thumbnail['file_path']
+                    post["thumbnail_alt"] = raw_thumbnail['alt']
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -897,7 +876,7 @@ class PostGenerator:
             name: str,
             **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, name, content, lang 
                     FROM sloth_localized_strings WHERE name = %s;""",
                             (name,))
@@ -909,15 +888,15 @@ class PostGenerator:
         for item in raw_items:
             if name not in self.settings:
                 self.settings[name] = {
-                    item[3]: {
-                        "uuid": item[0],
-                        "content": item[2]
+                    item['lang']: {
+                        "uuid": item['uuid'],
+                        "content": item['content']
                     }
                 }
             else:
-                self.settings[name][item[3]] = {
-                    "uuid": item[0],
-                    "content": item[2]
+                self.settings[name][item['lang']] = {
+                    "uuid": item['uuid'],
+                    "content": item['content']
                 }
 
     def set_translatable_individual_settings_by_post_type(
@@ -927,7 +906,7 @@ class PostGenerator:
             post_type: str,
             **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, name, content, lang, post_type 
                     FROM sloth_localized_strings WHERE post_type = %s;""",
                             (post_type,))
@@ -935,15 +914,15 @@ class PostGenerator:
                 for item in raw_items:
                     if post_type not in self.settings:
                         self.settings[post_type] = {
-                            item[3]: {
-                                "uuid": item[0],
-                                "content": item[2]
+                            item['lang']: {
+                                "uuid": item['uuid'],
+                                "content": item['content']
                             }
                         }
                     else:
-                        self.settings[post_type][item[3]] = {
-                            "uuid": item[0],
-                            "content": item[2]
+                        self.settings[post_type][item['lang']] = {
+                            "uuid": item['uuid'],
+                            "content": item['content']
                         }
         except Exception as e:
             print(e)
@@ -952,43 +931,36 @@ class PostGenerator:
     def set_individual_settings(self, *args, connection: psycopg.Connection, setting_name: str,
                                 alternate_name: str = None, settings_type: str = 'sloth', **kwargs):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT settings_name, settings_value, settings_value_type 
                                     FROM sloth_settings WHERE settings_name = %s AND settings_type = %s""",
                             (setting_name, settings_type))
-                raw_items = cur.fetchall()
+                items = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
 
         if alternate_name is None:
-            for item in raw_items:
-                self.settings[str(item[0])] = {
-                    "settings_name": item[0],
-                    "settings_value": item[1],
-                    "settings_value_type": item[2]
+            for item in items:
+                self.settings[str(item['settings_name'])] = {
+                    "settings_name": item['settings_name'],
+                    "settings_value": item['settings_value'],
+                    "settings_value_type": item['settings_value_type']
                 }
         else:
-            for item in raw_items:
+            for item in items:
                 self.settings[alternate_name] = {
-                    "settings_name": item[0],
-                    "settings_value": item[1],
-                    "settings_value_type": item[2]
+                    "settings_name": item['settings_name'],
+                    "settings_value": item['settings_value'],
+                    "settings_value_type": item['settings_value_type']
                 }
 
     def get_languages(self):
         languages = []
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings""")
-                raw_items = cur.fetchall()
-
-                for item in raw_items:
-                    languages.append({
-                        "uuid": item[0],
-                        "long_name": item[1],
-                        "short_name": item[2]
-                    })
+                languages = cur.fetchall()
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -999,23 +971,15 @@ class PostGenerator:
         # get form
         form = []
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT sff.uuid, sff.name, sff.position, sff.is_childless, sff.type, 
                     sff.is_required, sff.label FROM sloth_form_fields AS sff
                     INNER JOIN sloth_forms AS sf ON sff.form = sf.uuid
                     WHERE sf.name = %s ORDER BY sff.position;""",
                             (name,))
-                raw_rows = cur.fetchall()
-                for row in raw_rows:
-                    form.append({
-                        "uuid": row[0],
-                        "name": row[1],
-                        "position": row[2],
-                        "is_childless": row[3],
-                        "type": row[4],
-                        "is_required": row[5],
-                        "label": row[6],
-                    })
+                rows = cur.fetchall()
+                for row in rows:
+                    form.append(row)
         except Exception as e:
             print(traceback.format_exc())
             return
@@ -1084,7 +1048,7 @@ class PostGenerator:
             self.generate_sitemap()
         posts = {}
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 for post_type in post_types:
                     cur.execute(
                         """SELECT sp.uuid, sp.title, sp.slug, 
@@ -1095,8 +1059,9 @@ class PostGenerator:
                             ORDER BY publish_date DESC LIMIT %s""",
                         (post_type['uuid'], language['uuid'], True,
                          int(self.settings['number_rss_posts']['settings_value'])))
-                    raw_items = cur.fetchall()
-                    if int(self.settings['number_rss_posts']['settings_value']) - len(raw_items) > 0:
+                    items = cur.fetchall()
+                    if int(self.settings['number_rss_posts']['settings_value']) - len(items) > 0:
+                        # TODO debug this
                         cur.execute(
                             """SELECT sp.uuid, sp.title, sp.slug, 
                                 (SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
@@ -1105,23 +1070,23 @@ class PostGenerator:
                                     WHERE post_type = %s AND post_status = 'published' AND lang = %s  AND pinned = %s
                                     ORDER BY publish_date DESC LIMIT %s""",
                             (post_type['uuid'], language['uuid'], False,
-                             int(self.settings['number_rss_posts']['settings_value']) - len(raw_items)))
-                        raw_items.extend(cur.fetchall())
+                             int(self.settings['number_rss_posts']['settings_value']) - len(items)))
+                        items.extend(cur.fetchall())
                     md_parser = MarkdownParser()
                     posts[post_type['slug']] = []
 
-                    for item in raw_items:
+                    for item in items:
                         thumbnail_alt = None
                         thumbnail_path = None
-                        if item[5] is not None:
+                        if item['thumbnail'] is not None:
                             cur.execute("""SELECT file_path, alt FROM sloth_media as sm
                                             INNER JOIN sloth_media_alts AS sma ON sma.media = sm.uuid
                                             WHERE sma.lang = %s AND sm.uuid = %s;""",
-                                        (language['uuid'], item[5]))
+                                        (language['uuid'], item['thumbnail']))
                             res = cur.fetchone()
-                            thumbnail_path = f"/{res[0]}"
-                            thumbnail_alt = res[1]
-                        excerpt, excerpt_footnotes = md_parser.to_html_string(item[3])
+                            thumbnail_path = f"/{res['file_path']}"
+                            thumbnail_alt = res['alt']
+                        excerpt, excerpt_footnotes = md_parser.to_html_string(item[3]) # here will be error!!!
 
                         categories, tags = get_taxonomy_for_post_prepped_for_listing(
                             connection=self.connection,
@@ -1133,24 +1098,22 @@ class PostGenerator:
                         classes = " ".join(
                             [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
                                                                                            in tags])
-                        if item[6]:
+                        if item['pinned']:
                             classes += " pinned"
                             classes = classes.strip()
-                        posts[post_type['slug']].append({
-                            "uuid": item[0],
-                            "title": item[1],
-                            "slug": item[2],
-                            "excerpt": excerpt,
-                            "publish_date": item[4],
-                            "publish_timedate_formatted": datetime.fromtimestamp(float(item[4]) / 1000).strftime(
-                                "%Y-%m-%d %H:%M"),
-                            "post_type_slug": post_type['slug'],
-                            "thumbnail_path": thumbnail_path,
-                            "thumbnail_alt": thumbnail_alt,
-                            "classes": classes,
-                            "categories": categories,
-                            "tags": tags
-                        })
+                        posts[post_type['slug']].append(
+                            item.update({
+                                "excerpt": excerpt,
+                                "publish_timedate_formatted": datetime.fromtimestamp(float(item['publish_date']) / 1000).strftime(
+                                    "%Y-%m-%d %H:%M"),
+                                "post_type_slug": post_type['slug'],
+                                "thumbnail_path": thumbnail_path,
+                                "thumbnail_alt": thumbnail_alt,
+                                "classes": classes,
+                                "categories": categories,
+                                "tags": tags
+                            })
+                        )
         except Exception as e:
             print(390)
             print(e)
@@ -1188,7 +1151,7 @@ class PostGenerator:
 
     def prepare_rss_home_data(self, *args, language: Dict, **kwargs):
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.css, 
                              A.js, A.use_theme_css, A.use_theme_js,
                         A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
@@ -1198,23 +1161,10 @@ class PostGenerator:
                                     ORDER BY A.publish_date DESC LIMIT %s""",
                             (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
 
-                posts = [{
-                    "uuid": post[0],
-                    "slug": post[1],
-                    "author_name": post[2],
-                    "author_uuid": post[3],
-                    "title": post[4],
-                    "css": post[5],
-                    "js": post[6],
-                    "use_theme_css": post[7],
-                    "use_theme_js": post[8],
-                    "publish_date": post[9],
-                    "publish_timedate_formatted": datetime.fromtimestamp(float(post[9]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "update_date": post[10],
-                    "update_date_formatted": datetime.fromtimestamp(float(post[10]) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    "post_status": post[11],
-                    "post_type_slug": post[12]
-                } for post in cur.fetchall()]
+                posts = [post.update({
+                    "publish_timedate_formatted": datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    "update_date_formatted": datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
+                }) for post in cur.fetchall()]
 
                 for post in posts:
                     cur.execute(
@@ -1223,11 +1173,7 @@ class PostGenerator:
                             WHERE post = %s
                             ORDER BY position ASC;""",
                         (post["uuid"],))
-                    sections = [{
-                        "content": section[0],
-                        "type": section[1],
-                        "position": section[2]
-                    } for section in cur.fetchall()]
+                    sections = cur.fetchall()
 
                     post["excerpt"] = sections[0]["content"] if len(sections) > 0 else ""
                     post["content"] = "\n".join([section["content"] for section in sections if
@@ -1394,21 +1340,22 @@ class PostGenerator:
         doc.appendChild(root_node)
 
         try:
-            with self.connection.cursor() as cur:
+            with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 # Get languages
                 cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-                main_lang = cur.fetchone()[0]
+                main_lang = cur.fetchone()['settings_value']
                 cur.execute("""SELECT uuid, short_name FROM sloth_language_settings;""")
-                langs = {lang[0]: {
-                    "uuid": lang[0],
-                    "path": f"{lang[1]}" if lang[0] != main_lang else "",
+                langs = {lang['uuid']: {
+                    "uuid": lang['uuid'],
+                    "path": f"{lang['short_name']}" if lang['lang'] != main_lang else "",
                 } for lang in cur.fetchall()}
 
                 #   Get post types
                 cur.execute("""SELECT uuid, slug FROM sloth_post_types;""")
-                post_type_slugs = {slug[0]: {
-                    "slug": slug[1]
+                post_type_slugs = {slug['uuid']: {
+                    "slug": slug['slug']
                 } for slug in cur.fetchall()}
+
                 for lang in langs.keys():
                     home_url = doc.createElement("url")
                     home_loc = doc.createElement("loc")
@@ -1446,7 +1393,7 @@ class PostGenerator:
                         cur.execute("""SELECT slug FROM sloth_taxonomy 
                             WHERE taxonomy_type = %s AND post_type = %s;""",
                                     ('category', post_type))
-                        category_slugs = [slug[0] for slug in cur.fetchall()]
+                        category_slugs = [slug['slug'] for slug in cur.fetchall()]
                         for category in category_slugs:
                             if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'],
                                         "category",
@@ -1471,7 +1418,7 @@ class PostGenerator:
                         cur.execute("""SELECT slug FROM sloth_taxonomy 
                                                 WHERE taxonomy_type = %s AND post_type = %s;""",
                                     ('tag', post_type))
-                        tag_slugs = [slug[0] for slug in cur.fetchall()]
+                        tag_slugs = [slug['slug'] for slug in cur.fetchall()]
                         for tag in tag_slugs:
                             if not Path(output_path, langs[lang]['path'], post_type_slugs[post_type]['slug'], "tag",
                                         tag).is_dir():

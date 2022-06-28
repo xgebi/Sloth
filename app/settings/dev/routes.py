@@ -150,28 +150,28 @@ def check_posts_health(*args, connection: psycopg.Connection, **kwargs):
         code = 500
     else:
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 # from settings get default language
                 cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
-                lang_id = cur.fetchone()[0]
+                lang_id = cur.fetchone()['settings_value']
 
                 # from language_settings get short_name
                 cur.execute("""SELECT uuid, short_name FROM sloth_language_settings""")
                 raw_languages = cur.fetchall()
-                languages = {lang[0]:lang[1] for lang in raw_languages}
+                languages = {lang['uuid']: lang['short_name'] for lang in raw_languages}
                 # from post_types get slugs
                 cur.execute("""SELECT uuid, slug FROM sloth_post_types""")
                 raw_post_types = cur.fetchall()
-                post_types = {pt[0]: pt[1] for pt in raw_post_types}
+                post_types = {pt['uuid']: pt['slug'] for pt in raw_post_types}
                 # from posts get slugs, post_type, language
                 cur.execute("""SELECT slug, post_type, lang FROM sloth_posts WHERE post_status = 'published'""")
                 posts = cur.fetchall()
                 urls = [
                     Path(os.path.join(
                         current_app.config["OUTPUT_PATH"],
-                        languages[post[2]] if post[2] != lang_id else "",
-                        post_types[post[1]],
-                        post[0],
+                        languages[post['lang']] if post['lang'] != lang_id else "",
+                        post_types[post['post_type']],
+                        post['slug'],
                         "index.html"
                     ))
                     for post in posts

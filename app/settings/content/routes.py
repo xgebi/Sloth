@@ -63,9 +63,9 @@ def import_wordpress_content(*args, connection: psycopg.Connection, **kwargs):
 
     import_count = -1
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'wordpress_import_count';""")
-            import_count = int(cur.fetchone()[0]) + 1
+            import_count = int(cur.fetchone()['settings_value']) + 1
             cur.execute("""UPDATE sloth_settings SET settings_value = %s WHERE settings_name = 
             'wordpress_import_count';""",
                         (import_count,))
@@ -160,17 +160,15 @@ def process_attachments(items: List, connection: psycopg.Connection, import_coun
                 file_path = info.getElementsByTagName('wp:meta_value')[0].firstChild.wholeText \
                     if info.getElementsByTagName('wp:meta_value')[0].firstChild is not None else ""
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute("""INSERT INTO sloth_media (uuid, file_path, wp_id) VALUES (%s, %s, %s) RETURNING uuid""",
                             (str(uuid4()),
                              f"sloth-content/{file_path}",
                              f"{import_count}-{int(item.getElementsByTagName('wp:post_id')[0].firstChild.wholeText)}")
                             )
-                uuid = cur.fetchone()[0]
+                uuid = cur.fetchone()['uuid']
                 cur.execute("""INSERT INTO sloth_media_alts (uuid, media, lang, alt) 
-                        VALUES (
-                        %s,
-                        %s, 
+                        VALUES (%s, %s, 
                         (SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language'), 
                         %s)""",
                             (str(uuid4()), uuid, "", alt)
@@ -196,21 +194,21 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
     :return:
     """
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("SELECT slug, uuid FROM sloth_post_types")
             raw_post_types = cur.fetchall()
             cur.execute("SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'")
-            site_url = cur.fetchone()[0]
+            site_url = cur.fetchone()['settings_value']
             post_types = {}
             existing_categories = {}
             existing_tags = {}
             rewrite_rules = []
             for post_type in raw_post_types:
-                post_types[post_type[0]] = post_type[1]
+                post_types[post_type['uuid']] = post_type['uuid']
 
-                taxonomies = fetch_taxonomies(cursor=cur, post_type=post_types[post_type[0]])
-                existing_categories[post_type[1]] = taxonomies["categories"]
-                existing_tags[post_type[1]] = taxonomies["tags"]
+                taxonomies = fetch_taxonomies(cursor=connection, post_type=post_types[post_type['uuid']])
+                existing_categories[post_type['uuid']] = taxonomies["categories"]
+                existing_tags[post_type['uuid']] = taxonomies["tags"]
 
             for item in items:
                 # title
@@ -235,7 +233,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
                 cur.execute(
                     """SELECT count(slug) FROM sloth_posts WHERE (slug LIKE %s OR slug LIKE %s) AND post_type = %s;""",
                     (f"{post_slug}-%", f"{post_slug}%", post_types[post_type]))
-                similar = cur.fetchone()[0]
+                similar = cur.fetchone()['count']
                 if int(similar) > 0:
                     post_slug = f"{post_slug}-{str(int(similar) + 1)}"
 
@@ -365,7 +363,7 @@ def fetch_taxonomies(*args, connection: psycopg.Connection, post_type: Dict, **k
     :return:
     """
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, slug, display_name FROM sloth_taxonomy
                              WHERE taxonomy_type = 'tag' AND post_type = %s""",
                         (post_type,))
@@ -381,28 +379,9 @@ def fetch_taxonomies(*args, connection: psycopg.Connection, post_type: Dict, **k
             "categories": []
         }
     return {
-        "tags": process_taxonomy(taxonomy_list=temp_tags),
-        "categories": process_taxonomy(taxonomy_list=temp_categories)
+        "tags": temp_tags,
+        "categories": temp_categories
     }
-
-
-def process_taxonomy(*args, taxonomy_list: List, **kwargs) -> List:
-    """
-    Processes taxonomy
-
-    :param args:
-    :param taxonomy_list:
-    :param kwargs:
-    :return:
-    """
-    res_list = []
-    for item in taxonomy_list:
-        res_list.append({
-            "uuid": item[0],
-            "slug": item[1],
-            "display_name": item[2]
-        })
-    return res_list
 
 
 @content.route("/settings/export")

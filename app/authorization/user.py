@@ -51,7 +51,7 @@ class User:
         :return:
         """
         with connect_to_db() as connection:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 try:
                     cur.execute(
                         """SELECT uuid, password, display_name, permissions_level 
@@ -65,32 +65,25 @@ class User:
                 if items is None:
                     return None
 
-                trimmed_items = {
-                    "uuid": items[0],
-                    "password": items[1],
-                    "display_name": items[2],
-                    "permissions_level": items[3]
-                }
-
-                if bcrypt.checkpw(password.encode('utf8'), trimmed_items["password"].encode('utf8')):
+                if bcrypt.checkpw(password.encode('utf8'), items["password"].encode('utf8')):
                     token = str(uuid.uuid4())
                     expiry_time = time() + 1800  # 30 minutes
 
                     try:
                         cur.execute(
                             """UPDATE sloth_users SET token = %s, expiry_date = %s WHERE uuid = %s""",
-                            (token, expiry_time, trimmed_items["uuid"])
+                            (token, expiry_time, items["uuid"])
                         )
                         connection.commit()
                     except psycopg.errors.DatabaseError:
                         return None
 
                     return UserInfo(
-                        user_uuid=trimmed_items["uuid"],
-                        display_name=trimmed_items["display_name"],
+                        user_uuid=items["uuid"],
+                        display_name=items["display_name"],
                         token=token,
                         expiry_time=expiry_time * 1000,
-                        permissions_level=trimmed_items["permissions_level"]
+                        permissions_level=items["permissions_level"]
                     )
                 return None
 
@@ -102,7 +95,7 @@ class User:
         :return:
         """
         with connect_to_db() as connection:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 try:
                     cur.execute(
                         """SELECT permissions_level, expiry_date, token FROM sloth_users WHERE uuid = %s""",
@@ -112,7 +105,7 @@ class User:
                 except psycopg.errors.DatabaseError:
                     return False, -1
 
-                if items is None or permissions_level > items[0] or time() > items[1] or self.token != items[2]:
+                if items is None or permissions_level > items['permissions_level'] or time() > items['expiry_date'] or self.token != items['token']:
                     return False, -1
 
                 try:
@@ -124,7 +117,7 @@ class User:
                 except psycopg.errors.DatabaseError:
                     return False, -1
 
-            return True, int(items[0])
+            return True, int(items['permissions_level'])
 
     @db_connection
     def logout_user(self, connection: psycopg.Connection):
@@ -151,7 +144,7 @@ class User:
         :return:
         """
         with connect_to_db() as connection:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 try:
                     cur.execute(
                         """SELECT token, expiry_date FROM sloth_users WHERE uuid = %s""",
@@ -159,14 +152,14 @@ class User:
                     )
 
                     item = cur.fetchone()
-                    if time() > item[1]:
+                    if time() > item['expiry_date']:
                         response = make_response(json.dumps({"error": "Authorization timeout"}))
                         response.headers['Content-Type'] = 'application/json'
                         code = 403
 
                         return response, code
 
-                    if item[0] != self.token:
+                    if item['token'] != self.token:
                         response = make_response(json.dumps({"Unauthorized": True}))
                         response.headers['Content-Type'] = 'application/json'
                         code = 403

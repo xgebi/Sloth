@@ -21,9 +21,9 @@ def show_language_settings(*args, permission_level: int, connection: psycopg.Con
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute("""SELECT uuid, short_name, long_name FROM sloth_language_settings""")
-            temp_languages = cur.fetchall()
+            languages = cur.fetchall()
     except Exception as e:
         print(e)
         connection.close()
@@ -32,13 +32,9 @@ def show_language_settings(*args, permission_level: int, connection: psycopg.Con
     default_lang = get_default_language(connection=connection)
     connection.close()
 
-    languages = []
-    for lang in temp_languages:
-        languages.append({
-            "uuid": lang[0],
-            "short_name": lang[1],
-            "long_name": lang[2],
-            "default": lang[0] == default_lang
+    for lang in languages:
+        languages.update({
+            "default": lang['uuid'] == default_lang
         })
 
     return render_toe_from_path(
@@ -130,14 +126,9 @@ def delete_language(*args, connection: psycopg.Connection, lang_id: str, **kwarg
 @db_connection
 def get_language_list(*args, connection: psycopg.Connection, **kwargs):
     try:
-        with connection.cursor() as cur:
-            cur.execute("""SELECT uuid, long_name, short_name FROM sloth_language_settings;""")
-            res = [{
-                "uuid": lang[0],
-                "longName": lang[1],
-                "shortName": lang[2],
-                "default": False
-            } for lang in cur.fetchall()]
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            cur.execute("""SELECT uuid, long_name as longName, short_name as shortName FROM sloth_language_settings;""")
+            res = [lang.update({'default': False}) for lang in cur.fetchall()]
             default_lang = get_default_language(connection=connection)
             for lang in res:
                 if lang["uuid"] == default_lang["uuid"]:

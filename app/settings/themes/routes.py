@@ -28,12 +28,12 @@ def show_theme_settings(*args, permission_level: int, connection: psycopg.Connec
     config = current_app.config
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 "SELECT settings_value FROM sloth_settings WHERE settings_name = 'active_theme'"
             )
             raw_items = cur.fetchone()
-            active_theme = raw_items[0]
+            active_theme = raw_items['settings_value']
     except Exception:
         connection.close()
         print("db error")

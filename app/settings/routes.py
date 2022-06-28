@@ -33,12 +33,12 @@ def show_settings(*args, permission_level: int, connection: psycopg.Connection, 
     post_types_result = post_types.get_post_type_list(connection)
 
     try:
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             cur.execute(
                 """SELECT settings_name, display_name, settings_value, settings_value_type FROM sloth_settings 
                 WHERE settings_type = 'sloth';"""
             )
-            raw_items = cur.fetchall()
+            items = cur.fetchall()
     except psycopg.errors.DatabaseError as e:
         print("db error")
         connection.close()
@@ -48,18 +48,12 @@ def show_settings(*args, permission_level: int, connection: psycopg.Connection, 
     languages = get_languages(connection=connection)
     connection.close()
 
-    items = []
-    for item in raw_items:
-        formatted_item = {
-            "settings_name": item[0],
-            "display_name": item[1],
-            "settings_value": item[2],
-            "settings_value_type": item[3],
+    for item in items:
+        item.update({
             "possible_values": []
-        }
-        if item[0] == 'main_language':
-            formatted_item["possible_values"] = languages
-        items.append(formatted_item)
+        })
+        if item['settings_name'] == 'main_language':
+            item["possible_values"] = languages
 
     return render_toe_from_path(
         path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),

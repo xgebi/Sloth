@@ -1,6 +1,6 @@
 import psycopg
 from flask import abort
-from psycopg2 import sql
+from psycopg import sql
 
 
 class PostTypes:
@@ -10,65 +10,51 @@ class PostTypes:
     # Placeholder for the future
 
     def get_post_type_list(self, connection: psycopg.Connection):
-        with connection.cursor() as cur:
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
             raw_items = []
             try:
                 cur.execute(
                     """SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
                             FROM sloth_post_types"""
                 )
-                raw_items = cur.fetchall()
+                items = cur.fetchall()
             except psycopg.errors.DatabaseError as e:
                 abort(500)
             cur.close()
 
-            return [{
-                "uuid": item[0],
-                "slug": item[1],
-                "display_name": item[2],
-                "tags_enabled": item[3],
-                "categories_enabled": item[4],
-                "archive_enabled": item[5]
-            } for item in raw_items]
+            return items
 
     def get_post_type_list_as_json(self, connection: psycopg.Connection):
-        with connection.cursor() as cur:
-            raw_items = []
+        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            items = []
             try:
                 cur.execute(
                     """SELECT uuid, slug, display_name, tags_enabled, categories_enabled, archive_enabled 
                             FROM sloth_post_types"""
                 )
-                raw_items = cur.fetchall()
+                items = cur.fetchall()
             except psycopg.errors.DatabaseError as e:
                 abort(500)
             cur.close()
 
             return [{
-                "uuid": item[0],
-                "slug": item[1],
-                "displayName": item[2],
-                "tagsEnabled": item[3],
-                "categoriesEnabled": item[4],
-                "archiveEnabled": item[5]
-            } for item in raw_items]
+                "uuid": item['uuid'],
+                "slug": item['slug'],
+                "displayName": item['display_name'],
+                "tagsEnabled": item['tags_enabled'],
+                "categoriesEnabled": item['categories_enabled'],
+                "archiveEnabled": item['archive_enabled']
+            } for item in items]
 
     def get_post_type(self, connection, post_type_id):
         try:
-            with connection.cursor() as cur:
+            with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 cur.execute(
                         """SELECT uuid, display_name, slug, tags_enabled, categories_enabled, archive_enabled 
                         FROM sloth_post_types WHERE uuid = %s""", (post_type_id, ))
-                raw_item = cur.fetchone()
+                item = cur.fetchone()
                 cur.close()
-                return {
-                    "uuid": raw_item[0],
-                    "display_name": raw_item[1],
-                    "slug": raw_item[2],
-                    "tags_enabled": raw_item[3],
-                    "categories_enabled": raw_item[4],
-                    "archive_enabled": raw_item[5]
-                }
+                return item
         except Exception as e:
             abort(500)
 
