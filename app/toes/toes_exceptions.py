@@ -1,13 +1,13 @@
 class XMLParsingException(Exception):
-    pass
+	pass
 
 
 class ToeProcessingException(Exception):
-    pass
+	pass
 
 
 class ToeInvalidConditionException(Exception):
-    pass
+	pass
 
 class ToeVariableNotFoundException(Exception):
-    pass
+	pass

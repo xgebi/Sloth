@@ -9,4 +9,4 @@ from app.settings.integrations import integrations
 @authorize_web(1)
 @db_connection
 def show_integrations_settings(*args, connection: psycopg.Connection, **kwargs):
-    pass
+	pass

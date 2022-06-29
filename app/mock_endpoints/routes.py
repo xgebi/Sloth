@@ -18,217 +18,217 @@ from app.mock_endpoints import mock_endpoints
 @authorize_web(0)
 @db_connection
 def show_endpoints_list(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
-    """
-    Renders list of endpoints
+	"""
+	Renders list of endpoints
 
-    :param args:
-    :param permission_level:
-    :param connection:
-    :param kwargs:
-    :return:
-    """
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-    default_lang = get_default_language(connection=connection)
-    languages = get_languages(connection=connection, as_list=True)
+	:param args:
+	:param permission_level:
+	:param connection:
+	:param kwargs:
+	:return:
+	"""
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
+	default_lang = get_default_language(connection=connection)
+	languages = get_languages(connection=connection, as_list=True)
 
-    try:
-        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute("""SELECT uuid, path FROM sloth_mock_endpoints ORDER BY path DESC;""")
-            endpoints_list = cur.fetchall()
-    except Exception as e:
-        print(e)
-        connection.close()
-        abort(500)
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT uuid, path FROM sloth_mock_endpoints ORDER BY path DESC;""")
+			endpoints_list = cur.fetchall()
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
 
-    connection.close()
+	connection.close()
 
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="mock-endpoints-list.toe.html",
-        data={
-            "title": "List of media",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "default_lang": default_lang,
-            "languages": languages,
-            "endpoints_list": endpoints_list
-        },
-        hooks=Hooks()
-    )
+	return render_toe_from_path(
+		path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+		template="mock-endpoints-list.toe.html",
+		data={
+			"title": "List of media",
+			"post_types": post_types_result,
+			"permission_level": permission_level,
+			"default_lang": default_lang,
+			"languages": languages,
+			"endpoints_list": endpoints_list
+		},
+		hooks=Hooks()
+	)
 
 
 @mock_endpoints.route("/mock-endpoints/<endpoint>", methods=["GET"])
 @authorize_web(0)
 @db_connection
 def show_endpoint(*args, permission_level: int, connection: psycopg.Connection, endpoint: str, **kwargs):
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-    default_lang = get_default_language(connection=connection)
-    languages = get_languages(connection=connection, as_list=True)
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
+	default_lang = get_default_language(connection=connection)
+	languages = get_languages(connection=connection, as_list=True)
 
-    try:
-        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute("""SELECT uuid, path, data, content_type FROM sloth_mock_endpoints WHERE uuid = %s""",
-                        (endpoint,))
-            endpoint_result = cur.fetchone()
-    except Exception as e:
-        print(e)
-        connection.close()
-        abort(500)
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT uuid, path, data, content_type FROM sloth_mock_endpoints WHERE uuid = %s""",
+						(endpoint,))
+			endpoint_result = cur.fetchone()
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
 
-    connection.close()
+	connection.close()
 
-    endpoint_result.update({
-        "new": False
-    })
+	endpoint_result.update({
+		"new": False
+	})
 
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="mock-endpoint.toe.html",
-        data={
-            "title": "List of endpoints",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "default_lang": default_lang,
-            "languages": languages,
-            "endpoint": {
-                "uuid": str(uuid.uuid4()),
-                "new": True
-            },
-            "endpoint": endpoint_result
-        },
-        hooks=Hooks()
-    )
+	return render_toe_from_path(
+		path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+		template="mock-endpoint.toe.html",
+		data={
+			"title": "List of endpoints",
+			"post_types": post_types_result,
+			"permission_level": permission_level,
+			"default_lang": default_lang,
+			"languages": languages,
+			"endpoint": {
+				"uuid": str(uuid.uuid4()),
+				"new": True
+			},
+			"endpoint": endpoint_result
+		},
+		hooks=Hooks()
+	)
 
 
 @mock_endpoints.route("/api/mock-endpoints/<endpoint>/delete", methods=["DELETE"])
 @authorize_web(0)
 @db_connection
 def delete_endpoint(*args, permission_level: int, connection: psycopg.Connection, endpoint: str, **kwargs):
-    """
-    API endpoint for deleting a mock endpoint
+	"""
+	API endpoint for deleting a mock endpoint
 
-    :param args:
-    :param permission_level:
-    :param connection:
-    :param endpoint:
-    :param kwargs:
-    :return:
-    """
-    try:
-        with connection.cursor() as cur:
-            cur.execute("""DELETE FROM sloth_mock_endpoints WHERE uuid = %s""",
-                        (endpoint,)
-                        )
-            connection.commit()
-    except Exception as e:
-        print(e)
-        connection.close()
-        abort(500)
+	:param args:
+	:param permission_level:
+	:param connection:
+	:param endpoint:
+	:param kwargs:
+	:return:
+	"""
+	try:
+		with connection.cursor() as cur:
+			cur.execute("""DELETE FROM sloth_mock_endpoints WHERE uuid = %s""",
+						(endpoint,)
+						)
+			connection.commit()
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
 
-    connection.close()
+	connection.close()
 
-    return json.dumps({"endpoint": "deleted"}), 204
+	return json.dumps({"endpoint": "deleted"}), 204
 
 
 @mock_endpoints.route("/mock-endpoints/new", methods=["GET"])
 @authorize_web(0)
 @db_connection
 def show_new_endpoint(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
-    """
-    Renders a page to create a new endpoint
+	"""
+	Renders a page to create a new endpoint
 
-    :param args:
-    :param permission_level:
-    :param connection:
-    :param kwargs:
-    :return:
-    """
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-    default_lang = get_default_language(connection=connection)
-    languages = get_languages(connection=connection)
+	:param args:
+	:param permission_level:
+	:param connection:
+	:param kwargs:
+	:return:
+	"""
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
+	default_lang = get_default_language(connection=connection)
+	languages = get_languages(connection=connection)
 
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="mock-endpoint.toe.html",
-        data={
-            "title": "List of media",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "default_lang": default_lang,
-            "languages": languages,
-            "endpoint": {
-                "uuid": str(uuid.uuid4()),
-                "new": True
-            }
-        },
-        hooks=Hooks()
-    )
+	return render_toe_from_path(
+		path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+		template="mock-endpoint.toe.html",
+		data={
+			"title": "List of media",
+			"post_types": post_types_result,
+			"permission_level": permission_level,
+			"default_lang": default_lang,
+			"languages": languages,
+			"endpoint": {
+				"uuid": str(uuid.uuid4()),
+				"new": True
+			}
+		},
+		hooks=Hooks()
+	)
 
 
 @mock_endpoints.route("/mock-endpoints/<endpoint_id>/save", methods=["POST", "PUT"])
 @authorize_web(0)
 @db_connection
 def save_endpoint(*args, permission_level: int, connection: psycopg.Connection, endpoint_id: str, **kwargs):
-    filled = request.form
-    for key in filled.keys():
-        if len(filled[key]) == 0:
-            abort(400)
+	filled = request.form
+	for key in filled.keys():
+		if len(filled[key]) == 0:
+			abort(400)
 
-    try:
-        with connection.cursor() as cur:
-            if filled["new"].lower() == "true":
-                cur.execute("""INSERT INTO sloth_mock_endpoints VALUES (%s, %s, %s, %s)""",
-                            (endpoint_id, filled["path"], filled["data"], filled["content_type"]))
-            else:
-                cur.execute("""UPDATE sloth_mock_endpoints SET path = %s, data = %s, content_type = %s 
+	try:
+		with connection.cursor() as cur:
+			if filled["new"].lower() == "true":
+				cur.execute("""INSERT INTO sloth_mock_endpoints VALUES (%s, %s, %s, %s)""",
+							(endpoint_id, filled["path"], filled["data"], filled["content_type"]))
+			else:
+				cur.execute("""UPDATE sloth_mock_endpoints SET path = %s, data = %s, content_type = %s 
                 WHERE uuid = %s""",
-                            (filled["path"], filled["data"], filled["content_type"], endpoint_id))
-            connection.commit()
-    except Exception:
-        connection.close()
-        abort(500)
+							(filled["path"], filled["data"], filled["content_type"], endpoint_id))
+			connection.commit()
+	except Exception:
+		connection.close()
+		abort(500)
 
-    connection.close()
+	connection.close()
 
-    return redirect(f"/mock-endpoints/{endpoint_id}")
+	return redirect(f"/mock-endpoints/{endpoint_id}")
 
 
 @mock_endpoints.route("/api/mock/<path>", methods=["GET"])
 @cross_origin()
 @db_connection
 def get_endpoint(*args, connection: psycopg.Connection, path: str, **kwargs):
-    """
-    API endpoint for retrieving data from mock endpoint
+	"""
+	API endpoint for retrieving data from mock endpoint
 
-    :param args:
-    :param connection:
-    :param path:
-    :param kwargs:
-    :return:
-    """
-    if request.origin[request.origin.find("//") + 2:] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
-        abort(500)
+	:param args:
+	:param connection:
+	:param path:
+	:param kwargs:
+	:return:
+	"""
+	if request.origin[request.origin.find("//") + 2:] not in current_app.config["ALLOWED_REQUEST_HOSTS"]:
+		abort(500)
 
-    try:
-        with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute("""SELECT data, content_type FROM sloth_mock_endpoints WHERE path = %s;""",
-                        (path,))
-            temp_result = cur.fetchone()
-            if temp_result is not None:
-                result = temp_result['date']
-                content_type = temp_result['content_type']
-            else:
-                result = json.dumps({"error": "Missing data"})
-    except Exception as e:
-        print(e)
-        connection.close()
-        abort(500)
-    connection.close()
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT data, content_type FROM sloth_mock_endpoints WHERE path = %s;""",
+						(path,))
+			temp_result = cur.fetchone()
+			if temp_result is not None:
+				result = temp_result['date']
+				content_type = temp_result['content_type']
+			else:
+				result = json.dumps({"error": "Missing data"})
+	except Exception as e:
+		print(e)
+		connection.close()
+		abort(500)
+	connection.close()
 
-    response = make_response(result)
-    response.headers['Content-Type'] = content_type
+	response = make_response(result)
+	response.headers['Content-Type'] = content_type
 
-    return response
+	return response

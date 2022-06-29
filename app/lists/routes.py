@@ -15,18 +15,18 @@ from app.lists import lists
 @db_connection
 def no_post(*args, permission_level: int, connection: psycopg.Connection, **kwargs):
 
-    post_types = PostTypes()
-    post_types_result = post_types.get_post_type_list(connection)
-    default_language = get_default_language(connection=connection)
+	post_types = PostTypes()
+	post_types_result = post_types.get_post_type_list(connection)
+	default_language = get_default_language(connection=connection)
 
-    return render_toe_from_path(
-        path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
-        template="lists.toe.html",
-        data={
-            "title": "Settings",
-            "post_types": post_types_result,
-            "permission_level": permission_level,
-            "default_lang": default_language,
-        },
-        hooks=Hooks()
-    )
+	return render_toe_from_path(
+		path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
+		template="lists.toe.html",
+		data={
+			"title": "Settings",
+			"post_types": post_types_result,
+			"permission_level": permission_level,
+			"default_lang": default_language,
+		},
+		hooks=Hooks()
+	)
