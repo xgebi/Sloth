@@ -4,7 +4,7 @@ import json
 from uuid import uuid4
 import psycopg
 
-from flask import abort, request, redirect, current_app, make_response
+from flask import abort, request, redirect, current_app, make_response, escape
 from werkzeug import utils as w_utils
 from app.authorization.authorize import authorize_web
 from app.utilities.db_connection import db_connection
@@ -140,9 +140,9 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
 				os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "libs", location)
 			)
 
-		response = make_response(json.dumps({
+		response = make_response(escape(json.dumps({
 			"deleted": lib_to_delete["uuid"]
-		}))
+		})))
 		code = 204
 	except psycopg.errors.DatabaseError:
 		print(traceback.format_exc())

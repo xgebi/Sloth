@@ -1052,7 +1052,7 @@ class PostGenerator:
 				for post_type in post_types:
 					cur.execute(
 						"""SELECT sp.uuid, sp.title, sp.slug, 
-							(SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
+							(SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid) as content, 
 							sp.publish_date, sp.thumbnail, sp.pinned
 							FROM sloth_posts AS sp
 							WHERE post_type = %s AND post_status = 'published' AND lang = %s AND pinned = %s
@@ -1064,7 +1064,7 @@ class PostGenerator:
 						# TODO debug this
 						cur.execute(
 							"""SELECT sp.uuid, sp.title, sp.slug, 
-								(SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid), 
+								(SELECT content FROM sloth_post_sections as sps WHERE sps.position = 0 AND sps.post = sp.uuid) as content, 
 								sp.publish_date, sp.thumbnail, sp.pinned 
 								FROM sloth_posts AS sp
 									WHERE post_type = %s AND post_status = 'published' AND lang = %s  AND pinned = %s
@@ -1086,34 +1086,34 @@ class PostGenerator:
 							res = cur.fetchone()
 							thumbnail_path = f"/{res['file_path']}"
 							thumbnail_alt = res['alt']
-						excerpt, excerpt_footnotes = md_parser.to_html_string(item[3]) # here will be error!!!
+						excerpt, excerpt_footnotes = md_parser.to_html_string(item['content'])
 
 						categories, tags = get_taxonomy_for_post_prepped_for_listing(
 							connection=self.connection,
-							uuid=item[0],
-							main_language=self.settings['main_language'],
-							language=language,
-							post_type_slug=post_type['slug']
-						)
-						classes = " ".join(
-							[f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
-																						   in tags])
-						if item['pinned']:
-							classes += " pinned"
-							classes = classes.strip()
-						posts[post_type['slug']].append(
-							item.update({
-								"excerpt": excerpt,
-								"publish_timedate_formatted": datetime.fromtimestamp(float(item['publish_date']) / 1000).strftime(
-									"%Y-%m-%d %H:%M"),
-								"post_type_slug": post_type['slug'],
-								"thumbnail_path": thumbnail_path,
-								"thumbnail_alt": thumbnail_alt,
-								"classes": classes,
-								"categories": categories,
-								"tags": tags
-							})
-						)
+							uuid=item['uuid'],
+                            main_language=self.settings['main_language'],
+                            language=language,
+                            post_type_slug=post_type['slug']
+                        )
+                        classes = " ".join(
+                            [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
+                                                                                           in tags])
+                        if item['pinned']:
+                            classes += " pinned"
+                            classes = classes.strip()
+                        item.update({
+                            "excerpt": excerpt,
+                            "publish_timedate_formatted": datetime.fromtimestamp(
+                                float(item['publish_date']) / 1000).strftime(
+                                "%Y-%m-%d %H:%M"),
+                            "post_type_slug": post_type['slug'],
+                            "thumbnail_path": thumbnail_path,
+                            "thumbnail_alt": thumbnail_alt,
+                            "classes": classes,
+                            "categories": categories,
+                            "tags": tags
+                        })
+                        posts[post_type['slug']].append(item)
 		except Exception as e:
 			print(390)
 			print(e)
@@ -1154,17 +1154,18 @@ class PostGenerator:
 			with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 				cur.execute("""SELECT A.uuid, A.slug, B.display_name, B.uuid, A.title, A.css, 
                              A.js, A.use_theme_css, A.use_theme_js,
-                        A.publish_date, A.update_date, A.post_status, C.slug, C.uuid
+                        A.publish_date, A.update_date, A.post_status, C.slug as post_type_slug, C.uuid as post_type_uuid
                                     FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                                     INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
                                     WHERE C.archive_enabled = %s AND A.post_status = 'published' AND A.lang = %s
                                     ORDER BY A.publish_date DESC LIMIT %s""",
-							(True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
-
-				posts = [post.update({
-					"publish_timedate_formatted": datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
-					"update_date_formatted": datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
-				}) for post in cur.fetchall()]
+                            (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
+                posts = cur.fetchall()
+				for post in posts:
+                    post.update({
+                        "publish_timedate_formatted": datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
+                        "update_date_formatted": datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
+                    })
 
 				for post in posts:
 					cur.execute(

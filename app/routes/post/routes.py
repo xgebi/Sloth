@@ -156,12 +156,12 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute("""SELECT display_name FROM sloth_post_types WHERE uuid = %s""", (post_type,))
 			res = cur.fetchall()
-			post_type_info["name"] = res[0][0]
+			post_type_info["name"] = res[0]['display_name']
 			cur.execute("""SELECT A.uuid, A.title, A.publish_date, A.update_date, A.post_status, B.display_name 
                 FROM sloth_posts AS A INNER JOIN sloth_users AS B ON A.author = B.uuid 
                 WHERE A.post_type = %s AND A.lang = %s ORDER BY A.update_date DESC""",
 						(post_type, lang_id))
-			raw_items = cur.fetchall()
+			items = cur.fetchall()
 	except Exception:
 		print("db error Q")
 		connection.close()
@@ -171,16 +171,15 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 	default_lang = get_default_language(connection=connection)
 	connection.close()
 
-	items = []
-	for item in raw_items:
-		items.append(item.update({
-			"publish_date":
-				datetime.datetime.fromtimestamp(float(item['publish_date']) / 1000.0).
-				strftime("%Y-%m-%d") if item['publish_date'] is not None else "",
-			"update_date":
-				datetime.datetime.fromtimestamp(float(item['update_date']) / 1000.0).
-				strftime("%Y-%m-%d") if item['update_date'] is not None else "",
-		}))
+	for item in items:
+        item.update({
+            "publish_date":
+                datetime.datetime.fromtimestamp(float(item['publish_date']) / 1000.0).
+                    strftime("%Y-%m-%d") if item['publish_date'] is not None else "",
+            "update_date":
+                datetime.datetime.fromtimestamp(float(item['update_date']) / 1000.0).
+                    strftime("%Y-%m-%d") if item['update_date'] is not None else "",
+        })
 	# List of {{post_type["name"]}}
 	post_type_display_name = \
 		[post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0][

@@ -17,8 +17,8 @@ def get_languages(*args, connection: psycopg.Connection, lang_id: str = "", as_l
 		return ()
 
 	if len(lang_id) != 0:
-		languages = [lang for lang in temp_languages if lang[0] != lang_id]
-		current_lang = [lang for lang in temp_languages if lang[0] == lang_id][0]
+		languages = [lang for lang in temp_languages if lang['uuid'] != lang_id]
+		current_lang = [lang for lang in temp_languages if lang['uuid'] == lang_id][0]
 
 		return current_lang, languages
 	if as_list:

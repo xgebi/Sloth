@@ -39,9 +39,11 @@ def show_forms(*args, permission_level: int, connection: psycopg.Connection, **k
 			cur.execute(
 				"""SELECT uuid, name, lang as lang_id FROM sloth_forms;"""
 			)
-			forms_list = [form.update({
-				"lang_name": langs[form['lang_id']]["long_name"]
-			}) for form in cur.fetchall()]
+			forms_list = cur.fetchall()
+            for form in forms_list:
+                form.update({
+                    "lang_name": langs[form['lang_id']]["long_name"]
+                })
 
 	except psycopg.errors.DatabaseError as e:
 		print(traceback.format_exc())

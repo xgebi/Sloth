@@ -106,9 +106,9 @@
         </div>
         <div class="metadata second-column">
             <label for="publish_date">Publish date</label>
-            <input id="publish_date" type="date" toe:value="data['publish_date']"/>
+            <input id="publish_date" type="date" toe:value="data['publish_date_formatted']"/>
             <label for="publish_time">Publish time</label>
-            <input id="publish_time" type="time" toe:value="data['publish_time']"/>
+            <input id="publish_time" type="time" toe:value="data['publish_time_formatted']"/>
             <label for="post_status">Status</label>
             <select name="post_status" id="post_status">
                 <option toe:for="status in post_statuses" toe:value="status" toe:text="status"

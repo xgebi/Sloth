@@ -68,7 +68,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name 
+				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;""",
 				('published',)
@@ -76,7 +76,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 			recent_posts = cur.fetchall()
 
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name 
+				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.publish_date LIMIT 10;""",
 				('scheduled',)
@@ -84,7 +84,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 			upcoming_posts = cur.fetchall()
 
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.update_date as date, B.display_name 
+				"""SELECT A.uuid, A.title, A.update_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.update_date DESC LIMIT 10;""",
 				('draft',)
@@ -229,8 +229,8 @@ def format_post_data(post_arr: List) -> List:
 	posts = [{
 		"uuid": post['uuid'],
 		"title": post['title'],
-		"publish_date": post['publish_date'],
-		"formatted_publish_date": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
+		"publish_date": post['date'],
+		"formatted_publish_date": datetime.datetime.fromtimestamp(float(post['date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
 		"post_type": post['post_type']
 	} for post in post_arr]
 	return posts

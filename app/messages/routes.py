@@ -36,7 +36,7 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute("""SELECT uuid, sent_date, status 
                 FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
-			raw_messages = cur.fetchall()
+			message_list = cur.fetchall()
 	except psycopg.errors.DatabaseError as e:
 		print("db error d")
 		abort(500)
@@ -45,9 +45,11 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
 	languages = get_languages(connection=connection)
 	connection.close()
 
-	message_list = [message.update({
-		"sent_date": datetime.datetime.fromtimestamp(float(message['sent_date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
-	}) for message in raw_messages]
+	for message in message_list:
+        message.update({
+            "sent_date": datetime.datetime.fromtimestamp(float(message['sent_date']) / 1000.0).strftime(
+                "%Y-%m-%d %H:%M"),
+        })
 
 	return render_toe_from_path(
 		path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
