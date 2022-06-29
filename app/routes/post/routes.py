@@ -172,7 +172,7 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 	connection.close()
 
 	for item in items:
-        item.update({
+		item.update({
             "publish_date":
                 datetime.datetime.fromtimestamp(float(item['publish_date']) / 1000.0).
                     strftime("%Y-%m-%d") if item['publish_date'] is not None else "",

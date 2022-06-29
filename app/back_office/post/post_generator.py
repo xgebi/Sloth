@@ -284,7 +284,8 @@ class PostGenerator:
 	):
 		for post in items:
 			try:
-				thumbnail_path, thumbnail_alt = self.get_thumbnail_information(thumbnail_uuid=post["thumbnail"], language=post["lang"])
+				thumbnail_path, thumbnail_alt = self.get_thumbnail_information(thumbnail_uuid=post["thumbnail"],
+																			   language=post["lang"])
 				thumbnail_path = f"/{thumbnail_path}"
 				thumbnail_alt = html.escape(thumbnail_alt)
 
@@ -334,7 +335,8 @@ class PostGenerator:
 		return ''
 
 	def prepare_twitter_descriptions(self, sections: List, post: Dict) -> str:
-		if "twitter_description" in post and post["twitter_description"] is not None and len(post["twitter_description"]) > 0:
+		if "twitter_description" in post and post["twitter_description"] is not None and len(
+				post["twitter_description"]) > 0:
 			return post["twitter_description"]
 		if len(sections) > 0:
 			return sections[0]["content"][:161 if len(sections[0]) > 161 else len(sections[0]["content"])]
@@ -425,7 +427,7 @@ class PostGenerator:
 
 	def clean_taxonomy(self, *args, taxonomies_for_cleanup: List, **kwargs):
 		try:
-			with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur: # TODO debug this
+			with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:  # TODO debug this
 				for taxonomy in taxonomies_for_cleanup:
 					cur.execute(
 						"""SELECT st.slug, st.taxonomy_type, sls.uuid, sls.short_name, spt.uuid, spt.slug
@@ -654,7 +656,7 @@ class PostGenerator:
 		if thumbnail_uuid is None:
 			return "", ""
 		try:
-			with self.connection.cursor() as cur: # Here the empty arguments make sense
+			with self.connection.cursor() as cur:  # Here the empty arguments make sense
 				cur.execute("""SELECT sm.file_path, sma.alt FROM sloth_media as sm
                     INNER JOIN sloth_media_alts as sma on sm.uuid = sma.media
                     WHERE sm.uuid = %s AND sma.lang = %s;""",
@@ -671,7 +673,8 @@ class PostGenerator:
 			post_template_path = os.path.join(self.theme_path,
 											  f"post-{post_type['slug']}-{post['post_format_slug']}-{language['short_name']}.toe.html")
 		# post type, post format
-		elif os.path.isfile(os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['post_format_slug']}.toe.html")):
+		elif os.path.isfile(
+				os.path.join(self.theme_path, f"post-{post_type['slug']}-{post['post_format_slug']}.toe.html")):
 			post_template_path = os.path.join(self.theme_path,
 											  f"post-{post_type['slug']}-{post['post_format_slug']}.toe.html")
 		# post format, language
@@ -805,7 +808,8 @@ class PostGenerator:
 		try:
 			with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 				cur.execute("""SELECT name, uuid FROM sloth_menus;""")
-				menus = {menu['uuid']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in cur.fetchall()}
+				menus = {menu['uuid']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in
+						 cur.fetchall()}
 				for menu in menus.keys():
 					cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",
 								(menus[menu]["uuid"],)
@@ -1091,29 +1095,29 @@ class PostGenerator:
 						categories, tags = get_taxonomy_for_post_prepped_for_listing(
 							connection=self.connection,
 							uuid=item['uuid'],
-                            main_language=self.settings['main_language'],
-                            language=language,
-                            post_type_slug=post_type['slug']
-                        )
-                        classes = " ".join(
-                            [f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
-                                                                                           in tags])
-                        if item['pinned']:
-                            classes += " pinned"
-                            classes = classes.strip()
-                        item.update({
-                            "excerpt": excerpt,
-                            "publish_timedate_formatted": datetime.fromtimestamp(
-                                float(item['publish_date']) / 1000).strftime(
-                                "%Y-%m-%d %H:%M"),
-                            "post_type_slug": post_type['slug'],
-                            "thumbnail_path": thumbnail_path,
-                            "thumbnail_alt": thumbnail_alt,
-                            "classes": classes,
-                            "categories": categories,
-                            "tags": tags
-                        })
-                        posts[post_type['slug']].append(item)
+							main_language=self.settings['main_language'],
+							language=language,
+							post_type_slug=post_type['slug']
+						)
+						classes = " ".join(
+							[f"category-{category['slug']}" for category in categories] + [f"tag-{tag['slug']}" for tag
+																						   in tags])
+						if item['pinned']:
+							classes += " pinned"
+							classes = classes.strip()
+						item.update({
+							"excerpt": excerpt,
+							"publish_timedate_formatted": datetime.fromtimestamp(
+								float(item['publish_date']) / 1000).strftime(
+								"%Y-%m-%d %H:%M"),
+							"post_type_slug": post_type['slug'],
+							"thumbnail_path": thumbnail_path,
+							"thumbnail_alt": thumbnail_alt,
+							"classes": classes,
+							"categories": categories,
+							"tags": tags
+						})
+						posts[post_type['slug']].append(item)
 		except Exception as e:
 			print(390)
 			print(e)
@@ -1159,15 +1163,16 @@ class PostGenerator:
                                     INNER JOIN sloth_post_types AS C ON A.post_type = C.uuid
                                     WHERE C.archive_enabled = %s AND A.post_status = 'published' AND A.lang = %s
                                     ORDER BY A.publish_date DESC LIMIT %s""",
-                            (True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
-                posts = cur.fetchall()
-				for post in posts:
-                    post.update({
-                        "publish_timedate_formatted": datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
-                        "update_date_formatted": datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
-                    })
+							(True, language['uuid'], int(self.settings['number_rss_posts']['settings_value'])))
+				posts = cur.fetchall()
 
 				for post in posts:
+					post.update({
+						"publish_timedate_formatted": datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime(
+							"%Y-%m-%d %H:%M"),
+						"update_date_formatted": datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d %H:%M"),
+					})
+
 					cur.execute(
 						"""SELECT content, section_type, position
 							FROM sloth_post_sections

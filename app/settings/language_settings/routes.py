@@ -129,8 +129,8 @@ def get_language_list(*args, connection: psycopg.Connection, **kwargs):
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute("""SELECT uuid, long_name as longName, short_name as shortName FROM sloth_language_settings;""")
 			res = cur.fetchall()
-            for lang in res:
-                lang.update({'default': False})
+			for lang in res:
+				lang.update({'default': False})
 			default_lang = get_default_language(connection=connection)
 			for lang in res:
 				if lang["uuid"] == default_lang["uuid"]:

@@ -46,7 +46,7 @@ def show_message_list(*args, permission_level: int, connection: psycopg.Connecti
 	connection.close()
 
 	for message in message_list:
-        message.update({
+		message.update({
             "sent_date": datetime.datetime.fromtimestamp(float(message['sent_date']) / 1000.0).strftime(
                 "%Y-%m-%d %H:%M"),
         })
