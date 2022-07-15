@@ -7,6 +7,7 @@ import scala.collection.mutable
 
 object TemplateEngine {
   def render_toe(template: String, data: mutable.HashMap[String, String], hooks: List[Hooks]): String = {
+
     ""
   }
 
