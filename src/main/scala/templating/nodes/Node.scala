@@ -31,7 +31,10 @@ class Node(
 		} else {
 			argPairedTag
 		}
+	}
 
+	def setName(name: String): Node = {
+		new Node(name = name, children = this.children, argPairedTag = this.pairedTag, nodeType = this.nodeType, parent = this.parent, attributes = this.attributes)
 	}
 
 	def addChild(child: Node): Node = {
