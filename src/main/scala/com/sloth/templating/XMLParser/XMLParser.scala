@@ -37,6 +37,9 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     new Node(name = "abc", children = ListBuffer(), argPairedTag = true)
   }
 
+  /**
+   * This function is called when "<" is encountered
+   */
   def parseStartingTagCharacter(): Unit = {
     if (this.template(this.parsingInfo.idx + 1) == ' ') {
       // TODO test this, just in case
@@ -50,6 +53,11 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     }
   }
 
+  /**
+   * Creates a new node
+   *
+   * @return newly created Node
+   */
   def createNewNode(): Node = {
     if (this.template(this.parsingInfo.idx + 1) == '?') {
       val n = new ProcessingNode(parent = this.parsingInfo.currentNode)
@@ -83,6 +91,9 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     }
   }
 
+  /**
+   * This function is called when state is ParsingStates.NEW_PAGE and "<" was encountered.
+   */
   def startingCharOnNewPage(): Unit = {
     if (this.template.substring(this.parsingInfo.idx).indexOf("<?xml") == 0) {
       parsingInfo.moveIndex("<?xml".length)
@@ -107,6 +118,9 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     }
   }
 
+  /**
+   * This function is called when state is ParsingStates.LOOKING_FOR_CHILD_NODES and "<" was encountered.
+   */
   def startingCharLookingForChildNodes(): Unit = {
     if (this.template.substring(this.parsingInfo.idx).indexOf("<![CDATA[") == 0) {
       this.parsingInfo.moveIndex("<![CDATA[".length)
@@ -227,6 +241,9 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     }
   }
 
+  /**
+   * Function processes adding child text node
+   */
   def lookingForChildTextNodes(): Unit = {
     val textEndRaw = this.template.substring(parsingInfo.idx).indexOf("<")
     if (textEndRaw == -1) {
