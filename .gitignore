@@ -15,6 +15,7 @@ tmp/*
 *.class
 
 # python specific
+__pycache__
 *.pyc
 
 # xcode/iphone specific
@@ -93,16 +94,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # Editor directories and files
-.idea
 .vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-__pycache__
-*.pyc
 
 registration.lock
 /site/*
@@ -130,3 +127,5 @@ toes.pyd
 
 /cypress/videos
 /cypress/screenshots
+
+.bsp
