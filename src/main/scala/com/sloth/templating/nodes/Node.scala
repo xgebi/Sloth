@@ -18,7 +18,7 @@ object Node {
 
 class Node(
 						val name: String,
-						val children: ListBuffer[Node],
+						val children: ListBuffer[Node] = ListBuffer(),
 						argPairedTag: Boolean = true,
 						nodeType: String = Node.NODE,
 						val parent: Node = null,
@@ -86,14 +86,21 @@ class Node(
 	}
 
 	def toHTMLString: String = {
-		val formattedAttributes = this.attributesAsString
+		val formattedAttributes = {
+			val as = this.attributesAsString
+			if (as.isBlank) {
+				""
+			} else {
+				s" ${as}"
+			}
+		}
 
 		if (this.isPairedTag) {
 			val childrenAsList: ListBuffer[String] = new ListBuffer()
 			this.children foreach {case (child: Node) => childrenAsList.addOne(child.toHTMLString) }
-			s"<${this.name} $formattedAttributes>${childrenAsList.mkString("\n")}</${this.name}>"
+			s"<${this.name}$formattedAttributes>${childrenAsList.mkString("\n")}</${this.name}>"
 		} else {
-			s"<${this.name} $formattedAttributes />"
+			s"<${this.name}$formattedAttributes />"
 		}
 	}
 }
