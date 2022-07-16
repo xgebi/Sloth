@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+
+{% block title %}List of post types{% endblock %}
+
+{% block body %}
+<h1>List of post types</h1>
+<a href="/post-type/new">Create new post type</a>
+
+<table>
+	<thead>
+        <tr>
+            <th>Post type</th>
+            <th>Actions</th>
+        </tr>
+	</thead>
+	<tbody>
+		{% for post_type in post_types %}
+		<tr>
+            <td>{{ post_type["display_name"] }}</td>
+            <td><a href="/post-type/{{ post_type["uuid"] }}">Edit</a></td>
+        </tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{% endblock %}

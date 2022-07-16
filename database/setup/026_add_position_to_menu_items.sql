@@ -1,0 +1,1 @@
+ALTER TABLE sloth_menu_items ADD COLUMN IF NOT EXISTS position smallint;

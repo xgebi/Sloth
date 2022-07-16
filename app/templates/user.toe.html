@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html toe:lang="current_lang['short_name']" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+  <h1>My account</h1>
+
+  <form class="sloth-form" toe:action="'/settings/users/' + user['uuid'] '/save'" method="POST">
+    <section>
+      <label for="username">Username:</label>
+      <input type="text" name="username" id="username" toe:value="user['username']" disabled/>
+    </section>
+    <section>
+      <label for="display_name">Display name:</label>
+      <input type="text" name="display_name" id="display_name" toe:value="user['display_name']"/>
+    </section>
+    <section>
+      <label for="email">E-mail:</label>
+      <input type="email" name="email" id="email"
+             toe:value="user['email']"/>
+    </section>
+    <section toe:if="permission_level gt 0">
+      <label for="permissions">Permissions level:</label>
+      <input type="number" min="0" step="1" name="permissions" id="permissions"
+             toe:value="user['permissions_level']"/>
+    </section>
+
+    <input type="submit" value="save"/>
+  </form>
+
+  <h2>Change password</h2>
+  <p>Please, use password managers and let them generate your password.</p>
+  <form class="sloth-form" action="/settings/password-change/" method="POST">
+    <section>
+      <input class="hidden" type="text" name="username" id="username" toe:value="user['username']"/>
+    </section>
+   <section>
+      <label for="old-password">Old password:</label>
+      <input type="password" name="old-password" id="old-password" />
+    </section>
+   <section>
+      <label for="new-password">New password:</label>
+      <input type="password" name="new-password" id="new-password" />
+    </section>
+    <input type="submit" value="Change password"/>
+  </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends 'layout.html' %}
+
+{% block title %}Post type: {{ pt["display_name"] }}{% endblock %}
+
+{% block body %}
+    <h1>Post type: {{ pt["display_name"] }}</h1>
+
+    {% if new %}
+        <form class="settings-table" action="/post-type/{{ pt["uuid"] }}/create" method="POST">
+    {% else %}
+        <form class="settings-table" action="/post-type/{{ pt["uuid"] }}" method="POST">
+    {% endif %}
+<label for="display_name">Display name:</label>
+<input type="text" id="display_name" name="display_name" value="{{ pt["display_name"] }}"/>
+<label for="slug">Slug:</label>
+<input type="text" id="slug" name="slug" value="{{ pt["slug"] }}"/>
+{% if pt["categories_enabled"] %}
+    <input type="checkbox" id="categories_enabled" name="categories_enabled" checked/>
+{% else %}
+    <input type="checkbox" id="categories_enabled" name="categories_enabled"/>
+{% endif %}
+<label for="categories_enabled">Categories enabled</label>
+{% if pt["tags_enabled"] %}
+    <input type="checkbox" id="tags_enabled" name="tags_enabled" checked/>
+{% else %}
+    <input type="checkbox" id="tags_enabled" name="tags_enabled"/>
+{% endif %}
+<label for="tags_enabled">Tags enabled</label>
+{% if pt["archive_enabled"] %}
+    <input type="checkbox" id="archive_enabled" name="archive_enabled" checked/>
+{% else %}
+    <input type="checkbox" id="archive_enabled" name="archive_enabled"/>
+{% endif %}
+<label for="archive_enabled">Archive enabled</label>
+<input type="submit" value="Save">
+</form>
+
+    <div class="dangerzone">
+        <h2>Dangerzone</h2>
+        <button class="delete">Delete</button>
+        <div class="confirm-deletion hidden">
+            <label for="post-type-alt">Reassign posts to post type or delete them</label>
+            <select id="post-type-alt">
+                <option value="delete">Delete all posts for post type</option>
+                {% for post_type in post_types %}
+                    <option value="{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</option>
+                {% endfor %}
+            </select>
+            <button class="confirm-delete" data-uuid="{{ pt["uuid"] }}">Confirm deletion</button>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/js/post-type.js"></script>
+{% endblock %}

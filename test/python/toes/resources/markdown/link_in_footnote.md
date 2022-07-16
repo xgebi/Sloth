@@ -1,0 +1,1 @@
+Give a flying flamingo[3. Thanks to [John Bercow](https://en.wikipedia.org/wiki/John_Bercow) for giving us PG alternatives to swear words] is the third resource.

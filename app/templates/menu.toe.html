@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Message</h1>
+    <section>
+        <h2 toe:data-language="current_lang['uuid']" toe:text="current_lang['long_name'] + ' menus'"></h2>
+        <p>
+            Other languages:
+            <a toe:for="lang in languages" toe:href="'/settings/themes/menu/' + lang['uuid']" toe:text="lang['long_name']"></a>
+        </p>
+        <button id="create-new-menu">Create new menu</button>
+        <table id="menu-table">
+            <thead>
+            <tr>
+                <th>Menu</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr toe:for="menu in menus" toe:id="'menu-' + menu['uuid']">
+                <td class="menu-name" toe:text="menu['name']"></td>
+                <td>
+                    <button
+                            class="edit-button"
+                            toe:data-uuid="menu['uuid']"
+                            toe:data-name="menu['name']"
+                    >Edit
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <article id="menu-wrapper">
+
+        </article>
+
+        <template id="menu-form">
+            <div id="name-wrapper">
+                <label for="name">Name:</label>
+                <input type="text" id="name"/>
+            </div>
+            <table id="menu-items">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>URI</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+            <button id="add-item">Add new item</button>
+            <br/>
+            <button id="save-menu">Save menu</button>
+            <br/>
+            <button id="delete-menu">Delete menu</button>
+        </template>
+
+        <template id="item-row">
+            <tr class="row">
+                <td class="item-name">
+                    <input type="text"/>
+                </td>
+                <td class="item-type">
+                    <select>
+                        <option toe:for="type in item_types" toe:value="type" toe:text="type"></option>
+                    </select>
+                </td>
+                <td class="item-uri">
+                    <input type="text"/>
+                </td>
+                <td class="item-actions">
+                    <button class="up">⬆</button>
+                    <button class="down">⬇</button>
+                </td>
+            </tr>
+        </template>
+    </section>
+</main>
+<script src="/static/js/menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block title %}List of users{% endblock %}
+
+{% block body %}
+<h1>List of users</h1>
+
+<table>
+	<thead>
+		<tr>
+			<th>Username</th>
+			<th>Display name</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for user in user_list %}
+		<tr>
+			<td><a href="/settings/users/{{user['uuid']}}">{{user['username']}}</a></td>
+			<td>{{user['display_name']}}</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{% endblock %}

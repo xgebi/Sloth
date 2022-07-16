@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>List of forms</h1>
+    <div>
+        <a toe:href="'/forms/' + new">Create new form</a>
+    </div>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Language</th>
+        </tr>
+        </thead>
+        <tbody>
+        <toe:fragment toe:if="forms | length gt 0">
+            <tr toe:for="form in forms">
+                <td class="display-name" toe:text="form['name']"></td>
+                <td class="slug" toe:text="form['lang_name']"></td>
+                <td class="action">
+                    <a toe:href="'/forms/' + form['uuid']">Edit</a>
+                </td>
+            </tr>
+        </toe:fragment>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

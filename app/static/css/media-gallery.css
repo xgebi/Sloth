@@ -1,0 +1,60 @@
+dialog {
+    height: 75vh;
+    width: 75vw;
+    border: .125rem solid #75D5FF;
+    gap: 1rem;
+}
+
+.images {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(10rem, 1fr));
+    gap: 1rem;
+    grid-template-rows: repeat(3, 1fr);
+}
+
+img {
+    aspect-ratio: 1;
+    flex: 0 0 10rem;
+    height: 80%;
+    max-width: 100%;
+}
+
+.images figure {
+    margin: 0;
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
+    width: 100%;
+    aspect-ratio: 1;
+}
+
+.images button {
+    background: #75D5FF;
+    border: 0;
+    padding: .25rem .75rem;
+}
+
+.pagination {
+    text-align: center;
+}
+
+.pagination button {
+    margin: .25rem;
+    border: 0;
+    background: #75D5FF;
+    padding: .25rem .5rem;
+}
+
+.image-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.image-detail img {
+    height: auto;
+}
+
+.image-detail section {
+    display: flex;
+    flex-flow: column;
+}

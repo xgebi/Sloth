@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% if new %}
+New {{ taxonomy_type }}
+{% else %}
+Change {{ taxonomy_type }}
+{% endif %}{% endblock %}
+
+{% block body %}
+{% if new %}
+<h1>New {{ taxonomy_type }}</h1>
+{% else %}
+<h1>Change {{ taxonomy_type }}</h1>
+{% endif %}
+{% if not new %}
+<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy_type }}/{{ taxonomy['uuid'] }}" method="POST">
+{% else %}
+<form action="/post/{{ taxonomy['post_uuid'] }}/taxonomy/{{ taxonomy_type }}/{{ taxonomy['uuid'] }}?new" method="POST">
+{% endif %}
+    <label for="slug">Slug:</label>
+	<input type="text" name="slug" id="slug" value="{{ taxonomy["slug"] }}" />
+
+    <label for="display-name">Display name:</label>
+	<input type="text" name="display_name" id="display-name" value="{{ taxonomy["display_name"] }}" />
+    <input type="text" name="language" class="hidden" value="{{ current_lang_uuid }}" />
+
+	<input type="submit" value="save" />
+</form>
+    {% if not new %}
+    <button id="delete-taxonomy" data-uuid="{{ taxonomy["uuid"] }}">Delete {{ taxonomy["display_name"] }}</button>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/taxonomy.js"></script>
+{% endblock %}

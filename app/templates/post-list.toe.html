@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html toe:lang="current_lang['short_name']" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1 toe:text="'List of ' + post_type['name']"></h1>
+    <p class="other-languages-list">
+        Other languages:
+        <a toe:for="lang in languages" toe:href="'/post/' + post_type['uuid'] + '/' + lang['uuid']" toe:text="lang['long_name']" ></a>
+    </p>
+
+<p><a toe:href="'/post/' + post_type['uuid'] + '/new/' + current_lang['uuid']" toe:text="'Add new ' + post_type['name']"></a></p>
+
+<table class="post-list">
+	<thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Update date</th>
+            <th>Published date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr toe:for="post in post_list">
+            <td toe:text="post['title']"></td>
+            <td toe:text="post['status']"></td>
+            <td toe:text="post['update_date']"></td>
+            <td toe:text="post['publish_date']"></td>
+            <td><a toe:href="'/post/' + post['uuid'] + '/edit'">Edit</a></td>
+        </tr>
+    </tbody>
+</table>
+</main>
+</body>
+</html>

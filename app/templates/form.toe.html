@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Form</h1>
+    <div>
+        <label for="form-name">Name:</label>
+        <input id="form-name" name="form-name" toe:value="form_name">
+    </div>
+    <div>
+        <label for="form-language">Language:</label>
+        <select id="form-language">
+            <option value="" selected>---</option>
+            <option toe:for="language in languages"
+                    toe:value="language['uuid']"
+                    toe:text="language['long_name']"
+                    toe:selected="form_language eq language['uuid']"></option>
+        </select>
+    </div>
+    <div>
+        <button id="add-field">Add field</button>
+    </div>
+    <section id="form-fields"></section>
+    <div>
+        <button id="save-form">Save form</button>
+    </div>
+
+    <template id="form-item">
+        <div class="form-field">
+            <div>
+                <label id="item-type-label">Type:</label>
+                <select class="item-type">
+                    <option value="">---</option>
+                    <option value="text">One line text</option>
+                    <option value="textarea">Text</option>
+                    <option value="tel">Phone</option>
+                    <option value="time">Time</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="date">Date</option>
+                    <option value="email">Email</option>
+                    <option value="select" disabled>Select</option>
+                    <option value="note">Note</option>
+                    <option value="submit">Submit</option>
+                </select>
+            </div>
+            <div>
+                <label id="is-required-label">Is required <input type="checkbox" name="is-required" id="is-required" class="is-required" /></label>
+            </div>
+            <div class="form-item-settings"></div>
+            <button class="delete">Delete</button>
+        </div>
+    </template>
+
+    <template id="general-setting">
+        <div>
+            <div class="label">
+                <label for="label">Label:</label>
+                <input type="text" id="label" class="label-input"/>
+            </div>
+            <div class="input">
+                <label for="name">Name:</label>
+                <input type="text" id="name" class="name-input" />
+            </div>
+            <button class="add-option hidden">Add option</button>
+            <div class="options-wrapper hidden"></div>
+        </div>
+    </template>
+
+    <template id="option-item">
+        <div>
+            <div class="option-text">
+                <label>Option text</label>
+                <input type="text">
+            </div>
+            <div class="option-value">
+                <label>Option value</label>
+                <input type="text">
+            </div>
+        </div>
+    </template>
+</main>
+<script toe:inline-js>
+    const formFields = JSON.parse(`<( fields | json )>`);
+</script>
+<script src="/static/js/form.js"></script>
+</body>
+</html>

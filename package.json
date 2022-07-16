@@ -1,0 +1,39 @@
+{
+  "name": "sloth",
+  "version": "0.11.0",
+  "description": "SlothCMS is an experimental project during which I'd like to learn Python, Rust and VanillaJS and try to design a bigger app all on my own.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "dc:tests:build": "docker-compose -f docker-compose.tests.yml build",
+    "dc:tests:up": "docker-compose -f docker-compose.tests.yml up",
+    "dc:tests:down": "docker-compose -f docker-compose.tests.yml down",
+    "dc:tests:with:setup": "docker-compose -f docker-compose.tests.yml exec web ./tests.sh",
+    "dc:tests:run": "docker-compose -f docker-compose.tests.yml exec web ./run-tests.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xgebi/Sloth.git"
+  },
+  "author": "",
+  "license": "Hippocratic license",
+  "bugs": {
+    "url": "https://github.com/xgebi/Sloth/issues"
+  },
+  "homepage": "https://github.com/xgebi/Sloth#readme",
+  "dependencies": {
+    "d3": "^7.0.0",
+    "prettier": "^2.4.1"
+  },
+  "devDependencies": {
+    "cypress": "^8.6.0",
+    "cypress-file-upload": "^5.0.8",
+    "glob-parent": ">=5.1.2",
+    "gulp": "^4.0.2",
+    "gulp-shell": "^0.8.0"
+  }
+}

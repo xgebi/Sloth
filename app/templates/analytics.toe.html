@@ -1,0 +1,18 @@
+<toe:fragment xmlns:toe="https://xgebi.github.io/Sloth/">
+    <script toe:inline-js>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            fetch('<(sloth_api_url)>/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    page: window.location.pathname,
+                    referrer: document.referrer
+                })
+            }).then(response => {
+                return response.json()
+            });
+        });
+    </script>
+</toe:fragment>

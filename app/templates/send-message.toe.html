@@ -1,0 +1,57 @@
+<toe:fragment xmlns:toe="https://xgebi.github.io/Sloth/">
+    <script toe:inline-js>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const forms = document.querySelectorAll("form.sloth-form");
+            for (const form of forms) {
+                form.addEventListener('submit', submitForm);
+            }
+        });
+
+        function submitForm(event) {
+            event.preventDefault();
+            const message = {}
+            message["formName"] = event.target.dataset["form"];
+            if (event.target.querySelector(".spam-catcher").value.length !== 0) {
+                return;
+            }
+            for (const item of event.target.querySelectorAll("input")) {
+                const itemType = item.getAttribute("type")?.toLowerCase()
+                if (itemType === "checkbox" || itemType === "radio") {
+                    message[item.getAttribute("name")] = formChild.checked;
+                } else if (itemType !== "submit") {
+                    message[item.getAttribute("name")] = item.value;
+                }
+            }
+            for (const item of event.target.querySelectorAll("textarea")) {
+                message[item.getAttribute("name")] = item.value;
+            }
+
+            if (message["spam-catcher"].length > 0) {
+                return;
+            }
+            delete message["spam-catcher"];
+
+            fetch('<(sloth_api_url)>/api/messages/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            }).then(response => {
+                return response.json()
+            }).then(data => {
+                const parent = event.target.parentNode;
+                if (data.messageSaved) {
+                    parent.removeChild(event.target)
+                    const p = document.createElement('p');
+                    p.textContent = "Yaay!";
+                    parent.append(p);
+                } else {
+                    const p = document.createElement('p');
+                    p.textContent = "Nooooo!";
+                    parent.append(p);
+                }
+            })
+        }
+    </script>
+</toe:fragment>

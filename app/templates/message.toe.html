@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Message</h1>
+    <section>
+        <article>
+            <div toe:for="item in message['items']">
+                <strong toe:text="item['name']"></strong>
+                <p toe:text="item['value']"></p>
+            </div>
+        </article>
+        <a href="/messages">Go back to list</a>
+        <button id="delete-message">Delete message</button>
+    </section>
+</main>
+<script src="/static/js/messages.js"></script>
+</body>
+</html>

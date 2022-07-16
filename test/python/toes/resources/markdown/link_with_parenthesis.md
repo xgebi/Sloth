@@ -1,0 +1,1 @@
+A significant number of sports competitions have rules about foreigners. In Japan every sumo [stable](https://en.wikipedia.org/wiki/Heya_(sumo)) (部屋, heya) has a limit of one foreigner, so at any time there are about 43. In this post I'll look into webscraping, filling missing data and analyzing how good they are (hint: last to top ranked wrestlers are from Mongolia).

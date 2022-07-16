@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Languages</h1>
+    <button id="create-new-language">Create new language</button>
+    <table id="language-table">
+        <thead>
+        <tr>
+            <th>Long name</th>
+            <th>Short name</th>
+            <th>Default</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr toe:for="language in languages" toe:id="'language-' + language['uuid']"
+            toe:class="{ 'bold' : language['default'] }">
+            <td class="language-long-name" toe:text="language['long_name']"></td>
+            <td class="language-short-name" toe:text="language['short_name']"></td>
+            <td>
+                <toe:fragment toe:if="language['default']">
+                    yes
+                </toe:fragment>
+            </td>
+            <td>
+                <button
+                        class="action-button"
+                        data-action="edit"
+                        toe:data-uuid="language['uuid']"
+                >Edit
+                </button>
+            </td>
+            <td>
+                <button toe:if="not language['default']"
+                        toe:data-uuid="language['uuid']"
+                        class="delete-button"
+                >Delete
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <article id="language-wrapper">
+
+    </article>
+</main>
+<script src="/static/js/language.js"></script>
+</body>
+</html>

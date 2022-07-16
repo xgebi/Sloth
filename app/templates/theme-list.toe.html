@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>List of themes</h1>
+    <button toe:if="regenerating" id="regenerate-all-button" disabled>Regenerate all content</button>
+    <button toe:if="not regenerating" id="regenerate-all-button">Regenerate all content</button>
+    <button toe:if="regenerating" id="refresh-assets-button" disabled>Refresh assets</button>
+    <button toe:if="not regenerating" id="refresh-assets-button">Refresh assets</button>
+
+    <section>
+        <h2>Upload theme</h2>
+        <input type="file" id="file-upload" />
+        <button id="theme-upload-button">Upload theme</button>
+    </section>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Theme name</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr toe:for="theme in themes">
+                <td toe:text="theme['displayName']"></td>
+                <toe:fragment toe:if="theme['choosable']">
+                    <toe:fragment toe:if="theme['name'] neq active_theme">
+                        <td><a toe:href="'/settings/themes/activate/' + theme['name']">Choose theme</a></td>
+                    </toe:fragment>
+                </toe:fragment>
+                <td toe:if="theme['name'] neq active_theme"></td>
+            </tr>
+        </tbody>
+    </table>
+
+</main>
+<script src="/static/js/utilities.js"></script>
+    <script src="/static/js/themes.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="inner-city">
+<toe:import file="nav.toe.html"/>
+<main>
+    <h1>Libraries</h1>
+    <section>
+        <h2>Upload library</h2>
+        <form method="post" action="/libraries/new" enctype="multipart/form-data">
+            <div>
+                <label for="lib-name">Library name</label>
+                <input type="text" id="lib-name" name="lib-name" />
+            </div>
+            <div>
+                <label for="lib-version">Library version</label>
+                <input type="text" id="lib-version" name="lib-version" />
+            </div>
+            <div>
+                <label for="lib-file">Library name</label>
+                <input type="file" id="lib-file" name="lib-file" />
+            </div>
+            <input type="submit" value="Upload library" />
+        </form>
+    </section>
+    <section>
+        <div toe:for="lib in libraries">
+            <span toe:text="lib['name']"></span> Version: <span toe:text="lib['version']"></span> <button toe:data-uuid="lib['name']">Delete</button>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title toe:text="page_name">Sarah Gebauer</title>
+    <link href="/assets/styles.css" rel="stylesheet"/>
+    <meta name="description" toe:attr-content="meta_description"/>
+</head>
+
+<body>
+	<main id="content">
+    <h1 toe:text="page_name"></h1>
+    <section toe:if="posts | length eq 0">
+        No posts here yet
+    </section>
+    <article toe:for="post in posts" class="archive">
+        <h2>
+            <a toe:if="current_page_number gt 0" toe:href="'../' + post['slug']" toe:text="post['title']"></a>
+            <a toe:if="current_page_number eq 0" toe:href="post['slug']" toe:text="post['title']"></a>
+        </h2>
+        <p toe:text="'Published on ' + post['publish_timedate_formatted']"></p>
+    </article>
+
+    <toe:create var="previous" value="current_page_number"/>
+    <toe:create var="next" value="current_page_number"/>
+    <toe:modify var="next" toe:inc/>
+    <toe:modify var="previous" toe:dec/>
+    <nav class="pagination">
+        <toe:fragment toe:if="number_of_pages gt next">
+            <a toe:if="current_page_number gt 0" toe:href="'../' + next">Older</a>
+            <a toe:if="current_page_number eq 0" toe:href="next">Older</a>
+        </toe:fragment>
+
+        <a toe:if="current_page_number gt 1" toe:href="'../' + previous">Newer</a>
+        <a toe:if="current_page_number eq 1" href="../">Newer</a>
+    </nav>
+</main>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+[
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "039_alter_analytics_browser_data.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "040_forms.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "041_additional_form_settings.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "042_more_sloth_forms_settings.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "043_sloth_messages_upgrade.sql"
+  },
+  {
+    "type": "py",
+    "file": "improve_migrated_file"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "044_post_content_to_sections.sql"
+  },
+  {
+    "type": "py",
+    "file": "migrate_excerpt_post_to_section"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "045_add_referrer_column.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "046_create_ban_list.sql"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "047_add_form_to_sloth_post_section_type.sql"
+  },
+  {
+    "type": "py",
+    "file": "localized_strings_cleanup"
+  },
+  {
+    "type": "sql",
+    "folder": "setup",
+    "file": "048_add_pinned_column_to_sloth_posts.sql"
+  }
+]

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:toe="https://xgebi.github.io/Sloth/">
+<toe:import file="head.toe.html"/>
+<body class="gatekeeper">
+<main>
+    <h1>Log in to Sloth CMS</h1>
+    <section toe:if="status['error']" class="error">
+        Username or password are incorrect.
+    </section>
+    <section class="registration-items">
+        <form toe:if="redirect" toe:action="'/login/process?redirect=' + redirect" method="POST">
+            <label for="name">Username:</label> <input type="text" name="username" id="name"/>
+            <label for="password">Password:</label> <input type="password" name="password" id="password"/>
+            <span class="button success">
+					<input type="submit" value="Log in"/>
+				</span>
+        </form>
+        <form toe:if="not redirect" action="/login/process" method="POST">
+            <label for="name">Username:</label> <input type="text" name="username" id="name"/>
+            <label for="password">Password:</label> <input type="password" name="password" id="password"/>
+            <span class="button success">
+					<input id="login-btn" type="submit" value="Log in"/>
+				</span>
+        </form>
+    </section>
+</main>
+
+</body>
+</html>

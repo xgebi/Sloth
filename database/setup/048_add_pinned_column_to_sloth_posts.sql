@@ -1,0 +1,1 @@
+ALTER TABLE sloth_posts ADD COLUMN pinned boolean DEFAULT FALSE;

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+
+<body class="inner-city">
+<nav>
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <!--li>Content
+            <ul>
+                <li><a href="/messages">Messages</a></li>
+                <li><a href="/rss">RSS reader</a></li>
+                <li><a href="/analytics">Analytics</a></li>
+            </ul>
+        </li-->
+        {% for post_type in post_types %}
+            <li><a href="/post/{{ post_type['uuid'] }}">{{ post_type['display_name'] }}</a>
+                <ul>
+                    <li><a href="/post/{{ post_type['uuid'] }}/new/{{ default_lang['uuid'] }}">Add
+                        New {{ post_type['display_name'] }}</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/taxonomy">Taxonomy</a></li>
+                    <li><a href="/post/{{ post_type['uuid'] }}/formats">Post Formats</a></li>
+                </ul>
+            </li>
+        {% endfor %}
+        <li><a href="/media">Media</a></li>
+        <li><a href="/mock-endpoints">Mock Endpoints</a></li>
+        <li><a href="/post-types">Post Types</a></li>
+        <li><a href="/lists">Lists</a></li>
+        <li><a href="/settings/my-account">My account</a></li>
+        {% if  permission_level >= 1 %}
+            <li><a href="/settings">Settings</a>
+                <ul>
+                    <li><a href="/settings/users">Users</a></li>
+                    <li><a href="/settings/themes">Themes</a>
+                        <ul>
+                            <li><a href="/settings/themes/menu">Menu</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/settings/import">Import data</a></li>
+                    <li><a href="/settings/language">Language settings</a></li>
+                    <li><a href="/settings/integrations">Integrations</a></li>
+                    <li><a href="/settings/dev">Dev Settings</a></li>
+                </ul>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+<main>
+    {% if regenerating %}
+        Generating posts, some functionality may be limited
+    {% endif %}
+    {% block body %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        setInterval(keepLoggedIn, 10 * 60 * 1000);
+    });
+
+    function keepLoggedIn() {
+        fetch('/api/user/keep-logged-in', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'authorization': document.cookie
+                    .split(';')
+                    .find(row => row.trim().startsWith('sloth_session'))
+                    .split('=')[1]
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    window.location.replace(`${window.location.origin}/login?redirect=${window.location.pathname}`);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+</body>
+
+</html>
