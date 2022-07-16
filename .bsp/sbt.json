@@ -1,1 +1,1 @@
-{"name":"sbt","version":"1.4.5","bspVersion":"2.0.0-M5","languages":["scala"],"argv":["D:\\Program Files\\Java\\jdk-17.0.3.1/bin/java","-Xms100m","-Xmx100m","-classpath","D:\\sarah appdata\\JetBrains\\IntelliJIdea2022.1\\plugins\\Scala\\launcher\\sbt-launch.jar","xsbt.boot.Boot","-bsp"]}
+{"name":"sbt","version":"1.4.5","bspVersion":"2.0.0-M5","languages":["scala"],"argv":["D:\\Program Files\\Java\\jdk-17.0.3.1/bin/java","-Xms100m","-Xmx100m","-classpath","D:/sarah appdata/JetBrains/IntelliJIdea2022.1/plugins/Scala/launcher/sbt-launch.jar","xsbt.boot.Boot","-bsp"]}
