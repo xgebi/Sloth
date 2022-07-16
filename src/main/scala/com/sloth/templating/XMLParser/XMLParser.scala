@@ -27,8 +27,8 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
 
     while (parsingInfo.idx < this.template.length) {
       this.template.charAt(parsingInfo.idx).toString match {
-        case "<" => this.parseStartingTagCharacter() // result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
-        case ">" => this.parseEndingTagCharacter() // result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
+        case "<" => this.parseStartingTagCharacter()
+        case ">" => this.parseEndingTagCharacter()
         case " " | "\n" | "\t" => parsingInfo.moveIndex()
         case _ => this.parseCharacter()
       }
@@ -39,7 +39,7 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
 
   def parseStartingTagCharacter(): Unit = {
     if (this.template(this.parsingInfo.idx + 1) == ' ') {
-      // TODO this this, just in case
+      // TODO test this, just in case
       this.parsingInfo.moveIndex()
     } else if (this.parsingInfo.state == ParsingStates.NEW_PAGE) {
       this.startingCharOnNewPage()
@@ -51,7 +51,36 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
   }
 
   def createNewNode(): Node = {
-
+    if (this.template(this.parsingInfo.idx + 1) == '?') {
+      val n = new ProcessingNode(parent = this.parsingInfo.currentNode)
+      this.parsingInfo.currentNode.addChild(n)
+      this.parsingInfo.currentNode = n
+      this.parsingInfo.moveIndex(2)
+      this.parsingInfo.state = ParsingStates.READ_NODE_NAME
+      n
+    } else if (this.template(this.parsingInfo.idx + 1) == '!') {
+      val n = new DirectiveNode(parent = this.parsingInfo.currentNode)
+      this.parsingInfo.currentNode.addChild(n)
+      this.parsingInfo.currentNode = n
+      this.parsingInfo.moveIndex(2)
+      this.parsingInfo.state = ParsingStates.READ_NODE_NAME
+      n
+    } else {
+      val n = new Node(parent = this.parsingInfo.currentNode, name = "")
+      this.parsingInfo.currentNode.addChild(n)
+      this.parsingInfo.currentNode = n
+      if (n.children.nonEmpty) {
+        /*
+        This is here just in case. There was an issue with Python's runtime because it did NOT create
+        Nodes properly and list of children had to be created manually or the children would leak to
+        unrelated objects.
+        */
+        throw new Error("Memory is leaking here again")
+      }
+      this.parsingInfo.state = ParsingStates.READ_NODE_NAME
+      this.parsingInfo.moveIndex()
+      n
+    }
   }
 
   def startingCharOnNewPage(): Unit = {
@@ -79,38 +108,41 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
   }
 
   def startingCharLookingForChildNodes(): Unit = {
-
-    /*
-    if text[parsing_info.i:].find("<![CDATA[") == 0:
-				parsing_info.move_index(len("<![CDATA["))
-				parsing_info.current_node.add_child(
-					TextNode(
-						parent=parsing_info.current_node,
-						cdata=True,
-						text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
-					)
-				)
-				parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
-			elif text[parsing_info.i:].find("<!--") == 0:
-				comment_end_raw = text[parsing_info.i:].find("-->")
-				if comment_end_raw == -1:
-					raise XMLParsingException("Not properly closed tag")
-				comment_end = parsing_info.i + comment_end_raw
-				parsing_info.current_node.add_child(CommentNode(content=text[parsing_info.i + 4: comment_end].strip()))
-				parsing_info.move_index(len(f"{text[parsing_info.i: comment_end]}-->"))
-			elif text[parsing_info.i + 1] == "/":
-				name = text[parsing_info.i + 2: parsing_info.i + 2 + text[parsing_info.i + 2:].find(">")]
-				if parsing_info.current_node.get_name() == name:
-					parsing_info.current_node = parsing_info.current_node.parent
-					parsing_info.move_index(len(f"</{name}>"))
-				else:
-					print(text)
-					print(text[parsing_info.i:])
-					raise XMLParsingException()
-			else:
-				parsing_info.state = STATES.read_node_name
-				parsing_info = self.create_new_node(text=text, parsing_info=parsing_info)
-     */
+    if (this.template.substring(this.parsingInfo.idx).indexOf("<![CDATA[") == 0) {
+      this.parsingInfo.moveIndex("<![CDATA[".length)
+      val tn = new TextNode(
+        parent = this.parsingInfo.currentNode,
+        cdata = true,
+        content = this.template.substring(
+          this.parsingInfo.idx,
+          this.template.substring(this.parsingInfo.idx).indexOf("]]>")
+        )
+      )
+      this.parsingInfo.currentNode.addChild(tn)
+      this.parsingInfo.moveIndex(s"${tn.content}]]>".length)
+    } else if (this.template.substring(this.parsingInfo.idx).indexOf("<!--") == 0) {
+      this.parsingInfo.moveIndex("<![CDATA[".length)
+      val cn = new CommentNode(
+        parent = this.parsingInfo.currentNode,
+        content = this.template.substring(
+          this.parsingInfo.idx,
+          this.template.substring(this.parsingInfo.idx).indexOf("-->")
+        )
+      )
+      this.parsingInfo.currentNode.addChild(cn)
+      this.parsingInfo.moveIndex(s"${cn.content}-->".length)
+    } else if (this.template(this.parsingInfo.idx + 1) == '/') {
+      val name = this.template.substring(this.parsingInfo.idx + 2, this.parsingInfo.idx + 2 + this.template.substring(this.parsingInfo.idx + 2).indexOf(">"))
+      if (this.parsingInfo.currentNode.name == name) {
+        this.parsingInfo.currentNode = parsingInfo.currentNode.parent
+        this.parsingInfo.moveIndex(s"</${name}>".length)
+      } else {
+        throw new XMLParsingException("Need to test this thoroughly")
+      }
+    } else {
+      this.parsingInfo.state = ParsingStates.READ_NODE_NAME
+      this.createNewNode()
+    }
   }
 
   def parseEndingTagCharacter(): Unit = {
