@@ -38,7 +38,68 @@ class XMLParser(template: String) {
   }
 
   def parseStartingTagCharacter(): Unit = {
+    if (this.template(this.parsingInfo.idx + 1) == ' ') {
+      // TODO this this, just in case
+      this.parsingInfo.moveIndex()
+    } else if (this.parsingInfo.state == ParsingStates.NEW_PAGE) {
+      this.startingCharOnNewPage()
+    } else if (this.parsingInfo.state == ParsingStates.LOOKING_FOR_CHILD_NODES) {
+      this.startingCharLookingForChildNodes()
+    } else {
+      this.parsingInfo.moveIndex()
+    }
+  }
 
+  def startingCharOnNewPage(): Unit = {
+
+    /*
+    if text[parsing_info.i:].find("<?xml") == 0:
+				parsing_info.move_index(len("<?xml"))
+				parsing_info.state = STATES.looking_for_attribute
+			elif text[parsing_info.i:].find("<!DOCTYPE") == 0:
+				parsing_info.current_node.html = True
+				parsing_info.current_node.attributes["doctype"] = text[len("<!DOCTYPE "):text.find(">")]
+				parsing_info.state = STATES.looking_for_child_nodes
+				parsing_info.move_index(text.find(">"))
+			else:
+				parsing_info = self.create_new_node(text, parsing_info)
+				parsing_info.state = STATES.read_node_name
+     */
+  }
+
+  def startingCharLookingForChildNodes(): Unit = {
+
+    /*
+    if text[parsing_info.i:].find("<![CDATA[") == 0:
+				parsing_info.move_index(len("<![CDATA["))
+				parsing_info.current_node.add_child(
+					TextNode(
+						parent=parsing_info.current_node,
+						cdata=True,
+						text=text[parsing_info.i: text[parsing_info.i:].find("]]>")]
+					)
+				)
+				parsing_info.move_index(len(text[parsing_info.i:].find("]]>") + len("]]>")))
+			elif text[parsing_info.i:].find("<!--") == 0:
+				comment_end_raw = text[parsing_info.i:].find("-->")
+				if comment_end_raw == -1:
+					raise XMLParsingException("Not properly closed tag")
+				comment_end = parsing_info.i + comment_end_raw
+				parsing_info.current_node.add_child(CommentNode(content=text[parsing_info.i + 4: comment_end].strip()))
+				parsing_info.move_index(len(f"{text[parsing_info.i: comment_end]}-->"))
+			elif text[parsing_info.i + 1] == "/":
+				name = text[parsing_info.i + 2: parsing_info.i + 2 + text[parsing_info.i + 2:].find(">")]
+				if parsing_info.current_node.get_name() == name:
+					parsing_info.current_node = parsing_info.current_node.parent
+					parsing_info.move_index(len(f"</{name}>"))
+				else:
+					print(text)
+					print(text[parsing_info.i:])
+					raise XMLParsingException()
+			else:
+				parsing_info.state = STATES.read_node_name
+				parsing_info = self.create_new_node(text=text, parsing_info=parsing_info)
+     */
   }
 
   def parseEndingTagCharacter(): Unit = {
