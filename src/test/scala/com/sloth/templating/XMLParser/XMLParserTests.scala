@@ -10,9 +10,46 @@ class XMLParserTests extends AnyFunSuite{
     assert(xp != null)
   }
 
-  test("read node name") {
-    val xp = new XMLParser("test template")
+  test("parse starting tag character") {
+    val xp = new XMLParser("a>test template")
     assert(xp != null)
+  }
+
+  test("parse ending tag character") {
+    val xp = new XMLParser("a>test template")
+    assert(xp != null)
+  }
+
+  test("read node name - >") {
+    val xp = new XMLParser("a>test template")
+    assert(xp != null)
+    xp.parsingInfo.currentNode = new Node("")
+    xp.readNodeName()
+    assert(xp.parsingInfo.currentNode.name == "a")
+  }
+
+  test("read node name - [ ]") {
+    val xp = new XMLParser("a >test template")
+    assert(xp != null)
+    xp.parsingInfo.currentNode = new Node("")
+    xp.readNodeName()
+    assert(xp.parsingInfo.currentNode.name == "a")
+  }
+
+  test("read node name - />") {
+    val xp = new XMLParser("a/>test template")
+    assert(xp != null)
+    xp.parsingInfo.currentNode = new Node("")
+    xp.readNodeName()
+    assert(xp.parsingInfo.currentNode.name == "a")
+  }
+
+  test("read node name - \n") {
+    val xp = new XMLParser("a\n>test template")
+    assert(xp != null)
+    xp.parsingInfo.currentNode = new Node("")
+    xp.readNodeName()
+    assert(xp.parsingInfo.currentNode.name == "a")
   }
 
   test("look for attribute - ! moves index") {
@@ -24,6 +61,22 @@ class XMLParserTests extends AnyFunSuite{
 
   test("look for attribute - throws exception because tag is not finished") {
     val xp = new XMLParser("test template")
+    assert(xp != null)
+    assertThrows[XMLParsingException] {
+      xp.lookForAttribute()
+    }
+  }
+
+  test("look for attribute - throws exception because attribute value not in quotes") {
+    val xp = new XMLParser("my-attr=abc>test template")
+    assert(xp != null)
+    assertThrows[XMLParsingException] {
+      xp.lookForAttribute()
+    }
+  }
+
+  test("look for attribute - throws exception because unpaired quotes") {
+    val xp = new XMLParser("my-attr=\"abc>test template")
     assert(xp != null)
     assertThrows[XMLParsingException] {
       xp.lookForAttribute()

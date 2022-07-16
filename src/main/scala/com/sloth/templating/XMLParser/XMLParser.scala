@@ -27,14 +27,22 @@ class XMLParser(template: String) {
 
     while (parsingInfo.idx < this.template.length) {
       this.template.charAt(parsingInfo.idx).toString match {
-        case "<" => ??? // result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
-        case ">" => ??? // result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
+        case "<" => this.parseStartingTagCharacter() // result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
+        case ">" => this.parseEndingTagCharacter() // result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
         case " " | "\n" | "\t" => parsingInfo.moveIndex()
         case _ => this.parseCharacter()
       }
     }
 
     new Node(name = "abc", children = ListBuffer(), argPairedTag = true)
+  }
+
+  def parseStartingTagCharacter(): Unit = {
+
+  }
+
+  def parseEndingTagCharacter(): Unit = {
+
   }
 
   /**
@@ -59,7 +67,7 @@ class XMLParser(template: String) {
       this.template.substring(parsingInfo.idx).indexOf("/>"),
       this.template.substring(parsingInfo.idx).indexOf("\n")
     )) + parsingInfo.idx
-    parsingInfo.currentNode.setName(this.template.substring(parsingInfo.idx, nameEnd))
+    parsingInfo.currentNode = parsingInfo.currentNode.setName(this.template.substring(parsingInfo.idx, nameEnd))
     parsingInfo.moveIndex(this.template.substring(parsingInfo.idx, nameEnd).length)
     parsingInfo.state = ParsingStates.LOOKING_FOR_ATTRIBUTE
   }
@@ -94,13 +102,17 @@ class XMLParser(template: String) {
         var attrValEndCharPosition: Int = parsingInfo.idx + this.template.substring(parsingInfo.idx).indexOf("=") + 1
         val attrValue: String = {
           var result = ""
-
+          var resultChanged = false
           do {
             attrValEndCharPosition += 1
             if (this.template.charAt(attrValEndCharPosition) == attrValQuoteChar && this.template.charAt(attrValEndCharPosition - 1).toString != "\\") {
               result = this.template.substring(equalsPosition + 2, attrValEndCharPosition)
+              resultChanged = true
             }
-          } while ((attrValEndCharPosition < this.template.length) && !(this.template.charAt(attrValEndCharPosition) == attrValQuoteChar && this.template.charAt(attrValEndCharPosition - 1).toString != "\\"))
+          } while ((attrValEndCharPosition < this.template.length - 1) && !(this.template.charAt(attrValEndCharPosition) == attrValQuoteChar && this.template.charAt(attrValEndCharPosition - 1).toString != "\\"))
+          if (!resultChanged) {
+            throw new XMLParsingException("XML file has unpaired quotes")
+          }
           result
         }
         parsingInfo.currentNode.setAttribute(attrName, attrValue)
