@@ -12,8 +12,8 @@ import scala.util.control.Breaks.break
  *
  * @param template A template to be parsed
  */
-class XMLParser(template: String) {
-  val parsingInfo = new XMLParsingInfo()
+class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
+  val parsingInfo = new XMLParsingInfo(rootNode = rootNode, currentNode = rootNode)
 
   /**
    * Main function to be interacted with. Parses template into nodes.
@@ -50,21 +50,32 @@ class XMLParser(template: String) {
     }
   }
 
-  def startingCharOnNewPage(): Unit = {
+  def createNewNode(): Node = {
 
-    /*
-    if text[parsing_info.i:].find("<?xml") == 0:
-				parsing_info.move_index(len("<?xml"))
-				parsing_info.state = STATES.looking_for_attribute
-			elif text[parsing_info.i:].find("<!DOCTYPE") == 0:
-				parsing_info.current_node.html = True
-				parsing_info.current_node.attributes["doctype"] = text[len("<!DOCTYPE "):text.find(">")]
-				parsing_info.state = STATES.looking_for_child_nodes
-				parsing_info.move_index(text.find(">"))
-			else:
-				parsing_info = self.create_new_node(text, parsing_info)
-				parsing_info.state = STATES.read_node_name
-     */
+  }
+
+  def startingCharOnNewPage(): Unit = {
+    if (this.template.substring(this.parsingInfo.idx).indexOf("<?xml") == 0) {
+      parsingInfo.moveIndex("<?xml".length)
+      parsingInfo.state = ParsingStates.LOOKING_FOR_ATTRIBUTE
+    } else if (this.template.substring(this.parsingInfo.idx).indexOf("<!DOCTYPE") == 0) {
+      this.parsingInfo.currentNode match {
+        case node: RootNode => {
+          node.html = true
+          this.parsingInfo.currentNode.setAttribute(
+            "doctype",
+            this.template.substring(
+              this.parsingInfo.idx + "<!DOCTYPE ".length,
+              this.template.indexOf(">")
+            ))
+          this.parsingInfo.state = ParsingStates.LOOKING_FOR_CHILD_NODES
+          this.parsingInfo.moveIndex(this.template.indexOf(">"))
+        }
+      }
+    } else {
+      this.parsingInfo.currentNode = this.createNewNode()
+      this.parsingInfo.state = ParsingStates.READ_NODE_NAME
+    }
   }
 
   def startingCharLookingForChildNodes(): Unit = {

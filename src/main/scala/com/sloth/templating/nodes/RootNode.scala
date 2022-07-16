@@ -2,7 +2,7 @@ package com.sloth.templating.nodes
 
 import scala.collection.mutable.ListBuffer
 
-class RootNode(val html: Boolean = false, doctype: String = "") extends Node("xml", ListBuffer(), false, Node.ROOT) {
+class RootNode(var html: Boolean = false, doctype: String = "") extends Node("xml", ListBuffer(), false, Node.ROOT) {
   if (html) {
     super.setAttribute("doctype", if (doctype.nonEmpty)  doctype else "html")
   } else {
