@@ -32,11 +32,4 @@ class XMLParsingInfoTests extends AnyFunSuite{
     xpi.moveIndex(-1)
     assert(xpi.idx == 0)
   }
-
-  test("Add to result") {
-    val xpi = new XMLParsingInfo()
-    xpi.addToResult("abc")
-    assert(xpi.result == "abc")
-    assert(xpi.idx == 3)
-  }
 }

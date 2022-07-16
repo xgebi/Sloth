@@ -30,7 +30,7 @@ class XMLParser(template: String) {
         case "<" => ??? // result, parsing_info = self.parse_starting_tag_character(text=result, parsing_info=parsing_info)
         case ">" => ??? // result, parsing_info = self.parse_ending_tag_character(text=result, parsing_info=parsing_info)
         case " " | "\n" | "\t" => parsingInfo.moveIndex()
-        case _ => this.parseCharacter
+        case _ => this.parseCharacter()
       }
     }
 
@@ -44,7 +44,7 @@ class XMLParser(template: String) {
     parsingInfo.state match {
       case ParsingStates.READ_NODE_NAME => this.readNodeName()
       case ParsingStates.LOOKING_FOR_ATTRIBUTE => this.lookForAttribute()
-      case ParsingStates.LOOKING_FOR_CHILD_NODES => ???
+      case ParsingStates.LOOKING_FOR_CHILD_NODES => this.lookingForChildTextNodes()
       case _ => this.parsingInfo.moveIndex()
     }
   }
@@ -91,23 +91,33 @@ class XMLParser(template: String) {
         if (attrValQuoteChar.toString != "\"" && attrValQuoteChar.toString != "'") {
           throw new XMLParsingException("Attribute is not in quotes")
         }
-        var attrValEndCharPosition: Int = parsingInfo.idx + this.template.substring(parsingInfo.idx).indexOf("=") + 2
+        var attrValEndCharPosition: Int = parsingInfo.idx + this.template.substring(parsingInfo.idx).indexOf("=") + 1
         val attrValue: String = {
           var result = ""
-          while (attrValEndCharPosition < this.template.length) {
+
+          do {
+            attrValEndCharPosition += 1
             if (this.template.charAt(attrValEndCharPosition) == attrValQuoteChar && this.template.charAt(attrValEndCharPosition - 1).toString != "\\") {
               result = this.template.substring(equalsPosition + 2, attrValEndCharPosition)
-              break
             }
-            attrValEndCharPosition += 1
-          }
+          } while ((attrValEndCharPosition < this.template.length) && !(this.template.charAt(attrValEndCharPosition) == attrValQuoteChar && this.template.charAt(attrValEndCharPosition - 1).toString != "\\"))
           result
         }
         parsingInfo.currentNode.setAttribute(attrName, attrValue)
-        parsingInfo.moveIndex(f"$attrName='$attrValue'".length)
+        parsingInfo.moveIndex(f"$attrName='$attrValue'".length + 1)
       }
     } else {
       parsingInfo.moveIndex()
     }
+  }
+
+  def lookingForChildTextNodes(): Unit = {
+    val textEndRaw = this.template.substring(parsingInfo.idx).indexOf("<")
+    if (textEndRaw == -1) {
+      throw new XMLParsingException("Not properly closed tag")
+    }
+    val textEnd = parsingInfo.idx + textEndRaw
+    parsingInfo.currentNode.addChild(new TextNode(content = this.template.substring(parsingInfo.idx, textEnd), parent = parsingInfo.currentNode))
+    parsingInfo.moveIndex(this.template.substring(parsingInfo.idx, textEnd).length)
   }
 }
