@@ -1,4 +1,4 @@
-package templating.nodes
+package com.sloth.templating.nodes
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

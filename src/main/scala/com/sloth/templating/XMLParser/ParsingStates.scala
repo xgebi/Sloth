@@ -1,4 +1,4 @@
-package templating.XMLParser
+package com.sloth.templating.XMLParser
 
 object ParsingStates {
   val NEW_PAGE = 0

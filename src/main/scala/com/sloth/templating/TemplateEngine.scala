@@ -1,6 +1,6 @@
-package templating
+package com.sloth.templating
 
-import templating.toe.Hooks
+import com.sloth.templating.toe.Hooks
 
 import java.nio.file.Path
 import scala.collection.mutable

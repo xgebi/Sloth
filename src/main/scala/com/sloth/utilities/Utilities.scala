@@ -1,4 +1,4 @@
-package utilities
+package com.sloth.utilities
 
 object Utilities {
 

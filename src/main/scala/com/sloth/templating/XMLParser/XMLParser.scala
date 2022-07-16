@@ -1,8 +1,8 @@
-package templating.XMLParser
+package com.sloth.templating.XMLParser
 
-import templating.exceptions.{EmptyTemplateException, XMLParsingException}
-import templating.nodes._
-import utilities.Utilities
+import com.sloth.templating.exceptions.{EmptyTemplateException, XMLParsingException}
+import com.sloth.templating.nodes._
+import com.sloth.utilities.Utilities
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks.break
@@ -43,7 +43,9 @@ class XMLParser(template: String) {
   def parseCharacter(): Unit = {
     parsingInfo.state match {
       case ParsingStates.READ_NODE_NAME => this.readNodeName()
-      case ParsingStates.LOOKING_FOR_ATTRIBUTE =>
+      case ParsingStates.LOOKING_FOR_ATTRIBUTE => this.lookForAttribute()
+      case ParsingStates.LOOKING_FOR_CHILD_NODES => ???
+      case _ => this.parsingInfo.moveIndex()
     }
   }
 
@@ -80,6 +82,7 @@ class XMLParser(template: String) {
           this.template.substring(parsingInfo.idx).indexOf("/>"),
         )))
         val attrValue = ""
+        parsingInfo.currentNode.setAttribute(attrName, attrValue)
         parsingInfo.moveIndex(attrName.length)
       } else {
         val equalsPosition = parsingInfo.idx + this.template.substring(parsingInfo.idx).indexOf("=")

@@ -1,6 +1,6 @@
-package templating.XMLParser
+package com.sloth.templating.XMLParser
 
-import templating.nodes._
+import com.sloth.templating.nodes._
 
 class XMLParsingInfo(var idx: Int = 0, var state: Int = ParsingStates.NEW_PAGE, var currentNode: Node = null, var rootNode: Node = null) {
   var result = "";
