@@ -23,7 +23,7 @@ class Node(
 						nodeType: String = Node.NODE,
 						val parent: Node = null,
 						attributes: mutable.HashMap[String, String] = mutable.HashMap()) {
-	val pairedTag: Boolean = {
+	def isPairedTag: Boolean = {
 		if (Node.UNPAIRED_TAGS.contains(name)) {
 			false
 		} else if (Node.ALWAYS_PAIRED.contains(name)) {
@@ -34,11 +34,11 @@ class Node(
 	}
 
 	def setName(name: String): Node = {
-		new Node(name = name, children = this.children, argPairedTag = this.pairedTag, nodeType = this.nodeType, parent = this.parent, attributes = this.attributes)
+		new Node(name = name, children = this.children, argPairedTag = this.isPairedTag, nodeType = this.nodeType, parent = this.parent, attributes = this.attributes)
 	}
 
 	def addChild(child: Node): Node = {
-		if (this.pairedTag) {
+		if (this.isPairedTag) {
 			children.addOne(child)
 		}
 		child
@@ -88,7 +88,7 @@ class Node(
 	def toHTMLString: String = {
 		val formattedAttributes = this.attributesAsString
 
-		if (this.pairedTag) {
+		if (this.isPairedTag) {
 			val childrenAsList: ListBuffer[String] = new ListBuffer()
 			this.children foreach {case (child: Node) => childrenAsList.addOne(child.toHTMLString) }
 			s"<${this.name} $formattedAttributes>${childrenAsList.mkString("\n")}</${this.name}>"

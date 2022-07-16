@@ -7,4 +7,14 @@ class XMLParserTests extends AnyFunSuite{
     val xp = new XMLParser("test template")
     assert(xp != null)
   }
+
+  test("read node name") {
+    val xp = new XMLParser("test template")
+    assert(xp != null)
+  }
+
+  test("look for attribute") {
+    val xp = new XMLParser("test template")
+    assert(xp != null)
+  }
 }
