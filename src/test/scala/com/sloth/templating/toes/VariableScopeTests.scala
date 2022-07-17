@@ -44,6 +44,24 @@ class VariableScopeTests extends AnyFunSpec{
       assert(result.head == "name")
       assert(result(1) == "1")
     }
+
+    it("parses: name[1][0]") {
+      val vs = new VariableScope()
+      val result = vs.getNames(name = "name[1][0]")
+      assert(result.length == 3)
+      assert(result.head == "name")
+      assert(result(1) == "1")
+      assert(result(2) == "0")
+    }
+
+    it("parses: name['abc'][0]") {
+      val vs = new VariableScope()
+      val result = vs.getNames(name = "name['abc'][0]")
+      assert(result.length == 3)
+      assert(result.head == "name")
+      assert(result(1) == "'abc'")
+      assert(result(2) == "0")
+    }
   }
 
   describe("assign variable") {
