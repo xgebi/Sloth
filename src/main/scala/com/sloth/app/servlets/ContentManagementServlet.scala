@@ -5,11 +5,10 @@ import com.sloth.app.services.ContentManagementService
 import org.scalatra._
 import slick.jdbc.PostgresProfile.api._
 
-class ContentManagementServlet extends ScalatraServlet {
+class ContentManagementServlet(val contentManagementService: ContentManagementService = new ContentManagementService()) extends ScalatraServlet {
 
   delete("/clear") {
-    val cms = new ContentManagementService()
-    cms.deleteAllContent()
+    this.contentManagementService.deleteAllContent()
     response.setStatus(204)
   }
 
