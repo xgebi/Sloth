@@ -1,10 +1,12 @@
 package com.sloth.templating.toe
 
+import com.sloth.templating.exceptions.VariableScopeException
+
 import scala.collection.mutable
 
 class VariableScope(
                      val variables: mutable.HashMap[String, String] = mutable.HashMap(),
-                     val parentScope: VariableScope = null
+                     val parentScope: Option[VariableScope] = None
                    ) {
   /**
    * Function for resolving a variable
@@ -36,6 +38,13 @@ class VariableScope(
    * @param value Value of the variable
    */
   def assignVariable(name: String, value: String): Unit = {
+    if (this.isVariableInCurrentScope(name)) {
+      this.variables.update(name, value)
+    } else if (this.parentScope.nonEmpty) {
+      this.parentScope.get.assignVariable(name, value)
+    } else {
+      throw new VariableScopeException("Variable doesn't exist")
+    }
 
   }
 
@@ -46,7 +55,10 @@ class VariableScope(
    * @param value Value of the variable
    */
   def createVariable(name: String, value: String): Unit = {
-
+    if (this.isVariableInCurrentScope(name)) {
+      throw new VariableScopeException(s"Variable $name already exists")
+    }
+    this.variables.addOne(name, value)
   }
 
   /**
