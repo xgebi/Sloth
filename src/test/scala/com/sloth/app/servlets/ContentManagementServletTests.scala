@@ -10,11 +10,11 @@ class ContentManagementServletTests extends ScalatraFunSuite with MockFactory wi
 
   test("DELETE /clear on ContentManagementServlet should return status 204") {
     val cmsMocked = mock[ContentManagementService]
-    addServlet(new ContentManagementServlet(cmsMocked), "/*")
+    addServlet(new ContentManagementServlet(cmsMocked), "/content")
 
     (cmsMocked.deleteAllContent _).expects()
 
-    delete("/clear") {
+    delete("/content/clear") {
       status should equal(204)
     }
   }
@@ -25,7 +25,7 @@ class ContentManagementServletTests extends ScalatraFunSuite with MockFactory wi
 
     (cmsMocked.deleteAllContent _).expects().onCall(() => throw new Exception())
 
-    delete("/clear") {
+    delete("/content/clear") {
       status should equal(500)
     }
   }
