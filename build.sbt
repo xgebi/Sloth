@@ -21,7 +21,7 @@ lazy val hello = (project in file("."))
       "org.postgresql" % "postgresql" % "42.4.0",
       "com.mchange" % "c3p0" % "0.9.5.5"
     ),
-    libraryDependencies += "org.mockito" % "mockito-core" % "4.6.1",
+    libraryDependencies += "org.mockito" % "mockito-scala_2.13" % "1.17.7",
     libraryDependencies += "org.bitbucket.b_c" % "jose4j" % "0.7.12",
     // For the time being there shall be argon and bcrypt at the same time
     libraryDependencies += "de.mkammerer" % "argon2-jvm" % "2.11",

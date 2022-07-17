@@ -1,4 +1,4 @@
-package com.sloth.app
+package com.sloth.app.servlets
 
 import org.scalatra._
 
