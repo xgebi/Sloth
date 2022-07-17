@@ -30,4 +30,48 @@ class Toe {
   def processToeTag(parentElement: Node, element: Node): Unit = {
 
   }
+
+  def processHeadHooks(parentNode: Node): Unit = {
+
+  }
+
+  def processFooterHooks(parentNode: Node): Unit = {
+
+  }
+
+  def processToeImportTag(generatedTree: Node, element: Node): Unit = {
+
+  }
+
+  def processToeValue(attributeValue: String): String = {
+    null
+  }
+
+  def processAssignTag(element: Node): Unit = {
+
+  }
+
+  def processCreateTag(element: Node): Unit = {
+
+  }
+
+  def processModifyTag(element: Node): Unit = {
+
+  }
+
+  def processIfAttribute(parentElement: Node, element: Node): Node = {
+    null
+  }
+
+  def processForAttribute(parentElement: Node, element: Node): Node = {
+    null
+  }
+
+  def processWhileAttribute(parentElement: Node, element: Node): Node = {
+    null
+  }
+
+  def processPipe(side: String): String = {
+    null
+  }
 }

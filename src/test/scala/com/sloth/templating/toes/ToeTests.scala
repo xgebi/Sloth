@@ -26,4 +26,48 @@ class ToeTests extends AnyFunSpec{
   describe("process Toe tag") {
 
   }
+
+  describe("process head hooks") {
+
+  }
+
+  describe("process footer hooks") {
+
+  }
+
+  describe("process toe import tag") {
+
+  }
+
+  describe("process Toe value") {
+
+  }
+
+  describe("process assign tag") {
+
+  }
+
+  describe("process create tag") {
+
+  }
+
+  describe("process modify tag") {
+
+  }
+
+  describe("process if attribute") {
+
+  }
+
+  describe("process for attribute") {
+
+  }
+
+  describe("process while attribute") {
+
+  }
+
+  describe("process pipe") {
+
+  }
 }
