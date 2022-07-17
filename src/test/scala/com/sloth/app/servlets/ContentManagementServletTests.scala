@@ -19,5 +19,16 @@ class ContentManagementServletTests extends ScalatraFunSuite with MockFactory wi
     }
   }
 
+  test("DELETE /clear on ContentManagementServlet should return status 500") {
+    val cmsMocked = mock[ContentManagementService]
+    addServlet(new ContentManagementServlet(cmsMocked), "/*")
+
+    (cmsMocked.deleteAllContent _).expects().onCall(() => throw new Exception())
+
+    delete("/clear") {
+      status should equal(500)
+    }
+  }
+
   override def header = ???
 }

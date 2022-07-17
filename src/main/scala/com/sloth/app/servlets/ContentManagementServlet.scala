@@ -8,8 +8,12 @@ import slick.jdbc.PostgresProfile.api._
 class ContentManagementServlet(val contentManagementService: ContentManagementService = new ContentManagementService()) extends ScalatraServlet {
 
   delete("/clear") {
-    this.contentManagementService.deleteAllContent()
-    response.setStatus(204)
+    try {
+      this.contentManagementService.deleteAllContent()
+      response.setStatus(204)
+    } catch {
+      case _: Exception => response.setStatus(500)
+    }
   }
 
 }
