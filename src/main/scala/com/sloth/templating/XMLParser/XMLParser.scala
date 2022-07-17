@@ -159,8 +159,39 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
     }
   }
 
+  /**
+   * Function that handles processing ">" character
+   */
   def parseEndingTagCharacter(): Unit = {
+    if (this.parsingInfo.state == ParsingStates.LOOKING_FOR_ATTRIBUTE) {
+      if ((this.template.substring(this.parsingInfo.idx - 1) == "/" || !this.parsingInfo.currentNode.isPairedTag)
+        && !this.parsingInfo.currentNode.isInstanceOf[RootNode]) {
+        this.parsingInfo.currentNode.argPairedTag = false
+        this.parsingInfo.currentNode = this.parsingInfo.currentNode.parent
+      }
+      this.parsingInfo.state = ParsingStates.LOOKING_FOR_CHILD_NODES
 
+      if (this.parsingInfo.currentNode.name.toLowerCase != "script") {
+        this.parsingInfo.moveIndex()
+      } else {
+        val endScriptPosition = this.parsingInfo.idx + this.template.substring(this.parsingInfo.idx).indexOf("</script>")
+        if (endScriptPosition < this.parsingInfo.idx) {
+          throw new XMLParsingException("Script attribute not ended")
+        }
+        val tn = new TextNode(
+          cdata = false,
+          content = this.template.substring(this.parsingInfo.idx + 1, endScriptPosition),
+          parent = this.parsingInfo.currentNode
+        )
+        this.parsingInfo.currentNode.addChild(tn)
+        this.parsingInfo.moveIndex(
+          s"${this.template.substring(this.parsingInfo.idx, endScriptPosition)}</script>".length
+        )
+        this.parsingInfo.currentNode = this.parsingInfo.currentNode.parent
+      }
+    } else {
+      this.parsingInfo.moveIndex()
+    }
   }
 
   /**

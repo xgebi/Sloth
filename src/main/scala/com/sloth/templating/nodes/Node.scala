@@ -19,7 +19,7 @@ object Node {
 class Node(
 						val name: String,
 						val children: ListBuffer[Node] = ListBuffer(),
-						argPairedTag: Boolean = true,
+						var argPairedTag: Boolean = true,
 						nodeType: String = Node.NODE,
 						val parent: Node = null,
 						attributes: mutable.HashMap[String, String] = mutable.HashMap()) {
