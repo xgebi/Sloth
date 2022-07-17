@@ -3,6 +3,7 @@ package com.sloth.templating.toe
 import com.sloth.templating.exceptions.VariableScopeException
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class VariableScope(
                      val variables: mutable.HashMap[String, String] = mutable.HashMap(),
@@ -27,8 +28,39 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return
    */
-  def getNames(name: String, passedNames: List[String]): Any = {
-
+  def getNames(name: String, passedNames: Option[ListBuffer[String]] = Some(ListBuffer())): ListBuffer[String] = {
+    if (passedNames.get.isEmpty && name.indexOf("[") >= 0) {
+      var idx = name.indexOf("[") + 1
+      passedNames.get.addOne(name.substring(0, idx - 1))
+      var level = 1
+      var temp = ""
+      while (idx < name.length) {
+        if (name(idx) == '[') {
+          if (level == 0) {
+            passedNames.get.addOne(temp)
+            temp = ""
+          } else {
+            temp += name(idx)
+          }
+          level += 1
+        } else if (name(idx) == ']') {
+          if (level > 1) {
+            temp += name(idx)
+          }
+          level -= 1
+        } else {
+          temp += name(idx)
+        }
+        idx += 1
+        if (idx < name.length && level == -1) {
+          return null
+        }
+      }
+      passedNames.get.addOne(temp)
+    } else {
+      return ListBuffer(name)
+    }
+    passedNames.get
   }
 
   /**
