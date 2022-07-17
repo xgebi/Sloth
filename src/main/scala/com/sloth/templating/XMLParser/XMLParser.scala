@@ -34,7 +34,7 @@ class XMLParser(template: String, rootNode: RootNode = new RootNode()) {
       }
     }
 
-    new Node(name = "abc", children = ListBuffer(), argPairedTag = true)
+    this.parsingInfo.rootNode
   }
 
   /**
