@@ -8,7 +8,7 @@ import org.scalatra.test.scalatest._
 
 class ContentManagementServletTests extends ScalatraFunSuite with MockFactory with Matchers {
 
-  test("DELETE /clear on ContentManagementServlet should return status 204") {
+  test("DELETE /content/clear on ContentManagementServlet should return status 204") {
     val cmsMocked = mock[ContentManagementService]
     addServlet(new ContentManagementServlet(cmsMocked), "/content")
 
@@ -19,7 +19,7 @@ class ContentManagementServletTests extends ScalatraFunSuite with MockFactory wi
     }
   }
 
-  test("DELETE /clear on ContentManagementServlet should return status 500") {
+  test("DELETE /content/clear on ContentManagementServlet handles exception and should return status 500") {
     val cmsMocked = mock[ContentManagementService]
     addServlet(new ContentManagementServlet(cmsMocked), "/*")
 
