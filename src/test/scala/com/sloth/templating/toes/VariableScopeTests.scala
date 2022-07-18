@@ -9,29 +9,45 @@ import scala.collection.mutable
 class VariableScopeTests extends AnyFunSpec{
   describe("find variable") {
     it("variable found in current scope") {
-
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
+      assert(vs.findVariable("a", None) == "b")
     }
 
     it("variable not found") {
-
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
+      assertThrows[VariableScopeException] {
+        vs.findVariable("b", None) == "b"
+      }
     }
 
     it("variable found in parent scope") {
-
+      val vsParent = new VariableScope(variables = mutable.HashMap("c" -> new VariableWrapper("d")))
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")), parentScope = Some(vsParent))
+      assert(vs.findVariable("c", None) == "d")
     }
   }
 
   describe("does variable exist") {
     it("variable found in current scope") {
-
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
+      assert(vs.variableExists("a", None))
     }
 
     it("variable not found") {
-
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
+      assert(!vs.variableExists("b", None))
     }
 
     it("variable found in parent scope") {
+      val vsParent = new VariableScope(variables = mutable.HashMap("c" -> new VariableWrapper("d")))
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")), parentScope = Some(vsParent))
+      assert(vs.variableExists("c", None))
+    }
 
+    it("variable not found in parent scope") {
+      val vsParent = new VariableScope(variables = mutable.HashMap("c" -> new VariableWrapper("d")))
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")), parentScope = Some(vsParent))
+      assert(!vs.variableExists("e", None))
     }
   }
 

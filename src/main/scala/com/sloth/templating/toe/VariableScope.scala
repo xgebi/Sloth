@@ -17,14 +17,14 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def findVariable(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Any = {
+  def findVariable(name: String, passedNames: Option[List[String]]): Any = {
     val names: List[String] = this.prepareNames(name, passedNames)
 
     if (names.nonEmpty) {
       if (this.isVariableInCurrentScope(names.head)) {
-        this.variables(names.head).resolve(passedNames.get.tail)
+        this.variables(names.head).resolve(names.tail)
       } else if (this.parentScope.nonEmpty) {
-        this.parentScope.get.findVariable(name, originalScope, passedNames)
+        this.parentScope.get.findVariable(null, Some(names))
       } else {
         throw new VariableScopeException(s"Variable ${names.head} was not found")
       }
@@ -114,14 +114,14 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def variableExists(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Boolean = {
+  def variableExists(name: String, passedNames: Option[List[String]]): Boolean = {
     val names: List[String] = this.prepareNames(name, passedNames)
 
     if (names.nonEmpty) {
       if (this.isVariableInCurrentScope(names.head)) {
-        this.variables(names.head).resolve(passedNames.get.tail) != null
+        this.variables(names.head).resolve(names.tail) != null
       } else if (this.parentScope.nonEmpty) {
-        this.parentScope.get.variableExists(name, originalScope, passedNames)
+        this.parentScope.get.variableExists(null, Some(names))
       } else {
         false
       }

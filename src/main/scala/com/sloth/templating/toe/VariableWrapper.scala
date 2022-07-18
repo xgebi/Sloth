@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 class VariableWrapper(val value: Any) {
   def resolve(passedNames: List[String]): Any = {
-    if (this.isIterable(value.getClass)) {
+    if (this.isIterable(this.value.getClass)) {
       var currentlyResolved:Any = value
       passedNames.foreach((name: String) => {
         currentlyResolved match {
