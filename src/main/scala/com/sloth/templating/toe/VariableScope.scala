@@ -6,7 +6,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class VariableScope(
-                     val variables: mutable.HashMap[String, String] = mutable.HashMap(),
+                     val variables: mutable.HashMap[String, VariableWrapper] = mutable.HashMap(),
                      val parentScope: Option[VariableScope] = None
                    ) {
   /**
@@ -17,7 +17,7 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def findVariable(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): String = {
+  def findVariable(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Any = {
     val names: List[String] = {
       if (passedNames.nonEmpty) {
         passedNames.get
@@ -26,38 +26,17 @@ class VariableScope(
       }
     }
 
-
-    /*
-		if len(names) > 0 and self.is_variable(variable_name=names[0], original_scope=original_scope):
-			if len(names) > 0:
-				if names[0] in self.variables:
-					res = self.variables.get(names[0])
-				elif self.parent_scope is not None:
-					res = self.parent_scope.find_variable(names[0], names, self if original_scope is None else original_scope)
-				else:
-					return None
-				if (type(res) is list and len(res) > 0) or type(res) is dict:
-					for i in range(1, len(names)):
-						if ((names[i][0] == "'" and names[i][-1] == "'") or (names[i][0] == "\"" and names[i][-1] == "\"")) \
-								and names[i].find("+") == -1:
-							resolved_name = names[i][1: -1]
-						else:
-							try:
-								resolved_name = int(names[i])
-							except:
-								resolved_name = self.find_variable(names[i], original_scope=original_scope)
-						if resolved_name in res or (type(resolved_name) is int and len(res) > resolved_name and res[resolved_name] is not None):
-							res = res[resolved_name]
-						elif original_scope is not None:
-							return original_scope.find_variable(variable_name=variable_name)
-						else:
-							return None
-				return res
-			else:
-				return self.variables[names[0]]
-
-		return None
-     */
+    if (names.nonEmpty) {
+      if (this.isVariableInCurrentScope(names.head)) {
+        this.variables(names.head).resolve(passedNames.get)
+      } else if (this.parentScope.nonEmpty) {
+        this.parentScope.get.findVariable(name, originalScope, passedNames)
+      } else {
+        throw new VariableScopeException(s"Variable ${names.head} was not found")
+      }
+    } else {
+      throw new VariableScopeException(s"Variable ${names.head} was not found")
+    }
   }
 
   /**
@@ -108,9 +87,10 @@ class VariableScope(
    * @param name Name of the variable
    * @param value Value of the variable
    */
-  def assignVariable(name: String, value: String): Unit = {
+  def assignVariable(name: String, value: Any): Unit = {
     if (this.isVariableInCurrentScope(name)) {
-      this.variables.update(name, value)
+      val vw = new VariableWrapper(value = value, variableType = value.getClass)
+      this.variables.update(name, vw)
     } else if (this.parentScope.nonEmpty) {
       this.parentScope.get.assignVariable(name, value)
     } else {
@@ -125,11 +105,11 @@ class VariableScope(
    * @param name Name of the variable
    * @param value Value of the variable
    */
-  def createVariable(name: String, value: String): Unit = {
+  def createVariable(name: String, value: Any): Unit = {
     if (this.isVariableInCurrentScope(name)) {
       throw new VariableScopeException(s"Variable $name already exists")
     }
-    this.variables.addOne(name, value)
+    this.variables.addOne(name, new VariableWrapper(value = value, variableType = value.getClass))
   }
 
   /**
@@ -140,8 +120,12 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def variableExists(name: String, originalScope: VariableScope, passedNames: List[String]): Boolean = {
-    true
+  def variableExists(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Boolean = {
+    if (this.findVariable(name, originalScope, passedNames) != null) {
+      true
+    } else {
+      false
+    }
   }
 
   /**
