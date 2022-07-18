@@ -7,10 +7,9 @@ class VariableWrapper(val value: Any, val variableType: Class[_]) {
     if (this.isIterable(variableType)) {
       var currentlyResolved:Any = value
       passedNames.foreach((name: String) => {
-        if (classOf[mutable.HashMap[String, Any]].isAssignableFrom(variableType)) {
-          println(s"HashMap $name")
-        } else if (classOf[List[Any]].isAssignableFrom(variableType)) {
-          currentlyResolved = currentlyResolved.asInstanceOf[List[Any]].toList(name.toInt)
+        currentlyResolved match {
+          case hm: mutable.HashMap[String, Any] => currentlyResolved = hm(name)
+          case l: List[Any] => currentlyResolved = l(name.toInt)
         }
       })
       currentlyResolved
