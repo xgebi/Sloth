@@ -17,7 +17,7 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def findVariable(name: String, passedNames: Option[List[String]]): Any = {
+  def findVariable(name: String, passedNames: Option[List[String]] = None): Any = {
     val names: List[String] = this.prepareNames(name, passedNames)
 
     if (names.nonEmpty) {
@@ -114,7 +114,7 @@ class VariableScope(
    * @param passedNames I don't know yet, I don't remember
    * @return Returns value of a variable as a string
    */
-  def variableExists(name: String, passedNames: Option[List[String]]): Boolean = {
+  def variableExists(name: String, passedNames: Option[List[String]] = None): Boolean = {
     val names: List[String] = this.prepareNames(name, passedNames)
 
     if (names.nonEmpty) {

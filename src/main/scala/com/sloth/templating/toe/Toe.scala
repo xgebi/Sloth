@@ -2,7 +2,9 @@ package com.sloth.templating.toe
 
 import com.sloth.templating.nodes._
 
-class Toe {
+import scala.collection
+
+class Toe(val currentScope: VariableScope = new VariableScope()) {
   def processTree(): Unit = {
 
   }
@@ -72,6 +74,23 @@ class Toe {
   }
 
   def processPipe(side: String): String = {
-    null
+    val actions = side.split("\\|")
+    if (this.currentScope.variableExists(name = actions.head)) {
+      var value = this.currentScope.findVariable(name = actions.head.strip())
+      actions.tail.foreach((action: String) => {
+        if (value != null) {
+          action.strip() match {
+            case "length" => value = value.asInstanceOf[collection.Iterable].size
+            case "json" => // TODO convert value to JSON
+          }
+        }
+      })
+      if (value == null) {
+        return ""
+      }
+      value.toString
+    } else {
+      null
+    }
   }
 }
