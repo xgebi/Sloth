@@ -18,13 +18,7 @@ class VariableScope(
    * @return Returns value of a variable as a string
    */
   def findVariable(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Any = {
-    val names: List[String] = {
-      if (passedNames.nonEmpty) {
-        passedNames.get
-      } else {
-        this.getNames(name = name).toList
-      }
-    }
+    val names: List[String] = this.prepareNames(name, passedNames)
 
     if (names.nonEmpty) {
       if (this.isVariableInCurrentScope(names.head)) {
@@ -121,12 +115,28 @@ class VariableScope(
    * @return Returns value of a variable as a string
    */
   def variableExists(name: String, originalScope: Option[VariableScope], passedNames: Option[List[String]]): Boolean = {
-    if (this.findVariable(name, originalScope, passedNames) != null) {
-      true
+    val names: List[String] = this.prepareNames(name, passedNames)
+
+    if (names.nonEmpty) {
+      if (this.isVariableInCurrentScope(names.head)) {
+        this.variables(names.head).resolve(passedNames.get.tail) != null
+      } else if (this.parentScope.nonEmpty) {
+        this.parentScope.get.variableExists(name, originalScope, passedNames)
+      } else {
+        false
+      }
     } else {
       false
     }
   }
+
+  def prepareNames(name: String, passedNames: Option[List[String]]): List[String] = {
+      if (passedNames.nonEmpty) {
+        passedNames.get
+      } else {
+        this.getNames(name = name).toList
+      }
+    }
 
   /**
    * Checks if variable is in current scope
