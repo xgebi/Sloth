@@ -130,6 +130,13 @@ class VariableScope(
     }
   }
 
+  /**
+   * Prepares names of variable path to be processed
+   *
+   * @param name Top level variable name
+   * @param passedNames Lower level variable names
+   * @return List of names ranging from top to bottom level
+   */
   def prepareNames(name: String, passedNames: Option[List[String]]): List[String] = {
       if (passedNames.nonEmpty) {
         passedNames.get

@@ -21,6 +21,20 @@ class VariableScopeTests extends AnyFunSpec{
     }
   }
 
+  describe("does variable exist") {
+    it("variable found in current scope") {
+
+    }
+
+    it("variable not found") {
+
+    }
+
+    it("variable found in parent scope") {
+
+    }
+  }
+
   describe("get names") {
     it("parses: name") {
       val vs = new VariableScope()
@@ -108,17 +122,20 @@ class VariableScopeTests extends AnyFunSpec{
     }
   }
 
-  describe("does variable exist") {
-    it("variable found in current scope") {
-
+  describe("prepare names") {
+    it("simple name") {
+      val vs = new VariableScope()
+      val result = vs.prepareNames("a", None)
+      assert(result.head == "a")
     }
 
-    it("variable not found") {
-
-    }
-
-    it("variable found in parent scope") {
-
+    it("path with three items") {
+      val vs = new VariableScope()
+      val result = vs.prepareNames(null, Some(List("a", "b", "c")))
+      assert(result.head == "a")
+      assert(result.length == 3)
+      assert(result(1) == "b")
+      assert(result(2) == "c")
     }
   }
 }
