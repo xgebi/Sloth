@@ -1,5 +1,6 @@
 package com.sloth.templating.toes
 
+import com.sloth.templating.exceptions.VariableResolvingException
 import com.sloth.templating.toe.VariableWrapper
 import org.scalatest.funspec.AnyFunSpec
 
@@ -65,6 +66,16 @@ class VariableWrapperTests extends AnyFunSpec {
       assert(vw != null)
 
       assert(vw.resolve(List("a", "b")) == 2)
+    }
+
+    it("should throw an error") {
+      val l = List("abc")
+      val vw = new VariableWrapper(l)
+      assert(vw != null)
+
+      assertThrows[VariableResolvingException] {
+        vw.resolve(List("0", "1"))
+      }
     }
   }
 
