@@ -16,7 +16,7 @@ class VariableScopeTests extends AnyFunSpec{
     it("variable not found") {
       val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
       assertThrows[VariableScopeException] {
-        vs.findVariable("b", None) == "b"
+        vs.findVariable("b", None)
       }
     }
 
@@ -96,15 +96,25 @@ class VariableScopeTests extends AnyFunSpec{
 
   describe("assign variable") {
     it("assign value to variable in the current scope") {
-
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")))
+      vs.assignVariable("a", "c")
+      assert(vs.findVariable("a", None) == "c")
     }
 
     it("assign value to variable in the parent scope") {
-
+      val vsParent = new VariableScope(variables = mutable.HashMap("c" -> new VariableWrapper("d")))
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")), parentScope = Some(vsParent))
+      vs.assignVariable("c", "c")
+      assert(vs.findVariable("c", None) == "c")
     }
 
     it("throws error when variable doesn't exist") {
-
+      val vsParent = new VariableScope(variables = mutable.HashMap("c" -> new VariableWrapper("d")))
+      val vs = new VariableScope(variables = mutable.HashMap("a" -> new VariableWrapper("b")), parentScope = Some(vsParent))
+      vs.assignVariable("c", "c")
+      assertThrows[VariableScopeException] {
+        vs.assignVariable("d", "c")
+      }
     }
   }
 
