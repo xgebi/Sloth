@@ -28,7 +28,7 @@ class VariableScope(
 
     if (names.nonEmpty) {
       if (this.isVariableInCurrentScope(names.head)) {
-        this.variables(names.head).resolve(passedNames.get)
+        this.variables(names.head).resolve(passedNames.get.tail)
       } else if (this.parentScope.nonEmpty) {
         this.parentScope.get.findVariable(name, originalScope, passedNames)
       } else {
