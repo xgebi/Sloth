@@ -1,7 +1,7 @@
 package com.sloth.templating.toes
 
 import com.sloth.templating.exceptions.VariableScopeException
-import com.sloth.templating.toe.VariableScope
+import com.sloth.templating.toe.{VariableScope, VariableWrapper}
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.collection.mutable
@@ -80,13 +80,15 @@ class VariableScopeTests extends AnyFunSpec{
 
   describe("create a variable") {
     it("creates a variable") {
+      val vw = new VariableWrapper(1, Int.getClass)
       val vs = new VariableScope()
-      vs.createVariable("a", "1")
+      vs.createVariable("a", vw)
       assert(vs.variables.contains("a"))
     }
 
     it("throws error when variable in current scope already exists") {
-      val vs = new VariableScope(mutable.HashMap("a" -> "1"))
+      val vw = new VariableWrapper(1, Int.getClass)
+      val vs = new VariableScope(mutable.HashMap("a" -> vw))
       assertThrows[VariableScopeException] {
         vs.createVariable("a", "1")
       }
@@ -95,7 +97,8 @@ class VariableScopeTests extends AnyFunSpec{
 
   describe("is variable in current scope") {
     it("variable found in current scope") {
-      val vs = new VariableScope(mutable.HashMap("a" -> "1"))
+      val vw = new VariableWrapper(1, Int.getClass)
+      val vs = new VariableScope(mutable.HashMap("a" -> vw))
       assert(vs.isVariableInCurrentScope("a"))
     }
 
