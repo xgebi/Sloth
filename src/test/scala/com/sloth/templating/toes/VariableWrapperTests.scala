@@ -7,13 +7,13 @@ import scala.collection.mutable
 
 class VariableWrapperTests extends AnyFunSpec {
   it("VariableWrapper was created") {
-    val vw = new VariableWrapper(1, 1.getClass)
+    val vw = new VariableWrapper(1)
     assert(vw != null)
   }
 
   describe("resolve") {
     it("resolves an integer") {
-      val vw = new VariableWrapper(1, 1.getClass)
+      val vw = new VariableWrapper(1)
       assert(vw != null)
 
       assert(vw.resolve(null) == 1)
@@ -21,7 +21,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a simple list") {
       val l = List("abc")
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("0")) == "abc")
@@ -29,7 +29,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a list with nested list") {
       val l = List(List("abc"))
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("0", "0")) == "abc")
@@ -37,7 +37,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a list with nested HashMap") {
       val l = List(mutable.HashMap("abc" -> "def"))
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("0", "abc")) == "def")
@@ -45,7 +45,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a simple HashMap") {
       val l: mutable.HashMap[String, Any] = mutable.HashMap("a" -> 1)
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("a")) == 1)
@@ -53,7 +53,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a HashMap with nested list") {
       val l: mutable.HashMap[String, Any] = mutable.HashMap("a" -> List(2))
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("a", "0")) == 2)
@@ -61,7 +61,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("resolves a HashMap with nested HashMap") {
       val l: mutable.HashMap[String, Any] = mutable.HashMap("a" -> mutable.HashMap("b" -> 2))
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.resolve(List("a", "b")) == 2)
@@ -70,7 +70,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
   describe("is iterable") {
     it("integer is not iterable") {
-      val vw = new VariableWrapper(1, 1.getClass)
+      val vw = new VariableWrapper(1)
       assert(vw != null)
 
       assert(!vw.isIterable(1.getClass))
@@ -78,7 +78,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("HashMap is iterable") {
       val hm = mutable.HashMap()
-      val vw = new VariableWrapper(hm, hm.getClass)
+      val vw = new VariableWrapper(hm)
       assert(vw != null)
 
       assert(vw.isIterable(hm.getClass))
@@ -86,7 +86,7 @@ class VariableWrapperTests extends AnyFunSpec {
 
     it("List is iterable") {
       val l = List()
-      val vw = new VariableWrapper(l, l.getClass)
+      val vw = new VariableWrapper(l)
       assert(vw != null)
 
       assert(vw.isIterable(l.getClass))

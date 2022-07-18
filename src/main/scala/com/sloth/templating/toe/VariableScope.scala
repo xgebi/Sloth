@@ -89,7 +89,7 @@ class VariableScope(
    */
   def assignVariable(name: String, value: Any): Unit = {
     if (this.isVariableInCurrentScope(name)) {
-      val vw = new VariableWrapper(value = value, variableType = value.getClass)
+      val vw = new VariableWrapper(value = value)
       this.variables.update(name, vw)
     } else if (this.parentScope.nonEmpty) {
       this.parentScope.get.assignVariable(name, value)
@@ -109,7 +109,7 @@ class VariableScope(
     if (this.isVariableInCurrentScope(name)) {
       throw new VariableScopeException(s"Variable $name already exists")
     }
-    this.variables.addOne(name, new VariableWrapper(value = value, variableType = value.getClass))
+    this.variables.addOne(name, new VariableWrapper(value = value))
   }
 
   /**

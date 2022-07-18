@@ -80,14 +80,14 @@ class VariableScopeTests extends AnyFunSpec{
 
   describe("create a variable") {
     it("creates a variable") {
-      val vw = new VariableWrapper(1, Int.getClass)
+      val vw = new VariableWrapper(1)
       val vs = new VariableScope()
       vs.createVariable("a", vw)
       assert(vs.variables.contains("a"))
     }
 
     it("throws error when variable in current scope already exists") {
-      val vw = new VariableWrapper(1, Int.getClass)
+      val vw = new VariableWrapper(1)
       val vs = new VariableScope(mutable.HashMap("a" -> vw))
       assertThrows[VariableScopeException] {
         vs.createVariable("a", "1")
@@ -97,7 +97,7 @@ class VariableScopeTests extends AnyFunSpec{
 
   describe("is variable in current scope") {
     it("variable found in current scope") {
-      val vw = new VariableWrapper(1, Int.getClass)
+      val vw = new VariableWrapper(1)
       val vs = new VariableScope(mutable.HashMap("a" -> vw))
       assert(vs.isVariableInCurrentScope("a"))
     }

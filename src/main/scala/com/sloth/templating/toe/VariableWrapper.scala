@@ -2,9 +2,9 @@ package com.sloth.templating.toe
 
 import scala.collection.mutable
 
-class VariableWrapper(val value: Any, val variableType: Class[_]) {
+class VariableWrapper(val value: Any) {
   def resolve(passedNames: List[String]): Any = {
-    if (this.isIterable(variableType)) {
+    if (this.isIterable(value.getClass)) {
       var currentlyResolved:Any = value
       passedNames.foreach((name: String) => {
         currentlyResolved match {
