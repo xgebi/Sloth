@@ -98,7 +98,8 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 			raw_messages = cur.fetchall()
 
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		abort(500)
 
 	messages = []
@@ -190,7 +191,8 @@ def create_draft(*args, connection: psycopg.Connection, **kwargs):
 		}))
 		code = 200
 	except Exception as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps({
 			"error": True
 		}))

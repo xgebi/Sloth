@@ -1,3 +1,5 @@
+import traceback
+
 import psycopg
 from typing import List, Dict
 
@@ -6,6 +8,7 @@ from app.repositories.post_repositories import get_other_translations, get_trans
 
 def get_translations(*args, connection: psycopg.Connection, post_uuid: str, original_entry_uuid: str, languages: List,
 					 **kwargs):
+	# TODO redo this, this is so wrong on so many levels
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			translatable = []
@@ -33,6 +36,7 @@ def get_translations(*args, connection: psycopg.Connection, post_uuid: str, orig
 			return translated_languages, translatable
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		return [], []
 
 
@@ -56,6 +60,7 @@ def get_taxonomy_for_post_prepped_for_listing(connection: psycopg.Connection, uu
 			all_taxonomies = cur.fetchall()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		return [], []
 	categories = []
 	tags = []

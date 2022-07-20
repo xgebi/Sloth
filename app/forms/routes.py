@@ -46,7 +46,8 @@ def show_forms(*args, permission_level: int, connection: psycopg.Connection, **k
 				})
 
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		abort(500)
 	connection.close()
 	return render_toe_from_path(
@@ -108,7 +109,8 @@ def show_form(*args, permission_level: int, connection: psycopg.Connection, form
 			fields.sort(key=lambda form: form.get("position"))
 
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		abort(500)
 	connection.close()
 

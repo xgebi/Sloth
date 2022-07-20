@@ -73,6 +73,7 @@ def show_posts_list(*args, permission_level: int, connection: psycopg.Connection
 			lang_id = cur.fetchone()['settings_value']
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -107,6 +108,7 @@ def get_posts_list(*args, permission_level: int, connection: psycopg.Connection,
 			return json.dumps(cur.fetchall())
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -382,9 +384,9 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
 						if section["position"] == trans_section['position']:
 							section["original"] = trans_section['content']
 	except Exception as e:
-		print(traceback.format_exc())
-		print("db error B")
 		print(e)
+		traceback.print_exc()
+		print("db error B")
 		connection.close()
 		abort(500)
 	categories, tags = separate_taxonomies(taxonomies=raw_all_taxonomies, post_taxonomies=raw_post_taxonomies)
@@ -486,7 +488,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
 			cur.execute("SELECT display_name FROM sloth_post_types WHERE uuid = %s",
 						(post_type,))
 			post_type_name = cur.fetchone()['display_name']
-			cur.execute("SELECT unnest(enum_range(NULL::sloth_post_status))")
+			cur.execute("SELECT unnest(enum_range(NULL::sloth_post_status)) as status")
 			temp_post_statuses = cur.fetchall()
 			cur.execute("""SELECT uuid, display_name, taxonomy_type, slug FROM sloth_taxonomy
                                                 WHERE post_type = %s AND lang = %s""",
@@ -526,6 +528,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
 	except Exception as e:
 		connection.close()
 		print(e)
+		traceback.print_exc()
 		abort(500)
 
 	connection.close()
@@ -536,7 +539,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
 		"new": True,
 		"use_theme_js": True,
 		"use_theme_css": True,
-		"status": "draft",
+		"post_status": "draft",
 		"uuid": uuid.uuid4(),
 		"post_type": post_type,
 		"lang": lang_id,
@@ -554,7 +557,7 @@ def prepare_data_new_post(connection: psycopg.Connection, post_type: str, lang_i
 		"post_type_name": post_type_name,
 		"data": data,
 		"media_data": json.dumps([media[key] for key in media.keys()]),
-		"post_statuses": [item for sublist in temp_post_statuses for item in sublist],
+		"post_statuses": [item["status"] for item in temp_post_statuses],
 		"default_lang": default_lang,
 		"languages": translatable_languages,
 		"translations": translations,
@@ -637,7 +640,7 @@ def show_taxonomy(*args, permission_level: int, connection: psycopg.Connection, 
 							(type_id, taxonomy_type, lang_id))
 				taxonomy[taxonomy_type] = cur.fetchall()
 	except Exception as e:
-		print("db error C")
+		print("db error C1")
 		abort(500)
 
 	# current_lang, languages = get_languages(connection=connection, lang_id=lang_id)
@@ -675,7 +678,7 @@ def show_formats(*args, permission_level: int, connection: psycopg.Connection, t
 				(type_id,))
 			post_formats =cur.fetchall()
 	except Exception as e:
-		print("db error C")
+		print("db error C2")
 		connection.close()
 		abort(500)
 
@@ -738,7 +741,7 @@ def save_post_format(*args, connection: psycopg.Connection, **kwargs):
 			result = cur.fetchone()
 			connection.commit()
 	except Exception as e:
-		print("db error C")
+		print("db error C3")
 		connection.close()
 		abort(500)
 
@@ -770,7 +773,7 @@ def delete_post_format(*args, permission_level, connection: psycopg.Connection, 
 				"deleted": False
 			})), 406
 	except Exception as e:
-		print("db error C")
+		print("db error C4")
 		connection.close()
 		abort(500)
 
@@ -797,7 +800,9 @@ def show_post_taxonomy_item(*args, permission_level: int, connection: psycopg.Co
 						(type_id, taxonomy_id))
 			temp_taxonomy = cur.fetchone()
 	except Exception as e:
-		print("db error C")
+		print("db error C5")
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -907,6 +912,8 @@ def get_media_data(*args, connection: psycopg.Connection, lang_id: str, **kwargs
 				media[alt['media']]["alt"] = alt['alt'] if media[alt['media']] is not None else None
 	except Exception as e:
 		print("db error")
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -941,7 +948,8 @@ def upload_image(*args, file_name: str, connection: psycopg.Connection, **kwargs
 						(str(uuid.uuid4()), os.path.join("sloth-content", file_name), ""))
 			file = cur.fetchone()
 	except Exception as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -1085,8 +1093,9 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 						language=language
 					)
 					gen.run(clean_protected=True, post=saved_post)
-	except Exception:
-		print(traceback.format_exc())
+	except Exception as e:
+		print(e)
+		traceback.print_exc()
 		return json.dumps({"error": "Error saving post"}), 500
 
 	result["saved"] = True

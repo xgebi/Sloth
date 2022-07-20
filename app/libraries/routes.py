@@ -39,8 +39,9 @@ def show_libraries(permission_level: int, connection: psycopg.Connection):
 			cur.execute("""SELECT uuid, name, version, location FROM sloth_libraries;""")
 			libs = cur.fetchall()
 
-	except psycopg.errors.DatabaseError:
-		print(traceback.format_exc())
+	except psycopg.errors.DatabaseError as e:
+		print(e)
+		traceback.print_exc()
 		abort(500)
 	connection.close()
 	return render_toe_from_path(
@@ -99,8 +100,9 @@ def add_libraries(*args, permission_level: int, connection: psycopg.Connection, 
 				""",
 				(str(uuid4()), lib_data["lib-name"], lib_data["lib-version"], location))
 			connection.commit()
-	except psycopg.errors.DatabaseError:
-		print(traceback.format_exc())
+	except psycopg.errors.DatabaseError as e:
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 	connection.close()
@@ -144,8 +146,9 @@ def delete_library(*args, permission_level: int, connection: psycopg.Connection,
 			"deleted": lib_to_delete["uuid"]
 		})))
 		code = 204
-	except psycopg.errors.DatabaseError:
-		print(traceback.format_exc())
+	except psycopg.errors.DatabaseError as e:
+		print(e)
+		traceback.print_exc()
 		abort(500)
 		response = make_response(json.dumps({
 			"error": True

@@ -362,6 +362,7 @@ class PostGenerator:
 			# path for other languages
 			output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
 			post["related_posts"] = get_related_posts(connection=self.connection, post=post)
+		print(output_path)
 
 		thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post["thumbnail"], language["uuid"])
 		post["thumbnail_path"] = f"/{thumbnail_path}"
@@ -420,7 +421,7 @@ class PostGenerator:
 					title=title
 				)
 				self.generate_rss(
-					output_path=os.path.join(output_path, post_type['slug'], item["type"], item["slug"]),
+					output_path=os.path.join(output_path, post_type['slug'], item["taxonomy_type"], item["slug"]),
 					posts=posts,
 					language=language
 				)
@@ -556,6 +557,8 @@ class PostGenerator:
 			post_type_slug=post_type["slug"]
 		)
 
+		post["related_posts"] = translations
+
 		with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
 			md_parser = MarkdownParser()
 			i = 0
@@ -632,7 +635,7 @@ class PostGenerator:
 		if "related_posts" in post and original_post is None and not multiple:
 			for related_post in post["related_posts"]:
 				for lang in self.languages:
-					if lang['uuid'] == related_post['lang']:
+					if lang['uuid'] == related_post['lang_uuid']:
 						if lang['uuid'] == self.settings["main_language"]['settings_value']:
 							loc_output_path = Path(self.config["OUTPUT_PATH"])
 						else:
@@ -664,6 +667,7 @@ class PostGenerator:
 				return cur.fetchone()
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 		return "", ""
 
 	def get_post_template(self, *args, post_type: Dict, post: Dict, language: Dict, **kwargs) -> Optional[str]:
@@ -714,11 +718,13 @@ class PostGenerator:
 			if post['lang'] != translation['lang_uuid']:
 				if translation["lang_uuid"] != self.settings["main_language"]['settings_value']:
 					result.append({
+						"lang_uuid": translation['lang_uuid'],
 						"language": translation['long_name'],
 						"link": f"/{translation['short_name']}/{post_type['slug']}/{translation['slug']}"
 					})
 				else:
 					result.append({
+						"lang_uuid": translation['lang_uuid'],
 						"language": translation['long_name'],
 						"link": f"/{post_type['slug']}/{translation['slug']}"
 					})
@@ -743,7 +749,7 @@ class PostGenerator:
 			})
 
 		if taxonomy:
-			archive_path_dir = Path(output_path, post_type["slug"], taxonomy["type"], taxonomy["slug"])
+			archive_path_dir = Path(output_path, post_type["slug"], taxonomy["taxonomy_type"], taxonomy["slug"])
 		else:
 			archive_path_dir = Path(output_path, post_type["slug"])
 
@@ -985,7 +991,8 @@ class PostGenerator:
 				for row in rows:
 					form.append(row)
 		except Exception as e:
-			print(traceback.format_exc())
+			print(e)
+			traceback.print_exc()
 			return
 
 		# build form
@@ -1351,10 +1358,12 @@ class PostGenerator:
 				cur.execute("""SELECT settings_value FROM sloth_settings WHERE settings_name = 'main_language';""")
 				main_lang = cur.fetchone()['settings_value']
 				cur.execute("""SELECT uuid, short_name FROM sloth_language_settings;""")
+				result = cur.fetchall()
+
 				langs = {lang['uuid']: {
 					"uuid": lang['uuid'],
-					"path": f"{lang['short_name']}" if lang['lang'] != main_lang else "",
-				} for lang in cur.fetchall()}
+					"path": f"{lang['short_name']}" if lang['uuid'] != main_lang else "",
+				} for lang in result}
 
 				#   Get post types
 				cur.execute("""SELECT uuid, slug FROM sloth_post_types;""")
@@ -1446,28 +1455,30 @@ class PostGenerator:
 							root_node.appendChild(pt_url)
 				#   Get posts
 				cur.execute("""SELECT lang, slug, post_type, update_date FROM sloth_posts;""")
-				for post in cur.fetchall():
+				posts = cur.fetchall()
+				for post in posts:
 					pt_url = doc.createElement("url")
 					pt_loc = doc.createElement("loc")
-					if len(langs[post[0]]['path']) == 0:
+					if len(langs[post['lang']]['path']) == 0:
 						pt_loc.appendChild(
 							doc.createTextNode(
-								f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
+								f"{self.settings['site_url']['settings_value']}/{post_type_slugs[post['post_type']]['slug']}/{post['slug']}"))
 					else:
 						pt_loc.appendChild(
 							doc.createTextNode(
-								f"{self.settings['site_url']['settings_value']}/{langs[post[0]]['path']}/{post_type_slugs[post[2]]['slug']}/{post[1]}"))
+								f"{self.settings['site_url']['settings_value']}/{langs[post['lang']]['path']}/{post_type_slugs[post['post_type']]['slug']}/{post['slug']}"))
 					pt_url.appendChild(pt_loc)
 					pt_change_freq = doc.createElement("changefreq")
 					pt_change_freq.appendChild(doc.createTextNode("monthly"))
 					pt_url.appendChild(pt_change_freq)
 					pt_last_mod = doc.createElement("lastmod")
 					pt_last_mod.appendChild(
-						doc.createTextNode(datetime.fromtimestamp(post[3] / 1000).strftime("%Y-%m-%d")))
+						doc.createTextNode(datetime.fromtimestamp(post['update_date'] / 1000).strftime("%Y-%m-%d")))
 					pt_url.appendChild(pt_last_mod)
 					root_node.appendChild(pt_url)
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 
 		with codecs.open(os.path.join(output_path, "sitemap.xml"), "w", "utf-8") as f:
 			f.write(doc.toprettyxml())

@@ -72,6 +72,7 @@ def import_wordpress_content(*args, connection: psycopg.Connection, **kwargs):
 			connection.commit()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -176,7 +177,8 @@ def process_attachments(items: List, connection: psycopg.Connection, import_coun
 				connection.commit()
 		except Exception as e:
 			print("100")
-			print(traceback.format_exc())
+			print(e)
+			traceback.print_exc()
 			return -1
 
 		cur.close()
@@ -295,6 +297,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 							})
 						except Exception as e:
 							print(e)
+							traceback.print_exc()
 					connection.commit()
 
 				if len(new_categories) > 0:
@@ -313,6 +316,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 							})
 						except Exception as e:
 							print(e)
+							traceback.print_exc()
 					connection.commit()
 
 				meta_infos = item.getElementsByTagName('wp:postmeta')
@@ -348,7 +352,8 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 		return rewrite_rules
 	except Exception as e:
 		print("117")
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		abort(500)
 
 
@@ -374,6 +379,7 @@ def fetch_taxonomies(*args, connection: psycopg.Connection, post_type: Dict, **k
 			temp_categories = cur.fetchall()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		return {
 			"tags": [],
 			"categories": []

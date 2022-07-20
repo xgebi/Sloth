@@ -112,14 +112,14 @@
             <label for="post_status">Status</label>
             <select name="post_status" id="post_status">
                 <option toe:for="status in post_statuses" toe:value="status" toe:text="status"
-                        toe:selected="status eq data['status']"></option>
+                        toe:selected="status eq data['post_status']"></option>
             </select>
-            <toe:fragment toe:if="data['status'] neq 'protected'">
+            <toe:fragment toe:if="data['post_status'] neq 'protected'">
                 <label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
                 <input id="password_protection" type="text" class="hidden"/>
                 <!-- In this case type password is unnecessary, may change -->
             </toe:fragment>
-            <toe:fragment toe:if="data['status'] eq 'protected'">
+            <toe:fragment toe:if="data['post_status'] eq 'protected'">
                 <label for="password_protection" id="password_protection_label">Password:</label>
                 <input id="password_protection" type="text" toe:value="data['password']"/>
                 <!-- In this case type password is necessary, may change -->
@@ -128,7 +128,7 @@
                 <label for="import_approved">Imported post approved:</label>
                 <input type="checkbox" id="import_approved" toe:checked="data['import_approved']"/>
             </toe:fragment>
-            <toe:fragment toe:if="data['status'] eq 'draft'">
+            <toe:fragment toe:if="data['post_status'] eq 'draft'">
                 <button id="save-draft">Save draft</button>
                 <button id="publish-button">Publish post</button>
                 <toe:fragment toe:if="languages | length gt 0">

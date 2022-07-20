@@ -38,7 +38,8 @@ def update_analytics(*args, connection: psycopg.Connection, **kwargs):
 		code = 200
 	except psycopg.errors.DatabaseError as e:
 		print("100")
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps({"page_recorded": "not ok"}))
 		code = 500
 	connection.close()

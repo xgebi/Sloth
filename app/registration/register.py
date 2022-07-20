@@ -39,7 +39,8 @@ class Register:
 			items = [0]
 		except Exception as e:
 			self.de_setup()
-			print(traceback.format_exc())
+			print(e)
+			traceback.print_exc()
 			return {"error": "database", "status": 500}
 
 		if items[0] > 0:
@@ -58,7 +59,8 @@ class Register:
 							(filled['username'],))
 				items = cur.fetchall()
 		except Exception as e:
-			print(traceback.format_exc())
+			print(e)
+			traceback.print_exc()
 			self.de_setup()
 			return {"error": "database", "status": 500}
 
@@ -99,7 +101,8 @@ class Register:
 
 					self.connection.commit()
 			except Exception as e:
-				print(traceback.format_exc())
+				print(e)
+				traceback.print_exc()
 				return {"error": "Database error", "status": 500}
 
 			self.set_data()
@@ -134,7 +137,8 @@ class Register:
 						self.connection.commit()
 					except Exception as e:
 						print("hihi")
-						print(traceback.format_exc())
+						print(e)
+						traceback.print_exc()
 						return {"error": "Database error", "status": 500}
 		return {"state": "ok"}
 
@@ -151,7 +155,8 @@ class Register:
 					self.connection.commit()
 				except Exception as e:
 					print(script)
-					print(traceback.format_exc())
+					print(e)
+					traceback.print_exc()
 					return {"error": "Database error", "status": 500}
 			try:
 				cur.execute("""SELECT name, standalone FROM sloth_localizable_strings;""")
@@ -172,7 +177,9 @@ class Register:
                                                     WHERE settings_name = 'main_language'), %s)""",
 										(str(uuid.uuid4()), item[0], '', post_type))
 				self.connection.commit()
-			except Exception:
+			except Exception as e:
+				print(e)
+				traceback.print_exc()
 				return {"error": "Database error", "status": 500}
 		return {"state": "ok"}
 
@@ -189,6 +196,7 @@ class Register:
 					self.connection.commit()
 				except Exception as e:
 					print(script)
-					print(traceback.format_exc())
+					print(e)
+					traceback.print_exc()
 					return {"error": "Database error", "status": 500}
 		return {"state": "reverted"}

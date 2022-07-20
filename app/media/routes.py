@@ -105,7 +105,7 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
 				code = 500
 	except psycopg.errors.DatabaseError as e:
 		print(e)
-		print(traceback.format_exc())
+		traceback.print_exc()
 		response = make_response(json.dumps(
 			{"media": []}
 		))
@@ -147,7 +147,8 @@ def upload_item(*args, connection: psycopg.Connection, **kwargs):
 			connection.commit()
 			cur.close()
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps(
 			{"media": []}
 		))
@@ -190,7 +191,8 @@ def delete_item(*args, connection: psycopg.Connection, **kwargs):
 			}))
 			code = 201
 	except Exception as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps({
 			"deleted": False
 		}))
@@ -241,7 +243,8 @@ def get_media(*args, connection: psycopg.Connection, **kwargs):
 						"lang": alt['long_name']
 					})
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		print("db error")
 		return []
 

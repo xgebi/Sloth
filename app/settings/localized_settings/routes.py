@@ -46,7 +46,8 @@ def show_localized_settings(*args, permission_level: int, connection: psycopg.Co
                     WHERE s.standalone = TRUE;""", )
 			raw_standalone_strings = cur.fetchall()
 	except Exception as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 	connection.close()
@@ -123,7 +124,8 @@ def change_localized_settings(*args, permission_level: int, connection: psycopg.
 							(updated["content"], updated["uuid"]))
 		connection.commit()
 	except Exception as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 	return redirect('/settings/localized-settings')

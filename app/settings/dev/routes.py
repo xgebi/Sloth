@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from pathlib import Path
 
 import psycopg
@@ -89,6 +90,7 @@ def delete_posts(*args, connection: psycopg.Connection, **kwargs):
 		code = 200
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps(
 			{"postsDeleted": False}
 		))
@@ -129,6 +131,7 @@ def delete_taxonomy(*args, connection: psycopg.Connection, **kwargs):
 			code = 200
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 			response = make_response(json.dumps(
 				{"taxonomyDeleted": False}
 			))
@@ -178,6 +181,7 @@ def check_posts_health(*args, connection: psycopg.Connection, **kwargs):
 				]
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 
 		connection.close()
 

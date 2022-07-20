@@ -1,3 +1,5 @@
+import traceback
+
 import psycopg
 from flask import request, abort, redirect, make_response
 import os
@@ -41,6 +43,8 @@ def show_settings(*args, permission_level: int, connection: psycopg.Connection, 
 			items = cur.fetchall()
 	except psycopg.errors.DatabaseError as e:
 		print("db error")
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -92,6 +96,8 @@ def save_settings(*args, permission_level: int, connection: psycopg.Connection, 
 				connection.commit()
 		except Exception as e:
 			print("db error")
+			print(e)
+			traceback.print_exc()
 			abort(500)
 
 	generator = PostGenerator()

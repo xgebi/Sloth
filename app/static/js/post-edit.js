@@ -246,16 +246,16 @@ function savePost(values) {
           throw `${response.status}: ${response.statusText}`
       })
       .then(data => {
-          if (window.location.pathname.indexOf("/new/") >= 0) {
-              window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
-          } else if (values["createTranslation"]) {
+          if (values["createTranslation"]) {
               let original = values['uuid'];
-              if (values['original_lang_entry_uuid'].length > 0) {
+              if (values['original_lang_entry_uuid']?.length > 0) {
                   original = values['original_lang_entry_uuid'];
               }
               window.location.replace(
                 `/${window.location.pathname.substring(1).split("/")[0]}/${data["postType"]}/new/${values["createTranslation"]}?original=${original}`
               );
+          } else if (window.location.pathname.indexOf("/new/") >= 0) {
+              window.location.replace(`/${window.location.pathname.substring(1).split("/")[0]}/${data.uuid}/edit`);
           } else {
               regenerationCheckInterval = setInterval(checkRegenerationLock, 1000, metadataButtons)
           }

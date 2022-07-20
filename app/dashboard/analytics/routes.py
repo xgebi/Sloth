@@ -64,7 +64,8 @@ def show_dashboard(*args, permission_level: int, connection: psycopg.Connection,
                     """)
 			browser_data = json.dumps(cur.fetchall())
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -141,7 +142,8 @@ def get_pages_in_time_data(*args, permission_level: int, connection: psycopg.Con
 		response = make_response(most_visited)
 		code = 200
 	except psycopg.errors.DatabaseError as e:
-		print(traceback.format_exc())
+		print(e)
+		traceback.print_exc()
 		response = make_response(json.dumps({"cleaned": False}))
 		code = 500
 

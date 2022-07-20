@@ -1,3 +1,5 @@
+import traceback
+
 import psycopg
 from flask import request, abort, redirect, render_template
 
@@ -93,6 +95,7 @@ def save_post_type(*args, connection: psycopg.Connection, post_type_id: str, **k
 			connection.commit()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -152,6 +155,7 @@ def create_post_type(*args, connection: psycopg.Connection, post_type_id: str, *
 			connection.commit()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 		connection.close()
 		abort(500)
 
@@ -173,6 +177,7 @@ def delete_post_type(*args, connection: psycopg.Connection, **kwargs):
 				connection.commit()
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 	else:
 		try:
 			with connection.cursor() as cur:
@@ -181,6 +186,7 @@ def delete_post_type(*args, connection: psycopg.Connection, **kwargs):
 				connection.commit()
 		except Exception as e:
 			print(e)
+			traceback.print_exc()
 	try:
 		with connection.cursor() as cur:
 			cur.execute("""DELETE FROM sloth_post_types WHERE uuid = %s""",
@@ -188,6 +194,7 @@ def delete_post_type(*args, connection: psycopg.Connection, **kwargs):
 			connection.commit()
 	except Exception as e:
 		print(e)
+		traceback.print_exc()
 
 	if data["action"] != "delete":
 		gen = PostGenerator(connection=connection)

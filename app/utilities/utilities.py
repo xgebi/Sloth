@@ -64,9 +64,9 @@ def get_related_posts(*args, post, connection, **kwargs):
 			(related_post["uuid"],)
 		)
 		sections = [{
-			"content": section[0],
-			"type": section[1],
-			"position": section[2]
+			"content": section["content"],
+			"type": section['section_type'],
+			"position": section['position']
 		} for section in cur.fetchall()]
 		related_post.update({
 			"meta_description": prepare_description(char_limit=161, description=post["meta_description"], section=sections[0]),
@@ -76,15 +76,15 @@ def get_related_posts(*args, post, connection, **kwargs):
 
 	for post in related_posts:
 		cur.execute(
-			"""SELECT sl.location, spl.hook_name
+			"""SELECT sl.location as location, spl.hook_name as hook_name
 				FROM sloth_post_libraries AS spl
 				INNER JOIN sloth_libraries sl on sl.uuid = spl.library
 				WHERE spl.post = %s;""",
 			(post["uuid"],)
 		)
 		post["libraries"] = [{
-			"location": lib[0],
-			"hook_name": lib[1]
+			"location": lib['location'],
+			"hook_name": lib['hook_name']
 		} for lib in cur.fetchall()]
 	cur.close()
 	return related_posts
