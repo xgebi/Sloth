@@ -14,6 +14,7 @@ import traceback
 import copy
 import html
 
+from app.repositories.post_repositories import get_all_translations
 from app.utilities.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
 from app.toes.markdown_parser import MarkdownParser, combine_footnotes
@@ -21,7 +22,8 @@ from app.toes.toes import render_toe_from_string
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
-from app.services.post_services import get_translations, get_taxonomy_for_post_prepped_for_listing
+from app.services.post_services import get_translations, get_taxonomy_for_post_prepped_for_listing, \
+	get_available_translations
 
 
 class PostGenerator:
@@ -361,7 +363,6 @@ class PostGenerator:
 		else:
 			# path for other languages
 			output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
-			post["related_posts"] = get_related_posts(connection=self.connection, post=post)
 		print(output_path)
 
 		thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post["thumbnail"], language["uuid"])
@@ -537,15 +538,11 @@ class PostGenerator:
 		if not os.path.exists(post_path_dir):
 			os.makedirs(post_path_dir)
 
-		translations_temp, translatable_languages = get_translations(
-			connection=self.connection,
-			post_uuid=post['uuid'],
-			original_entry_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post else "",
-			languages=self.languages
-		)
+		with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			translations_temp = get_available_translations(connection=self.connection, languages=self.languages, post_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post and len(post['original_lang_entry_uuid']) > 0 else post['uuid'])
 
 		translations_filtered = [translation for translation in translations_temp if
-								 translation["status"].lower() == 'published']
+								 translation["status"].lower() == 'published' and translation['post_uuid'] != post['uuid'] ]
 
 		translations = self.get_translation_links(translations=translations_filtered, post_type=post_type, post=post)
 
@@ -556,8 +553,6 @@ class PostGenerator:
 			language=language,
 			post_type_slug=post_type["slug"]
 		)
-
-		post["related_posts"] = translations
 
 		with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
 			md_parser = MarkdownParser()
@@ -633,9 +628,10 @@ class PostGenerator:
 			os.remove(Path(os.path.join(post_path_dir, 'style.css')))
 
 		if "related_posts" in post and original_post is None and not multiple:
+			post["related_posts"] = [post for post in post["related_posts"] if post['post_status'] == 'published']
 			for related_post in post["related_posts"]:
 				for lang in self.languages:
-					if lang['uuid'] == related_post['lang_uuid']:
+					if lang['uuid'] == related_post['lang']:
 						if lang['uuid'] == self.settings["main_language"]['settings_value']:
 							loc_output_path = Path(self.config["OUTPUT_PATH"])
 						else:
@@ -719,12 +715,14 @@ class PostGenerator:
 				if translation["lang_uuid"] != self.settings["main_language"]['settings_value']:
 					result.append({
 						"lang_uuid": translation['lang_uuid'],
+						"post_uuid": translation['post_uuid'],
 						"language": translation['long_name'],
 						"link": f"/{translation['short_name']}/{post_type['slug']}/{translation['slug']}"
 					})
 				else:
 					result.append({
 						"lang_uuid": translation['lang_uuid'],
+						"post_uuid": translation['post_uuid'],
 						"language": translation['long_name'],
 						"link": f"/{post_type['slug']}/{translation['slug']}"
 					})

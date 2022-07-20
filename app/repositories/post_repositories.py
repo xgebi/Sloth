@@ -14,8 +14,16 @@ def get_other_translations(cur: psycopg.cursor.Cursor, original_entry_uuid: str,
 
 def get_translation_for_original(cur: psycopg.cursor.Cursor, post_uuid: str) -> List:
 	if post_uuid is not None and len(post_uuid) > 0:
-		cur.execute("""SELECT uuid, lang, slug, post_status as status FROM sloth_posts WHERE original_lang_entry_uuid=%s""",
-					(post_uuid,)
-					)
+		cur.execute(
+			"""SELECT uuid, lang, slug, post_status as status FROM sloth_posts WHERE original_lang_entry_uuid=%s""",
+			(post_uuid,)
+			)
 		return cur.fetchall()
 	return []
+
+
+def get_all_translations(cur: psycopg.cursor.Cursor, post_uuid: str) -> List:
+	cur.execute("""SELECT uuid, lang, slug, post_status as status FROM sloth_posts 
+						WHERE (original_lang_entry_uuid=%s OR uuid = %s)""",
+				(post_uuid, post_uuid))
+	return cur.fetchall()
