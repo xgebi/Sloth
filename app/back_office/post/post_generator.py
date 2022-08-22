@@ -539,7 +539,7 @@ class PostGenerator:
 			os.makedirs(post_path_dir)
 
 		with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
-			translations_temp = get_available_translations(connection=self.connection, languages=self.languages, post_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post and len(post['original_lang_entry_uuid']) > 0 else post['uuid'])
+			translations_temp = get_available_translations(connection=self.connection, languages=self.languages, post_uuid=post['original_lang_entry_uuid'] if 'original_lang_entry_uuid' in post and post['original_lang_entry_uuid'] is not None and len(post['original_lang_entry_uuid']) > 0 else post['uuid'])
 
 		translations_filtered = [translation for translation in translations_temp if
 								 translation["status"].lower() == 'published' and translation['post_uuid'] != post['uuid'] ]
