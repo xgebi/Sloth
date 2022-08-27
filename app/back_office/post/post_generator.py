@@ -812,7 +812,7 @@ class PostGenerator:
 		try:
 			with self.connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 				cur.execute("""SELECT name, uuid FROM sloth_menus;""")
-				menus = {menu['uuid']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in
+				menus = {menu['name']: {"items": [], "uuid": menu['uuid'], "name": menu['name']} for menu in
 						 cur.fetchall()}
 				for menu in menus.keys():
 					cur.execute("""SELECT title, url FROM sloth_menu_items WHERE menu = %s""",

@@ -22,7 +22,6 @@ def get_translations(*args, connection: psycopg.Connection, post_uuid: str, orig
 	:param kwargs:
 	:return:
 	"""
-	# TODO redo this, this is so wrong on so many levels
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			translatable = []
@@ -105,7 +104,6 @@ def get_available_translations(*args, connection: psycopg.Connection, post_uuid:
 	:param kwargs:
 	:return:
 	"""
-	# TODO redo this, this is so wrong on so many levels
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			translations = get_all_translations(cur=cur, post_uuid=post_uuid)
