@@ -4,9 +4,14 @@ import datetime
 from typing import List, Dict
 
 
-def build_post_query(uuid: bool = False, scheduled: bool = False, published_per_post_type: bool = False,
-					 published_in_taxonomy_per_post_type: bool = False, original_other_language_versions: bool = False,
-					 other_language_versions_only: bool = False) -> str:
+def build_post_query(
+		uuid: bool = False,
+		scheduled: bool = False,
+		published_per_post_type: bool = False,
+		published_in_taxonomy_per_post_type: bool = False,
+		original_other_language_versions: bool = False,
+		other_language_versions_only: bool = False
+) -> str:
 	query = """
 SELECT sp.uuid, sp.original_lang_entry_uuid, sp.lang, sp.slug, sp.post_type, sp.author, sp.title, 
 sp.css, sp.use_theme_css, sp.js, sp.use_theme_js, sp.thumbnail, sp.publish_date, 
@@ -56,12 +61,16 @@ def normalize_post_from_query(post: Dict) -> Dict | None:
 	post.update({
 		"publish_timedate_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime(
 			"%Y-%m-%d %H:%M") if post['publish_date'] is not None else None,
-		"publish_date_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%Y-%m-%d") if post['publish_date'] else None,
-		"publish_time_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime("%H:%M") if post['publish_date'] else None,
+		"publish_date_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime(
+			"%Y-%m-%d") if post['publish_date'] else None,
+		"publish_time_formatted": datetime.datetime.fromtimestamp(float(post['publish_date']) / 1000).strftime(
+			"%H:%M") if post['publish_date'] else None,
 		"update_timedate_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime(
 			"%Y-%m-%d %H:%M") if post['update_date'] is not None else None,
-		"update_date_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%Y-%m-%d") if post['update_date'] else None,
-		"update_time_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%H:%M") if post['update_date'] else None,
+		"update_date_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime(
+			"%Y-%m-%d") if post['update_date'] else None,
+		"update_time_formatted": datetime.datetime.fromtimestamp(float(post['update_date']) / 1000).strftime("%H:%M") if
+		post['update_date'] else None,
 	})
 
 	return post

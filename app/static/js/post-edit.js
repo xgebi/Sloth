@@ -224,6 +224,7 @@ function collectValues() {
 }
 
 function savePost(values) {
+    debugger;
     const metadataButtons = document.querySelectorAll(".metadata button");
     metadataButtons.forEach(button => {
         button.setAttribute("disabled", "true");

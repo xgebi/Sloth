@@ -1393,3 +1393,26 @@ def is_generating(*args, **kwargs):
 	return json.dumps({
 		"generating": Path(os.path.join(os.getcwd(), 'generating.lock')).is_file()
 	})
+
+
+@post.route("/api/check-scheduled/<key>", methods=["GET"])
+@db_connection
+def check_scheduled(*args, key: str, connection: psycopg.Connection, **kwargs):
+	if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file() or current_app.config['SCHEDULED_KEY'] != key:
+		return json.dumps({
+			"error": "later"
+		}), 503
+
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute(build_post_query(scheduled=True), (time() * 1000,))
+			items = [normalize_post_from_query(fetched) for fetched in cur.fetchall()]
+			return json.dumps({
+				"error": ""
+			}), 200
+	except Exception as e:
+		print(e)
+		traceback.print_exc()
+		return json.dumps({
+			"error": "db"
+		}), 500
