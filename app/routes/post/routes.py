@@ -175,13 +175,13 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 
 	for item in items:
 		item.update({
-            "publish_date":
-                datetime.datetime.fromtimestamp(float(item['publish_date']) / 1000.0).
-                    strftime("%Y-%m-%d") if item['publish_date'] is not None else "",
-            "update_date":
-                datetime.datetime.fromtimestamp(float(item['update_date']) / 1000.0).
-                    strftime("%Y-%m-%d") if item['update_date'] is not None else "",
-        })
+			"publish_date":
+				datetime.datetime.fromtimestamp(float(item['publish_date']) / 1000.0).
+				strftime("%Y-%m-%d") if item['publish_date'] is not None else "",
+			"update_date":
+				datetime.datetime.fromtimestamp(float(item['update_date']) / 1000.0).
+				strftime("%Y-%m-%d") if item['update_date'] is not None else "",
+		})
 	# List of {{post_type["name"]}}
 	post_type_display_name = \
 		[post_type_full for post_type_full in post_types_result if post_type_full['uuid'] == post_type][0][
@@ -312,7 +312,8 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
 			current_lang, languages = get_languages(connection=connection, lang_id=normed_post["lang"])
 			translatable = []
 
-			if "original_lang_entry_uuid" in normed_post and normed_post["original_lang_entry_uuid"] is not None and len(normed_post["original_lang_entry_uuid"]) > 0:
+			if "original_lang_entry_uuid" in normed_post and normed_post[
+				"original_lang_entry_uuid"] is not None and len(normed_post["original_lang_entry_uuid"]) > 0:
 				translations, translatable = get_translations(
 					connection=connection,
 					post_uuid=normed_post["uuid"],
@@ -676,7 +677,7 @@ def show_formats(*args, permission_level: int, connection: psycopg.Connection, t
 					 FROM sloth_post_formats
 					 WHERE post_type = %s""",
 				(type_id,))
-			post_formats =cur.fetchall()
+			post_formats = cur.fetchall()
 	except Exception as e:
 		print("db error C2")
 		connection.close()
@@ -980,7 +981,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 				lang = cur.fetchone()['settings_value']
 			else:
 				lang = filled["lang"]
-				matched_tags = process_taxonomy(connection=connection, post_tags=filled["tags"], post_type_uuid=filled["post_type_uuid"], lang=lang)
+				matched_tags = process_taxonomy(connection=connection, post_tags=filled["tags"],
+												post_type_uuid=filled["post_type_uuid"], lang=lang)
 				# get user
 				author = request.headers.get('authorization').split(":")[1]
 
@@ -1011,7 +1013,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 								(filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
 								 filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
 								 filled["post_status"], lang, filled["password"] if "password" in filled else None,
-								 filled["original_lang_entry_uuid"] if "original_lang_entry_uuid" in filled else "", filled["post_format"],
+								 filled["original_lang_entry_uuid"] if "original_lang_entry_uuid" in filled else "",
+								 filled["post_format"],
 								 filled["meta_description"], filled["twitter_description"], filled["pinned"]))
 					connection.commit()
 					taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
@@ -1049,8 +1052,11 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 				saved_post = normalize_post_from_query(cur.fetchone())
 				sections = process_sections(connection, filled["sections"], filled["uuid"])
 				saved_post.update({
-					"meta_description": prepare_description(char_limit=161, description=saved_post["meta_description"], section=sections[0]),
-					"twitter_description": prepare_description(char_limit=161, description=saved_post["twitter_description"], section=sections[0]),
+					"meta_description": prepare_description(char_limit=161, description=saved_post["meta_description"],
+															section=sections[0]),
+					"twitter_description": prepare_description(char_limit=161,
+															   description=saved_post["twitter_description"],
+															   section=sections[0]),
 					"sections": sections,
 				})
 				cur.execute(
@@ -1065,19 +1071,19 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 				if filled["post_status"] == 'published':
 					gen = PostGenerator(connection=connection)
 					gen.run(post=saved_post, regenerate_taxonomies=taxonomy_to_clean)
-					# (threading.Thread(
-					#     target=toes.generate_post,
-					#     args=[
-					#         get_connection_dict(current_app.config),
-					#         os.getcwd(),
-					#         generatable_post,
-					#         current_app.config["THEMES_PATH"],
-					#         current_app.config["OUTPUT_PATH"],
-					#         taxonomy_to_clean
-					#     ]
-					# )).start()
+				# (threading.Thread(
+				#     target=toes.generate_post,
+				#     args=[
+				#         get_connection_dict(current_app.config),
+				#         os.getcwd(),
+				#         generatable_post,
+				#         current_app.config["THEMES_PATH"],
+				#         current_app.config["OUTPUT_PATH"],
+				#         taxonomy_to_clean
+				#     ]
+				# )).start()
 
-				if filled["post_status"] == 'protected':
+				if filled["post_status"] == 'protected' or filled["post_status"] == 'scheduled':
 					# get post type slug
 					cur.execute("""SELECT slug, uuid FROM sloth_post_types WHERE uuid = %s;""",
 								(saved_post["post_type"],))
@@ -1252,7 +1258,7 @@ def delete_post(*args, connection: psycopg.Connection, **kwargs):
 						(filled["post"],))
 			oldest_alternative = cur.fetchone()
 			cur.execute("""UPDATE sloth_posts SET original_lang_entry_uuid = '' WHERE uuid = %s;""",
-						(oldest_alternative['uuid'], ))
+						(oldest_alternative['uuid'],))
 			cur.execute("""UPDATE sloth_posts SET original_lang_entry_uuid = %s WHERE original_lang_entry_uuid = %s;""",
 						(oldest_alternative['uuid'], filled["post"]))
 			cur.execute("""DELETE FROM sloth_post_taxonomies WHERE post = %s;""",
@@ -1407,6 +1413,34 @@ def check_scheduled(*args, key: str, connection: psycopg.Connection, **kwargs):
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute(build_post_query(scheduled=True), (time() * 1000,))
 			items = [normalize_post_from_query(fetched) for fetched in cur.fetchall()]
+
+			gen = PostGenerator(connection=connection)
+			for item in items:
+				cur.execute("""SELECT sl.location, spl.hook_name
+								FROM sloth_post_libraries AS spl
+								INNER JOIN sloth_libraries sl on sl.uuid = spl.library
+								WHERE spl.post = %s;""",
+							(item['uuid'],))
+				libraries = cur.fetchall()
+
+				cur.execute(
+					"""SELECT content, section_type as type, position
+					FROM sloth_post_sections
+					WHERE post = %s
+					ORDER BY position;""",
+					(item['uuid'],))
+				item['sections'] = cur.fetchall()
+
+				item['related_posts'] = get_related_posts(post=item, connection=connection)
+
+				cur.execute("""UPDATE sloth_posts SET post_status = 'published' WHERE uuid = %s;""",
+							(item['uuid'],))
+				connection.commit()
+
+				item['post_status'] = "published"
+				item["libraries"] = libraries
+				gen.run(post=item, multiple=True)
+
 			return json.dumps({
 				"error": ""
 			}), 200
