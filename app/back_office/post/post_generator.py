@@ -91,7 +91,7 @@ class PostGenerator:
 			everything : bool
 				Tells the function that everything will be regeneratable
 		"""
-		if not self.runnable or (len(post) > 0 and len(post_type) > 0):
+		if not self.runnable or (len(post.keys()) > 0 and len(post_type) > 0):
 			return False
 
 		if Path(os.path.join(os.getcwd(), 'generating.lock')).is_file():
