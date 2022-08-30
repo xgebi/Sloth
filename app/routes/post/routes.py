@@ -268,7 +268,8 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
 			"post_formats": post_formats,
 			"libs": libs,
 			"hook_list": HooksList.list(),
-			"media_data": [media_data[key] for key in media_data.keys()]
+			"media_data": [media_data[key] for key in media_data.keys()],
+			"thumbnail_info": temp_thumbnail_info
 		}
 	)
 
@@ -303,7 +304,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
 					"""SELECT sma.alt, 
 					concat(
 						(SELECT settings_value FROM sloth_settings WHERE settings_name = 'site_url'), '/',file_path
-					)
+					) AS uri
 						FROM sloth_media AS sm 
 						INNER JOIN sloth_media_alts sma on sm.uuid = sma.media
 						WHERE sm.uuid=%s AND sma.lang = %s""",
@@ -1094,11 +1095,12 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 					# get post slug
 					gen = PostGenerator()
 					gen.delete_post_files(
-						post_type_slug=post_type['slug'],
-						post_slug=saved_post["slug"],
+						post_type=post_type,
+						post=saved_post,
 						language=language
 					)
-					gen.run(clean_protected=True, post=saved_post)
+					gen.run(clean_protected=True, post=saved_post, regenerate_taxonomies=taxonomy_to_clean)
+
 	except Exception as e:
 		print(e)
 		traceback.print_exc()

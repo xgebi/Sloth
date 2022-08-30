@@ -111,7 +111,6 @@ function setupNewMenu(menuData, name, uuid) {
 }
 
 function moveItemUp(event) {
-    debugger;
     const index = getRowIndex(event.currentTarget.dataset["uuid"]);
     const rows = document.querySelector("#menu-items tbody").children;
     if (index > 0) {
@@ -120,7 +119,6 @@ function moveItemUp(event) {
 }
 
 function moveItemDown(event) {
-    debugger;
     console.log("down");
     const index = getRowIndex(event.currentTarget.dataset["uuid"]);
     const rows = document.querySelector("#menu-items tbody").children;

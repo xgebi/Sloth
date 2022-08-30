@@ -1019,13 +1019,13 @@ class PostGenerator:
 		return form_text
 
 	# delete post files
-	def delete_post_files(self, *args, post_type_slug: str, post_slug: str, language: Dict, **kwargs):
+	def delete_post_files(self, *args, post_type: Dict, post: Dict, language: Dict, **kwargs):
 		if language["uuid"] == self.settings["main_language"]['settings_value']:
 			# path for main language
-			post_path_dir = Path(self.config["OUTPUT_PATH"], post_type_slug, post_slug)
+			post_path_dir = Path(self.config["OUTPUT_PATH"], post_type['slug'], post["slug"])
 		else:
 			# path for other languages
-			post_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type_slug, post_slug)
+			post_path_dir = Path(self.config["OUTPUT_PATH"], language["short_name"], post_type['slug'], post["slug"])
 
 		if os.path.exists(post_path_dir):
 			shutil.rmtree(post_path_dir)

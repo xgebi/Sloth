@@ -99,10 +99,10 @@
         <div class="second-column thumbnail">
             <label for="thumbnail">Thumbnail</label>
             <figure id="thumbnail-wrapper">
-                <img toe:if="data['thumbnail_uuid']" toe:src="data['thumbnail_path']" toe:alt="data['thumbnail_alt']"/>
+                <img toe:if="data['thumbnail']" toe:src="thumbnail_info['uri']" toe:alt="data['alt']"/>
             </figure>
             <button id="pick-thumbnail">Pick thumbnail</button>
-            <input id="thumbnail" class="hidden" toe:value="data['thumbnail_uuid']"/>
+            <input id="thumbnail" class="hidden" toe:value="data['thumbnail']"/>
         </div>
         <div class="metadata second-column">
             <label for="publish_date">Publish date</label>
