@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+    <title>Stencil Component Starter</title>
+
+    <script type="module" src="/build/sloth-components.esm.js"></script>
+    <script nomodule src="/build/sloth-components.js"></script>
+    <script>
+      function actionHandler(e) {
+        console.log(e)
+      }
+    </script>
+  </head>
+  <body>
+    <sloth-editor-section
+      type="text"
+      section-id="1"
+      content-target-language="Def"
+    ></sloth-editor-section>
+  <script>
+    document.querySelector("sloth-editor-section").addEventListener('action', actionHandler);
+  </script>
+  </body>
+</html>
