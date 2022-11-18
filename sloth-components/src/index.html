@@ -14,13 +14,12 @@
     </script>
   </head>
   <body>
-    <sloth-editor-section
-      type="text"
-      section-id="1"
-      content-target-language="Def"
-    ></sloth-editor-section>
+    <sloth-editor
+      title="This is the title"
+      sections='[{"content": "Test aa", "original": "", "type": "text", "position": 0}]'
+    ></sloth-editor>
   <script>
-    document.querySelector("sloth-editor-section").addEventListener('action', actionHandler);
+    {#document.querySelector("sloth-editor-section").addEventListener('action', actionHandler);#}
   </script>
   </body>
 </html>

@@ -28,7 +28,7 @@ def create_app():  # dev, test, or prod
 		THREAD_ID=uuid4()
 	)
 
-	app.config.from_pyfile(os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py'))
+	app.config.from_pyfile(os.path.join(os.getcwd(), 'config', f'{os.environ["SLOTH_ENV"]}.py'))
 	app.config["THEMES_PATH"] = os.path.join(os.getcwd(), 'themes')
 	app.config["TEMPLATES_PATH"] = os.path.join(os.getcwd(), 'src', 'cms', 'app', 'templates')
 	app.config['CORS_HEADERS'] = 'Content-Type'
@@ -42,7 +42,7 @@ def create_app():  # dev, test, or prod
 				'/design') or request.path.startswith('/static')) and not registration_lock_file.is_file():
 			return redirect('/registration')
 
-	if os.environ["FLASK_ENV"] != "development":
+	if os.environ["SLOTH_ENV"] != "development":
 		@app.errorhandler(500)
 		def internal_error(error):
 			return "500 error", 500

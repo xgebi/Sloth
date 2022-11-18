@@ -24,6 +24,8 @@ export namespace Components {
     interface SideBar {
     }
     interface SlothEditor {
+        "sections": string;
+        "title": string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage": string;
@@ -95,6 +97,8 @@ declare namespace LocalJSX {
     interface SideBar {
     }
     interface SlothEditor {
+        "sections"?: string;
+        "title"?: string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage"?: string;

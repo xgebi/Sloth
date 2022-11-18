@@ -34,7 +34,7 @@ def show_dev_settings(*args, permission_level: int, connection: psycopg.Connecti
 	default_language = get_default_language(connection=connection)
 	connection.close()
 
-	if os.environ["FLASK_ENV"] != "development":
+	if os.environ["SLOTH_ENV"] != "development":
 		return render_toe_from_path(
 			path_to_templates=os.path.join(os.getcwd(), 'app', 'templates'),
 			template="dev-settings-prod.toe.html",
@@ -71,7 +71,7 @@ def delete_posts(*args, connection: psycopg.Connection, **kwargs):
 	:param kwargs:
 	:return:
 	"""
-	if os.environ["FLASK_ENV"] != "development":
+	if os.environ["SLOTH_ENV"] != "development":
 		abort(403)
 
 	try:
@@ -113,7 +113,7 @@ def delete_taxonomy(*args, connection: psycopg.Connection, **kwargs):
 	:return:
 	"""
 	code = -1
-	if os.environ["FLASK_ENV"] != "development":
+	if os.environ["SLOTH_ENV"] != "development":
 		response = make_response(json.dumps(
 			{"taxonomyDeleted": False}
 		))

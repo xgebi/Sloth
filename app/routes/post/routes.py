@@ -254,22 +254,23 @@ def show_post_edit(*args, permission_level: int, connection: psycopg.Connection,
 		template="post-edit.toe.html",
 		hooks=Hooks(),
 		data={
-			"title": f"Add new {post_type_name}" if "new" in post_data else f"Edit {post_type_name}",
-			"post_types": post_types_result,
-			"permission_level": permission_level,
-			"token": token,
-			"post_type_name": post_type_name,
-			"data": post_data,
-			"post_statuses": post_statuses,
-			"default_lang": default_lang,
-			"languages": translatable,
-			"translations": translations,
 			"current_lang_id": post_data["lang"],
-			"post_formats": post_formats,
-			"libs": libs,
+			"data": post_data,
+			"default_lang": default_lang,
 			"hook_list": HooksList.list(),
+			"languages": translatable,
+			"libs": libs,
 			"media_data": [media_data[key] for key in media_data.keys()],
-			"thumbnail_info": temp_thumbnail_info
+			"permission_level": permission_level,
+			"post_formats": post_formats,
+			"post_statuses": post_statuses,
+			"post_types": post_types_result,
+			"post_type_name": post_type_name,
+			"sections_json": json.dumps(post_data['sections']),
+			"thumbnail_info": temp_thumbnail_info,
+			"title": f"Add new {post_type_name}" if "new" in post_data else f"Edit {post_type_name}",
+			"token": token,
+			"translations": translations,
 		}
 	)
 
@@ -355,12 +356,13 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
 				"version": lib['version'],
 				"hook": lib['hook_name']
 			} for lib in cur.fetchall()]
-			cur.execute("""SELECT content, section_type, position
+			cur.execute("""SELECT content, section_type, position, uuid
                         FROM sloth_post_sections
                         WHERE post = %s
                         ORDER BY position;""",
 						(post_id,))
 			sections = [{
+				"uuid": section['uuid'],
 				"content": section['content'],
 				"original": "",
 				"type": section['section_type'],
@@ -376,6 +378,7 @@ def get_post_data(*args, connection: psycopg.Connection, post_id: str, **kwargs)
 				translated_sections = cur.fetchall()
 				while len(sections) < len(translated_sections):
 					sections.append({
+						"uuid": "",
 						"content": "",
 						"original": "",
 						"type": translated_sections[len(sections)]['section_type'],

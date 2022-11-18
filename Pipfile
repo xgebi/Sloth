@@ -14,10 +14,8 @@ python-dateutil = "*"
 pytz = "*"
 authlib = "*"
 requests = "*"
-tweepy = "*"
-apscheduler = "*"
-psycopg = {extras = ["binary"], version = "*"}
 pylint = "*"
+psycopg = {version = "==3.0.17", extras = ["c"]}
 
 [requires]
 python_version = "3.10"

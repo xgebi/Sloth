@@ -10,7 +10,7 @@ services:
       - ./:/app
     tty: true
     environment:
-      FLASK_ENV: tests
+      SLOTH_ENV: tests
     links:
       - database
   database:

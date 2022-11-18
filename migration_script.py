@@ -23,7 +23,7 @@ def execute_python_scripts(con, migration_py):
 	module.transform(con)
 
 
-config_filename = os.path.join(os.getcwd(), 'config', f'{os.environ["FLASK_ENV"]}.py')
+config_filename = os.path.join(os.getcwd(), 'config', f'{os.environ["SLOTH_ENV"]}.py')
 try:
 	with open(config_filename, mode="rb") as config_file:
 		exec(compile(config_file.read(), config_filename, "exec"))
@@ -54,12 +54,12 @@ if os.path.isfile("migration.json"):
 			migrations = json.load(migrations_file)
 
 		for migration in migrations:
-			if os.environ["FLASK_ENV"] == "development":
+			if os.environ["SLOTH_ENV"] == "development":
 				answer = input(f"Should process {migration['file']}? (y/N)")
 				if answer.lower() != 'y':
 					continue
 
-			if os.environ['FLASK_ENV'] == "production":
+			if os.environ['SLOTH_ENV'] == "production":
 				migrated_path = os.path.join(os.getcwd(), "migrated")
 				if not Path(migrated_path).is_file():
 					with open(migrated_path, 'w') as f:
@@ -84,7 +84,7 @@ if os.path.isfile("migration.json"):
 				cur.execute("""INSERT INTO migrations (uuid, migration) VALUES (%s, %s)""", (str(uuid.uuid4()), f"{migration['type']}-{migration['file']}"))
 				con.commit()
 
-	if os.environ["FLASK_ENV"] != "development":
+	if os.environ["SLOTH_ENV"] != "development":
 		os.remove("migration.json")
 
 print("\nMigrations done")
