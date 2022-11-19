@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: '.'
+      dockerfile: "./Dockerfile"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./:/app
+    tty: true
+    environment:
+      SLOTH_ENV: tests
+    links:
+      - database
+  database:
+    image: 'postgres:latest'
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sloth
+      POSTGRES_PASSWORD: sloth
+      POSTGRES_DB: sloth

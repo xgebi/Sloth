@@ -1,0 +1,11 @@
+{
+  "waitForAnimations": true,
+  "animationDistanceThreshold": 5,
+  "defaultCommandTimeout": 5000,
+  "video": true,
+  "pageLoadTimeout": 60000,
+  "requestTimeout": 15000,
+  "responseTimeout": 30000,
+  "failOnStatusCode": false,
+  "includeShadowDom": true
+}

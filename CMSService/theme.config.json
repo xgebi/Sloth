@@ -1,0 +1,18 @@
+{
+  "choosable": {
+    "description": "Theme can be chose",
+    "type": "boolean"
+  },
+  "displayName": {
+    "description": "Display name of the theme",
+    "type": "string"
+  },
+  "name": {
+    "description": "Machine readable name of the theme",
+    "type": "string"
+  },
+  "version": {
+    "description": "Version of the theme",
+    "type": "string"
+  }
+}
