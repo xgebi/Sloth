@@ -16,7 +16,7 @@ def transform(connection):
                     (str(uuid.uuid4()), med[0],  med[2])
                 )
             connection.commit()
-    except psycopg.errors.DatabaseError:
+    except psycopg.errors.DatabaseError as e:
         print(e)
         return False
     return True

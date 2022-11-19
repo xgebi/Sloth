@@ -1,2 +1,0 @@
-class Twitter:
-	pass

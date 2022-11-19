@@ -14,11 +14,6 @@ from app.toes.hooks import Hooks, Hook
 bcrypt = Bcrypt()
 
 
-class Dummy:
-	def __init__(self):
-		self.name = "Dummy bot"
-
-
 def create_app():  # dev, test, or prod
 
 	app = Flask(__name__)

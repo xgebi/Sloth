@@ -1,4 +1,0 @@
-- name: sast-scan
-  uses: AppThreat/sast-scan-action@1.0.2
-  with:
-    type: "python"

@@ -31,18 +31,18 @@ __pycache__
 *.pyc
 
 registration.lock
-/site/*
-/themes/dummy/*
+CMSService/site/*
+CMSService/themes/dummy/*
 
 /target
 /diagrams
 
-/themes/sabine-wren/
-/themes/ahsoka-tano/
+CMSService/themes/sabine-wren/
+CMSService/themes/ahsoka-tano/
 
-generating.lock
-rss.lock
-schedule.lock
+CMSService/generating.lock
+CMSService/rss.lock
+CMSService/schedule.lock
 
 rust/toes/target/
 
@@ -54,5 +54,5 @@ toes.pyd
 *.so
 *.h
 
-/cypress/videos
-/cypress/screenshots
+CMSService/cypress/videos
+CMSService/cypress/screenshots
