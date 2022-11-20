@@ -1,0 +1,26 @@
+[package]
+name = "post_generation_service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tonic = "0.8.2"
+prost = "0.11.2"
+futures-core = "0.3.25"
+futures-util = "0.3.25"
+tokio = { version = "1.22.0", features = ["full"] }
+tokio-stream = "0.1.11"
+async-stream = "0.3.3"
+rand = "0.8.5"
+config = "0.13.2"
+deadpool-postgres = "0.10.3"
+derive_more = "0.99.17"
+dotenv = "0.15.0"
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.88"
+tokio-pg-mapper = "0.2.0"
+tokio-pg-mapper-derive = "0.2.0"
+tokio-postgres = "0.7.6"
+

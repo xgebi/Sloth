@@ -1,0 +1,19 @@
+syntax = "proto3";
+package user;
+
+service Crud {
+  rpc GeneratePost (PostRequest) returns (GeneratingReply) {}
+  rpc RegenerateAll(Empty) returns (GeneratingReply) {}
+  rpc RegenerateAssets(Empty) returns (Empty) {}
+  rpc IsGenerating(Empty) returns (GeneratingReply) {}
+}
+
+message Empty {}
+
+message PostRequest {
+    string uuid = 1;
+}
+
+message GeneratingReply {
+  bool generating = 1;
+}

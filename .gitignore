@@ -56,3 +56,4 @@ toes.pyd
 
 CMSService/cypress/videos
 CMSService/cypress/screenshots
+/post_generation_service/target/

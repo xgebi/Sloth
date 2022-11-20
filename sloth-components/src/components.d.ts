@@ -23,9 +23,11 @@ export namespace Components {
     }
     interface SideBar {
     }
+    interface SlothButton {
+    }
     interface SlothEditor {
+        "postTitle": string;
         "sections": string;
-        "title": string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage": string;
@@ -53,6 +55,12 @@ declare global {
         prototype: HTMLSideBarElement;
         new (): HTMLSideBarElement;
     };
+    interface HTMLSlothButtonElement extends Components.SlothButton, HTMLStencilElement {
+    }
+    var HTMLSlothButtonElement: {
+        prototype: HTMLSlothButtonElement;
+        new (): HTMLSlothButtonElement;
+    };
     interface HTMLSlothEditorElement extends Components.SlothEditor, HTMLStencilElement {
     }
     var HTMLSlothEditorElement: {
@@ -74,6 +82,7 @@ declare global {
     interface HTMLElementTagNameMap {
         "my-component": HTMLMyComponentElement;
         "side-bar": HTMLSideBarElement;
+        "sloth-button": HTMLSlothButtonElement;
         "sloth-editor": HTMLSlothEditorElement;
         "sloth-editor-section": HTMLSlothEditorSectionElement;
         "sloth-thumbnail-chooser": HTMLSlothThumbnailChooserElement;
@@ -96,9 +105,11 @@ declare namespace LocalJSX {
     }
     interface SideBar {
     }
+    interface SlothButton {
+    }
     interface SlothEditor {
+        "postTitle"?: string;
         "sections"?: string;
-        "title"?: string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage"?: string;
@@ -112,6 +123,7 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "my-component": MyComponent;
         "side-bar": SideBar;
+        "sloth-button": SlothButton;
         "sloth-editor": SlothEditor;
         "sloth-editor-section": SlothEditorSection;
         "sloth-thumbnail-chooser": SlothThumbnailChooser;
@@ -123,6 +135,7 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
             "side-bar": LocalJSX.SideBar & JSXBase.HTMLAttributes<HTMLSideBarElement>;
+            "sloth-button": LocalJSX.SlothButton & JSXBase.HTMLAttributes<HTMLSlothButtonElement>;
             "sloth-editor": LocalJSX.SlothEditor & JSXBase.HTMLAttributes<HTMLSlothEditorElement>;
             "sloth-editor-section": LocalJSX.SlothEditorSection & JSXBase.HTMLAttributes<HTMLSlothEditorSectionElement>;
             "sloth-thumbnail-chooser": LocalJSX.SlothThumbnailChooser & JSXBase.HTMLAttributes<HTMLSlothThumbnailChooserElement>;

@@ -1,0 +1,27 @@
+@import "../styles-only/button.css";
+
+:host {
+  display: block;
+}
+
+.sloth-editor {
+  width: 100%;
+  display: flex;
+  flex-flow: column;
+  gap: 2rem;
+}
+
+.sloth-editor__header {
+  display: flex;
+  flex-flow: column;
+  gap: .5rem;
+}
+
+.sloth-editor__header input {
+  padding: .5rem;
+}
+
+.sloth-editor__footer {
+  display: flex;
+  justify-content: center;
+}

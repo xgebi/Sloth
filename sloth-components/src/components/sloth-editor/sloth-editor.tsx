@@ -3,11 +3,11 @@ import {ISlothEditorSectionData} from "../../interfaces/ISlothEditorSectionData"
 
 @Component({
   tag: 'sloth-editor',
-  styleUrl: 'sloth-editor.css',
+  styleUrl: 'sloth-editor.scss',
   shadow: true,
 })
 export class SlothEditor {
-  @Prop() title: string;
+  @Prop() postTitle: string;
 
   @Prop() sections: string;
 
@@ -19,10 +19,10 @@ export class SlothEditor {
 
   render() {
     return (
-      <article>
-        <header>
+      <article class="sloth-editor">
+        <header class="sloth-editor__header">
           <laber for="title">Title</laber>
-          <input id="title" value={this.title} />
+          <input id="title" value={this.postTitle} />
         </header>
         <div>
           {this.sectionsLocal.map((section) => (<section>
@@ -33,7 +33,7 @@ export class SlothEditor {
             ></sloth-editor-section>
           </section>))}
         </div>
-        <footer>
+        <footer class="sloth-editor__footer">
           <button onClick={this.addSections.bind(this)}>Add section</button>
         </footer>
       </article>

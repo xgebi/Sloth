@@ -1,0 +1,45 @@
+@import "../styles-only/button.css";
+
+:host {
+  display: block;
+}
+
+.sloth-editor-section {
+  display: grid;
+  grid-template-rows: 1rem auto 2rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.sloth-editor-section--translation-mode .sloth-editor-section__target-column-name {
+
+}
+
+.sloth-editor-section--original-mode .sloth-editor-section__target-column-name {
+
+}
+
+.sloth-editor-section--translation-mode textarea,
+.sloth-editor-section--translation-mode .sloth-editor-section__target-column-name {
+  grid-column: 2 / 3;
+}
+
+.sloth-editor-section--original-mode textarea,
+.sloth-editor-section--original-mode .sloth-editor-section__target-column-name  {
+  grid-column: 1 / 3;
+}
+
+.sloth-editor-section__action-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sloth-editor-section__original {
+  background: #ccffff;
+}
+
+.sloth-editor-section__original,
+.sloth-editor-section__target {
+  border: 1px solid darkgrey;
+  padding: .5rem;
+}
