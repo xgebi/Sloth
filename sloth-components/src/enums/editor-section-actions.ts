@@ -1,5 +1,7 @@
 export enum EditorSectionActions {
   Up= "up",
   Down = "down",
-  Delete = "delete"
+  Delete = "delete",
+  ContentChanged = "content-changed",
+  TypeChanged = "type-changed",
 }

@@ -11,12 +11,24 @@
   gap: 1rem;
 }
 
+.sloth-editor-section--top-sections {
+  grid-template-rows: 1rem 1rem auto 2rem;
+}
+
 .sloth-editor-section--translation-mode .sloth-editor-section__target-column-name {
 
 }
 
 .sloth-editor-section--original-mode .sloth-editor-section__target-column-name {
 
+}
+
+.sloth-editor-section--original-mode .sloth-editor-section__headline {
+  grid-column: 1 / 2;
+}
+
+.sloth-editor-section--translation-mode .sloth-editor-section__headline {
+  grid-column: 1 / 3;
 }
 
 .sloth-editor-section--translation-mode textarea,

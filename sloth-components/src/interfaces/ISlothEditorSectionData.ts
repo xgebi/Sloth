@@ -1,5 +1,5 @@
 export interface ISlothEditorSectionData {
-  content: string;
+  target: string;
   original: string;
   type: string;
   position: number;

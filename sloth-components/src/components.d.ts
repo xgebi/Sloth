@@ -26,14 +26,20 @@ export namespace Components {
     interface SlothButton {
     }
     interface SlothEditor {
+        "mediaList": string;
         "postTitle": string;
         "sections": string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage": string;
         "contentTargetLanguage": string;
+        "mediaList": string;
+        "position": number;
         "sectionId": string;
         "type": string;
+    }
+    interface SlothMediaPicker {
+        "mediaList": string;
     }
     interface SlothThumbnailChooser {
     }
@@ -73,6 +79,12 @@ declare global {
         prototype: HTMLSlothEditorSectionElement;
         new (): HTMLSlothEditorSectionElement;
     };
+    interface HTMLSlothMediaPickerElement extends Components.SlothMediaPicker, HTMLStencilElement {
+    }
+    var HTMLSlothMediaPickerElement: {
+        prototype: HTMLSlothMediaPickerElement;
+        new (): HTMLSlothMediaPickerElement;
+    };
     interface HTMLSlothThumbnailChooserElement extends Components.SlothThumbnailChooser, HTMLStencilElement {
     }
     var HTMLSlothThumbnailChooserElement: {
@@ -85,6 +97,7 @@ declare global {
         "sloth-button": HTMLSlothButtonElement;
         "sloth-editor": HTMLSlothEditorElement;
         "sloth-editor-section": HTMLSlothEditorSectionElement;
+        "sloth-media-picker": HTMLSlothMediaPickerElement;
         "sloth-thumbnail-chooser": HTMLSlothThumbnailChooserElement;
     }
 }
@@ -108,15 +121,21 @@ declare namespace LocalJSX {
     interface SlothButton {
     }
     interface SlothEditor {
+        "mediaList"?: string;
         "postTitle"?: string;
         "sections"?: string;
     }
     interface SlothEditorSection {
         "contentOriginalLanguage"?: string;
         "contentTargetLanguage"?: string;
-        "onAction"?: (event: SlothEditorSectionCustomEvent<{ action: EditorSectionActions, id: string }>) => void;
+        "mediaList"?: string;
+        "onSectionUpdated"?: (event: SlothEditorSectionCustomEvent<{ action: EditorSectionActions, uuid: string, data?: string }>) => void;
+        "position"?: number;
         "sectionId"?: string;
         "type"?: string;
+    }
+    interface SlothMediaPicker {
+        "mediaList"?: string;
     }
     interface SlothThumbnailChooser {
     }
@@ -126,6 +145,7 @@ declare namespace LocalJSX {
         "sloth-button": SlothButton;
         "sloth-editor": SlothEditor;
         "sloth-editor-section": SlothEditorSection;
+        "sloth-media-picker": SlothMediaPicker;
         "sloth-thumbnail-chooser": SlothThumbnailChooser;
     }
 }
@@ -138,6 +158,7 @@ declare module "@stencil/core" {
             "sloth-button": LocalJSX.SlothButton & JSXBase.HTMLAttributes<HTMLSlothButtonElement>;
             "sloth-editor": LocalJSX.SlothEditor & JSXBase.HTMLAttributes<HTMLSlothEditorElement>;
             "sloth-editor-section": LocalJSX.SlothEditorSection & JSXBase.HTMLAttributes<HTMLSlothEditorSectionElement>;
+            "sloth-media-picker": LocalJSX.SlothMediaPicker & JSXBase.HTMLAttributes<HTMLSlothMediaPickerElement>;
             "sloth-thumbnail-chooser": LocalJSX.SlothThumbnailChooser & JSXBase.HTMLAttributes<HTMLSlothThumbnailChooserElement>;
         }
     }

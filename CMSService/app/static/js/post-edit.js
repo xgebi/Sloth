@@ -289,7 +289,7 @@ function saveCreatePost(values) {
         })
         .then(data => {
             let original = values['uuid'];
-            if (values['original_lang_entry_uuid'].length > 0) {
+            if (values['original_lang_entry_uuid']?.length > 0) {
                 original = values['original_lang_entry_uuid'];
             }
             window.location.replace(

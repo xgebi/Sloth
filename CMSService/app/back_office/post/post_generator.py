@@ -363,7 +363,7 @@ class PostGenerator:
 		else:
 			# path for other languages
 			output_path = Path(self.config["OUTPUT_PATH"], language["short_name"])
-		print(output_path)
+		print(f"output path: {output_path}")
 
 		thumbnail_path, thumbnail_alt = self.get_thumbnail_information(post["thumbnail"], language["uuid"])
 		post["thumbnail_path"] = f"/{thumbnail_path}"
