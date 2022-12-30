@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package post_generation;
 
-service Crud {
-  rpc GeneratePost (PostRequest) returns (GeneratingReply) {}
-  rpc RegenerateAll(Empty) returns (GeneratingReply) {}
+service PostService {
+  rpc GeneratePost (PostRequest) returns (PostGeneratingReply) {}
+  rpc RegenerateAll(Empty) returns (PostGeneratingReply) {}
   rpc RegenerateAssets(Empty) returns (Empty) {}
-  rpc IsGenerating(Empty) returns (GeneratingReply) {}
+  rpc IsGenerating(Empty) returns (PostGeneratingReply) {}
 }
 
 message Empty {}
@@ -15,6 +15,6 @@ message PostRequest {
     string uuid = 1;
 }
 
-message GeneratingReply {
+message PostGeneratingReply {
   bool generating = 1;
 }

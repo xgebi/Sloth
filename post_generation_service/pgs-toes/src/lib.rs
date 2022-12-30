@@ -1,14 +1,18 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+pub fn render_page_from_string() -> String {
+    String::new()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub fn render_page_from_path() -> String {
+    String::new()
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn it_works() {
+//         let result = add(2, 2);
+//         assert_eq!(result, 4);
+//     }
+// }
