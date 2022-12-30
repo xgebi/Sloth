@@ -57,3 +57,7 @@ toes.pyd
 CMSService/cypress/videos
 CMSService/cypress/screenshots
 /post_generation_service/target/
+
+CMSService/app/static/js/libs/deps.js
+
+.cache

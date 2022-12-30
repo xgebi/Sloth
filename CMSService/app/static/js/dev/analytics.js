@@ -1,3 +1,5 @@
+const d3 = require('d3/dist/d3');
+
 document.addEventListener('DOMContentLoaded', () => {
     drawPageViewsChart();
     drawMostVisitedChart();
