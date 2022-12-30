@@ -122,7 +122,7 @@ function drawMostVisitedChart() {
         .append("text")
         .attr("font-size", 16)
         .text((d) => d.pathname)
-        .attr("x", (d, i, arr) => {
+        .attr("x", () => {
             return padding;
         })
         .attr("y", (d, i) => {
@@ -190,7 +190,7 @@ function drawMostVisitedChart() {
                         console.log(d);
                         return d.pathname;
                     })
-                    .attr("x", (d, i, arr) => {
+                    .attr("x", () => {
                         return padding;
                     })
                     .attr("y", (d, i) => {
@@ -210,11 +210,11 @@ function drawBrowserStats() {
             refinedBrowserDataMap[item.browser] = {
                 browser: item.browser,
                 count: item.count,
-                versions: [item.version]
+                versions: [item['browser_version']]
             };
         } else {
             refinedBrowserDataMap[item.browser].count += item.count;
-            refinedBrowserDataMap[item.browser].versions.push(item.version);
+            refinedBrowserDataMap[item.browser].versions.push(item['browser_version']);
         }
     }
     const refinedBrowserData = Object.values(refinedBrowserDataMap)
@@ -244,7 +244,7 @@ function drawBrowserStats() {
         .data(refinedBrowserData)
         .enter()
         .append("rect")
-        .attr("x", (d) => padding + 100)
+        .attr("x", () => padding + 100)
         .attr("y", (d, i) => {
             return (i * paddedBarHeight);
         })
@@ -261,7 +261,7 @@ function drawBrowserStats() {
         .append("text")
         .attr("font-size", 16)
         .text((d) => d.browser)
-        .attr("x", (d, i, arr) => {
+        .attr("x", () => {
             return padding;
         })
         .attr("y", (d, i) => {

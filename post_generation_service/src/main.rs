@@ -1,10 +1,11 @@
 mod generator;
+mod settings;
 
 use tonic::{transport::Server, Request, Response, Status};
 
 use post_generation::crud_server::{Crud, CrudServer};
 use post_generation::{Empty, GeneratingReply, PostRequest };
-use crate::generator::Generator;
+use crate::generator::{ generate_post, regenerate_all, regenerate_assets, is_generating};
 
 pub mod post_generation {
     tonic::include_proto!("post_generation"); // The string specified here must match the proto package name
@@ -21,28 +22,28 @@ impl Crud for MyGreeter {
     ) -> Result<Response<GeneratingReply>, Status> {
         println!("Got a request: {:?}", request);
 
-        let reply = post_generation::GeneratingReply {
-            generating: Generator::generate_post(request.into_inner().uuid)
+        let reply = GeneratingReply {
+            generating: generate_post(request.into_inner().uuid)
         };
 
         Ok(Response::new(reply))
     }
 
     async fn regenerate_all(&self, _request: Request<Empty>) -> Result<Response<GeneratingReply>, Status> {
-        let reply = post_generation::GeneratingReply {
-            generating: Generator::regenerate_all()
+        let reply = GeneratingReply {
+            generating: regenerate_all()
         };
         Ok(Response::new(reply))
     }
 
     async fn regenerate_assets(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        Generator::regenerate_assets();
+        regenerate_assets();
         Ok(Response::new(Empty {}))
     }
 
     async fn is_generating(&self, _request: Request<Empty>) -> Result<Response<GeneratingReply>, Status> {
-        let reply = post_generation::GeneratingReply {
-            generating: Generator::is_generating()
+        let reply = GeneratingReply {
+            generating: is_generating()
         };
         Ok(Response::new(reply))
     }
