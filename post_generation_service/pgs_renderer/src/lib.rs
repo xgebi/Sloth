@@ -1,4 +1,7 @@
+use pgs_nodes::node::Node;
+
 pub fn add(left: usize, right: usize) -> usize {
+    let a = Node { name: String::new() };
     left + right
 }
 

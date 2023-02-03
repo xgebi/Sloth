@@ -990,20 +990,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "pgs-renderer"
-version = "0.1.0"
-
-[[package]]
-name = "pgs-slothmark"
-version = "0.1.0"
-
-[[package]]
-name = "pgs-toes"
-version = "0.1.0"
-
-[[package]]
 name = "pgs_nodes"
 version = "0.1.0"
+
+[[package]]
+name = "pgs_renderer"
+version = "0.1.0"
+dependencies = [
+ "pgs_nodes",
+]
+
+[[package]]
+name = "pgs_slothmark"
+version = "0.1.0"
+dependencies = [
+ "pgs_nodes",
+ "pgs_renderer",
+]
+
+[[package]]
+name = "pgs_toes"
+version = "0.1.0"
+dependencies = [
+ "pgs_nodes",
+ "pgs_renderer",
+]
 
 [[package]]
 name = "phf"
