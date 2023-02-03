@@ -30,19 +30,8 @@ yarn-error.log*
 __pycache__
 *.pyc
 
-registration.lock
-CMSService/site/*
-CMSService/themes/dummy/*
-
 /target
 /diagrams
-
-CMSService/themes/sabine-wren/
-CMSService/themes/ahsoka-tano/
-
-CMSService/generating.lock
-CMSService/rss.lock
-CMSService/schedule.lock
 
 rust/toes/target/
 
@@ -54,12 +43,4 @@ toes.pyd
 *.so
 *.h
 
-CMSService/cypress/videos
-CMSService/cypress/screenshots
 /post_generation_service/target/
-
-CMSService/app/static/js/libs/deps.js
-
-.cache
-
-CMSService/themes/January

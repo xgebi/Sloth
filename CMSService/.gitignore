@@ -1,0 +1,16 @@
+out/
+themes/sabine-wren/
+themes/ahsoka-tano/
+
+generating.lock
+rss.lock
+schedule.lock
+registration.lock
+site/*
+themes/dummy/*
+
+cypress/videos
+cypress/screenshots
+app/static/js/libs/deps.js
+.cache
+themes/January

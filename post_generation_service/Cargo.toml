@@ -7,9 +7,10 @@ edition = "2021"
 
 [workspace]
 members = [
-    "pgs-toes",
-    "pgs-slothmark",
-    "pgs-renderer",
+    "pgs_nodes",
+    "pgs_toes",
+    "pgs_slothmark",
+    "pgs_renderer",
 ]
 
 [dependencies]
