@@ -990,21 +990,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "pgs_nodes"
+name = "pgs_common"
 version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "postgres",
+]
 
 [[package]]
 name = "pgs_renderer"
 version = "0.1.0"
 dependencies = [
- "pgs_nodes",
+ "pgs_common",
 ]
 
 [[package]]
 name = "pgs_slothmark"
 version = "0.1.0"
 dependencies = [
- "pgs_nodes",
+ "pgs_common",
  "pgs_renderer",
 ]
 
@@ -1012,7 +1016,7 @@ dependencies = [
 name = "pgs_toes"
 version = "0.1.0"
 dependencies = [
- "pgs_nodes",
+ "pgs_common",
  "pgs_renderer",
 ]
 
@@ -1082,7 +1086,9 @@ dependencies = [
  "futures-preview",
  "futures-util",
  "http",
- "postgres",
+ "pgs_common",
+ "pgs_slothmark",
+ "pgs_toes",
  "prost",
  "prost-derive",
  "prost-types",

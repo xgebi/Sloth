@@ -1,3 +1,4 @@
+use deadpool_postgres::tokio_postgres::connect;
 use crate::post_generation::post_service_server::PostService;
 use tonic::{transport::Server, Request, Response, Status};
 use crate::post_generation::{Empty, PostGeneratingReply, PostRequest };

@@ -6,4 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pgs_nodes = { path = "../pgs_nodes" }
+pgs_common = { path = "../pgs_common" }

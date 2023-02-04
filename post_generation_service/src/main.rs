@@ -3,6 +3,8 @@ mod settings;
 mod page_generator;
 mod greeters;
 
+use pgs_common;
+
 use tonic::{transport::Server, Request, Response, Status};
 
 use post_generation::post_service_server::{PostService, PostServiceServer};
