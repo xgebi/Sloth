@@ -1,6 +1,7 @@
 use postgres::{Client, Error, NoTls, Row};
 use dotenv::dotenv;
 use std::env;
+use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
 fn connect() -> Result<Client, Error> {
@@ -62,6 +63,29 @@ pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<S
 
 fn row_to_single_post(row: Row) -> SinglePost {
     SinglePost {
-        title: String::new()
+        title: String::new(),
+        uuid: "".to_string(),
+        original_lang_entry_uuid: "".to_string(),
+        lang: "".to_string(),
+        slug: "".to_string(),
+        post_type: "".to_string(),
+        author: "".to_string(),
+        content: "".to_string(),
+        excerpt: "".to_string(),
+        css: "".to_string(),
+        use_theme_css: false,
+        js: "".to_string(),
+        use_theme_js: false,
+        thumbnail: "".to_string(),
+        publish_date: 0.0,
+        update_date: 0.0,
+        post_status: PostStatus::Published,
+        post_format: "".to_string(),
+        imported: false,
+        import_approved: false,
+        password: "".to_string(),
+        meta_description: "".to_string(),
+        twitter_description: "".to_string(),
+        pinned: false,
     }
 }
