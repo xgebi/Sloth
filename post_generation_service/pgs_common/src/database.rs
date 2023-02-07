@@ -12,7 +12,7 @@ fn connect() -> Result<Client, Error> {
 
 pub fn get_single_post() -> Option<&Row> {
     let mut db = connect()?;
-
+    let _stmt = include_str!("../sql/single_post.sql");
     let result = db.query("SELECT id, name, data FROM person", &[]);
     match result {
         Ok(res) => {
