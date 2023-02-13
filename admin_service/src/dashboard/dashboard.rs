@@ -1,11 +1,11 @@
-use actix_web::{Error, HttpResponse, web};
+use actix_web::{Error, HttpResponse, Responder, web};
 use deadpool_postgres::Pool;
 
 pub async fn redirect_to_dashboard(
         user: web::Json<User>,
         db_pool: web::Data<Pool>,
-    ) -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Found().append_header(("Location", "/dashboard")).finish())
+    ) -> impl Responder {
+    web::Redirect::to("/dashboard").see_other()
 }
 
 pub async fn serve_dashboard_page(

@@ -5,6 +5,7 @@ mod themes;
 mod post_type;
 mod post;
 mod settings;
+mod user;
 
 use actix_web::{App, guard, HttpServer, middleware, web};
 use crate::authentication::{process_login, serve_login_page};
