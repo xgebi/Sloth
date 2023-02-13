@@ -1,22 +1,11 @@
 [package]
-name = "post_generation_service"
-version = "0.1.1-alpha.1"
+name = "auth_service"
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[workspace]
-members = [
-    "pgs_common",
-    "pgs_toes",
-    "pgs_slothmark",
-    "pgs_renderer",
-]
-
 [dependencies]
-pgs_common = { path = "pgs_common" }
-pgs_toes = { path = "pgs_toes" }
-pgs_slothmark = { path = "pgs_slothmark" }
 tonic = "0.8.3"
 bytes = "1.3.0"
 prost = "0.11.5"
@@ -44,8 +33,4 @@ tokio-pg-mapper-derive = "0.2.0"
 tokio-postgres = "0.7.7"
 chrono = "0.4.9"
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
-
-# Help you use gRPC protobuf files in Rust.
-[build-dependencies]
-tonic-build = "0.8.4"
 

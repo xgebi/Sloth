@@ -30,7 +30,7 @@ yarn-error.log*
 __pycache__
 *.pyc
 
-/target
+target/
 /diagrams
 
 rust/toes/target/
