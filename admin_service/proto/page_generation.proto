@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package page_generation;
+
+service PageService {
+  rpc GeneratePage (PageRequest) returns (PageGeneratingReply) {}
+}
+
+message PageRequest {
+    map<string, string> values = 1;
+}
+
+message PageGeneratingReply {
+  string generating = 1;
+}

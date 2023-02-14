@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package post_generation;
+
+service PostService {
+  rpc GeneratePost (PostRequest) returns (PostGeneratingReply) {}
+  rpc RegenerateAll(Empty) returns (PostGeneratingReply) {}
+  rpc RegenerateAssets(Empty) returns (Empty) {}
+  rpc IsGenerating(Empty) returns (PostGeneratingReply) {}
+}
+
+message Empty {}
+
+message PostRequest {
+    string uuid = 1;
+}
+
+message PostGeneratingReply {
+  bool generating = 1;
+}
