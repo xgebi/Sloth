@@ -80,14 +80,14 @@ mod tests {
 
     // #[test]
     // fn renders_ordered_list() {
-    //     let result = render_markup(String::from(""));
-    //     assert_eq!(result, String::from(""));
+    //     let result = render_markup(String::from("1. abc\n2. def"));
+    //     assert_eq!(result, String::from("<ol><li>abc</li><li>def</li></ol>"));
     // }
     //
     // #[test]
     // fn renders_unordered() {
-    //     let result = render_markup(String::from(""));
-    //     assert_eq!(result, String::from(""));
+    //     let result = render_markup(String::from("- abc\n- def"));
+    //     assert_eq!(result, String::from("<ul><li>abc</li><li>def</li></ul>"));
     // }
     //
     // #[test]
