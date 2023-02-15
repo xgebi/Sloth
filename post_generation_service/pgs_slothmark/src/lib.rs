@@ -21,35 +21,33 @@ fn parse_slothmark(sm: String) -> Node {
         let p_pattern = Regex::new(r"-\d").unwrap();
         if i == 0 && !p_pattern.is_match(g[i]) {
             let mut p = Node::create_node(Some(String::from("p")), None);
-
+            let t = process_content(g[i..g.len()].to_vec());
+            i += t.content.len();
+            p.children.push(t);
             current_node = &p;
 
-            // root_node.children.push(p);
+            root_node.children.push(p);
         }
     }
 
     root_node
 }
 
-fn process_content(c: Vec<&str>) -> Vec<Node> {
-    let mut res = Vec::new();
+fn process_content(c: Vec<&str>) -> Node {
     let mut i: usize = 0;
     let mut current_node = Node::create_text_node(String::new());
     while i < c.len() {
         if (i+1 < c.len() && c[i..i+2].join("") == "\n\n") ||
             (i+3 < c.len() && c[i..i+4].join("") == "\n\r\n\r") {
-            res.push(current_node.clone());
-            current_node = Node::create_text_node(String::new());
-            i += 2;
+            return current_node;
         } else if c[i] != "\n" || c[i] != "\r"{
             current_node.content = format!("{}{}", current_node.content, c[i]);
-            i += 1;
         } else {
-            i += 1;
+            current_node.content = format!("{}{}", current_node.content, " ");
         }
+        i += 1;
     }
-    res.push(current_node);
-    res
+    current_node
 }
 
 #[cfg(test)]
@@ -71,21 +69,13 @@ mod tests {
     #[test]
     fn process_empty_content() {
         let result = process_content("".graphemes(true).collect::<Vec<&str>>());
-        assert_eq!(result[0].content, "");
+        assert_eq!(result.content, "");
     }
 
     #[test]
     fn process_paragraph_content() {
         let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
-        assert_eq!(result[0].content, "Abc");
-    }
-
-    #[test]
-    fn process_two_paragraph_content() {
-        let result = process_content("Abc\n\nDef".graphemes(true).collect::<Vec<&str>>());
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].content, "Abc");
-        assert_eq!(result[1].content, "Def");
+        assert_eq!(result.content, "Abc");
     }
 
     // #[test]
