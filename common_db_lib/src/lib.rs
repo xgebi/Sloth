@@ -1,7 +1,4 @@
-use pgs_common::node::Node;
-
 pub fn add(left: usize, right: usize) -> usize {
-    let a = Node::create_node(None, None);
     left + right
 }
 

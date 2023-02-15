@@ -1,20 +1,22 @@
 use std::collections::HashMap;
 use std::borrow::Borrow;
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum NodeType {
     Node,
     Processing,
     Text,
-    Comment
+    Comment,
+    Root
 }
 
+#[derive(Clone)]
 pub struct Node {
     pub name: String,
     pub node_type: NodeType,
     pub attributes: HashMap<String, String>,
-    pub children: Option<Vec<Node>>,
-    pub content: Option<String>,
+    pub children: Vec<Node>,
+    pub content: String,
 }
 
 impl Node {
@@ -28,13 +30,13 @@ impl Node {
         paired_tags.contains(&&*tag_name)
     }
 
-    pub fn create_node(name: Option<String>) -> Node {
-        Node{
+    pub fn create_node(name: Option<String>, node_type: Option<NodeType>) -> Node {
+        Node {
             name: name.unwrap_or_default(),
-            node_type: NodeType::Node,
+            node_type: node_type.unwrap_or_else(|| NodeType::Node),
             attributes: HashMap::new(),
-            content: None,
-            children: Some(Vec::new()),
+            content: String::new(),
+            children: Vec::new(),
         }
     }
 
@@ -43,29 +45,33 @@ impl Node {
             name: String::new(),
             node_type: NodeType::Processing,
             attributes: HashMap::new(),
-            content: None,
-            children: None,
+            content: String::new(),
+            children: Vec::new(),
         }
     }
 
-    pub fn create_text_node(content: Option<String>) -> Node {
+    pub fn create_text_node(content: String) -> Node {
         Node {
             name: String::new(),
             node_type: NodeType::Text,
             attributes: HashMap::new(),
             content,
-            children: None
+            children: Vec::new()
         }
     }
 
-    pub fn create_comment_node(content: Option<String>) -> Node {
+    pub fn create_comment_node(content: String) -> Node {
         Node {
             name: String::new(),
             node_type: NodeType::Comment,
             attributes: HashMap::new(),
             content,
-            children: None
+            children: Vec::new()
         }
+    }
+
+    pub fn add_child(&mut self, n: Node) {
+        self.children.push(n);
     }
 
     pub fn to_string(&self) -> String {
@@ -74,7 +80,18 @@ impl Node {
             NodeType::Processing => { self.processing_node_to_string() }
             NodeType::Text => { self.text_node_to_string() }
             NodeType::Comment => {self.comment_node_to_string() }
+            NodeType::Root => {self.root_node_to_string()}
         }
+    }
+
+    fn root_node_to_string(&self) -> String {
+        let mut result = String::new();
+
+        for child in &self.children {
+            result += child.to_string().as_str();
+        }
+
+        result
     }
 
     fn node_to_string(&self) -> String {
@@ -88,11 +105,11 @@ impl Node {
             Node::is_always_paired(self.name.clone()) {
             result = result.trim().parse().unwrap();
             result += &*format!(">");
-            if let Some(children) = &self.children {
-                for child in children {
-                    result += child.to_string().as_str();
-                }
+
+            for child in &self.children {
+                result += child.to_string().as_str();
             }
+
             result += &*format!("</{}>", self.name.clone());
         } else {
             result += &*format!("/>");
@@ -112,15 +129,15 @@ impl Node {
     }
 
     fn text_node_to_string(&self) -> String {
-        if let Some(content) = &self.content {
-            return content.clone();
+        if self.content.len() > 0 {
+            return self.content.clone();
         }
         String::new()
     }
 
     fn comment_node_to_string(&self) -> String {
-        if let Some(content) = &self.content {
-            return String::from(format!("<!-- {} -->", content.clone()));
+        if self.content.len() > 0 {
+            return String::from(format!("<!-- {} -->", self.content.clone()));
         }
         String::new()
     }
@@ -129,7 +146,6 @@ impl Node {
 #[cfg(test)]
 mod tests {
     use crate::node::{Node, NodeType};
-    use unicode_segmentation::UnicodeSegmentation;
 
     #[test]
     fn is_tag_paired() {
@@ -154,28 +170,28 @@ mod tests {
     // Node tests
     #[test]
     fn test_creating_node() {
-        let root_node = Node::create_node(None);
+        let root_node = Node::create_node(None, None);
         assert_eq!(root_node.node_type, NodeType::Node);
     }
 
     #[test]
     fn unpaired_node_to_string() {
-        let mut node = Node::create_node(Some(String::from("br")));
+        let mut node = Node::create_node(Some(String::from("br")), None);
         assert_eq!(node.to_string(), "<br />");
     }
 
     #[test]
     fn paired_childless_node_to_string() {
-        let mut node = Node::create_node(Some(String::from("br")));
+        let node = Node::create_node(Some(String::from("br")), None);
         assert_eq!(node.to_string(), "<br />");
     }
 
     #[test]
     fn paired_node_to_string() {
-        let mut node = Node::create_node(Some(String::from("div")));
-        if let Some(ref mut children) = node.children {
-            children.push(Node::create_node(Some(String::from("br"))))
-        }
+        let mut node = Node::create_node(Some(String::from("div")), None);
+
+        node.children.push(Node::create_node(Some(String::from("br")), None));
+
         assert_eq!(node.to_string(), "<div><br /></div>");
     }
 
@@ -197,26 +213,34 @@ mod tests {
     // Text nodes
     #[test]
     fn test_creating_text_node() {
-        let text_node = Node::create_text_node(Some("text".to_string()));
+        let text_node = Node::create_text_node("text".to_string());
         assert_eq!(text_node.node_type, NodeType::Text);
     }
 
     #[test]
     fn text_node_to_string() {
-        let mut text_node = Node::create_text_node(Some("text".to_string()));
+        let text_node = Node::create_text_node("text".to_string());
         assert_eq!(text_node.to_string(), "text");
     }
 
     // Processing nodes
     #[test]
     fn test_creating_comment_node() {
-        let comment_node = Node::create_comment_node(Some("this is comment".to_string()));
+        let comment_node = Node::create_comment_node("this is comment".to_string());
         assert_eq!(comment_node.node_type, NodeType::Comment);
     }
 
     #[test]
     fn comment_node_to_string() {
-        let comment_node = Node::create_comment_node(Some("this is comment".to_string()));
+        let comment_node = Node::create_comment_node("this is comment".to_string());
         assert_eq!(comment_node.to_string(), "<!-- this is comment -->");
+    }
+
+    #[test]
+    fn root_node_to_string() {
+        let mut root_node = Node::create_node(None, Some(NodeType::Root));
+        let child = Node::create_node(Some(String::from("p")), None);
+        root_node.add_child(child);
+        assert_eq!(root_node.to_string(), "<p></p>")
     }
 }

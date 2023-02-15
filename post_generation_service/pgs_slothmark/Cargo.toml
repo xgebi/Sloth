@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 pgs_common = { path = "../pgs_common" }
 pgs_renderer = { path = "../pgs_renderer" }
+unicode-segmentation = "1.10.1"
+regex = "1.7.1"

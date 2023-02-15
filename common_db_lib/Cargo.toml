@@ -1,12 +1,8 @@
 [package]
-name = "pgs_toes"
+name = "common_db_lib"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pgs_common = { path = "../pgs_common" }
-pgs_renderer = { path = "../pgs_renderer" }
-unicode-segmentation = "1.10.1"
-regex = "1.7.1"
