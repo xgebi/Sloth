@@ -12,6 +12,7 @@ static NEW_LINE_ORDERED_LIST_PATTERN: &str = r"\n\d+\. ";
 static UNORDERED_LIST_PATTERN: &str = r"- ";
 static NEW_LINE_UNORDERED_LIST_PATTERN: &str = r"\n- ";
 static IMAGE_PATTERN: &str = r"![";
+static CODEBLOCK_PATTERN: &str = r"```";
 
 pub fn render_markup(md: String) -> String {
     // 1. parse markdown to nodes
@@ -30,28 +31,40 @@ fn parse_slothmark(sm: String) -> Node {
     while i < g.len() {
         // process paragraph
         let p_pattern = Regex::new(NOT_PARAGRAPH_PATTERN).unwrap();
+        let ordered_list_regex = Regex::new(ORDERED_LIST_PATTERN).unwrap();
         if (i == 0 || g[i - 1] == "\n") && !p_pattern.is_match(g[i]) {
             let mut p = Node::create_node(Some(String::from("p")), None);
             let t = process_content(g[i..g.len()].to_vec());
-            i += t.content.len();
+            i += t.2;
             p.children.extend(t[0]);
+            footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
         } else if g[i] == "#" {
             // case for h*
             process_headline(g[i..g.len()].to_vec());
+        } else if g[i..i+2].join("") == UNORDERED_LIST_PATTERN &&
+            ((i > 0 && g[i-1] == "\n") || i == 0) {
+            // case for unordered list
+            process_unordered_list(g[i..g.len()].to_vec());
+        } else if ((i > 0 && g[i-1] == "\n") || i == 0) &&
+            ordered_list_regex.is_match_at(g[i..g.len()].join("").as_str(), 0) {
+            // Add if case for ordered list
+            process_ordered_list(g[i..g.len()].to_vec());
+        } else if g[i..i+2].join("") == IMAGE_PATTERN{
+            // Add if case for image
+            process_image(g[i..g.len()].to_vec());
+        } else if g[i..i+3].join("") == CODEBLOCK_PATTERN {
+            // Add if case for code block
+            process_code_block(g[i..g.len()].to_vec());
         }
-        // case for unordered list
-        // Add if case for ordered list
-        // Add if case for image
-        // Add if case for code block
     }
 
     root_node
 }
 
-fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     let mut i: usize = 0;
     let mut current_node = Node::create_text_node(String::new());
     let mut nodes = Vec::new();
