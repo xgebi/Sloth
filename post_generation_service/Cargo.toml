@@ -10,7 +10,6 @@ members = [
     "pgs_common",
     "pgs_toes",
     "pgs_slothmark",
-    "pgs_renderer",
 ]
 
 [dependencies]

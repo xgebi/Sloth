@@ -1,3 +1,6 @@
+mod toes;
+mod template;
+
 pub fn render_page_from_string() -> String {
     String::new()
 }
