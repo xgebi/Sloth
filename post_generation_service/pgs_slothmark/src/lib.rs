@@ -35,7 +35,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
         let ordered_list_regex = Regex::new(ORDERED_LIST_PATTERN).unwrap();
         if (i == 0 || g[i - 1] == "\n") && !p_pattern.is_match(g[i]) {
             let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_content(g[i..g.len()].to_vec());
+            let t = process_content(g[i..g.len()].to_vec(), true);
             i += t.2;
             p.children.extend(t[0]);
             footnotes.children.extend(t.1);
@@ -44,18 +44,45 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             root_node.children.push(p);
         } else if g[i] == "#" {
             // case for h*
-            process_headline(g[i..g.len()].to_vec());
+            let mut p = Node::create_node(Some(String::from("p")), None);
+            let t = process_headline(g[i..g.len()].to_vec());
+            i += t.2;
+            p.children.extend(t[0]);
+            footnotes.children.extend(t.1);
+            current_node = &p;
+
+            root_node.children.push(p);
         } else if g[i..i+2].join("") == UNORDERED_LIST_PATTERN &&
             ((i > 0 && g[i-1] == "\n") || i == 0) {
             // case for unordered list
             process_unordered_list(g[i..g.len()].to_vec());
+            let mut p = Node::create_node(Some(String::from("p")), None);
+            let t = process_headline(g[i..g.len()].to_vec());
+            i += t.2;
+            p.children.extend(t[0]);
+            footnotes.children.extend(t.1);
+            current_node = &p;
+
+            root_node.children.push(p);
         } else if ((i > 0 && g[i-1] == "\n") || i == 0) &&
             ordered_list_regex.is_match_at(g[i..g.len()].join("").as_str(), 0) {
             // Add if case for ordered list
-            process_ordered_list(g[i..g.len()].to_vec());
+            let mut p = Node::create_node(Some(String::from("ol")), None);
+            let t = process_ordered_list(g[i..g.len()].to_vec());
+            i += t.2;
+            p.children.extend(t[0]);
+            footnotes.children.extend(t.1);
+            current_node = &p;
+
+            root_node.children.push(p);
         } else if g[i..i+2].join("") == IMAGE_PATTERN{
             // Add if case for image
-            process_image(g[i..g.len()].to_vec());
+            let mut p = Node::create_node(Some(String::from("img")), None);
+            let t = process_image(g[i..g.len()].to_vec());
+            i += t.1;
+            if let Some(image) = t.0 {
+                root_node.children.push(image);
+            }
         } else if g[i..i+3].join("") == CODEBLOCK_PATTERN {
             // Add if case for code block
             process_code_block(g[i..g.len()].to_vec());
@@ -65,7 +92,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
     (root_node, footnotes)
 }
 
-fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) {
     let mut i: usize = 0;
     let mut current_node = Node::create_text_node(String::new());
     let mut nodes = Vec::new();
@@ -106,37 +133,37 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (nodes, footnotes, c.len())
 }
 
-fn process_headline(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_headline(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
-fn process_image(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
+    (None, 0)
+}
+
+fn process_link(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
-fn process_link(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    (vec![], vec![], 0)
+fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
+    (None, 0)
 }
 
-fn process_inline_code(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    (vec![], vec![], 0)
+fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
+    (None, 0)
 }
 
-fn process_code_block(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    (vec![], vec![], 0)
-}
-
-fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
 // Not tested yet
-fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, i) {
+fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let end_index = c[i+2..c.len()].join("").find("**");
     match end_index {
         Some(i) => {
             let mut bold = Node::create_node(Some(String::from("b")), Some(NodeType::Node));
-            let r = process_content(c[i+2..end_index].into_vec());
+            let r = process_content(c[i+2..end_index].into_vec(), true);
             bold.children.extend(r.0);
             (Some(bold), r.1, end_index + 1)
         },
@@ -147,12 +174,12 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, i) {
 }
 
 // Not tested yet
-fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     let end_index = c[i+2..c.len()].join("").find("*");
     match end_index {
         Some(i) => {
             let mut italic = Node::create_node(Some(String::from("i")), Some(NodeType::Node));
-            let r = process_content(c[i+2..end_index].into_vec());
+            let r = process_content(c[i+2..end_index].into_vec(), true);
             italic.children.extend(r.0);
             (Some(italic), r.1, end_index + 1)
         },
@@ -163,15 +190,21 @@ fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
     (vec![], vec![], 0)
 }
 
-fn process_ordered_list(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    (vec![], vec![], 0)
+fn process_ordered_list(c: Vec<&str>) -> (Node, Vec<Node>, usize) {
+    let mut list = Node::create_node(Some(String::from("ol")), Some(NodeType::Node));
+    let res = process_list_items(c);
+    list.children.extend(r.0);
+    (list, r.1, r.2)
 }
 
-fn process_unordered_list(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    (vec![], vec![], 0)
+fn process_unordered_list(c: Vec<&str>) -> (Node, Vec<Node>, usize) {
+    let mut list = Node::create_node(Some(String::from("ul")), Some(NodeType::Node));
+    let res = process_list_items(c);
+    list.children.extend(r.0);
+    (list, r.1, r.2)
 }
 
-fn process_list_item(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+fn process_list_items(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
@@ -193,55 +226,55 @@ mod tests {
 
     #[test]
     fn process_empty_content() {
-        let result = process_content("".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.content, "");
     }
 
     #[test]
     fn process_paragraph_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_link_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_italic_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_bold_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_bold_italic_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_footnote_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_image_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.content, "Abc");
     }
 
     #[test]
     fn process_inline_code_content() {
-        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>());
+        let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.content, "Abc");
     }
 
