@@ -81,10 +81,10 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
             current_node.content = format!("{}{}", current_node.content, c[i]);
         } else if c[i..i+3].join("**") == "" {
             // clause for bold
-            process_bold(c[i..c.len()])
+            process_bold(c[i..c.len()].into_vec())
         } else if c[i] == "*" {
             // clause for italic
-            process_italic(c[i..c.len()])
+            process_italic(c[i..c.len()].into_vec())
         } else if footnote_pattern.is_match(c[i..i+2].join("").as_str()) {
             // clause for footnotes
             let end_index = c[i+2..c.len()].join("").find("]");
@@ -130,20 +130,36 @@ fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
     (vec![], vec![], 0)
 }
 
-fn process_bold(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+// Not tested yet
+fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, i) {
     let end_index = c[i+2..c.len()].join("").find("**");
-    let r = process_slothmark(c[i+1..end_index]);
-
-    (vec![], vec![], 0)
+    match end_index {
+        Some(i) => {
+            let mut bold = Node::create_node(Some(String::from("b")), Some(NodeType::Node));
+            let r = process_content(c[i+2..end_index].into_vec());
+            bold.children.extend(r.0);
+            (Some(bold), r.1, end_index + 1)
+        },
+        None => {
+            (None, vec![], 0)
+        }
+    }
 }
 
+// Not tested yet
 fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
     let end_index = c[i+2..c.len()].join("").find("*");
-
-    (vec![], vec![], 0)
-}
-
-fn process_bold_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
+    match end_index {
+        Some(i) => {
+            let mut italic = Node::create_node(Some(String::from("i")), Some(NodeType::Node));
+            let r = process_content(c[i+2..end_index].into_vec());
+            italic.children.extend(r.0);
+            (Some(italic), r.1, end_index + 1)
+        },
+        None => {
+            (None, vec![], 0)
+        }
+    }
     (vec![], vec![], 0)
 }
 
