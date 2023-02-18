@@ -10,6 +10,7 @@ static NOT_PARAGRAPH_PATTERN: &str = r"[-\d#]";
 static ORDERED_LIST_PATTERN: &str = r"\d+\. ";
 static NEW_LINE_ORDERED_LIST_PATTERN: &str = r"\n\d+\. ";
 static UNORDERED_LIST_PATTERN: &str = r"- ";
+static UNORDERED_LIST_PATTERN_ALT: &str = r"* ";
 static NEW_LINE_UNORDERED_LIST_PATTERN: &str = r"\n- ";
 static IMAGE_PATTERN: &str = r"![";
 static CODEBLOCK_PATTERN: &str = r"```";
@@ -21,7 +22,7 @@ pub fn render_markup(md: String) -> String {
     res_node.to_string()
 }
 
-fn parse_slothmark(sm: String) -> Node {
+fn parse_slothmark(sm: String) -> (Node, Node) {
     let g = sm.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_node(None, Some(NodeType::Root));
@@ -61,7 +62,7 @@ fn parse_slothmark(sm: String) -> Node {
         }
     }
 
-    root_node
+    (root_node, footnotes)
 }
 
 fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
@@ -78,27 +79,25 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
             return (nodes, footnotes, i + 1);
         } else if c[i] != "\n" || c[i] != "\r" {
             current_node.content = format!("{}{}", current_node.content, c[i]);
-        } else if c[i..i+4].join("***") == "" {
-        // clause for bold italic
-
         } else if c[i..i+3].join("**") == "" {
-        // clause for bold
-
+            // clause for bold
+            process_bold(c[i..c.len()])
         } else if c[i] == "*" {
-        // clause for italic
-
+            // clause for italic
+            process_italic(c[i..c.len()])
         } else if footnote_pattern.is_match(c[i..i+2].join("").as_str()) {
-        // clause for footnotes
-
+            // clause for footnotes
+            let end_index = c[i+2..c.len()].join("").find("]");
         } else if c[i] == "[" {
-        // clause for links
-
+            // clause for links
+            let middle_index = c[i+2..c.len()].join("").find("](");
+            let end_index = c[i+2..c.len()].join("").find(")");
         } else if c[i..i+2].join("") == IMAGE_PATTERN {
-        // clause for images
-
+            // clause for images
+            let end_index = c[i+2..c.len()].join("").find("]");
         } else if c[i] == "`" {
-        // clause for inline code
-
+            // clause for inline code
+            let end_index = c[i+2..c.len()].join("").find("```\n");
         } else {
             current_node.content = format!("{}{}", current_node.content, " ");
         }
@@ -108,51 +107,56 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
 }
 
 fn process_headline(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_image(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_link(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_inline_code(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_code_block(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_bold(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    let end_index = c[i+2..c.len()].join("").find("**");
+    let r = process_slothmark(c[i+1..end_index]);
+
+    (vec![], vec![], 0)
 }
 
 fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    let end_index = c[i+2..c.len()].join("").find("*");
+
+    (vec![], vec![], 0)
 }
 
 fn process_bold_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_ordered_list(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_unordered_list(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 fn process_list_item(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, i) {
-    todo!()
+    (vec![], vec![], 0)
 }
 
 #[cfg(test)]
