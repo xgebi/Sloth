@@ -15,6 +15,11 @@ static NEW_LINE_UNORDERED_LIST_PATTERN: &str = r"\n- ";
 static IMAGE_PATTERN: &str = r"![";
 static CODEBLOCK_PATTERN: &str = r"```";
 
+enum ListType {
+    Ordered,
+    Unordered
+}
+
 pub fn render_markup(md: String) -> String {
     // 1. parse markdown to nodes
     let res_node = parse_slothmark(md);
@@ -23,69 +28,75 @@ pub fn render_markup(md: String) -> String {
 }
 
 fn parse_slothmark(sm: String) -> (Node, Node) {
-    let g = sm.graphemes(true).collect::<Vec<&str>>();
+    let processed_new_lines = sm.replace(DOUBLE_NEW_LINE_WIN, DOUBLE_NEW_LINE);
+    let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_node(None, Some(NodeType::Root));
     let mut footnotes = Node::create_node(Some(String::from("ul")), Some(NodeType::Node));
     let mut current_node = &root_node;
     let mut i: usize = 0;
-    while i < g.len() {
+    while i < grapheme_vector.len() {
         // process paragraph
         let p_pattern = Regex::new(NOT_PARAGRAPH_PATTERN).unwrap();
         let ordered_list_regex = Regex::new(ORDERED_LIST_PATTERN).unwrap();
-        if (i == 0 || g[i - 1] == "\n") && !p_pattern.is_match(g[i]) {
+        if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
             let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_content(g[i..g.len()].to_vec(), true);
+            let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec(), true);
             i += t.2;
             p.children.extend(t[0]);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if g[i] == "#" {
+        } else if grapheme_vector[i] == "#" {
             // case for h*
             let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_headline(g[i..g.len()].to_vec());
+            let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
             p.children.extend(t[0]);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if g[i..i+2].join("") == UNORDERED_LIST_PATTERN &&
-            ((i > 0 && g[i-1] == "\n") || i == 0) {
+        } else if (grapheme_vector[i..i+2].join("") == UNORDERED_LIST_PATTERN ||
+            grapheme_vector[i..i+2].join("") == UNORDERED_LIST_PATTERN_ALT) &&
+            ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
             // case for unordered list
-            process_unordered_list(g[i..g.len()].to_vec());
+            process_list_items(
+                grapheme_vector[i..grapheme_vector.len()].to_vec(),
+                String::new(),
+                String::from(grapheme_vector[i])
+            );
             let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_headline(g[i..g.len()].to_vec());
+            let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
             p.children.extend(t[0]);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if ((i > 0 && g[i-1] == "\n") || i == 0) &&
-            ordered_list_regex.is_match_at(g[i..g.len()].join("").as_str(), 0) {
+        } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
+            ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
             // Add if case for ordered list
             let mut p = Node::create_node(Some(String::from("ol")), None);
-            let t = process_ordered_list(g[i..g.len()].to_vec());
+            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::new(), String::from(r"\d"));
             i += t.2;
             p.children.extend(t[0]);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if g[i..i+2].join("") == IMAGE_PATTERN{
+        } else if grapheme_vector[i..i+2].join("") == IMAGE_PATTERN{
             // Add if case for image
             let mut p = Node::create_node(Some(String::from("img")), None);
-            let t = process_image(g[i..g.len()].to_vec());
+            let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.1;
             if let Some(image) = t.0 {
                 root_node.children.push(image);
             }
-        } else if g[i..i+3].join("") == CODEBLOCK_PATTERN {
+        } else if grapheme_vector[i..i+3].join("") == CODEBLOCK_PATTERN {
             // Add if case for code block
-            process_code_block(g[i..g.len()].to_vec());
+            process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
         }
     }
 
@@ -100,8 +111,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     let footnote_pattern = Regex::new(FOOTNOTE_PATTERN).unwrap();
     while i < c.len() {
         // Add quit cases for headline, code block and lists
-        if (i+1 < c.len() && c[i..i+2].join("") == DOUBLE_NEW_LINE) ||
-            (i+3 < c.len() && c[i..i+4].join("") == DOUBLE_NEW_LINE_WIN) {
+        if i+1 < c.len() && c[i..i+3].join("") == DOUBLE_NEW_LINE {
             nodes.push(current_node);
             return (nodes, footnotes, i + 1);
         } else if c[i] != "\n" || c[i] != "\r" {
@@ -190,21 +200,11 @@ fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
-fn process_ordered_list(c: Vec<&str>) -> (Node, Vec<Node>, usize) {
-    let mut list = Node::create_node(Some(String::from("ol")), Some(NodeType::Node));
-    let res = process_list_items(c);
-    list.children.extend(r.0);
-    (list, r.1, r.2)
-}
+fn process_list_items(c: Vec<&str>, offset: String, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
+    let mut i = 0;
+    while i < c.len() {
 
-fn process_unordered_list(c: Vec<&str>) -> (Node, Vec<Node>, usize) {
-    let mut list = Node::create_node(Some(String::from("ul")), Some(NodeType::Node));
-    let res = process_list_items(c);
-    list.children.extend(r.0);
-    (list, r.1, r.2)
-}
-
-fn process_list_items(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
+    }
     (vec![], vec![], 0)
 }
 
