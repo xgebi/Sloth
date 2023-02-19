@@ -67,3 +67,21 @@ impl Patterns {
         self.patterns.iter().find(|p| p.name == name).cloned()
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finds_item() {
+        let pat = Patterns::new();
+        assert_ne!(pat.locate("codeblock"), None);
+    }
+
+    #[test]
+    fn finds_nothing() {
+        let pat = Patterns::new();
+        assert_eq!(pat.locate("non-sense"), None);
+    }
+}
