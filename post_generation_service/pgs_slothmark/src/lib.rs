@@ -107,48 +107,70 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     let mut nodes = Vec::new();
     let mut footnotes = Vec::new();
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
-    while i < c.len() {
-        if i+2 < c.len() {
-            println!("{}", c[i..i + 2].join(""));
-        }
+    let j = c.len();
+    while i < j {
         // Add quit cases for headline, code block and lists
         if i+2 < c.len() && c[i..i+3].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
             return (nodes, footnotes, i + 1);
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
             // clause for bold
             let r = process_bold(c[i..c.len()].to_vec());
-            current_node = r.0.unwrap();
-            footnotes.extend(r.1);
-            i += r.2;
+            if let Some(strong) = r.0 {
+                nodes.push(strong);
+                footnotes.extend(r.1);
+                i += r.2;
+            } else {
+                i += 1; // just to be safe
+            }
         } else if c[i] == "*" {
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
+            current_node = Node::create_text_node(String::new());
             // clause for italic
             let r = process_italic(c[i..c.len()].to_vec());
             // current_node.children.push(r.0.unwrap());
-            current_node = r.0.unwrap();
-            footnotes.extend(r.1);
-            i += r.2;
+            if let Some(em) = r.0 {
+                nodes.push(em);
+                footnotes.extend(r.1);
+                i += r.2;
+            } else {
+                i += 1; // just to be safe
+            }
         } else if i+1 < c.len() && footnote_pattern.is_match(c[i..i+2].join("").as_str()) {
             // clause for footnotes
             let end_index = c[i+2..c.len()].join("").find("]");
+            i += 1;
         } else if c[i] == "[" {
             // clause for links
             let middle_index = c[i+2..c.len()].join("").find("](");
             let end_index = c[i+2..c.len()].join("").find(")");
+            i += 1;
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
             let end_index = c[i+2..c.len()].join("").find("]");
+            i += 1;
         } else if c[i] == "`" {
             // clause for inline code
             let end_index = c[i+2..c.len()].join("").find("```\n");
+            i += 1;
         } else if c[i] != "\n" || c[i] != "\r" {
             current_node.content = format!("{}{}", current_node.content, c[i]);
+            i += 1;
         } else {
             current_node.content = format!("{}{}", current_node.content, " ");
+            i += 1;
         }
-        i += 1;
     }
-    nodes.push(current_node);
+    if current_node.content.len() > 0 || current_node.children.len() > 0 {
+        nodes.push(current_node);
+    }
     (nodes, footnotes, c.len())
 }
 
@@ -182,9 +204,9 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     match end_index {
         Some(i) => {
             let mut bold = Node::create_node(Some(String::from("strong")), Some(NodeType::Node));
-            let r = process_content(c[2..i + 2].to_vec(), true);
+            let r = process_content(c[2..i].to_vec(), true);
             bold.children.extend(r.0);
-            (Some(bold), r.1, i + 3)
+            (Some(bold), r.1, i + 4)
         },
         None => {
             (None, vec![], 0)
@@ -198,7 +220,7 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     match end_index {
         Some(i) => {
             let mut italic = Node::create_node(Some(String::from("em")), Some(NodeType::Node));
-            let r = process_content(c[1..i + 1].to_vec(), true);
+            let r = process_content(c[1..i].to_vec(), true);
             italic.children.extend(r.0);
             (Some(italic), r.1, i + 2)
         },
@@ -235,9 +257,7 @@ mod tests {
     #[test]
     fn process_empty_content() {
         let result = process_content("".graphemes(true).collect::<Vec<&str>>(), false);
-        assert_eq!(result.0.len(), 1);
-        assert_eq!(result.0[0].content, "");
-        assert_eq!(result.0[0].children.len(), 0);
+        assert_eq!(result.0.len(), 0);
     }
 
     #[test]
@@ -255,7 +275,6 @@ mod tests {
     #[test]
     fn process_italic_content() {
         let result = process_content("*Abc*".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "em");
         assert_eq!(result.0[0].children.len(), 1);
@@ -269,6 +288,25 @@ mod tests {
         assert_eq!(result.0[0].name, "strong");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn process_bold_italic_content_A() {
+        let result = process_content("***Abc* def**".graphemes(true).collect::<Vec<&str>>(), true);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "strong");
+        assert_eq!(result.0[0].children.len(), 2);
+        assert_eq!(result.0[0].children[1].content, " def");
+    }
+
+    #[test]
+    fn process_bold_italic_content_B() {
+        let result = process_content("*Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 1);
+        // assert_eq!(result.0[0].name, "strong");
+        // assert_eq!(result.0[0].children.len(), 2);
+        // assert_eq!(result.0[0].children[1].content, " def");
     }
 
     // #[test]
