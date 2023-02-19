@@ -11,3 +11,4 @@ name = "pgs_common"
 [dependencies]
 dotenv = "0.15.0"
 postgres = { version = "0.19.4" }
+serde = "1.0.152"

@@ -1,19 +1,9 @@
+
 use std::thread::current;
 use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
+use pgs_common::patterns::Patterns;
 use regex::Regex;
-
-static FOOTNOTE_PATTERN: &str = r"\[\d+\. ";
-static DOUBLE_NEW_LINE: &str = "\n\n";
-static DOUBLE_NEW_LINE_WIN: &str = "\r\n\r\n";
-static NOT_PARAGRAPH_PATTERN: &str = r"[-\d#]";
-static ORDERED_LIST_PATTERN: &str = r"\d+\. ";
-static NEW_LINE_ORDERED_LIST_PATTERN: &str = r"\n\d+\. ";
-static UNORDERED_LIST_PATTERN: &str = r"- ";
-static UNORDERED_LIST_PATTERN_ALT: &str = r"* ";
-static NEW_LINE_UNORDERED_LIST_PATTERN: &str = r"\n- ";
-static IMAGE_PATTERN: &str = r"![";
-static CODEBLOCK_PATTERN: &str = r"```";
 
 enum ListType {
     Ordered,
@@ -24,11 +14,15 @@ pub fn render_markup(md: String) -> String {
     // 1. parse markdown to nodes
     let res_node = parse_slothmark(md);
     // 2. call node::to_string() to create result
-    res_node.to_string()
+    format!("{}{}", res_node.0.to_string(), res_node.1.to_string())
 }
 
 fn parse_slothmark(sm: String) -> (Node, Node) {
-    let processed_new_lines = sm.replace(DOUBLE_NEW_LINE_WIN, DOUBLE_NEW_LINE);
+    let patterns = Patterns::new();
+    let processed_new_lines = sm.replace(
+        patterns.locate("double_line_win").unwrap().value.as_str(),
+        patterns.locate("double_line").unwrap().value.as_str()
+    );
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_node(None, Some(NodeType::Root));
@@ -37,13 +31,13 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
     let mut i: usize = 0;
     while i < grapheme_vector.len() {
         // process paragraph
-        let p_pattern = Regex::new(NOT_PARAGRAPH_PATTERN).unwrap();
-        let ordered_list_regex = Regex::new(ORDERED_LIST_PATTERN).unwrap();
+        let p_pattern = Regex::new(patterns.locate("not_paragraph").unwrap().value.as_str()).unwrap();
+        let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
         if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
             let mut p = Node::create_node(Some(String::from("p")), None);
             let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec(), true);
             i += t.2;
-            p.children.extend(t[0]);
+            p.children.extend(t.0);
             footnotes.children.extend(t.1);
             current_node = &p;
 
@@ -53,13 +47,13 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             let mut p = Node::create_node(Some(String::from("p")), None);
             let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
-            p.children.extend(t[0]);
+            p.children.extend(t.0);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if (grapheme_vector[i..i+2].join("") == UNORDERED_LIST_PATTERN ||
-            grapheme_vector[i..i+2].join("") == UNORDERED_LIST_PATTERN_ALT) &&
+        } else if (grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
+            grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) &&
             ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
             // case for unordered list
             process_list_items(
@@ -70,7 +64,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             let mut p = Node::create_node(Some(String::from("p")), None);
             let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
-            p.children.extend(t[0]);
+            p.children.extend(t.0);
             footnotes.children.extend(t.1);
             current_node = &p;
 
@@ -81,12 +75,12 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             let mut p = Node::create_node(Some(String::from("ol")), None);
             let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::new(), String::from(r"\d"));
             i += t.2;
-            p.children.extend(t[0]);
+            p.children.extend(t.0);
             footnotes.children.extend(t.1);
             current_node = &p;
 
             root_node.children.push(p);
-        } else if grapheme_vector[i..i+2].join("") == IMAGE_PATTERN{
+        } else if grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
             let mut p = Node::create_node(Some(String::from("img")), None);
             let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
@@ -94,7 +88,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             if let Some(image) = t.0 {
                 root_node.children.push(image);
             }
-        } else if grapheme_vector[i..i+3].join("") == CODEBLOCK_PATTERN {
+        } else if grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
             // Add if case for code block
             process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
         }
@@ -104,24 +98,28 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
 }
 
 fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) {
+    let patterns = Patterns::new();
     let mut i: usize = 0;
     let mut current_node = Node::create_text_node(String::new());
     let mut nodes = Vec::new();
     let mut footnotes = Vec::new();
-    let footnote_pattern = Regex::new(FOOTNOTE_PATTERN).unwrap();
+    let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     while i < c.len() {
         // Add quit cases for headline, code block and lists
-        if i+1 < c.len() && c[i..i+3].join("") == DOUBLE_NEW_LINE {
+        if i+1 < c.len() && c[i..i+3].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
             return (nodes, footnotes, i + 1);
         } else if c[i] != "\n" || c[i] != "\r" {
             current_node.content = format!("{}{}", current_node.content, c[i]);
         } else if c[i..i+3].join("**") == "" {
             // clause for bold
-            process_bold(c[i..c.len()].into_vec())
+            let r = process_bold(c[i..c.len()].to_vec());
+            current_node.children.push(r.0.unwrap());
+            footnotes.extend(r.1);
+            i += r.2;
         } else if c[i] == "*" {
             // clause for italic
-            process_italic(c[i..c.len()].into_vec())
+            process_italic(c[i..c.len()].to_vec());
         } else if footnote_pattern.is_match(c[i..i+2].join("").as_str()) {
             // clause for footnotes
             let end_index = c[i+2..c.len()].join("").find("]");
@@ -129,7 +127,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             // clause for links
             let middle_index = c[i+2..c.len()].join("").find("](");
             let end_index = c[i+2..c.len()].join("").find(")");
-        } else if c[i..i+2].join("") == IMAGE_PATTERN {
+        } else if c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
             let end_index = c[i+2..c.len()].join("").find("]");
         } else if c[i] == "`" {
@@ -169,13 +167,13 @@ fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
 
 // Not tested yet
 fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
-    let end_index = c[i+2..c.len()].join("").find("**");
+    let end_index = c[2..c.len()].join("").find("**");
     match end_index {
         Some(i) => {
             let mut bold = Node::create_node(Some(String::from("b")), Some(NodeType::Node));
-            let r = process_content(c[i+2..end_index].into_vec(), true);
+            let r = process_content(c[2..i].to_vec(), true);
             bold.children.extend(r.0);
-            (Some(bold), r.1, end_index + 1)
+            (Some(bold), r.1, i + 1)
         },
         None => {
             (None, vec![], 0)
@@ -184,20 +182,19 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
 }
 
 // Not tested yet
-fn process_italic(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
-    let end_index = c[i+2..c.len()].join("").find("*");
+fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+    let end_index = c[2..c.len()].join("").find("*");
     match end_index {
         Some(i) => {
             let mut italic = Node::create_node(Some(String::from("i")), Some(NodeType::Node));
-            let r = process_content(c[i+2..end_index].into_vec(), true);
+            let r = process_content(c[2..i].to_vec(), true);
             italic.children.extend(r.0);
-            (Some(italic), r.1, end_index + 1)
+            (Some(italic), r.1, i + 1)
         },
         None => {
             (None, vec![], 0)
         }
     }
-    (vec![], vec![], 0)
 }
 
 fn process_list_items(c: Vec<&str>, offset: String, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {

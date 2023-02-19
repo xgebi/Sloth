@@ -1004,6 +1004,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "postgres",
+ "serde",
 ]
 
 [[package]]

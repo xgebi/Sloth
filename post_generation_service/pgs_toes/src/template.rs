@@ -1,8 +1,13 @@
 use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
+use pgs_common::patterns::Patterns;
 
 fn parse_toe(sm: String) -> Node {
-    let processed_new_lines = sm.replace(DOUBLE_NEW_LINE_WIN, DOUBLE_NEW_LINE);
+    let patterns = Patterns::new();
+    let processed_new_lines = sm.replace(
+        patterns.locate("double_line_win").unwrap().value.as_str(),
+        patterns.locate("double_line").unwrap().value.as_str()
+    );
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     process_nodes(grapheme_vector)
 }
@@ -19,7 +24,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Node {
                     _ => { j+=1; }
                 }
             }
-            root_node.name = graphemes[j..j + index].join("");
+            root_node.name = graphemes[i..j].join("");
 
 
         }
@@ -27,7 +32,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Node {
     root_node
 }
 
-fn get_minimum<'a>(v: Vec<Option<usize>>) -> Option<&'a usize> {
+fn get_minimum<'a>(v: Vec<Option<usize>>) -> Option<usize> {
     let mut temp = Vec::new();
 
     for i in v {
@@ -36,5 +41,5 @@ fn get_minimum<'a>(v: Vec<Option<usize>>) -> Option<&'a usize> {
         }
     }
 
-    temp.iter().min()
+    temp.iter().min().cloned()
 }
