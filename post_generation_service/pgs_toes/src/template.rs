@@ -14,6 +14,7 @@ fn parse_toe(sm: String) -> Node {
 
 fn process_nodes(graphemes: Vec<&str>) -> Node {
     let mut root_node = Node::create_node(None, Some(NodeType::Root));
+    let mut current_node: &mut Node = &mut root_node;
     let mut i: usize = 0;
     while i < graphemes.len() {
         if graphemes[i] == "<" {
