@@ -202,9 +202,12 @@ fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
 fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let end_index = c[2..c.len()].join("").find("**");
     match end_index {
-        Some(i) => {
+        Some(mut i) => {
+            if c[2..c.len()].join("").find("***").is_some() && c[2..c.len()].join("").find("***").unwrap() == i {
+                i += 1
+            }
             let mut bold = Node::create_node(Some(String::from("strong")), Some(NodeType::Node));
-            let r = process_content(c[2..i].to_vec(), true);
+            let r = process_content(c[2..i+2].to_vec(), true);
             bold.children.extend(r.0);
             (Some(bold), r.1, i + 4)
         },
@@ -216,11 +219,19 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
 
 // Not tested yet
 fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
-    let end_index = c[1..c.len()].join("").find("*");
+    let mut end_index = c[1..c.len()].join("").find("*");
     match end_index {
-        Some(i) => {
+        Some(mut i) => {
+            while i + 2 < c.len() && c[i + 2] == "*" {
+                let bold_end_temp = c[i + 2..c.len()].join("").find("**");
+                if let Some(bold_end) = bold_end_temp {
+                    i += bold_end + 2;
+                } else {
+                    i += 1
+                }
+            }
             let mut italic = Node::create_node(Some(String::from("em")), Some(NodeType::Node));
-            let r = process_content(c[1..i].to_vec(), true);
+            let r = process_content(c[1..i+1].to_vec(), true);
             italic.children.extend(r.0);
             (Some(italic), r.1, i + 2)
         },
@@ -293,6 +304,7 @@ mod tests {
     #[test]
     fn process_bold_italic_content_A() {
         let result = process_content("***Abc* def**".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "strong");
         assert_eq!(result.0[0].children.len(), 2);
