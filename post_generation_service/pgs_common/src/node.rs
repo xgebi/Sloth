@@ -10,7 +10,7 @@ pub enum NodeType {
     Root
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Node {
     pub name: String,
     pub node_type: NodeType,
