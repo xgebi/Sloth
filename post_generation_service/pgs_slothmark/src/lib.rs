@@ -83,7 +83,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             current_node = &p;
 
             root_node.children.push(p);
-        } else if grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
+        } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
             let mut p = Node::create_node(Some(String::from("img")), None);
             let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
@@ -91,7 +91,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             if let Some(image) = t.0 {
                 root_node.children.push(image);
             }
-        } else if grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
+        } else if i + 3 < grapheme_vector.len() && grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
             // Add if case for code block
             process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
         }
@@ -109,10 +109,11 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     let j = c.len();
     while i < j {
+        let l = c[i];
         // Add quit cases for headline, code block and lists
-        if i+2 < c.len() && c[i..i+3].join("") == patterns.locate("double_line").unwrap().value {
+        if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
-            return (nodes, footnotes, i + 1);
+            return (nodes, footnotes, i + 2);
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
             if current_node.content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
@@ -266,6 +267,13 @@ mod tests {
     }
 
     #[test]
+    fn renders_two_paragraphs() {
+        let result = render_markup(String::from("Abc\n\ndef"));
+        println!("{:?}", result);
+        assert_eq!(result, String::from("<p>Abc</p><p>def</p>"));
+    }
+
+    #[test]
     fn process_empty_content() {
         let result = process_content("".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 0);
@@ -279,6 +287,30 @@ mod tests {
 
     // #[test]
     // fn process_link_content() {
+    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.content, "Abc");
+    // }
+
+    // #[test]
+    // fn process_bold_link_content() {
+    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.content, "Abc");
+    // }
+
+    // #[test]
+    // fn process_italic_link_content() {
+    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.content, "Abc");
+    // }
+
+    // #[test]
+    // fn process_bold_italic_link_content() {
+    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.content, "Abc");
+    // }
+
+    // #[test]
+    // fn process_image_link_content() {
     //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
     //     assert_eq!(result.0.content, "Abc");
     // }
@@ -316,6 +348,36 @@ mod tests {
         let result = process_content("*Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
+        // assert_eq!(result.0[0].name, "strong");
+        // assert_eq!(result.0[0].children.len(), 2);
+        // assert_eq!(result.0[0].children[1].content, " def");
+    }
+
+    #[test]
+    fn process_bold_italic_content_C() {
+        let result = process_content("mno *Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 3);
+        // assert_eq!(result.0[0].name, "strong");
+        // assert_eq!(result.0[0].children.len(), 2);
+        // assert_eq!(result.0[0].children[1].content, " def");
+    }
+
+    #[test]
+    fn process_bold_italic_content_D() {
+        let result = process_content("*Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 2);
+        // assert_eq!(result.0[0].name, "strong");
+        // assert_eq!(result.0[0].children.len(), 2);
+        // assert_eq!(result.0[0].children[1].content, " def");
+    }
+
+    #[test]
+    fn process_bold_italic_content_E() {
+        let result = process_content("mno *Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 2);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
         // assert_eq!(result.0[0].children[1].content, " def");
