@@ -87,11 +87,11 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             // Add if case for image
             let mut p = Node::create_node(Some(String::from("img")), None);
             let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
-            i += t.1;
             if let Some(image) = t.0 {
                 root_node.children.push(image);
+                i += t.1;
             }
-        } else if i + 3 < grapheme_vector.len() && grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
+        } else if i + 3 < grapheme_vector.len() && grapheme_vector[i..i+4].join("") == patterns.locate("codeblock").unwrap().value {
             // Add if case for code block
             process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
         }
@@ -181,25 +181,47 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
 }
 
 fn process_headline(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
+    let middle_index = c[0..c.len()].join("").find(" ");
+    let end_index = c[0..c.len()].join("").find("\n");
+    if middle_index.is_some() && end_index.is_some() {
+
+    }
     (vec![], vec![], 0)
 }
 
 fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
+    let middle_index = c[0..c.len()].join("").find("](");
+    if let Some(mi) = middle_index {
+        let space_index = c[mi + 1..c.len()].join("").find(" ");
+        let mut end_index = c[1..c.len()].join("").find(")");
+
+        if space_index.is_some() && end_index.is_some() {
+            // todo some loop
+            let q: Vec<_> = c[space_index.unwrap()..end_index.unwrap()].join("").match_indices("\"").collect();
+            // todo check if odd/even something, no brain now
+
+        }
+    }
+
+    // if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
+    //     let mut image = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
+    //     image.attributes.insert(String::from("href"), c[middle_index + 3..end_index+1].join(""));
+    //
+    //     return (Some(image), end_index + 2);
+    // }
     (None, 0)
 }
 
 fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
-    let middle_index = c[1..c.len()].join("").find("](").unwrap_or(usize::MAX);
-    let end_index = c[1..c.len()].join("").find(")").unwrap_or(usize::MAX);
-    if middle_index < c.len() && middle_index < end_index && end_index < c.len() && c.len() < usize::MAX {
-        let m = c[end_index + 1];
-
+    let middle_index = c[1..c.len()].join("").find("](");
+    let end_index = c[1..c.len()].join("").find(")");
+    if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
         let mut link_node = Node::create_node(Some(String::from("a")), Some(NodeType::Node));
-        link_node.attributes.insert(String::from("href"), c[middle_index + 3..end_index+1].join(""));
+        link_node.attributes.insert(String::from("href"), c[middle_index.unwrap() + 3..end_index.unwrap()+1].join(""));
 
-        let r = process_content(c[1..middle_index + 1].to_vec(), true);
+        let r = process_content(c[1..middle_index.unwrap() + 1].to_vec(), true);
         link_node.children.extend(r.0);
-        return (Some(link_node), r.1, end_index + 2);
+        return (Some(link_node), r.1, end_index.unwrap() + 2);
     }
     (None, vec![], 0)
 }
