@@ -150,9 +150,14 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             i += 1;
         } else if c[i] == "[" {
             // clause for links
-            let middle_index = c[i+2..c.len()].join("").find("](");
-            let end_index = c[i+2..c.len()].join("").find(")");
-            i += 1;
+            let r = process_link(c[i..c.len()].to_vec());
+            if let Some(link) = r.0 {
+                nodes.push(link);
+                footnotes.extend(r.1);
+                i += r.2;
+            } else {
+                i += 1;
+            }
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
             let end_index = c[i+2..c.len()].join("").find("]");
@@ -183,8 +188,20 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
     (None, 0)
 }
 
-fn process_link(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
-    (vec![], vec![], 0)
+fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+    let middle_index = c[1..c.len()].join("").find("](").unwrap_or(usize::MAX);
+    let end_index = c[1..c.len()].join("").find(")").unwrap_or(usize::MAX);
+    if middle_index < c.len() && middle_index < end_index && end_index < c.len() && c.len() < usize::MAX {
+        let m = c[end_index + 1];
+
+        let mut link_node = Node::create_node(Some(String::from("a")), Some(NodeType::Node));
+        link_node.attributes.insert(String::from("href"), c[middle_index + 3..end_index+1].join(""));
+
+        let r = process_content(c[1..middle_index + 1].to_vec(), true);
+        link_node.children.extend(r.0);
+        return (Some(link_node), r.1, end_index + 2);
+    }
+    (None, vec![], 0)
 }
 
 fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
@@ -199,7 +216,6 @@ fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
     (vec![], vec![], 0)
 }
 
-// Not tested yet
 fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let end_index = c[2..c.len()].join("").find("**");
     match end_index {
@@ -218,7 +234,6 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-// Not tested yet
 fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let mut end_index = c[1..c.len()].join("").find("*");
     match end_index {
@@ -285,29 +300,49 @@ mod tests {
         assert_eq!(result.0.len(), 1);
     }
 
-    // #[test]
-    // fn process_link_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+    #[test]
+    fn process_link_content() {
+        let result = process_content("[Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "a");
+        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].content, "Abc");
+    }
 
-    // #[test]
-    // fn process_bold_link_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+    #[test]
+    fn process_bold_link_content() {
+        let result = process_content("[**Abc**](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "a");
+        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "strong");
+    }
 
-    // #[test]
-    // fn process_italic_link_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+    #[test]
+    fn process_italic_link_content() {
+        let result = process_content("[*Abc*](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "a");
+        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "em");
+    }
 
-    // #[test]
-    // fn process_bold_italic_link_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+    #[test]
+    fn process_bold_italic_link_content() {
+        let result = process_content("[***Abc***](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "a");
+        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "strong");
+    }
 
     // #[test]
     // fn process_image_link_content() {
@@ -334,7 +369,7 @@ mod tests {
     }
 
     #[test]
-    fn process_bold_italic_content_A() {
+    fn process_bold_italic_content_a() {
         let result = process_content("***Abc* def**".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
@@ -344,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn process_bold_italic_content_B() {
+    fn process_bold_italic_content_b() {
         let result = process_content("*Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
@@ -354,7 +389,7 @@ mod tests {
     }
 
     #[test]
-    fn process_bold_italic_content_C() {
+    fn process_bold_italic_content_c() {
         let result = process_content("mno *Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 3);
@@ -364,7 +399,7 @@ mod tests {
     }
 
     #[test]
-    fn process_bold_italic_content_D() {
+    fn process_bold_italic_content_d() {
         let result = process_content("*Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 2);
@@ -374,7 +409,7 @@ mod tests {
     }
 
     #[test]
-    fn process_bold_italic_content_E() {
+    fn process_bold_italic_content_e() {
         let result = process_content("mno *Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 2);
