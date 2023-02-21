@@ -109,6 +109,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     let j = c.len();
     while i < j {
+        // TODO when whole PGS is working, invert if-else to reduce duplicate code
         let l = c[i]; // todo remove, this is debugging only
         // Add quit cases for headline, code block and lists
         if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
@@ -168,9 +169,19 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
                 i += 1;
             }
         } else if c[i] == "`" {
-            // clause for inline code
-            let end_index = c[i+2..c.len()].join("").find("```\n");
-            i += 1;
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
+            current_node = Node::create_text_node(String::new());
+            // clause for italic
+            let r = process_inline_code(c[i..c.len()].to_vec());
+            if let Some(em) = r.0 {
+                nodes.push(em);
+                i += r.1;
+            } else {
+                i += 1; // just to be safe
+            }
         } else if c[i] != "\n" || c[i] != "\r" {
             current_node.content = format!("{}{}", current_node.content, c[i]);
             i += 1;
@@ -263,7 +274,15 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
 }
 
 fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
-    (None, 0)
+    let possible_end = c[1..c.len()].join("").find("`");
+    if let Some(end) = possible_end {
+        let mut code = Node::create_node(Some("code".parse().unwrap()), Some(NodeType::Node));
+        let code_content = Node::create_text_node(c[1..end + 1].join(""));
+        code.children.push(code_content);
+        (Some(code), end + 1)
+    } else {
+        (None, 0)
+    }
 }
 
 fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
@@ -500,22 +519,19 @@ mod tests {
     }
 
     // #[test]
-    // fn process_bold_italic_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
-    //
-    // #[test]
     // fn process_footnote_content() {
     //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
     //     assert_eq!(result.0.content, "Abc");
     // }
-    //
-    // #[test]
-    // fn process_inline_code_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+
+    #[test]
+    fn process_inline_code_content() {
+        let result = process_content("`Abc`".graphemes(true).collect::<Vec<&str>>(), true);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "code");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].content, "Abc");
+    }
 
     // #[test]
     // fn renders_ordered_list() {
