@@ -32,15 +32,3 @@ fn process_nodes(graphemes: Vec<&str>) -> Node {
     }
     root_node
 }
-
-fn get_minimum<'a>(v: Vec<Option<usize>>) -> Option<usize> {
-    let mut temp = Vec::new();
-
-    for i in v {
-        if let Some(unwrapped) = i {
-            temp.push(unwrapped.clone());
-        }
-    }
-
-    temp.iter().min().cloned()
-}

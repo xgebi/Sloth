@@ -368,8 +368,34 @@ mod tests {
 
     // #[test]
     // fn process_image_link_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.content, "Abc");
+    //     let result = process_content("[![Abc](def \"jkl\")](href)".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.len(), 1);
+    //     assert_eq!(result.0[0].name, "a");
+    //     assert_eq!(result.0[0].attributes.get("href").unwrap(), "href");
+    //     assert_eq!(result.0[0].children.len(), 1);
+    //     assert_eq!(result.0[0].children[0].name, "img");
+    //     assert_eq!(result.0[0].children[0].attributes.get("src").unwrap(), "def");
+    //     assert_eq!(result.0[0].children[0].attributes.get("title").unwrap(), "jkl");
+    //     assert_eq!(result.0[0].children[0].attributes.get("alt").unwrap(), "Abc");
+    // }
+
+    // #[test]
+    // fn process_image_with_title_content() {
+    //     let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.len(), 1);
+    //     assert_eq!(result.0[0].name, "img");
+    //      assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
+    //      assert_eq!(result.0[0].attributes.get("title").unwrap(), "jkl");
+    //      assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
+    // }
+
+    // #[test]
+    // fn process_image_content() {
+    //     let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
+    //     assert_eq!(result.0.len(), 1);
+    //     assert_eq!(result.0[0].name, "img");
+    //      assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
+    //      assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
     // }
 
     #[test]
@@ -448,12 +474,6 @@ mod tests {
     //
     // #[test]
     // fn process_footnote_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
-    //
-    // #[test]
-    // fn process_image_content() {
     //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
     //     assert_eq!(result.0.content, "Abc");
     // }

@@ -1,5 +1,5 @@
-mod toes;
-mod template;
+mod compiler;
+mod parser;
 
 pub fn render_page_from_string() -> String {
     String::new()
