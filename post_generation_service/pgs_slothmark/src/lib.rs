@@ -109,7 +109,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     let j = c.len();
     while i < j {
-        let l = c[i];
+        let l = c[i]; // todo remove, this is debugging only
         // Add quit cases for headline, code block and lists
         if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
@@ -160,8 +160,13 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             }
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
-            let end_index = c[i+2..c.len()].join("").find("]");
-            i += 1;
+            let r = process_image(c[i..c.len()].to_vec());
+            if let Some(image) = r.0 {
+                nodes.push(image);
+                i += r.1;
+            } else {
+                i += 1;
+            }
         } else if c[i] == "`" {
             // clause for inline code
             let end_index = c[i+2..c.len()].join("").find("```\n");
@@ -196,20 +201,29 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
         let mut end_index = c[1..c.len()].join("").find(")");
 
         if space_index.is_some() && end_index.is_some() {
-            // todo some loop
-            let q: Vec<_> = c[space_index.unwrap()..end_index.unwrap()].join("").match_indices("\"").collect();
-            // todo check if odd/even something, no brain now
-
+            let mut ei = end_index.unwrap();
+            let si = space_index.unwrap() + mi + 1;
+            while c[ei] != "\"" {
+                if let Some(temp) = c[ei + 1..c.len()].join("").find(")") {
+                    ei += temp;
+                }
+            }
+            let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
+            img.attributes.insert("src".parse().unwrap(), c[mi + 2..si].join(""));
+            img.attributes.insert("alt".parse().unwrap(), c[2..mi].join(""));
+            img.attributes.insert("title".parse().unwrap(), c[si + 2..ei].join(""));
+            (Some(img), ei + 2)
+        } else if space_index.is_none() && end_index.is_some() {
+            let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
+            img.attributes.insert("src".parse().unwrap(), c[mi + 2..end_index.unwrap() + 1].join(""));
+            img.attributes.insert("alt".parse().unwrap(), c[2..mi].join(""));
+            (Some(img), end_index.unwrap() + 2)
+        } else {
+            panic!();
         }
+    } else {
+        (None, 0)
     }
-
-    // if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
-    //     let mut image = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
-    //     image.attributes.insert(String::from("href"), c[middle_index + 3..end_index+1].join(""));
-    //
-    //     return (Some(image), end_index + 2);
-    // }
-    (None, 0)
 }
 
 fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
@@ -217,11 +231,33 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let end_index = c[1..c.len()].join("").find(")");
     if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
         let mut link_node = Node::create_node(Some(String::from("a")), Some(NodeType::Node));
-        link_node.attributes.insert(String::from("href"), c[middle_index.unwrap() + 3..end_index.unwrap()+1].join(""));
 
-        let r = process_content(c[1..middle_index.unwrap() + 1].to_vec(), true);
+        let mut mi = middle_index.unwrap() + 1;
+        let mut ei = end_index.unwrap() + 1;
+        loop {
+            let image_middle = c[1..mi].join("").match_indices("](").count();
+            let image = c[1..mi].join("").match_indices("![").count();
+            if image > image_middle {
+                let possible_middle = c[mi + 1..c.len()].join("").find("](");
+                if let Some(val) = possible_middle {
+                    mi += val + 1;
+                } else {
+                    panic!();
+                }
+                let possible_end = c[ei + 1..c.len()].join("").find(")");
+                if let Some(val) = possible_end {
+                    ei += val + 1;
+                } else {
+                    panic!();
+                }
+            } else {
+                break;
+            }
+        }
+        link_node.attributes.insert(String::from("href"), c[mi + 2..ei].join(""));
+        let r = process_content(c[1..mi].to_vec(), true);
         link_node.children.extend(r.0);
-        return (Some(link_node), r.1, end_index.unwrap() + 2);
+        return (Some(link_node), r.1, ei + 2);
     }
     (None, vec![], 0)
 }
@@ -306,7 +342,6 @@ mod tests {
     #[test]
     fn renders_two_paragraphs() {
         let result = render_markup(String::from("Abc\n\ndef"));
-        println!("{:?}", result);
         assert_eq!(result, String::from("<p>Abc</p><p>def</p>"));
     }
 
@@ -325,7 +360,6 @@ mod tests {
     #[test]
     fn process_link_content() {
         let result = process_content("[Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
@@ -336,7 +370,6 @@ mod tests {
     #[test]
     fn process_bold_link_content() {
         let result = process_content("[**Abc**](def)".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
@@ -366,37 +399,37 @@ mod tests {
         assert_eq!(result.0[0].children[0].name, "strong");
     }
 
-    // #[test]
-    // fn process_image_link_content() {
-    //     let result = process_content("[![Abc](def \"jkl\")](href)".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.len(), 1);
-    //     assert_eq!(result.0[0].name, "a");
-    //     assert_eq!(result.0[0].attributes.get("href").unwrap(), "href");
-    //     assert_eq!(result.0[0].children.len(), 1);
-    //     assert_eq!(result.0[0].children[0].name, "img");
-    //     assert_eq!(result.0[0].children[0].attributes.get("src").unwrap(), "def");
-    //     assert_eq!(result.0[0].children[0].attributes.get("title").unwrap(), "jkl");
-    //     assert_eq!(result.0[0].children[0].attributes.get("alt").unwrap(), "Abc");
-    // }
+    #[test]
+    fn process_image_link_content() {
+        let result = process_content("[![Abc](def \"jkl\")](vam)".graphemes(true).collect::<Vec<&str>>(), true);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "a");
+        assert_eq!(result.0[0].attributes.get("href").unwrap(), "vam");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "img");
+        assert_eq!(result.0[0].children[0].attributes.get("src").unwrap(), "def");
+        assert_eq!(result.0[0].children[0].attributes.get("title").unwrap(), "jkl");
+        assert_eq!(result.0[0].children[0].attributes.get("alt").unwrap(), "Abc");
+    }
 
-    // #[test]
-    // fn process_image_with_title_content() {
-    //     let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.len(), 1);
-    //     assert_eq!(result.0[0].name, "img");
-    //      assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
-    //      assert_eq!(result.0[0].attributes.get("title").unwrap(), "jkl");
-    //      assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
-    // }
+    #[test]
+    fn process_image_with_title_content() {
+        let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), true);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "img");
+        assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.get("title").unwrap(), "jkl");
+        assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
+    }
 
-    // #[test]
-    // fn process_image_content() {
-    //     let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
-    //     assert_eq!(result.0.len(), 1);
-    //     assert_eq!(result.0[0].name, "img");
-    //      assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
-    //      assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
-    // }
+    #[test]
+    fn process_image_content() {
+        let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        assert_eq!(result.0.len(), 1);
+        assert_eq!(result.0[0].name, "img");
+        assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
+    }
 
     #[test]
     fn process_italic_content() {
