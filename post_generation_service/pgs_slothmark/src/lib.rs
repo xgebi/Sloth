@@ -36,16 +36,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
         // process paragraph
         let p_pattern = Regex::new(patterns.locate("not_paragraph").unwrap().value.as_str()).unwrap();
         let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
-        if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
-            let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec(), true);
-            i += t.2;
-            p.children.extend(t.0);
-            footnotes.children.extend(t.1);
-            current_node = &p;
-
-            root_node.children.push(p);
-        } else if grapheme_vector[i] == "#" {
+        if grapheme_vector[i] == "#" {
             // case for h*
             let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
@@ -89,9 +80,22 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
                 root_node.children.push(image);
                 i += t.1;
             }
-        } else if i + 3 < grapheme_vector.len() && grapheme_vector[i..i+4].join("") == patterns.locate("codeblock").unwrap().value {
+        } else if i + 2 < grapheme_vector.len() && grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
             // Add if case for code block
-            process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
+            let t = process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
+            if let Some(codeblock) = t.0 {
+                root_node.children.push(codeblock);
+                i += t.1;
+            }
+        } else if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
+            let mut p = Node::create_node(Some(String::from("p")), None);
+            let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec(), true);
+            i += t.2;
+            p.children.extend(t.0);
+            footnotes.children.extend(t.1);
+            current_node = &p;
+
+            root_node.children.push(p);
         }
     }
 
@@ -292,7 +296,29 @@ fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
 }
 
 fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
-    (None, 0)
+    let possible_end = c[3..c.len()].join("").find("```");
+    if let Some(end) = possible_end {
+        let first_end_line = c.join("").find("\n");
+        if first_end_line.is_none() {
+            panic!();
+        }
+        // pre -> code
+        let mut pre = Node::create_node(Some("pre".parse().unwrap()), Some(NodeType::Node));
+        let mut code = Node::create_node(Some("code".parse().unwrap()), Some(NodeType::Node));
+        let code_content = Node::create_text_node(c[first_end_line.unwrap()..end + 3].join("").trim().to_string());
+
+        if c[first_end_line.unwrap()] != "\"" {
+            pre.attributes.insert("class".parse().unwrap(), format!("language-{}", c[3..first_end_line.unwrap()].join("")));
+            code.attributes.insert("class".parse().unwrap(), format!("language-{}", c[3..first_end_line.unwrap()].join("")));
+        }
+
+        code.children.push(code_content);
+        pre.children.push(code);
+
+        (Some(pre), end + 6)
+    } else {
+        (None, 0)
+    }
 }
 
 fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
@@ -552,7 +578,7 @@ mod tests {
     // }
 
     #[test]
-    fn renders_h1() {
+    fn parses_h1() {
         let result = parse_slothmark("# Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h1");
@@ -561,7 +587,7 @@ mod tests {
     }
 
     #[test]
-    fn renders_h2() {
+    fn parses_h2() {
         let result = parse_slothmark("## Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h2");
@@ -569,7 +595,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h3() {
+    fn parses_h3() {
         let result = parse_slothmark("### Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h3");
@@ -577,7 +603,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h4() {
+    fn parses_h4() {
         let result = parse_slothmark("#### Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h4");
@@ -585,7 +611,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h5() {
+    fn parses_h5() {
         let result = parse_slothmark("##### Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h5");
@@ -593,7 +619,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h6() {
+    fn parses_h6() {
         let result = parse_slothmark("###### Abc".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h6");
@@ -602,7 +628,7 @@ mod tests {
     }
 
     #[test]
-    fn renders_h1_end_line() {
+    fn parses_h1_end_line() {
         let result = parse_slothmark("# Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h1");
@@ -611,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn renders_h2_end_line() {
+    fn parses_h2_end_line() {
         let result = parse_slothmark("## Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h2");
@@ -619,7 +645,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h3_end_line() {
+    fn parses_h3_end_line() {
         let result = parse_slothmark("### Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h3");
@@ -627,7 +653,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h4_end_line() {
+    fn parses_h4_end_line() {
         let result = parse_slothmark("#### Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h4");
@@ -635,7 +661,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h5_end_line() {
+    fn parses_h5_end_line() {
         let result = parse_slothmark("##### Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h5");
@@ -643,11 +669,35 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].content, "Abc");
     }
     #[test]
-    fn renders_h6_end_line() {
+    fn parses_h6_end_line() {
         let result = parse_slothmark("###### Abc\n".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h6");
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn parses_code_block() {
+        let result = parse_slothmark("```\nAbc\n```".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "pre");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].name, "code");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn parses_code_block_language() {
+        let result = parse_slothmark("```css\nAbc\n```".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "pre");
+        assert_eq!(result.0.children[0].attributes.get("class").unwrap(), "language-css");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].name, "code");
+        assert_eq!(result.0.children[0].children[0].attributes.get("class").unwrap(), "language-css");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
     }
 }
