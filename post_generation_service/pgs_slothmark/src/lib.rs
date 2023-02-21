@@ -47,14 +47,12 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             root_node.children.push(p);
         } else if grapheme_vector[i] == "#" {
             // case for h*
-            let mut p = Node::create_node(Some(String::from("p")), None);
             let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
-            p.children.extend(t.0);
             footnotes.children.extend(t.1);
-            current_node = &p;
-
-            root_node.children.push(p);
+            if let Some(headline) = t.0 {
+                root_node.children.push(headline);
+            }
         } else if (grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
             grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) &&
             ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
@@ -196,13 +194,21 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     (nodes, footnotes, c.len())
 }
 
-fn process_headline(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let middle_index = c[0..c.len()].join("").find(" ");
-    let end_index = c[0..c.len()].join("").find("\n");
-    if middle_index.is_some() && end_index.is_some() {
-
+    let end_index = c[0..c.len()].join("").find("\n").unwrap_or(c.len());
+    if let Some(mi) = middle_index {
+        let level = c[0..mi].join("").match_indices("#").count();
+        if level == mi {
+            let mut headline = Node::create_node(Some(String::from(format!("h{}", level))), Some(NodeType::Node));
+            let content = process_content(c[mi + 1..end_index].to_vec(), true);
+            headline.children.extend(content.0);
+            return (Some(headline), content.1, end_index + 1);
+        } else {
+            panic!();
+        }
     }
-    (vec![], vec![], 0)
+    (None, vec![], 0)
 }
 
 fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
@@ -544,36 +550,104 @@ mod tests {
     //     let result = render_markup(String::from("- abc\n- def"));
     //     assert_eq!(result, String::from("<ul><li>abc</li><li>def</li></ul>"));
     // }
-    //
-    // #[test]
-    // fn renders_h1() {
-    //     let result = render_markup(String::from("# ABC"));
-    //     assert_eq!(result, String::from("<h1>ABC</h1>"));
-    // }
-    //
-    // #[test]
-    // fn renders_h2() {
-    //     let result = render_markup(String::from("## ABC"));
-    //     assert_eq!(result, String::from("<h2>ABC</h2>"));
-    // }
-    // #[test]
-    // fn renders_h3() {
-    //     let result = render_markup(String::from("### ABC"));
-    //     assert_eq!(result, String::from("<h3>ABC</h3>"));
-    // }
-    // #[test]
-    // fn renders_h4() {
-    //     let result = render_markup(String::from("#### ABC"));
-    //     assert_eq!(result, String::from("<h4>ABC</h4>"));
-    // }
-    // #[test]
-    // fn renders_h5() {
-    //     let result = render_markup(String::from("##### ABC"));
-    //     assert_eq!(result, String::from("<h5>ABC</h5>"));
-    // }
-    // #[test]
-    // fn renders_h6() {
-    //     let result = render_markup(String::from("###### ABC"));
-    //     assert_eq!(result, String::from("<h6>ABC</h6>"));
-    // }
+
+    #[test]
+    fn renders_h1() {
+        let result = parse_slothmark("# Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h1");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn renders_h2() {
+        let result = parse_slothmark("## Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h2");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h3() {
+        let result = parse_slothmark("### Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h3");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h4() {
+        let result = parse_slothmark("#### Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h4");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h5() {
+        let result = parse_slothmark("##### Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h5");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h6() {
+        let result = parse_slothmark("###### Abc".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h6");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn renders_h1_end_line() {
+        let result = parse_slothmark("# Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h1");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn renders_h2_end_line() {
+        let result = parse_slothmark("## Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h2");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h3_end_line() {
+        let result = parse_slothmark("### Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h3");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h4_end_line() {
+        let result = parse_slothmark("#### Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h4");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h5_end_line() {
+        let result = parse_slothmark("##### Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h5");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
+    #[test]
+    fn renders_h6_end_line() {
+        let result = parse_slothmark("###### Abc\n".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "h6");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].content, "Abc");
+    }
 }
