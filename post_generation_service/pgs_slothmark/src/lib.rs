@@ -147,12 +147,31 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             } else {
                 i += 1; // just to be safe
             }
-        } else if i+1 < c.len() && footnote_pattern.is_match(c[i..i+2].join("").as_str()) {
+        } else if i < c.len() &&
+            c[i..c.len()].join("").find(" ").is_some() &&
+            c[i..c.len()].join("").find(" ").unwrap() > i &&
+            footnote_pattern.is_match(
+            c[i..c[i..c.len()].join("").find(" ").unwrap() + 1].join("").as_str()
+        ) {
             // clause for footnotes
-            let end_index = c[i+2..c.len()].join("").find("]");
-            i += 1;
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
+            let r = process_footnote(c[i..c.len()].to_vec());
+            if let Some(footnote) = r.0 {
+                nodes.push(footnote);
+                footnotes.extend(r.1);
+                i += r.2;
+            } else {
+                i += 1;
+            }
         } else if c[i] == "[" {
             // clause for links
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
             let r = process_link(c[i..c.len()].to_vec());
             if let Some(link) = r.0 {
                 nodes.push(link);
@@ -163,6 +182,10 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             }
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
+            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+                nodes.push(current_node);
+                current_node = Node::create_text_node(String::new());
+            }
             let r = process_image(c[i..c.len()].to_vec());
             if let Some(image) = r.0 {
                 nodes.push(image);
@@ -321,8 +344,37 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
     }
 }
 
-fn process_footnote(c: Vec<&str>) -> (Vec<Node>, Vec<Node>, usize) {
-    (vec![], vec![], 0)
+fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+    let end_number_char = c[0..c.len()].join("").find(".").unwrap();
+    let mut possible_end = end_number_char + c[end_number_char..c.len()].join("").find("]").unwrap();
+
+    // [1. thing](address) vs [1. Abc [some](where)] vs [1. ![abc](something)]
+    if possible_end + 1 < c.len() && c[possible_end + 1] == "(" && c[0..possible_end].join("").match_indices("[").count() == 0 {
+        return process_link(c);
+    }
+
+    let number = c[1..end_number_char].join("");
+    let mut sup = Node::create_node(Some("sup".parse().unwrap()), Some(NodeType::Node));
+    let mut link = Node::create_node(Some("a".to_string()), Some(NodeType::Node));
+    link.attributes.insert("href".to_string(), format!("footnote-{}", number));
+    let link_content = Node::create_text_node(number);
+
+    link.children.push(link_content);
+    sup.children.push(link);
+
+    let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
+    while c[0..possible_end + 1].join("").match_indices("[").count() != c[0..possible_end + 1].join("").match_indices("]").count() {
+        possible_end += 1 + c[possible_end + 1..c.len()].join("").find("]").unwrap();
+        let c = 3;
+    }
+
+    let footnote = process_content(c[end_number_char + 2.. possible_end].to_vec(), true);
+
+    li.children.extend(footnote.0);
+
+    let mut result = vec![li];
+    result.extend(footnote.1);
+    (Some(sup), result, possible_end + 1)
 }
 
 fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
@@ -550,11 +602,64 @@ mod tests {
         // assert_eq!(result.0[0].children[1].content, " def");
     }
 
-    // #[test]
-    // fn process_footnote_content() {
-    //     let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
-    //     assert_eq!(result.0.content, "Abc");
-    // }
+    #[test]
+    fn process_footnote_content() {
+        let result = process_content("[1. Abc]".graphemes(true).collect::<Vec<&str>>(), false);
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].name, "sup");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "a");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].content, "1");
+
+        assert_eq!(result.1[0].children.len(), 1);
+        assert_eq!(result.1[0].name, "li");
+        assert_eq!(result.1[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn process_footnote_with_link_content() {
+        let result = process_content("[1. Abc [abc](def)]".graphemes(true).collect::<Vec<&str>>(), false);
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].name, "sup");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "a");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].content, "1");
+
+        println!("{:?}", result.1);
+        assert_eq!(result.1.len(), 1);
+        assert_eq!(result.1[0].name, "li");
+        assert_eq!(result.1[0].children.len(), 2);
+        assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
+        assert_eq!(result.1[0].children[0].content, "Abc ");
+        assert_eq!(result.1[0].children[1].node_type, NodeType::Node);
+        assert_eq!(result.1[0].children[1].children.len(), 1);
+        assert_eq!(result.1[0].children[1].name, "a");
+        assert_eq!(result.1[0].children[1].children[0].content, "abc");
+    }
+
+    #[test]
+    fn process_footnote_with_image_content() {
+        let result = process_content("[1. Abc ![abc](def)]".graphemes(true).collect::<Vec<&str>>(), false);
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].name, "sup");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "a");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].content, "1");
+
+        println!("{:?}", result.1);
+        assert_eq!(result.1.len(), 1);
+        assert_eq!(result.1[0].name, "li");
+        assert_eq!(result.1[0].children.len(), 2);
+        assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
+        assert_eq!(result.1[0].children[0].content, "Abc ");
+        assert_eq!(result.1[0].children[1].node_type, NodeType::Node);
+        assert_eq!(result.1[0].children[1].name, "img");
+        assert_eq!(result.1[0].children[1].attributes.get("alt").unwrap(), "abc");
+        assert_eq!(result.1[0].children[1].attributes.get("src").unwrap(), "def");
+    }
 
     #[test]
     fn process_inline_code_content() {
