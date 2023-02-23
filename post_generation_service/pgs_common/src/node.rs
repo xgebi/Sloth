@@ -7,7 +7,8 @@ pub enum NodeType {
     Processing,
     Text,
     Comment,
-    Root
+    Root,
+    Declaration,
 }
 
 #[derive(Clone, Debug)]
@@ -20,7 +21,7 @@ pub struct Node {
 }
 
 impl Node {
-    fn is_unpaired(tag_name: String) -> bool {
+    pub fn is_unpaired(tag_name: String) -> bool {
         let unpaired_tags = ["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input", "link"];
         unpaired_tags.contains(&&*tag_name)
     }
@@ -81,6 +82,7 @@ impl Node {
             NodeType::Text => { self.text_node_to_string() }
             NodeType::Comment => {self.comment_node_to_string() }
             NodeType::Root => {self.root_node_to_string()}
+            NodeType::Declaration => { todo!(); }
         }
     }
 
