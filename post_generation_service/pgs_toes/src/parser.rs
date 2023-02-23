@@ -71,7 +71,10 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, Err()> {
                                             pct += 1 + j;
                                         }
 
-                                        // get child nodes
+                                        match process_nodes(graphemes[possible_tag_end.unwrap()..pct].to_vec()) {
+                                            Err(e) => { return e; }
+                                            Ok(node)=> { current_node.children = node.children; }
+                                        }
                                     }
                                     None => {
                                         return Err(());
