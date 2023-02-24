@@ -15,7 +15,7 @@ pub enum NodeType {
 pub struct Node {
     pub name: String,
     pub node_type: NodeType,
-    pub attributes: HashMap<String, String>,
+    pub attributes: HashMap<String, Option<String>>,
     pub children: Vec<Node>,
     pub content: String,
 }
@@ -100,7 +100,11 @@ impl Node {
         let mut result = String::new();
         result += &*format!("<{} ", self.name.clone());
         for (key, value) in self.attributes.iter() {
-            result += &*format!("{}=\"{}\"", key, value);
+            if let Some(v) = value {
+                result += &*format!("{}=\"{}\"", key, v);
+            } else {
+                result += &*format!("{}", key);
+            }
         }
 
         if !Node::is_unpaired(self.name.clone()) ||
@@ -124,7 +128,11 @@ impl Node {
         let mut result = String::new();
         result += &*format!("<?{} ", self.name.clone());
         for (key, value) in self.attributes.iter() {
-            result += &*format!("{}=\"{}\"", key, value);
+            if let Some(v) = value {
+                result += &*format!("{}=\"{}\"", key, v);
+            } else {
+                result += &*format!("{}", key);
+            }
         }
         result += &*format!(" ?>");
         result
@@ -208,7 +216,7 @@ mod tests {
     fn processing_node_to_string() {
         let mut processing_node = Node::create_processing_node();
         processing_node.name = String::from("processing");
-        processing_node.attributes.insert(String::from("attr"), String::from("attr-val"));
+        processing_node.attributes.insert(String::from("attr"), Some(String::from("attr-val")));
         assert_eq!(processing_node.to_string(), "<?processing attr=\"attr-val\" ?>");
     }
 
