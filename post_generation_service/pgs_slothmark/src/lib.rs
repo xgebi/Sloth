@@ -253,14 +253,14 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
                 }
             }
             let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
-            img.attributes.insert("src".parse().unwrap(), c[mi + 2..si].join(""));
-            img.attributes.insert("alt".parse().unwrap(), c[2..mi].join(""));
-            img.attributes.insert("title".parse().unwrap(), c[si + 2..ei].join(""));
+            img.attributes.insert("src".parse().unwrap(), Some(c[mi + 2..si].join("")));
+            img.attributes.insert("alt".parse().unwrap(), Some(c[2..mi].join("")));
+            img.attributes.insert("title".parse().unwrap(), Some(c[si + 2..ei].join("")));
             (Some(img), ei + 2)
         } else if space_index.is_none() && end_index.is_some() {
             let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
-            img.attributes.insert("src".parse().unwrap(), c[mi + 2..end_index.unwrap() + 1].join(""));
-            img.attributes.insert("alt".parse().unwrap(), c[2..mi].join(""));
+            img.attributes.insert("src".parse().unwrap(), Some(c[mi + 2..end_index.unwrap() + 1].join("")));
+            img.attributes.insert("alt".parse().unwrap(), Some(c[2..mi].join("")));
             (Some(img), end_index.unwrap() + 2)
         } else {
             panic!();
@@ -298,7 +298,7 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
                 break;
             }
         }
-        link_node.attributes.insert(String::from("href"), c[mi + 2..ei].join(""));
+        link_node.attributes.insert(String::from("href"), Some(c[mi + 2..ei].join("")));
         let r = process_content(c[1..mi].to_vec(), true);
         link_node.children.extend(r.0);
         return (Some(link_node), r.1, ei + 2);
@@ -331,8 +331,8 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
         let code_content = Node::create_text_node(c[first_end_line.unwrap()..end + 3].join("").trim().to_string());
 
         if c[first_end_line.unwrap()] != "\"" {
-            pre.attributes.insert("class".parse().unwrap(), format!("language-{}", c[3..first_end_line.unwrap()].join("")));
-            code.attributes.insert("class".parse().unwrap(), format!("language-{}", c[3..first_end_line.unwrap()].join("")));
+            pre.attributes.insert("class".parse().unwrap(), Some(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
+            code.attributes.insert("class".parse().unwrap(), Some(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
         }
 
         code.children.push(code_content);
@@ -356,7 +356,7 @@ fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let number = c[1..end_number_char].join("");
     let mut sup = Node::create_node(Some("sup".parse().unwrap()), Some(NodeType::Node));
     let mut link = Node::create_node(Some("a".to_string()), Some(NodeType::Node));
-    link.attributes.insert("href".to_string(), format!("footnote-{}", number));
+    link.attributes.insert("href".to_string(), Some(format!("footnote-{}", number)));
     let link_content = Node::create_text_node(number);
 
     link.children.push(link_content);
@@ -465,7 +465,9 @@ mod tests {
         let result = process_content("[Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
-        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.contains_key("href"), true);
+        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].content, "Abc");
     }
@@ -475,7 +477,9 @@ mod tests {
         let result = process_content("[**Abc**](def)".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
-        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.contains_key("href"), true);
+        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "strong");
     }
@@ -486,7 +490,9 @@ mod tests {
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
-        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.contains_key("href"), true);
+        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "em");
     }
@@ -497,7 +503,9 @@ mod tests {
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
-        assert_eq!(result.0[0].attributes.get("href").unwrap(), "def");
+        assert_eq!(result.0[0].attributes.contains_key("href"), true);
+        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "strong");
     }
@@ -507,12 +515,23 @@ mod tests {
         let result = process_content("[![Abc](def \"jkl\")](vam)".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
-        assert_eq!(result.0[0].attributes.get("href").unwrap(), "vam");
+        assert_eq!(result.0[0].attributes.contains_key("href"), true);
+        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "vam");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "img");
-        assert_eq!(result.0[0].children[0].attributes.get("src").unwrap(), "def");
-        assert_eq!(result.0[0].children[0].attributes.get("title").unwrap(), "jkl");
-        assert_eq!(result.0[0].children[0].attributes.get("alt").unwrap(), "Abc");
+
+        assert_eq!(result.0[0].children[0].attributes.contains_key("src"), true);
+        let attr = result.0[0].children[0].attributes.get("src").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
+
+        assert_eq!(result.0[0].children[0].attributes.contains_key("title"), true);
+        let attr = result.0[0].children[0].attributes.get("title").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "jkl");
+
+        assert_eq!(result.0[0].children[0].attributes.contains_key("alt"), true);
+        let attr = result.0[0].children[0].attributes.get("alt").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "Abc");
     }
 
     #[test]
@@ -520,9 +539,17 @@ mod tests {
         let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
-        assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
-        assert_eq!(result.0[0].attributes.get("title").unwrap(), "jkl");
-        assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
+        assert_eq!(result.0[0].attributes.contains_key("src"), true);
+        let attr = result.0[0].attributes.get("src").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
+
+        assert_eq!(result.0[0].attributes.contains_key("title"), true);
+        let attr = result.0[0].attributes.get("title").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "jkl");
+
+        assert_eq!(result.0[0].attributes.contains_key("alt"), true);
+        let attr = result.0[0].attributes.get("alt").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "Abc");
     }
 
     #[test]
@@ -530,8 +557,13 @@ mod tests {
         let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
-        assert_eq!(result.0[0].attributes.get("src").unwrap(), "def");
-        assert_eq!(result.0[0].attributes.get("alt").unwrap(), "Abc");
+        assert_eq!(result.0[0].attributes.contains_key("src"), true);
+        let attr = result.0[0].attributes.get("src").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
+
+        assert_eq!(result.0[0].attributes.contains_key("alt"), true);
+        let attr = result.0[0].attributes.get("alt").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "Abc");
     }
 
     #[test]
@@ -657,8 +689,14 @@ mod tests {
         assert_eq!(result.1[0].children[0].content, "Abc ");
         assert_eq!(result.1[0].children[1].node_type, NodeType::Node);
         assert_eq!(result.1[0].children[1].name, "img");
-        assert_eq!(result.1[0].children[1].attributes.get("alt").unwrap(), "abc");
-        assert_eq!(result.1[0].children[1].attributes.get("src").unwrap(), "def");
+
+        assert_eq!(result.1[0].children[1].attributes.contains_key("src"), true);
+        let attr = result.1[0].children[1].attributes.get("src").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "def");
+
+        assert_eq!(result.1[0].children[1].attributes.contains_key("alt"), true);
+        let attr = result.1[0].children[1].attributes.get("alt").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "abc");
     }
 
     #[test]
@@ -798,10 +836,16 @@ mod tests {
         let result = parse_slothmark("```css\nAbc\n```".parse().unwrap());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "pre");
-        assert_eq!(result.0.children[0].attributes.get("class").unwrap(), "language-css");
+        assert_eq!(result.0.children[0].attributes.contains_key("class"), true);
+        let attr = result.0.children[0].attributes.get("class").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "language-css");
+        // assert_eq!(result.0.children[0].attributes.get("class").unwrap(), "language-css");
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "code");
-        assert_eq!(result.0.children[0].children[0].attributes.get("class").unwrap(), "language-css");
+        // assert_eq!(result.0.children[0].children[0].attributes.get("class").unwrap(), "language-css");
+        assert_eq!(result.0.children[0].children[0].attributes.contains_key("class"), true);
+        let attr = result.0.children[0].children[0].attributes.get("class").unwrap().to_owned().unwrap();
+        assert_eq!(attr, "language-css");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
     }

@@ -64,7 +64,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                             if graphemes[i+1+end] == " " || graphemes[i+1+end] == "\t" || graphemes[i+1+end] == "\n" {
                                 current_node.attributes = create_attribute_map(graphemes[i+2+end..tag_end].to_vec());
                             }
-                            if Node::is_unpaired(current_node.name.clone()) {
+                            if Node::is_unpaired(current_node.name.clone()) || graphemes[tag_end] == "/"{
                                 if graphemes[tag_end] == "/" {
                                     i += tag_end + 2;
                                 } else {
@@ -76,7 +76,8 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                                 match possible_closing_tag {
                                     Some(mut pct) => {
                                         let start_tag = format!("<{}", current_node.name);
-                                        while graphemes[possible_tag_end.unwrap()..pct].join("").find(&start_tag) == graphemes[possible_tag_end.unwrap()..pct].join("").find(&end_node) {
+                                        // c[0..possible_end + 1].join("").match_indices("[").count()
+                                        while graphemes[possible_tag_end.unwrap()..pct].join("").match_indices(&start_tag).count() == graphemes[possible_tag_end.unwrap()..pct].join("").match_indices(&end_node).count() {
                                             let j = graphemes[pct+1..graphemes.len()].join("").find(&end_node);
                                             if let Some(k) = j {
                                                 pct += 1 + k;
@@ -376,6 +377,14 @@ mod node_tests {
         let chars: Vec<&str> = "<div />".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
         println!("{:?}", result);
+        match result {
+            Ok(r) => {
+                println!("{:?}", r);
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
@@ -390,6 +399,14 @@ mod node_tests {
         let chars: Vec<&str> = "<div my-attr/>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
         println!("{:?}", result);
+        match result {
+            Ok(r) => {
+                println!("{:?}", r);
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
@@ -397,6 +414,17 @@ mod node_tests {
         let chars: Vec<&str> = "<div my-attr='val'/>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
         println!("{:?}", result);
+        match result {
+            Ok(r) => {
+                println!("{:?}", r);
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].attributes.contains_key("my-attr"), true);
+                let attr = r.children[0].attributes.get("my-attr").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "val");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
