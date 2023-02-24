@@ -137,13 +137,14 @@ fn create_attribute_map(g: Vec<&str>) -> HashMap<String, Option<String>> {
             key = g[start..j].join("");
             start = j + 2;
             quote = g[j + 1];
-            let mut end = g[j + 3..g.len()].join("").find(quote).unwrap();
-            while g[g[j + 3..g.len()].join("").find(quote).unwrap()] != "\\" {
+            let mut end = j + 3 + g[j + 3..g.len()].join("").find(quote).unwrap();
+            let q = g[g[j + 3..g.len()].join("").find(quote).unwrap() + 1];
+            while j < g.len() && g[g[j + 3..g.len()].join("").find(quote).unwrap()] == "\\" { // bug is here
                 end += g[j + 3..g.len()].join("").find(quote).unwrap() + 4;
             }
             value = g[start..end].join("");
             result.insert(key, Some(value));
-            j += end + 1;
+            j = end + 2;
             start = j;
         } else if g[j] == " " {
             if j != start {
@@ -213,5 +214,51 @@ mod attribute_tests {
         let chars: Vec<&str> = "abc='def'".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
         assert_eq!(result.get("abc").unwrap().to_owned().unwrap(), "def");
+    }
+
+    #[test]
+    fn create_attribute_map_two_key_value() {
+        let chars: Vec<&str> = "abc='def' ghi='jkl'".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        println!("{:?}", result);
+        assert_eq!(result.get("abc").unwrap().to_owned().unwrap(), "def");
+        assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
+    }
+
+    #[test]
+    fn create_attribute_map_key_only() {
+        let chars: Vec<&str> = "abc".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        assert_eq!(result.get("abc").is_none(), true);
+    }
+
+    #[test]
+    fn create_attribute_map_two_keys_only() {
+        let chars: Vec<&str> = "abc jkl".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        assert_eq!(result.contains_key("abc"), true);
+        assert_eq!(result.contains_key("jkl"), true);
+    }
+
+    #[test]
+    fn create_attribute_map_two_mixed_a() {
+        let chars: Vec<&str> = "abc ghi='jkl'".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        println!("{:?}", result);
+        assert_eq!(result.contains_key("abc"), true);
+        assert_eq!(result.get("abc").is_none(), true);
+        assert_eq!(result.contains_key("ghi"), true);
+        assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
+    }
+
+    #[test]
+    fn create_attribute_map_two_mixed_b() {
+        let chars: Vec<&str> = "ghi='jkl' abc".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        println!("{:?}", result);
+        assert_eq!(result.contains_key("abc"), true);
+        assert_eq!(result.get("abc").is_none(), true);
+        assert_eq!(result.contains_key("ghi"), true);
+        assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
     }
 }
