@@ -138,19 +138,25 @@ fn create_attribute_map(g: Vec<&str>) -> HashMap<String, Option<String>> {
             start = j + 2;
             quote = g[j + 1];
             let mut end = j + 3 + g[j + 3..g.len()].join("").find(quote).unwrap();
-            let q = g[g[j + 3..g.len()].join("").find(quote).unwrap() + 1];
-            while j < g.len() && g[g[j + 3..g.len()].join("").find(quote).unwrap()] == "\\" { // bug is here
+            while j < g.len() && g[g[j + 3..g.len()].join("").find(quote).unwrap()] == "\\" {
                 end += g[j + 3..g.len()].join("").find(quote).unwrap() + 4;
             }
             value = g[start..end].join("");
             result.insert(key, Some(value));
             j = end + 2;
             start = j;
-        } else if g[j] == " " {
+        } else if g[j] == " " || g[j] == "\t" || g[j] == "\n" {
             if j != start {
                 result.insert(g[start..j].join(""), None);
             }
             j += 1;
+            while g[j] == " " || g[j] == "\t" || g[j] == "\n" {
+                j += 1;
+            }
+            start = j;
+        } else if j + 1 == g.len() && start != j {
+            result.insert(g[start..j + 1].join(""), None);
+            j += 1
         } else {
             j += 1;
         }
@@ -229,13 +235,14 @@ mod attribute_tests {
     fn create_attribute_map_key_only() {
         let chars: Vec<&str> = "abc".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        assert_eq!(result.get("abc").is_none(), true);
+        assert_eq!(result.contains_key("abc"), true);
     }
 
     #[test]
     fn create_attribute_map_two_keys_only() {
         let chars: Vec<&str> = "abc jkl".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
+        println!("{:?}", result);
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("jkl"), true);
     }
@@ -246,7 +253,6 @@ mod attribute_tests {
         let result = create_attribute_map(chars);
         println!("{:?}", result);
         assert_eq!(result.contains_key("abc"), true);
-        assert_eq!(result.get("abc").is_none(), true);
         assert_eq!(result.contains_key("ghi"), true);
         assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
     }
@@ -257,8 +263,25 @@ mod attribute_tests {
         let result = create_attribute_map(chars);
         println!("{:?}", result);
         assert_eq!(result.contains_key("abc"), true);
-        assert_eq!(result.get("abc").is_none(), true);
         assert_eq!(result.contains_key("ghi"), true);
         assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
+    }
+
+    #[test]
+    fn create_attribute_map_two_keys_only_double_space() {
+        let chars: Vec<&str> = "abc  jkl".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        println!("{:?}", result);
+        assert_eq!(result.contains_key("abc"), true);
+        assert_eq!(result.contains_key("jkl"), true);
+    }
+
+    #[test]
+    fn create_attribute_map_two_keys_only_new_line_tab() {
+        let chars: Vec<&str> = "abc\n\tjkl".split_terminator("").skip(1).collect();
+        let result = create_attribute_map(chars);
+        println!("{:?}", result);
+        assert_eq!(result.contains_key("abc"), true);
+        assert_eq!(result.contains_key("jkl"), true);
     }
 }
