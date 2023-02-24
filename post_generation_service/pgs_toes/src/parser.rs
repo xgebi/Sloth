@@ -50,18 +50,26 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                         Err(e) => { return Err(e); }
                     }
                 } else {
-                    match find_name_end(graphemes[i+2..graphemes.len()].to_vec()) {
+                    match find_name_end(graphemes[i+1..graphemes.len()].to_vec()) {
                         Ok(end) => {
-                            current_node = Node::create_node(Some(graphemes[i+2..i+1+end].join("")), Some(NodeType::Node));
-                            if graphemes[i+1+end] == " " || graphemes[i+1+end] == "\t" || graphemes[i+1+end] == "\n" {
-                                current_node.attributes = create_attribute_map(graphemes[i+2+end..graphemes.len()].to_vec());
-                            }
+                            current_node = Node::create_node(Some(graphemes[i+1..i+end+1].join("")), Some(NodeType::Node));
                             let possible_tag_end = graphemes[i..graphemes.len()].join("").find(">");
                             if possible_tag_end.is_none() {
                                 return Err(());
                             }
+                            let mut tag_end = possible_tag_end.unwrap();
+                                if graphemes[tag_end - 1] == "/" {
+                                    tag_end -= 1;
+                                }
+                            if graphemes[i+1+end] == " " || graphemes[i+1+end] == "\t" || graphemes[i+1+end] == "\n" {
+                                current_node.attributes = create_attribute_map(graphemes[i+2+end..tag_end].to_vec());
+                            }
                             if Node::is_unpaired(current_node.name.clone()) {
-                                i += possible_tag_end.unwrap();
+                                if graphemes[tag_end] == "/" {
+                                    i += tag_end + 2;
+                                } else {
+                                    i += tag_end + 1;
+                                }
                             } else {
                                 let end_node = format!("</{}>", current_node.name.clone());
                                 let possible_closing_tag = graphemes[i..graphemes.len()].join("").find(&end_node);
@@ -283,5 +291,139 @@ mod attribute_tests {
         println!("{:?}", result);
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("jkl"), true);
+    }
+}
+
+#[cfg(test)]
+mod node_tests {
+    use super::*;
+
+    #[test]
+    fn parse_img() {
+        let chars: Vec<&str> = "<img />".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "img");
+            }
+            Err(_) => { panic!(); }
+        }
+    }
+
+    #[test]
+    fn parse_img_unclosed() {
+        let chars: Vec<&str> = "<img>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "img");
+            }
+            Err(_) => { panic!(); }
+        }
+    }
+
+    #[test]
+    fn parse_img_unclosed_with_attribute() {
+        let chars: Vec<&str> = "<img src=\"abc\">".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "img");
+                assert_eq!(r.children[0].attributes.contains_key("src"), true);
+                let attr = r.children[0].attributes.get("src").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "abc");
+            }
+            Err(_) => { panic!(); }
+        }
+    }
+
+    #[test]
+    fn parse_img_with_attribute() {
+        let chars: Vec<&str> = "<img src=\"abc\" />".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "img");
+                assert_eq!(r.children[0].attributes.contains_key("src"), true);
+                let attr = r.children[0].attributes.get("src").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "abc");
+            }
+            Err(_) => { panic!(); }
+        }
+    }
+
+    #[test]
+    fn parse_div() {
+        let chars: Vec<&str> = "<div></div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+        match result {
+            Ok(r) => {
+                println!("{:?}", r);
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+            }
+            Err(_) => { panic!(); }
+        }
+    }
+
+    #[test]
+    fn parse_div_unpaired() {
+        let chars: Vec<&str> = "<div />".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_with_content() {
+        let chars: Vec<&str> = "<div>abc</div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_unpaired_with_key_value_attribute() {
+        let chars: Vec<&str> = "<div my-attr/>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_unpaired_with_key_attribute() {
+        let chars: Vec<&str> = "<div my-attr='val'/>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_paired_with_key_value_attribute() {
+        let chars: Vec<&str> = "<div my-attr='val'></div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_paired_with_two_key_value_attributes() {
+        let chars: Vec<&str> = "<div my-attr='val' other='value'></div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_paired_with_two_key_value_attributes_and_content() {
+        let chars: Vec<&str> = "<div my-attr='val' other='value'>some stuff</div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
+    }
+
+    #[test]
+    fn parse_div_unpaired_with_two_key_value_attributes_content_and_nested_element() {
+        let chars: Vec<&str> = "<div my-attr='val' other='value'><img src='abc' /></div>".split_terminator("").skip(1).collect();
+        let result = process_nodes(chars);
+        println!("{:?}", result);
     }
 }
