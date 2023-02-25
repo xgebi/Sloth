@@ -13,6 +13,7 @@ members = [
 ]
 
 [dependencies]
+confy = "0.5.1"
 pgs_common = { path = "pgs_common" }
 pgs_toes = { path = "pgs_toes" }
 pgs_slothmark = { path = "pgs_slothmark" }
