@@ -1,6 +1,6 @@
 use postgres::{Client, Error, NoTls, Row};
-use dotenv::dotenv;
 use std::env;
+use std::error::Error;
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
@@ -10,7 +10,7 @@ fn connect() -> Result<Client, Error> {
     Client::connect("host=localhost user=postgres", NoTls)
 }
 
-pub fn get_single_post() -> Option<&Row> {
+pub fn get_single_post<'a>() -> Option<&'a Row> {
     let mut db = connect()?;
     let _stmt = include_str!("../sql/single_post.sql");
     let result = db.query("SELECT id, name, data FROM person", &[]);

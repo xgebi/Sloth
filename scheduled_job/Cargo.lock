@@ -670,7 +670,6 @@ checksum = "5583e89e108996506031660fe09baa5011b9dd0341b89029313006d1fb508d70"
 name = "scheduled_job"
 version = "0.1.0"
 dependencies = [
- "confy",
  "prost",
  "sloth_config_lib",
  "tokio",
@@ -711,6 +710,7 @@ dependencies = [
 name = "sloth_config_lib"
 version = "0.1.0"
 dependencies = [
+ "confy",
  "serde",
 ]
 

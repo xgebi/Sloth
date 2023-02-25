@@ -419,10 +419,27 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
 
 fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
     let mut i = 0;
+    let mut result = Vec::new();
+    let mut footnotes = Vec::new();
     while i < c.len() {
+        let next_new_line = c.join("").find("\n").unwrap_or(c.len());
 
+        let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
+
+        let mut this_level = "";
+        if g[next_new_line+1] == "\n" && (g[next_new_line+2] == " " || g[next_new_line+2] == "\t") {
+
+        } else {
+            let li_content_start = c.join("").find(" ").unwrap() + 1;
+            let content = process_content(c[li_content_start..next_new_line].to_vec(), true);
+            li.children.extend(content.0);
+            footnotes.extend(content.1);
+            i += next_new_line + 1;
+        }
+
+        result.push(li);
     }
-    (vec![], vec![], 0)
+    (result, footnotes, 0)
 }
 
 #[cfg(test)]

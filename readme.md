@@ -10,3 +10,11 @@ Sloth is a content management system that should serve my two needs:
 2. Clear my bucket list of technical problems.
     
     This was a success.
+
+## Installation notes
+
+1. project needs protobuf
+
+   To install it on Fedora use `sudo yum install protobuf`.
+
+   For other systems follow [tonic's documentation](https://github.com/hyperium/tonic#getting-started)

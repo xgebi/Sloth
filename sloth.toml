@@ -11,3 +11,7 @@ port = 0
 [auth_service]
 url = ""
 port = 0
+
+[cms]
+theme_dir = ""
+site_dir = ""
