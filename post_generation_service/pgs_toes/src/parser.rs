@@ -77,9 +77,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                                     Some(mut pct) => {
                                         let start_tag = format!("<{}", current_node.name);
                                         let pte = possible_tag_end.unwrap();
-                                        // c[0..possible_end + 1].join("").match_indices("[").count()
-                                        let m = graphemes[pte..pct].join("").match_indices(&start_tag);
-                                        let n = graphemes[pte..pct].join("").match_indices(&end_node);
+
                                         while graphemes[pte..pct].join("").match_indices(&start_tag).count() != graphemes[pte..pct].join("").match_indices(&end_node).count() {
                                             let j = graphemes[pct+1..graphemes.len()].join("").find(&end_node);
                                             if let Some(k) = j {
@@ -89,10 +87,11 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                                             }
                                         }
 
-                                        match process_nodes(graphemes[possible_tag_end.unwrap()..pct].to_vec()) {
+                                        match process_nodes(graphemes[pte + 1..pct].to_vec()) {
                                             Err(e) => { return Err(e); }
                                             Ok(node)=> { current_node.children = node.children; }
                                         }
+                                        i += pct + end_node.len();
                                     }
                                     None => {
                                         return Err(());
@@ -238,7 +237,7 @@ mod attribute_tests {
     fn create_attribute_map_two_key_value() {
         let chars: Vec<&str> = "abc='def' ghi='jkl'".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.get("abc").unwrap().to_owned().unwrap(), "def");
         assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
     }
@@ -254,7 +253,7 @@ mod attribute_tests {
     fn create_attribute_map_two_keys_only() {
         let chars: Vec<&str> = "abc jkl".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("jkl"), true);
     }
@@ -263,7 +262,7 @@ mod attribute_tests {
     fn create_attribute_map_two_mixed_a() {
         let chars: Vec<&str> = "abc ghi='jkl'".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("ghi"), true);
         assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
@@ -273,7 +272,7 @@ mod attribute_tests {
     fn create_attribute_map_two_mixed_b() {
         let chars: Vec<&str> = "ghi='jkl' abc".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("ghi"), true);
         assert_eq!(result.get("ghi").unwrap().to_owned().unwrap(), "jkl");
@@ -283,7 +282,7 @@ mod attribute_tests {
     fn create_attribute_map_two_keys_only_double_space() {
         let chars: Vec<&str> = "abc  jkl".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("jkl"), true);
     }
@@ -292,7 +291,7 @@ mod attribute_tests {
     fn create_attribute_map_two_keys_only_new_line_tab() {
         let chars: Vec<&str> = "abc\n\tjkl".split_terminator("").skip(1).collect();
         let result = create_attribute_map(chars);
-        println!("{:?}", result);
+
         assert_eq!(result.contains_key("abc"), true);
         assert_eq!(result.contains_key("jkl"), true);
     }
@@ -364,10 +363,8 @@ mod node_tests {
     fn parse_div() {
         let chars: Vec<&str> = "<div></div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
         match result {
             Ok(r) => {
-                println!("{:?}", r);
                 assert_eq!(r.children.len(), 1);
                 assert_eq!(r.children[0].name, "div");
             }
@@ -379,7 +376,7 @@ mod node_tests {
     fn parse_div_unpaired() {
         let chars: Vec<&str> = "<div />".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
         match result {
             Ok(r) => {
                 println!("{:?}", r);
@@ -394,14 +391,23 @@ mod node_tests {
     fn parse_div_with_content() {
         let chars: Vec<&str> = "<div>abc</div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].children.len(), 1);
+                assert_eq!(r.children[0].children[0].content, "abc");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
     fn parse_div_unpaired_with_key_value_attribute() {
         let chars: Vec<&str> = "<div my-attr/>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
         match result {
             Ok(r) => {
                 println!("{:?}", r);
@@ -416,7 +422,7 @@ mod node_tests {
     fn parse_div_unpaired_with_key_attribute() {
         let chars: Vec<&str> = "<div my-attr='val'/>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
         match result {
             Ok(r) => {
                 println!("{:?}", r);
@@ -434,27 +440,88 @@ mod node_tests {
     fn parse_div_paired_with_key_value_attribute() {
         let chars: Vec<&str> = "<div my-attr='val'></div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].attributes.contains_key("my-attr"), true);
+                let attr = r.children[0].attributes.get("my-attr").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "val");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
     fn parse_div_paired_with_two_key_value_attributes() {
         let chars: Vec<&str> = "<div my-attr='val' other='value'></div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].attributes.contains_key("my-attr"), true);
+                let attr = r.children[0].attributes.get("my-attr").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "val");
+
+                assert_eq!(r.children[0].attributes.contains_key("other"), true);
+                let attr = r.children[0].attributes.get("other").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "value");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
     fn parse_div_paired_with_two_key_value_attributes_and_content() {
         let chars: Vec<&str> = "<div my-attr='val' other='value'>some stuff</div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].attributes.contains_key("my-attr"), true);
+                let attr = r.children[0].attributes.get("my-attr").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "val");
+
+                assert_eq!(r.children[0].attributes.contains_key("other"), true);
+                let attr = r.children[0].attributes.get("other").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "value");
+
+                assert_eq!(r.children[0].children.len(), 1);
+                assert_eq!(r.children[0].children[0].content, "some stuff");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 
     #[test]
     fn parse_div_unpaired_with_two_key_value_attributes_content_and_nested_element() {
         let chars: Vec<&str> = "<div my-attr='val' other='value'><img src='abc' /></div>".split_terminator("").skip(1).collect();
         let result = process_nodes(chars);
-        println!("{:?}", result);
+
+        match result {
+            Ok(r) => {
+                assert_eq!(r.children.len(), 1);
+                assert_eq!(r.children[0].name, "div");
+                assert_eq!(r.children[0].attributes.contains_key("my-attr"), true);
+                let attr = r.children[0].attributes.get("my-attr").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "val");
+
+                assert_eq!(r.children[0].attributes.contains_key("other"), true);
+                let attr = r.children[0].attributes.get("other").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "value");
+
+                assert_eq!(r.children[0].children.len(), 1);
+                assert_eq!(r.children[0].children[0].name, "img");
+                assert_eq!(r.children[0].children[0].attributes.contains_key("src"), true);
+                let attr = r.children[0].children[0].attributes.get("src").unwrap().to_owned().unwrap();
+                assert_eq!(attr, "abc");
+            }
+            Err(_) => { panic!(); }
+        }
     }
 }
