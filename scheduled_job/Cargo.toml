@@ -10,6 +10,7 @@ tonic = "0.8"
 prost = "0.11"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 confy = "0.5.1"
+sloth_config_lib = { path = "../sloth_config_lib" }
 
 [build-dependencies]
 tonic-build = "0.8"

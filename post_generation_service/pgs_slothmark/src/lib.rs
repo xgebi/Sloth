@@ -50,7 +50,6 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             // case for unordered list
             process_list_items(
                 grapheme_vector[i..grapheme_vector.len()].to_vec(),
-                String::new(),
                 String::from(grapheme_vector[i])
             );
             let mut p = Node::create_node(Some(String::from("p")), None);
@@ -65,7 +64,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
             // Add if case for ordered list
             let mut p = Node::create_node(Some(String::from("ol")), None);
-            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::new(), String::from(r"\d"));
+            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"));
             i += t.2;
             p.children.extend(t.0);
             footnotes.children.extend(t.1);
@@ -418,7 +417,7 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-fn process_list_items(c: Vec<&str>, offset: String, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
     let mut i = 0;
     while i < c.len() {
 

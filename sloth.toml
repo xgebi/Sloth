@@ -1,0 +1,13 @@
+[database]
+url=""
+port=0
+username=""
+password=""
+
+[post_generation_service]
+url = "abc"
+port = 0
+
+[auth_service]
+url = ""
+port = 0
