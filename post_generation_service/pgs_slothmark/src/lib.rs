@@ -425,12 +425,28 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
         let next_new_line = c.join("").find("\n").unwrap_or(c.len());
 
         let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
+        let li_content_start = c.join("").find(" ").unwrap() + 1;
 
-        let mut this_level = "";
-        if g[next_new_line+1] == "\n" && (g[next_new_line+2] == " " || g[next_new_line+2] == "\t") {
+        let mut this_level = 0;
+        if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
+            let mut j = next_new_line + 3;
+            loop {
+                if !c[j] == " " && !c[j] == "\t" {
+                    this_level = c[next_new_line+2..j].len();
+                    let next_new_line = c.join("").find("\n").unwrap_or(c.len());
+                    if next_new_line == c.len() {
+                        let result = parse_slothmark(c[li_content_start..c.len()].join(""));
+                        li.children.extend(result.0);
+                        footnotes.extend(result.1);
+                        i = c.len()
+                    } else {
+                        if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
 
+                        }
+                    }
+                }
+            }
         } else {
-            let li_content_start = c.join("").find(" ").unwrap() + 1;
             let content = process_content(c[li_content_start..next_new_line].to_vec(), true);
             li.children.extend(content.0);
             footnotes.extend(content.1);
