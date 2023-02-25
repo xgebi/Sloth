@@ -76,8 +76,11 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                                 match possible_closing_tag {
                                     Some(mut pct) => {
                                         let start_tag = format!("<{}", current_node.name);
+                                        let pte = possible_tag_end.unwrap();
                                         // c[0..possible_end + 1].join("").match_indices("[").count()
-                                        while graphemes[possible_tag_end.unwrap()..pct].join("").match_indices(&start_tag).count() == graphemes[possible_tag_end.unwrap()..pct].join("").match_indices(&end_node).count() {
+                                        let m = graphemes[pte..pct].join("").match_indices(&start_tag);
+                                        let n = graphemes[pte..pct].join("").match_indices(&end_node);
+                                        while graphemes[pte..pct].join("").match_indices(&start_tag).count() != graphemes[pte..pct].join("").match_indices(&end_node).count() {
                                             let j = graphemes[pct+1..graphemes.len()].join("").find(&end_node);
                                             if let Some(k) = j {
                                                 pct += 1 + k;
