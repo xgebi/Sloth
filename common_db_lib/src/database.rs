@@ -1,19 +1,22 @@
-use postgres::{Client, Error, NoTls, Row};
+use postgres::{Client, NoTls, Row};
 use std::env;
 use std::error::Error;
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
-fn connect() -> Result<Client, Error> {
-    dotenv().ok();
+fn connect() -> Result<Client, ()> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    Client::connect("host=localhost user=postgres", NoTls)
+    let client = Client::connect("host=localhost user=postgres", NoTls);
+    match client {
+        Ok(c) => { return Ok(c); }
+        Err(_) => {return Err(()); }
+    }
 }
 
 pub fn get_single_post<'a>() -> Option<&'a Row> {
     let mut db = connect()?;
-    let _stmt = include_str!("../sql/single_post.sql");
-    let result = db.query("SELECT id, name, data FROM person", &[]);
+    let _stmt = include_str!("query_builders/queries/single_post.sql");
+    let result = db.query(_stmt, &[]);
     match result {
         Ok(res) => {
             if !res.is_empty() {

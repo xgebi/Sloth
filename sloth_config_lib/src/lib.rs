@@ -1,13 +1,22 @@
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::path::Path;
 use confy::ConfyError;
 
-pub fn get_config() -> Result<SlothConfig, ConfyError> {
+pub fn get_config() -> Result<SlothConfig, ()> {
     let config_file = env::var("SLOTH_CONFIG").ok();
     if let Some(file_path) = config_file {
         let path = Path::new(&file_path).to_owned();
         if path.exists() {
-            return confy::load_path(Path::new(&file_path));
+            let loaded_config: Result<SlothConfig, ConfyError> = confy::load_path(Path::new(&file_path)) ;
+            match loaded_config {
+                Ok(c) => { return Ok(c); }
+                Err(_) => {
+                    return Err(())
+                }
+            }
+
+        } else {
         }
     }
     Err(())
@@ -15,30 +24,30 @@ pub fn get_config() -> Result<SlothConfig, ConfyError> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlothConfig {
-    database: DatabaseConfig,
-    post_generation_service: ServiceConfig,
-    auth_service: ServiceConfig,
-    cms: CmsConfig
+    pub database: DatabaseConfig,
+    pub post_generation_service: ServiceConfig,
+    pub auth_service: ServiceConfig,
+    pub cms: CmsConfig
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseConfig {
-    url: String,
-    port: u8,
-    username: String,
-    password: String
+    pub url: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServiceConfig {
-    url: String,
-    port: u8
+    pub url: String,
+    pub port: u16
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CmsConfig {
-    theme_dir: String,
-    site_dir: String,
+    pub theme_dir: String,
+    pub site_dir: String,
 }
 
 impl Default for SlothConfig {

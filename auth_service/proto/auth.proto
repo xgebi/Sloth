@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package auth_service;
+
+service AuthService {
+  rpc login (LoginRequest) returns (LoginResponse) {}
+  rpc logout (LogoutRequest) returns (LogoutResponse) {}
+  rpc change_password (PasswordChangeRequest) returns (PasswordChangeResponse) {}
+  rpc create_password (PasswordCreationRequest) returns (PasswordCreationResponse) {}
+}
+
+message LoginRequest {
+  string uuid = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  uint64 expiration = 2;
+}
+
+message LogoutRequest {
+  string uuid = 1;
+  string token = 2;
+}
+
+message LogoutResponse {
+  bool loggedOut = 1;
+}
+
+message PasswordCreationRequest {
+  string uuid = 1;
+  string password = 2;
+}
+
+message PasswordCreationResponse {
+  bool passwordCreated = 1;
+}
+
+message PasswordChangeRequest {
+  string oldPassword = 1;
+  string newPassword = 2;
+}
+
+message PasswordChangeResponse {
+  bool passwordChangeSuccessful = 1;
+}

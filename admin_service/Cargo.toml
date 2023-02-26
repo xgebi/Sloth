@@ -17,3 +17,7 @@ serde = { version = "1.0.137", features = ["derive"] }
 tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
 tokio-postgres = "0.7.6"
+
+# Help you use gRPC protobuf files in Rust.
+[build-dependencies]
+tonic-build = "0.8.4"

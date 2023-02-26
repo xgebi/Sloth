@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 confy = "0.5.1"
+sloth_config_lib = { path = "../sloth_config_lib" }
+pwhash = "1.0.0"
+orion = "0.17.3"
 tonic = "0.8.3"
 bytes = "1.3.0"
 prost = "0.11.5"
@@ -34,4 +37,10 @@ tokio-pg-mapper-derive = "0.2.0"
 tokio-postgres = "0.7.7"
 chrono = "0.4.9"
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
+async-trait = "0.1.64"
+common_db_lib = { path = "../common_db_lib" }
+
+# Help you use gRPC protobuf files in Rust.
+[build-dependencies]
+tonic-build = "0.8.4"
 

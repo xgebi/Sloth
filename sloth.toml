@@ -9,8 +9,8 @@ url = "abc"
 port = 0
 
 [auth_service]
-url = ""
-port = 0
+url = "localhost"
+port = 5501
 
 [cms]
 theme_dir = ""
