@@ -442,9 +442,11 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
                         i = c.len()
                     } else {
                         if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
-
+                            i+=1; // to be deleted, debugging purposes
                         }
                     }
+                } else {
+                    i+=1;
                 }
             }
         } else {
@@ -934,6 +936,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[1].children[0].content, "another");
     }
 
+    // doesn't work yet
     #[test]
     fn basic_unordered_list_multi_line_item() {
         let result = parse_slothmark("- test\n\n  second line\n- another".parse().unwrap());
