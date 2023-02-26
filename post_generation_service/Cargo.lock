@@ -1007,18 +1007,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "pgs_renderer"
-version = "0.1.0"
-dependencies = [
- "pgs_common",
-]
-
-[[package]]
 name = "pgs_slothmark"
 version = "0.1.0"
 dependencies = [
  "pgs_common",
- "pgs_renderer",
  "regex",
  "unicode-segmentation",
 ]
@@ -1028,7 +1020,6 @@ name = "pgs_toes"
 version = "0.1.0"
 dependencies = [
  "pgs_common",
- "pgs_renderer",
  "regex",
  "unicode-segmentation",
 ]
