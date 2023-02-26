@@ -45,32 +45,30 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
                 root_node.children.push(headline);
             }
         } else if (grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
-            grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) &&
+            grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) && // there's a bug here for ordered lists
             ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
+            let mut list = Node::create_node(Some("ul".to_string()), Some(NodeType::Node));
+
             // case for unordered list
-            process_list_items(
+            let t = process_list_items(
                 grapheme_vector[i..grapheme_vector.len()].to_vec(),
                 String::from(grapheme_vector[i])
             );
-            let mut p = Node::create_node(Some(String::from("p")), None);
-            let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
             i += t.2;
-            p.children.extend(t.0);
+            list.children.extend(t.0);
+            root_node.children.push(list);
             footnotes.children.extend(t.1);
-            current_node = &p;
-
-            root_node.children.push(p);
         } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
             ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
             // Add if case for ordered list
-            let mut p = Node::create_node(Some(String::from("ol")), None);
+            let mut list = Node::create_node(Some(String::from("ol")), None);
             let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"));
             i += t.2;
-            p.children.extend(t.0);
+            list.children.extend(t.0);
             footnotes.children.extend(t.1);
-            current_node = &p;
+            current_node = &list;
 
-            root_node.children.push(p);
+            root_node.children.push(list);
         } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
             let mut p = Node::create_node(Some(String::from("img")), None);
@@ -422,22 +420,25 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
     let mut result = Vec::new();
     let mut footnotes = Vec::new();
     while i < c.len() {
-        let next_new_line = c.join("").find("\n").unwrap_or(c.len());
+        let mut next_new_line = c[i..c.len()].join("").find("\n").unwrap_or(c.len());
+        if next_new_line != c.len() {
+            next_new_line += i;
+        }
 
         let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
-        let li_content_start = c.join("").find(" ").unwrap() + 1;
+        let li_content_start = i + c[i..c.len()].join("").find(" ").unwrap() + 1;
 
         let mut this_level = 0;
-        if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
+        if next_new_line+2 < c.len() && c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
             let mut j = next_new_line + 3;
             loop {
-                if !c[j] == " " && !c[j] == "\t" {
+                if c[j] != " " && c[j] != "\t" {
                     this_level = c[next_new_line+2..j].len();
                     let next_new_line = c.join("").find("\n").unwrap_or(c.len());
                     if next_new_line == c.len() {
                         let result = parse_slothmark(c[li_content_start..c.len()].join(""));
-                        li.children.extend(result.0);
-                        footnotes.extend(result.1);
+                        li.children.extend(result.0.children);
+                        footnotes.extend(result.1.children);
                         i = c.len()
                     } else {
                         if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
@@ -455,7 +456,7 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
 
         result.push(li);
     }
-    (result, footnotes, 0)
+    (result, footnotes, i)
 }
 
 #[cfg(test)]
@@ -880,5 +881,135 @@ mod tests {
         assert_eq!(attr, "language-css");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
+    }
+
+    #[test]
+    fn basic_unordered_list() {
+        let result = parse_slothmark("- test".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+    }
+
+    #[test]
+    fn basic_two_items_unordered_list() {
+        let result = parse_slothmark("- test\n- another".parse().unwrap());
+        println!("{:?}", result);
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[1].name, "li");
+        assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+    }
+
+    #[test]
+    fn basic_ordered_list() {
+        let result = parse_slothmark("1. test".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ol");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+    }
+
+    #[test]
+    fn basic_two_items_ordered_list() {
+        let result = parse_slothmark("1. test\n10. another".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ol");
+        assert_eq!(result.0.children[0].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[1].name, "li");
+        assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+    }
+
+    #[test]
+    fn basic_unordered_list_multi_line_item() {
+        let result = parse_slothmark("- test\n\n  second line\n- another".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 2);
+
+        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+
+        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+
+        assert_eq!(result.0.children[0].children[1].name, "li");
+        assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+    }
+
+
+    #[test]
+    fn basic_unordered_list_multi_line_item_nested_unordered_list() {
+        let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 2);
+
+        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+
+        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].content, "nested list");
+
+        assert_eq!(result.0.children[0].children[1].name, "li");
+        assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+    }
+
+    #[test]
+    fn basic_unordered_list_multi_line_item_nested_ordered_list() {
+        let result = parse_slothmark("- test\n\n  second line\n\n  1. nested list\n- another".parse().unwrap());
+        assert_eq!(result.0.children.len(), 1);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 2);
+
+        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+
+        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ol");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].content, "nested list");
+
+        assert_eq!(result.0.children[0].children[1].name, "li");
+        assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
     }
 }
