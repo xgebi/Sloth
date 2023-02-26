@@ -431,22 +431,40 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
         let mut this_level = 0;
         if next_new_line+2 < c.len() && c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
             let mut j = next_new_line + 3;
-            loop {
+            while j < c.len() {
                 if c[j] != " " && c[j] != "\t" {
                     this_level = c[next_new_line+2..j].len();
-                    let next_new_line = c.join("").find("\n").unwrap_or(c.len());
+                    next_new_line = c[j..c.len()].join("").find("\n").unwrap_or(c.len());
                     if next_new_line == c.len() {
                         let result = parse_slothmark(c[li_content_start..c.len()].join(""));
                         li.children.extend(result.0.children);
                         footnotes.extend(result.1.children);
-                        i = c.len()
+                        i = c.len();
+                        j = i;
                     } else {
                         if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
-                            i+=1; // to be deleted, debugging purposes
+                            let mut l = next_new_line + 3;
+                            while l < c.len() {
+                                if c[l] != " " || c[l] != "\t" {
+                                    break;
+                                }
+                                l += 1;
+                            }
+                            if l - next_new_line - 3 == this_level {
+                                let result = parse_slothmark(c[li_content_start..c.len()].join(""));
+                                li.children.extend(result.0.children);
+                                footnotes.extend(result.1.children);
+                                i = c.len();
+                                j = i;
+                            } else if l - next_new_line - 3 < this_level {
+                                j+=1; // to be deleted, debugging purposes<
+                            } else if l - next_new_line - 3 > this_level {
+                                j+=1; // to be deleted, debugging purposes<
+                            }
                         }
                     }
                 } else {
-                    i+=1;
+                    j+=1;
                 }
             }
         } else {
