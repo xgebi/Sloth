@@ -13,26 +13,28 @@ fn connect() -> Result<Client, ()> {
     }
 }
 
-pub fn get_single_post<'a>() -> Option<&'a Row> {
-    let mut db = connect()?;
-    let _stmt = include_str!("query_builders/queries/single_post.sql");
-    let result = db.query(_stmt, &[]);
-    match result {
-        Ok(res) => {
+pub fn get_single_post() -> Option<SinglePost> {
+    let mut db_result = connect();
+    if let Ok(db) = db_result {
+        let _stmt = include_str!("query_builders/queries/single_post.sql");
+        let result = db.query(_stmt, &[]);
+        if let Ok(res) = result {
             if !res.is_empty() {
-                return res.get(0);
+                for row in res {
+                    return Some(row_to_single_post(row));
+                }
             }
-            None
-        },
-        Err(_) => None
+        }
     }
+    None
 }
 
 pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
-    let mut db = connect()?;
-    let raw_result = db.query("SELECT id, name, data FROM person", &[]);
-    match raw_result {
-        Ok(res) => {
+    let mut db_result = connect();
+    if let Ok(db) = db_result {
+        let _stmt = include_str!("different file");
+        let result = db.query(_stmt, &[]);
+        if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
                 for row in res {
@@ -40,17 +42,17 @@ pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
                 }
                 return Some(result);
             }
-            None
-        },
-        Err(_) => None
+        }
     }
+    None
 }
 
 pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
-    let mut db = connect()?;
-    let raw_result = db.query("SELECT id, name, data FROM person", &[]);
-    match raw_result {
-        Ok(res) => {
+    let mut db_result = connect();
+    if let Ok(db) = db_result {
+        let _stmt = include_str!("different file");
+        let result = db.query(_stmt, &[]);
+        if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
                 for row in res {
@@ -58,10 +60,9 @@ pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<S
                 }
                 return Some(result);
             }
-            None
-        },
-        Err(_) => None
+        }
     }
+    None
 }
 
 fn row_to_single_post(row: Row) -> SinglePost {

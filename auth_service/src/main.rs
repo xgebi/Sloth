@@ -1,6 +1,7 @@
 #![feature(addr_parse_ascii)]
 
 mod greeters;
+mod authentication;
 
 use std::net::{SocketAddr, ToSocketAddrs};
 use tonic::{transport::Server, Request, Response, Status};
