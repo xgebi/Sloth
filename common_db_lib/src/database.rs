@@ -13,11 +13,11 @@ fn connect() -> Result<Client, ()> {
     }
 }
 
-pub fn get_single_post() -> Option<SinglePost> {
+pub fn get_single_post(uuid: String) -> Option<SinglePost> {
     let mut db_result = connect();
     if let Ok(db) = db_result {
-        let _stmt = include_str!("query_builders/queries/single_post.sql");
-        let result = db.query(_stmt, &[]);
+        let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/single_post.sql"));
+        let result = db.query(_stmt, &[uuid]);
         if let Ok(res) = result {
             if !res.is_empty() {
                 for row in res {
@@ -32,8 +32,8 @@ pub fn get_single_post() -> Option<SinglePost> {
 pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
     let mut db_result = connect();
     if let Ok(db) = db_result {
-        let _stmt = include_str!("different file");
-        let result = db.query(_stmt, &[]);
+        let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/post_type_archive.sql"));
+        let result = db.query(_stmt, &[post_type]);
         if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
