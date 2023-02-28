@@ -3,6 +3,7 @@
 mod greeters;
 mod authentication;
 mod database;
+mod authorization;
 
 use std::net::{SocketAddr, ToSocketAddrs};
 use tonic::{transport::Server, Request, Response, Status};

@@ -48,6 +48,7 @@ pub struct ServiceConfig {
 pub struct CmsConfig {
     pub theme_dir: String,
     pub site_dir: String,
+    pub token: String
 }
 
 impl Default for SlothConfig {
@@ -70,6 +71,7 @@ impl Default for SlothConfig {
             cms: CmsConfig {
                 theme_dir: String::new(),
                 site_dir: String::new(),
+                token: String::new(),
             }
         }
     }
