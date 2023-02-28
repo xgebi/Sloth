@@ -43,6 +43,8 @@ toes.pyd
 *.so
 *.h
 
+out
+
 /post_generation_service/target/
 
 .parcel-cache/
