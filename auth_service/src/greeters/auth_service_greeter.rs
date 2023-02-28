@@ -9,16 +9,6 @@ use crate::authorization::create_token;
 #[derive(Debug, Default)]
 pub struct AuthServiceGreeter {}
 
-impl AuthServiceGreeter {
-    fn process_bcrypt_login() {
-
-    }
-
-    fn process_argon_login() {
-
-    }
-}
-
 #[async_trait]
 impl AuthService for AuthServiceGreeter {
     async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginResponse>, Status> {

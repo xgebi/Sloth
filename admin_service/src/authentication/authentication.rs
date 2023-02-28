@@ -1,7 +1,6 @@
 use actix_web::{Error, HttpResponse, web};
 use deadpool_postgres::Pool;
 use tokio_postgres::Client;
-use page_generation::page_generation_client::{PageServiceClient};
 
 pub async fn serve_login_page(
         user: web::Json<User>,
