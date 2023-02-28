@@ -2,8 +2,6 @@ use std::net::ToSocketAddrs;
 use actix_web::guard::{GuardContext, Guard};
 use actix_web::HttpResponse;
 use actix_web::rt::Runtime;
-use actix_web_lab::__reexports::futures_util::{future, SinkExt, TryFutureExt};
-use async_trait::async_trait;
 use sloth_config_lib::get_config;
 use crate::auth_service::auth_service_client::AuthServiceClient;
 use crate::auth_service::LoggedInRequest;

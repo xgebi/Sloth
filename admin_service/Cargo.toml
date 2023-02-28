@@ -21,7 +21,6 @@ tonic = "0.8.3"
 prost = "0.11"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 sloth_config_lib = { path = "../sloth_config_lib" }
-async-trait = "0.1.64"
 
 # Help you use gRPC protobuf files in Rust.
 [build-dependencies]
