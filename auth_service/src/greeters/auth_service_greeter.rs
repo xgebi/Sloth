@@ -1,6 +1,6 @@
 use tonic::{Request, Response, Status, async_trait};
 use crate::auth_service::auth_service_server::AuthService;
-use crate::auth_service::{LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, PasswordChangeRequest, PasswordChangeResponse, PasswordCreationRequest, PasswordCreationResponse};
+use crate::auth_service::{LoggedInRequest, LoggedInResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, PasswordChangeRequest, PasswordChangeResponse, PasswordCreationRequest, PasswordCreationResponse};
 use crate::database::fetch_hash;
 use crate::authentication::bcrypt;
 use crate::authentication::argon;
@@ -30,7 +30,7 @@ impl AuthService for AuthServiceGreeter {
                 let res_option = create_token(login_request.uuid.clone());
                 if let Some(res) = res_option {
                     reply.token = res.0;
-                    reply.expiration = res.1;
+                    reply.expiration = res.1 as u64;
                     return Ok(Response::new(reply));
                 }
             }
@@ -39,6 +39,10 @@ impl AuthService for AuthServiceGreeter {
     }
 
     async fn logout(&self, request: Request<LogoutRequest>) -> Result<Response<LogoutResponse>, Status> {
+        todo!()
+    }
+
+    async fn is_logged_in(&self, request: Request<LoggedInRequest>) -> Result<Response<LoggedInResponse>, Status> {
         todo!()
     }
 
