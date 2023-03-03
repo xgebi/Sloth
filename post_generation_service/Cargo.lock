@@ -1051,7 +1051,6 @@ version = "0.1.0"
 dependencies = [
  "postgres",
  "serde",
-]
 
 [[package]]
 name = "pgs_slothmark"
