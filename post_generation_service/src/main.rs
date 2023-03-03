@@ -1,9 +1,11 @@
-mod post_generator;
 mod settings;
 mod page_generator;
 mod greeters;
+mod post;
 
 use pgs_common;
+
+extern crate fs_extra;
 
 use tonic::{transport::Server, Request, Response, Status};
 

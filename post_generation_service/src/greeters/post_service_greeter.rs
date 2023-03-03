@@ -1,8 +1,9 @@
 use deadpool_postgres::tokio_postgres::connect;
 use crate::post_generation::post_service_server::PostService;
 use tonic::{transport::Server, Request, Response, Status};
+use crate::post::files::copy_assets;
+use crate::post::generator::{generate_post, is_generating, regenerate_all, regenerate_assets};
 use crate::post_generation::{Empty, MultiplePostRequest, PostGeneratingReply, PostRequest};
-use crate::post_generator::{generate_post, is_generating, regenerate_all, regenerate_assets};
 
 #[derive(Debug, Default)]
 pub struct PostServiceGreeter {}
@@ -34,7 +35,7 @@ impl PostService for PostServiceGreeter {
     }
 
     async fn regenerate_assets(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
-        regenerate_assets();
+        copy_assets();
         Ok(Response::new(Empty {}))
     }
 

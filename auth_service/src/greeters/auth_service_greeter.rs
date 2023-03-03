@@ -24,7 +24,7 @@ impl AuthService for AuthServiceGreeter {
             if data.0 == "bcrypt" {
                 verification_result = bcrypt::verify_password(login_request.password.clone(), data.1.clone(), login_request.uuid.clone());
             } else if data.0 == "argon" {
-                verification_result = argon::verify_password(login_request.password.clone(), data.1.clone(), login_request.uuid);
+                verification_result = argon::verify_password(login_request.password.clone(), data.1.clone(), login_request.uuid.clone());
             }
             if verification_result {
                 let res_option = create_token(login_request.uuid.clone());
