@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+sloth_config_lib = { path = "../sloth_config_lib" }
 postgres = { version = "0.19.4" }
 serde = { version = "1.0.152", features = ["derive"] }

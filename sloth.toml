@@ -5,14 +5,14 @@ username=""
 password=""
 
 [post_generation_service]
-url = "abc"
-port = 0
+url = "localhost"
+port = 5502
 
 [auth_service]
 url = "localhost"
 port = 5501
 
 [cms]
-theme_dir = ""
-site_dir = ""
+theme_dir = "/home/xgebi/Projects/Sloth/CMSService/themes/"
+site_dir = "/home/xgebi/Projects/Sloth/dummy_site/"
 token = "123"

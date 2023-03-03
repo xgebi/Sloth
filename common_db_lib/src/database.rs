@@ -4,7 +4,7 @@ use std::error::Error;
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
-pub fn connect() -> Result<Client, ()> {
+pub fn connect(conf: &SlothConf) -> Result<Client, ()> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let client = Client::connect("host=localhost user=postgres", NoTls);
     match client {

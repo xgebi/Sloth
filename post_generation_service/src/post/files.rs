@@ -17,8 +17,10 @@ pub(crate) fn copy_assets() -> bool {
         if row.is_empty() {
             return false;
         }
-        let source = Path::new((conf.cms.theme_dir + row.get(0) + "/assets").as_str());
-        let target = Path::new((conf.cms.site_dir + "/assets").as_str());
+        let source_path = conf.cms.theme_dir + row.get(0) + "/assets";
+        let source = Path::new(source_path.as_str());
+        let target_path = conf.cms.site_dir + "/assets";
+        let target = Path::new(target_path.as_str());
 
         let options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
 

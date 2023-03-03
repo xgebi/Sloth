@@ -264,6 +264,7 @@ version = "0.1.0"
 dependencies = [
  "postgres",
  "serde",
+ "sloth_config_lib",
 ]
 
 [[package]]
