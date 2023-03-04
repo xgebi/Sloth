@@ -11,14 +11,14 @@ pub fn get_config() -> Result<SlothConfig, ()> {
             let loaded_config: Result<SlothConfig, ConfyError> = confy::load_path(Path::new(&file_path)) ;
             match loaded_config {
                 Ok(c) => { return Ok(c); }
-                Err(_) => {
-                    return Err(())
+                Err(e) => {
+                    println!("{:?}", e);
+                    return Err(());
                 }
             }
-
-        } else {
         }
     }
+    println!("error");
     Err(())
 }
 

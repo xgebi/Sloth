@@ -45,6 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .serve(server[0])
             .await?;
     } else {
+        println!("{:?}", conf_result);
         println!("beep");
     }
     Ok(())

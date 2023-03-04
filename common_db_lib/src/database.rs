@@ -1,4 +1,5 @@
-use postgres::{Client, NoTls, Row};
+// use postgres::{Client, NoTls, Row};
+use tokio_postgres::{NoTls, Client, Row};
 use std::env;
 use std::error::Error;
 use sloth_config_lib::{get_config, SlothConfig};

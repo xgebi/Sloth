@@ -36,7 +36,7 @@ tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
 tokio-postgres = "0.7.7"
 chrono = "0.4.9"
-postgres = { version = "0.19.4" }
+tokio-postgres = "0.7.7"
 async-trait = "0.1.64"
 common_db_lib = { path = "../common_db_lib" }
 
