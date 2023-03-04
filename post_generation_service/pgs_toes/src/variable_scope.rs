@@ -61,10 +61,10 @@ impl VariableScope {
                 }
                 return true;
             }
-            current_index -= 1;
             if current_index == 0 {
                 break;
             }
+            current_index -= 1;
         }
         false
     }

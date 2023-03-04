@@ -1,0 +1,1 @@
+INSERT INTO sloth_tokens (uuid, user_id, user_token, expiration) VALUES ($1, $2, $3, $4);

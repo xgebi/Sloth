@@ -13,6 +13,9 @@ members = [
 ]
 
 [dependencies]
+confy = "0.5.1"
+sloth_config_lib = { path = "../sloth_config_lib" }
+common_db_lib = { path = "../common_db_lib" }
 pgs_common = { path = "pgs_common" }
 pgs_toes = { path = "pgs_toes" }
 pgs_slothmark = { path = "pgs_slothmark" }
@@ -43,6 +46,7 @@ tokio-pg-mapper-derive = "0.2.0"
 tokio-postgres = "0.7.7"
 chrono = "0.4.9"
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
+fs_extra = "1.3.0"
 
 # Help you use gRPC protobuf files in Rust.
 [build-dependencies]

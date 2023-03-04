@@ -1,0 +1,1 @@
+WHERE spt.taxonomy = $1 AND sp.post_type = $2 AND sp.post_status = 'published';

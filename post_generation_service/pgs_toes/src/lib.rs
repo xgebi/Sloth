@@ -1,5 +1,6 @@
-mod toes;
-mod template;
+mod compiler;
+mod parser;
+mod variable_scope;
 
 pub fn render_page_from_string() -> String {
     String::new()
