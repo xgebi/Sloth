@@ -44,6 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .add_service(PageServiceServer::new(page_greeter))
             .serve(server[0])
             .await?;
+    } else {
+        println!("beep");
     }
     Ok(())
 }

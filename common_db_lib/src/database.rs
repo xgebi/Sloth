@@ -1,12 +1,28 @@
 use postgres::{Client, NoTls, Row};
 use std::env;
 use std::error::Error;
+use sloth_config_lib::{get_config, SlothConfig};
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
-pub fn connect(conf: &SlothConf) -> Result<Client, ()> {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let client = Client::connect("host=localhost user=postgres", NoTls);
+
+pub fn connect(conf: Option<SlothConfig>) -> Result<Client, ()> {
+    let config: SlothConfig = match conf {
+        Some(c) => { c }
+        None => {
+            if let Ok(c) = get_config() {
+                c
+            } else {
+                panic!()
+            }
+        }
+    };
+    let client = Client::connect(
+        format!("host={} port={} dbname={} user={} password={}",
+            config.database.url, config.database.port, config.database.dbname,
+                config.database.username, config.database.password
+        ).as_str(),
+        NoTls);
     match client {
         Ok(c) => { return Ok(c); }
         Err(_) => {return Err(()); }
@@ -14,7 +30,7 @@ pub fn connect(conf: &SlothConf) -> Result<Client, ()> {
 }
 
 pub fn get_single_post(uuid: String) -> Option<SinglePost> {
-    let mut db_result = connect();
+    let mut db_result = connect(None);
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/single_post.sql"));
         let result = db.query_one(&_stmt, &[&uuid]);
@@ -26,7 +42,7 @@ pub fn get_single_post(uuid: String) -> Option<SinglePost> {
 }
 
 pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
-    let mut db_result = connect();
+    let mut db_result = connect(None);
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/post_type_archive.sql"));
         let result = db.query(&_stmt, &[&post_type]);
@@ -44,7 +60,7 @@ pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
 }
 
 pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
-    let mut db_result = connect();
+    let mut db_result = connect(None);
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/taxonomy_archive.sql"));
         let result = db.query(&_stmt, &[&taxonomy, &post_type]);

@@ -22,7 +22,7 @@ pub fn get_config() -> Result<SlothConfig, ()> {
     Err(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SlothConfig {
     pub database: DatabaseConfig,
     pub post_generation_service: ServiceConfig,
@@ -30,21 +30,22 @@ pub struct SlothConfig {
     pub cms: CmsConfig
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DatabaseConfig {
     pub url: String,
     pub port: u16,
+    pub dbname: String,
     pub username: String,
     pub password: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServiceConfig {
     pub url: String,
     pub port: u16
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CmsConfig {
     pub theme_dir: String,
     pub site_dir: String,
@@ -57,6 +58,7 @@ impl Default for SlothConfig {
             database: DatabaseConfig {
                 url: String::new(),
                 port: 0,
+                dbname: String::new(),
                 username: String::new(),
                 password: String::new(),
             },

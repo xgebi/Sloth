@@ -3,6 +3,7 @@ url=""
 port=0
 username=""
 password=""
+dbname="sloth"
 
 [post_generation_service]
 url = "localhost"

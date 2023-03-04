@@ -201,6 +201,7 @@ dependencies = [
 name = "common_db_lib"
 version = "0.1.0"
 dependencies = [
+ "confy",
  "postgres",
  "serde",
  "sloth_config_lib",
