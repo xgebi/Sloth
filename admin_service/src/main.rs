@@ -6,6 +6,7 @@ mod post_type;
 mod post;
 mod settings;
 mod user;
+mod media;
 
 use tonic;
 use actix_web::{App, guard, HttpServer, middleware, web};
