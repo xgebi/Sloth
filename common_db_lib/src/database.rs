@@ -1,13 +1,14 @@
 // use postgres::{Client, NoTls, Row};
-use tokio_postgres::{NoTls, Client, Row};
+use tokio_postgres::{NoTls, Client, Row, Socket, Connection};
 use std::env;
 use std::error::Error;
 use sloth_config_lib::{get_config, SlothConfig};
+use tokio_postgres::tls::NoTlsStream;
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
 
-pub fn connect(conf: Option<SlothConfig>) -> Result<Client, ()> {
+pub async fn connect(conf: Option<SlothConfig>) -> Result<Client, ()> {
     let config: SlothConfig = match conf {
         Some(c) => { c }
         None => {
@@ -18,23 +19,26 @@ pub fn connect(conf: Option<SlothConfig>) -> Result<Client, ()> {
             }
         }
     };
-    let client = Client::connect(
-        format!("host={} port={} dbname={} user={} password={}",
-            config.database.url, config.database.port, config.database.dbname,
-                config.database.username, config.database.password
-        ).as_str(),
-        NoTls);
-    match client {
-        Ok(c) => { return Ok(c); }
-        Err(_) => {return Err(()); }
+
+    let conn_result =
+        tokio_postgres::connect("host=localhost user=postgres", NoTls).await;
+    match conn_result {
+        Ok((client, connection)) => {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+                return Err(());
+            }
+            Ok(client)
+        }
+        Err(_) => { return Err(())}
     }
 }
 
-pub fn get_single_post(uuid: String) -> Option<SinglePost> {
-    let mut db_result = connect(None);
+pub async fn get_single_post(uuid: String) -> Option<SinglePost> {
+    let mut db_result = connect(None).await;
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/single_post.sql"));
-        let result = db.query_one(&_stmt, &[&uuid]);
+        let result = db.query_one(&_stmt, &[&uuid]).await;
         if let Ok(res) = result {
             return Some(row_to_single_post(res));
         }
@@ -42,11 +46,11 @@ pub fn get_single_post(uuid: String) -> Option<SinglePost> {
     None
 }
 
-pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
-    let mut db_result = connect(None);
+pub async fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
+    let mut db_result = connect(None).await;
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/post_type_archive.sql"));
-        let result = db.query(&_stmt, &[&post_type]);
+        let result = db.query(&_stmt, &[&post_type]).await;
         if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
@@ -60,11 +64,11 @@ pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
     None
 }
 
-pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
-    let mut db_result = connect(None);
+pub async fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
+    let mut db_result = connect(None).await;
     if let Ok(mut db) = db_result {
         let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/taxonomy_archive.sql"));
-        let result = db.query(&_stmt, &[&taxonomy, &post_type]);
+        let result = db.query(&_stmt, &[&taxonomy, &post_type]).await;
         if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
