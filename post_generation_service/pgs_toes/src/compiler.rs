@@ -11,7 +11,6 @@ pub(crate) fn compile_node_tree(root_node: Node) -> Node {
 }
 
 fn compile_node(n: Node) -> Node {
-    
     // 1. check if it's a toe's meta node
     // 2. check attributes for toe's attributes
 

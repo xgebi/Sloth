@@ -7,6 +7,7 @@ use crate::parser::parse_toe;
 mod compiler;
 mod parser;
 mod variable_scope;
+mod conditions;
 
 pub fn render_page_from_string(s: String) -> String {
     let parsed_nodes = parse_toe(s);
