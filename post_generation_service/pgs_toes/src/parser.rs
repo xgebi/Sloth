@@ -3,7 +3,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
 use pgs_common::patterns::{Pattern, Patterns};
 
-fn parse_toe(sm: String) -> Result<Node, ()> {
+pub(crate) fn parse_toe(sm: String) -> Result<Node, ()> {
     let patterns = Patterns::new();
     let processed_new_lines = sm.replace(
         patterns.locate("double_line_win").unwrap().value.as_str(),
