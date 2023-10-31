@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::fs;
 use std::hash::Hash;
 use std::path::Path;
 use pgs_common::node::{Node, NodeType};
+use crate::parser::parse_toe;
 use crate::variable_scope::VariableScope;
 
 pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) -> Node {
@@ -75,11 +77,16 @@ fn process_import_tag(n: Node, vs: &mut VariableScope) -> Vec<Node> {
         let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
         let fp = Path::new(&formatted_path);
         if fp.is_file() {
-
+            let contents = fs::read_to_string(fp);
+            if contents.is_ok() {
+                let result = parse_toe(contents.unwrap());
+                // TODO add compilation step here
+                if result.is_ok() {
+                    return result.unwrap().children;
+                }
+            }
         }
-
     }
-
     res
 }
 
@@ -177,9 +184,45 @@ mod import_tests {
         let mut vs = VariableScope::create();
         let cd = env::current_dir().unwrap();
         let mut path = cd.join("test_data").to_str().unwrap().to_string();
-        vs.assign_variable(&"toe_file".to_string(), &mut path);
+        vs.create_variable(&"toe_file".to_string(), &mut path);
         let res = process_import_tag(node, &mut vs);
         assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn empty_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("empty.toe.html")));
+        let mut vs = VariableScope::create();
+        let cd = env::current_dir().unwrap();
+        let mut path = cd.join("test_data").to_str().unwrap().to_string();
+        vs.create_variable(&"toe_file".to_string(), &mut path);
+        let res = process_import_tag(node, &mut vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn single_template_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("single_template.toe.html")));
+        let mut vs = VariableScope::create();
+        let cd = env::current_dir().unwrap();
+        let mut path = cd.join("test_data").to_str().unwrap().to_string();
+        vs.create_variable(&"toe_file".to_string(), &mut path);
+        let res = process_import_tag(node, &mut vs);
+        assert_eq!(res.len(), 1);
     }
 }
 
