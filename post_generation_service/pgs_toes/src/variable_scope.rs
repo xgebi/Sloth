@@ -14,7 +14,18 @@ pub(crate) struct VariableScope {
 impl VariableScope {
     pub(crate) fn create() -> VariableScope {
         VariableScope {
-            scopes: Vec::new()
+            scopes: vec![SingleScope {
+                variables: HashMap::new(),
+            }],
+        }
+    }
+
+    pub(crate) fn create_from_hashmap(hm: HashMap<String, String>) -> VariableScope {
+        let mut scopes = vec![SingleScope {
+            variables: hm,
+        }];
+        VariableScope {
+            scopes,
         }
     }
 
@@ -94,6 +105,13 @@ mod tests {
         scope.scopes.push(single_scope);
 
         assert_eq!(scope.scopes.len(), 1)
+    }
+
+    #[test]
+    fn test_creating_scope_from_hm() {
+        let hm: HashMap<String, String> = HashMap::new();
+        let scope = VariableScope::create_from_hashmap(hm);
+        assert_eq!(scope.scopes.len(), 1);
     }
 
     #[test]
