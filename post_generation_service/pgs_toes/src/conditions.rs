@@ -57,13 +57,23 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
                         j += 1;
                     } else {
                         if j + 1 < graphemes.len() && graphemes[j] == "o" && graphemes[j+1] == "r" {
+                            // There might be bugs in this logic, I need to think it through more
                             if j + 2 == graphemes.len() {
                                 panic!("Unfinished condition encountered");
+                            } else if graphemes[j + 3] == " " || graphemes[j + 3] == ")" {
+                                node.junction = JunctionType::Or;
+                                // get a condition and parse it
                             }
+                            j += 2;
                         } else if j + 2 < graphemes.len() && graphemes[j] == "a" && graphemes[j+1] == "n" && graphemes[j+2] == "d" {
+                            // There might be bugs in this logic, I need to think it through more
                             if j + 3 == graphemes.len() {
                                 panic!("Unfinished condition encountered");
+                            } else if graphemes[j + 3] == " " || graphemes[j + 3] == ")" {
+                                node.junction = JunctionType::And;
+                                // get a condition and parse it
                             }
+                            j += 3;
                         }
                     }
                 }
@@ -104,5 +114,19 @@ mod node_tests {
     #[test]
     fn parse_less_than_variable_to_node() {
 
+    }
+}
+
+#[cfg(test)]
+mod parsing_tests {
+    use unicode_segmentation::UnicodeSegmentation;
+    use crate::conditions::{parse_condition_tree, process_condition};
+
+    #[test]
+    fn parse_number() {
+        let cond = "1".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.contents, "1");
     }
 }

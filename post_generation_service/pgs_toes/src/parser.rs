@@ -18,7 +18,9 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
     let mut i: usize = 0;
     while i < graphemes.len() {
         let mut current_node: Node = Node::create_node(None, None);
+        // First clause is for opening tag, valid XML can't have these tags out of order
         if graphemes[i] == "<" {
+            // check for comments
             if i + 4 <= graphemes.len() && graphemes[i+1..i+4].join("").find("!--").is_some() {
                 let  possible_end = graphemes[i+4..graphemes.len()].join("").find("-->");
                 if let Some(end) = possible_end {
@@ -29,6 +31,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                     return Err(());
                 }
             } else {
+                // Check for Document Type Definition
                 if graphemes[i + 1] == "!" {
                     match find_name_end(graphemes[i+2..graphemes.len()].to_vec()) {
                         Ok(end) => {
@@ -39,6 +42,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                         }
                         Err(e) => { return Err(e); }
                     }
+                // Check for declarations
                 } else if graphemes[i + 1] == "?" {
                     match find_name_end(graphemes[i+2..graphemes.len()].to_vec()) {
                         Ok(end) => {
@@ -50,6 +54,7 @@ fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
                         Err(e) => { return Err(e); }
                     }
                 } else {
+                    // Check where the name of the tag ends
                     match find_name_end(graphemes[i+1..graphemes.len()].to_vec()) {
                         Ok(end) => {
                             current_node = Node::create_node(Some(graphemes[i+1..i+end+1].join("")), Some(NodeType::Node));
