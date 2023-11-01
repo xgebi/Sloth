@@ -26,62 +26,17 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
 
     let mut parenthesis_counter = 0;
     let mut used_quotes = "";
-    let mut i: usize = 0;
-    while i < graphemes.len() {
-        match graphemes[i] {
-            "(" => {
-                parenthesis_counter += 1;
-                i += 1;
-            }
-            ")" => {
-                parenthesis_counter -= 1;
-                if parenthesis_counter < 0 && used_quotes.len() == 0 {
-                    panic!("Invalid condition encountered");
-                }
-                i += 1;
-            }
-            "\"" => {
-                if used_quotes.len() == 0 {
-                    if i == 0 || (i - 1 >= 0 && graphemes[i - 1] != "\"") {
-                        used_quotes = "\"";
-                    }
-                } else if i - 1 >= 0 && graphemes[i - 1] == "\"" {
-                    used_quotes = "";
-                }
-                i += 1;
-            }
-            " " => {
-                let mut j = i + 1;
-                while j < graphemes.len() {
-                    if graphemes[j] == " " {
-                        j += 1;
-                    } else {
-                        if j + 1 < graphemes.len() && graphemes[j] == "o" && graphemes[j+1] == "r" {
-                            // There might be bugs in this logic, I need to think it through more
-                            if j + 2 == graphemes.len() {
-                                panic!("Unfinished condition encountered");
-                            } else if graphemes[j + 3] == " " || graphemes[j + 3] == ")" {
-                                node.junction = JunctionType::Or;
-                                // get a condition and parse it
-                            }
-                            j += 2;
-                        } else if j + 2 < graphemes.len() && graphemes[j] == "a" && graphemes[j+1] == "n" && graphemes[j+2] == "d" {
-                            // There might be bugs in this logic, I need to think it through more
-                            if j + 3 == graphemes.len() {
-                                panic!("Unfinished condition encountered");
-                            } else if graphemes[j + 3] == " " || graphemes[j + 3] == ")" {
-                                node.junction = JunctionType::And;
-                                // get a condition and parse it
-                            }
-                            j += 3;
-                        }
-                    }
-                }
-                i += (j - i);
-            }
+    let mut start: usize = 0;
+    let mut end: usize = 0;
+    while end < graphemes.len() {
+        match graphemes[end] {
             _ => {
-                i += 1;
+                end += 1;
             }
+        }
+
+        if end == graphemes.len() {
+            node.contents = graphemes[start..end].join("");
         }
     }
 
