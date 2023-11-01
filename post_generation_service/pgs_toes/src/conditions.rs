@@ -1,3 +1,5 @@
+use crate::variable_scope::VariableScope;
+
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum JunctionType {
     None,
@@ -12,9 +14,24 @@ pub(crate) struct ConditionNode {
     children: Vec<ConditionNode>,
 }
 
-pub(crate) fn process_condition(graphemes: Vec<&str>) -> bool {
 
-    true
+impl ConditionNode {
+    pub fn compute(&self, variable_scope: VariableScope) -> bool {
+        if self.contents.len() > 0 {
+
+            false
+        } else if self.junctions.len() + 1 == self.children.len() {
+
+            false
+        } else {
+            false
+        }
+    }
+}
+
+pub(crate) fn process_condition(graphemes: Vec<&str>, variable_scope: VariableScope) -> bool {
+    let mut node = parse_condition_tree(graphemes);
+    node.compute(variable_scope)
 }
 
 fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
@@ -257,5 +274,22 @@ mod node_tests {
         assert_eq!(res.contents, String::from(""));
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::Or);
+    }
+}
+
+#[cfg(test)]
+mod condition_resolving_tests {
+    use unicode_segmentation::UnicodeSegmentation;
+    use super::*;
+
+    #[test]
+    fn resolve_true_boolean_node() {
+        let vs = VariableScope::create();
+        let node = ConditionNode {
+            contents: "true".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+
     }
 }
