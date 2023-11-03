@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct SingleScope {
     variables: HashMap<String, String>
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct VariableScope {
     scopes: Vec<SingleScope>
 }
@@ -35,10 +35,10 @@ impl VariableScope {
         }
     }
 
-    pub(crate) fn find_variable(self, variable_name: &String) -> Option<String> {
+    pub(crate) fn find_variable(self, variable_name: String) -> Option<String> {
         for scope in self.scopes.iter().rev() {
-            if scope.variables.contains_key(variable_name) {
-                return Some(scope.variables.get(variable_name).unwrap().clone())
+            if scope.variables.contains_key(variable_name.as_str()) {
+                return Some(scope.variables.get(variable_name.as_str()).unwrap().clone())
             }
         }
         return None
@@ -53,8 +53,8 @@ impl VariableScope {
         return false;
     }
 
-    pub(crate) fn create_variable(&mut self, variable_name: &String, variable_value: &String) -> bool {
-        if !self.scopes.last().unwrap().variables.contains_key(variable_name) {
+    pub(crate) fn create_variable(&mut self, variable_name: String, variable_value: String) -> bool {
+        if !self.scopes.last().unwrap().variables.contains_key(variable_name.as_str()) {
             let last_index = self.scopes.len() - 1;
             self.scopes[last_index].variables.insert(variable_name.to_string(), variable_value.to_string());
             return true;
@@ -63,11 +63,11 @@ impl VariableScope {
         false
     }
 
-    pub(crate) fn assign_variable(&mut self, variable_name: &String, variable_value: &mut String) -> bool {
+    pub(crate) fn assign_variable(&mut self, variable_name: String, mut variable_value: String) -> bool {
         let mut current_index = self.scopes.len() - 1;
         loop {
-            if self.scopes[current_index].variables.contains_key(variable_name) {
-                if let Some(x) = self.scopes[current_index].variables.get_mut(variable_name) {
+            if self.scopes[current_index].variables.contains_key(variable_name.as_str()) {
+                if let Some(x) = self.scopes[current_index].variables.get_mut(variable_name.as_str()) {
                     *x = variable_value.clone();
                 }
                 return true;
@@ -127,7 +127,7 @@ mod tests {
         let last = scope.scopes.len().clone() - 1;
         &scope.scopes[last].variables.insert(String::from("var"), String::from("a"));
 
-        assert_eq!(scope.find_variable(&String::from("var")).unwrap(), String::from("a"));
+        assert_eq!(scope.find_variable(String::from("var")).unwrap(), String::from("a"));
     }
 
     #[test]
@@ -148,7 +148,7 @@ mod tests {
         };
         scope.scopes.push(ss2);
 
-        assert_eq!(scope.find_variable(&String::from("var")).unwrap(), String::from("a"));
+        assert_eq!(scope.find_variable(String::from("var")).unwrap(), String::from("a"));
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         };
         scope.scopes.push(ss1);
 
-        assert_eq!(scope.create_variable(&String::from("var"), &String::from("a")), true)
+        assert_eq!(scope.create_variable(String::from("var"), String::from("a")), true)
     }
 
     #[test]
@@ -174,8 +174,8 @@ mod tests {
         };
         scope.scopes.push(ss1);
 
-        assert_eq!(scope.create_variable(&String::from("var"), &String::from("a")), true);
-        assert_eq!(scope.create_variable(&String::from("var"), &String::from("a")), false);
+        assert_eq!(scope.create_variable(String::from("var"), String::from("a")), true);
+        assert_eq!(scope.create_variable(String::from("var"), String::from("a")), false);
     }
 
     #[test]
@@ -188,15 +188,15 @@ mod tests {
         };
         scope.scopes.push(ss1);
 
-        assert_eq!(scope.create_variable(&String::from("var"), &String::from("a")), true);
+        assert_eq!(scope.create_variable(String::from("var"), String::from("a")), true);
 
         let mut ss2 = SingleScope {
             variables: HashMap::new()
         };
         scope.scopes.push(ss2);
 
-        assert_eq!(scope.assign_variable(&String::from("var"), &mut String::from("b")), true);
-        assert_eq!(scope.find_variable(&String::from("var")), Some(String::from("b")));
+        assert_eq!(scope.assign_variable(String::from("var"), String::from("b")), true);
+        assert_eq!(scope.find_variable(String::from("var")), Some(String::from("b")));
     }
 
     #[test]
@@ -214,6 +214,6 @@ mod tests {
         };
         scope.scopes.push(ss2);
 
-        assert_eq!(scope.assign_variable(&String::from("var"), &mut String::from("b")), false);
+        assert_eq!(scope.assign_variable(String::from("var"), String::from("b")), false);
     }
 }
