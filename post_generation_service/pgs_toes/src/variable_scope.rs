@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 struct SingleScope {

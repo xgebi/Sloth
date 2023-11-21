@@ -1,3 +1,4 @@
+use std::cell::{RefCell};
 use std::collections::HashMap;
 use std::fs;
 use std::hash::Hash;
@@ -7,10 +8,12 @@ use pgs_common::node::{Node, NodeType};
 use crate::parser::parse_toe;
 use crate::variable_scope::VariableScope;
 
+// TODO for future Sarah, look for ways to remove the unsafe blocks
+
 pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) -> Node {
     let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
-    // TODO redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
-    let var_scope = Rc::new(VariableScope::create_from_hashmap(data));
+    // Done redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
+    let var_scope = Rc::new(RefCell::new(VariableScope::create_from_hashmap(data)));
     for child in root_node.children {
         compiled_root_node.children.append(&mut compile_node(child, Rc::clone(&var_scope)));
     }
@@ -18,7 +21,7 @@ pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) 
     compiled_root_node
 }
 
-fn compile_node(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
+fn compile_node(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
     // 1. check if it's a toe's meta node
     if n.name.to_lowercase().starts_with("toe:") {
@@ -41,7 +44,7 @@ fn has_toe_attribute(hm: HashMap<String, Option<String>>) -> bool {
     res
 }
 
-fn process_toe_elements(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
+fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
 
     match n.name.to_lowercase().as_str() {
@@ -65,14 +68,13 @@ fn process_toe_elements(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
     res
 }
 
-fn process_import_tag(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
+fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let res = Vec::new();
 
     process_if_attribute(n.clone(), Rc::clone(&vs));
 
     let toe_file = String::from("toe_file");
-
-    let folder_path = Rc::try_unwrap(vs).unwrap().find_variable(toe_file); //.find_variable(&toe_file);
+    let folder_path = Rc::try_unwrap(vs).unwrap().into_inner().find_variable(toe_file);
     let cloned_n = n.clone();
     if cloned_n.attributes.contains_key("file") && folder_path.is_some() {
         let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
@@ -92,7 +94,7 @@ fn process_import_tag(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
     res
 }
 
-fn process_toe_attributes(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
+fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
 
     match n.name.to_lowercase().as_str() {
@@ -131,7 +133,7 @@ fn process_toe_attributes(n: Node, vs: Rc<VariableScope>) -> Vec<Node> {
     res
 }
 
-fn process_if_attribute(n: Node, vs: Rc<VariableScope>) -> Option<Node> {
+fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     Some(n)
 }
 
@@ -149,7 +151,7 @@ mod compile_basic_tests {
             children: vec![],
             content: "".to_string(),
         };
-        let mut vs = Rc::new(VariableScope::create());
+        let mut vs = Rc::new(RefCell::new(VariableScope::create()));
         let res = compile_node(root_node, vs);
         assert_eq!(res.len(), 0);
     }
@@ -169,7 +171,7 @@ mod import_tests {
             children: vec![],
             content: "".to_string(),
         };
-        let mut vs = Rc::new(VariableScope::create());
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
         let res = process_import_tag(node, vs);
         assert_eq!(res.len(), 0);
     }
@@ -183,10 +185,13 @@ mod import_tests {
             children: vec![],
             content: "".to_string(),
         };
-        let mut vs = Rc::new(VariableScope::create());
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let mut path = cd.join("test_data").to_str().unwrap().to_string();
-        vs.create_variable("toe_file".to_string(), path);
+        let path = cd.join("test_data").to_str().unwrap().to_string();
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
         let res = process_import_tag(node, vs);
         assert_eq!(res.len(), 0);
     }
@@ -201,10 +206,13 @@ mod import_tests {
             content: "".to_string(),
         };
         node.attributes.insert(String::from("file"), Some(String::from("empty.toe.html")));
-        let mut vs = Rc::new(VariableScope::create());
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let mut path = cd.join("test_data").to_str().unwrap().to_string();
-        vs.create_variable("toe_file".to_string(), path);
+        let path = cd.join("test_data").to_str().unwrap().to_string();
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
         let res = process_import_tag(node, vs);
         assert_eq!(res.len(), 0);
     }
@@ -219,10 +227,13 @@ mod import_tests {
             content: "".to_string(),
         };
         node.attributes.insert(String::from("file"), Some(String::from("single_template.toe.html")));
-        let mut vs = Rc::new(VariableScope::create());
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let mut path = cd.join("test_data").to_str().unwrap().to_string();
-        vs.create_variable("toe_file".to_string(), path);
+        let path = cd.join("test_data").to_str().unwrap().to_string();
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
         let res = process_import_tag(node, vs);
         assert_eq!(res.len(), 1);
     }
