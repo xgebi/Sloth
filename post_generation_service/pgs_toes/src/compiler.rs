@@ -49,7 +49,7 @@ fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
 
     match n.name.to_lowercase().as_str() {
         "toe:import" => {
-
+            res.append(process_import_tag(n.clone(), Rc::clone(&vs)).as_mut());
         }
         "toe:fragment" => {
 
@@ -94,46 +94,86 @@ fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     res
 }
 
-fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
-
-    match n.name.to_lowercase().as_str() {
-        "toe:if" => {
-            let processed_node = process_if_attribute(n, vs);
-            if processed_node.is_some() {
-                res.push(processed_node.unwrap());
+    return if n.attributes.contains_key("toe:if") || n.attributes.contains_key("toe:for") {
+        // I might have to rework this, ¿simplify?
+        let mut processed_node: Option<Node> = None;
+        if n.attributes.contains_key("toe:if") {
+            processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
+            if processed_node.is_none() {
+                return res;
             }
         }
-        "toe:for" => {
 
+        if n.attributes.contains_key("toe:for") && processed_node.is_some() {
+            processed_node = process_for_attribute(processed_node.unwrap(), Rc::clone(&vs));
         }
-        "toe:text" => {
 
-        }
-        "toe:content" => {
+        res
+    } else {
+        n.children.clone()
+    }
+}
 
-        }
-        "toe:href" => {
+fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let mut res = Vec::new();
+    let mut processed_node: Option<Node> = None;
 
-        }
-        "toe:alt" => {
+    if n.attributes.contains_key("toe:if") {
+        processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
+    }
 
-        }
-        "toe:src" => {
+    if n.attributes.contains_key("toe:for") {
+        processed_node = process_for_attribute(n.clone(), Rc::clone(&vs));
+    }
 
-        }
-        "toe:inline-js" => {
+    if n.attributes.contains_key("toe:text") {
 
-        }
-        _ => {
+    }
 
-        }
+    if n.attributes.contains_key("toe:content") {
+
+    }
+
+    if n.attributes.contains_key("toe:href") {
+
+    }
+
+    if n.attributes.contains_key("toe:alt") {
+
+    }
+
+    if n.attributes.contains_key("toe:src") {
+
+    }
+
+    if n.attributes.contains_key("toe:nline-js") {
+
+    }
+
+    if processed_node.is_some() {
+        res.push(processed_node.unwrap());
     }
 
     res
 }
 
 fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    Some(n)
+}
+
+fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    Some(n)
+}
+
+// toe:text escapes html characters
+fn process_text_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    Some(n)
+}
+
+// toe:content does NOT escape html characters
+fn process_content_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     Some(n)
 }
 
