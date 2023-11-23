@@ -98,13 +98,7 @@ fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
     return if n.attributes.contains_key("toe:if") || n.attributes.contains_key("toe:for") {
         // I might have to rework this, ¿simplify?
-        let mut processed_node: Option<Node> = None;
-        if n.attributes.contains_key("toe:if") {
-            processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
-            if processed_node.is_none() {
-                return res;
-            }
-        }
+        let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
 
         if n.attributes.contains_key("toe:for") && processed_node.is_some() {
             processed_node = process_for_attribute(processed_node.unwrap(), Rc::clone(&vs));
@@ -116,13 +110,19 @@ fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     }
 }
 
+fn handle_if_switch(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    if n.attributes.contains_key("toe:if") {
+        let processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
+        if processed_node.is_some() {
+            return processed_node;
+        }
+    }
+    Some(n)
+}
+
 fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
-    let mut processed_node: Option<Node> = None;
-
-    if n.attributes.contains_key("toe:if") {
-        processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
-    }
+    let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
 
     if n.attributes.contains_key("toe:for") {
         processed_node = process_for_attribute(n.clone(), Rc::clone(&vs));
@@ -148,7 +148,7 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
 
     }
 
-    if n.attributes.contains_key("toe:nline-js") {
+    if n.attributes.contains_key("toe:inline-js") {
 
     }
 
@@ -168,13 +168,29 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node
 }
 
 // toe:text escapes html characters
-fn process_text_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+fn process_text_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    // use https://docs.rs/html-escape/latest/html_escape/
+    let content = n.attributes.get("toe:text").unwrap().clone().unwrap_or(String::new());
+    let mut processed_string = compile_text(content, Rc::clone(&vs));
+    processed_string = html_escape::encode_safe(&processed_string).parse().unwrap();
+    n.attributes.remove("toe:text");
+    let text_node = Node::create_text_node(processed_string);
+    n.children = vec![text_node];
     Some(n)
 }
 
 // toe:content does NOT escape html characters
-fn process_content_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+fn process_content_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    let content = n.attributes.get("toe:content").unwrap().clone().unwrap_or(String::new());
+    let processed_string = compile_text(content, Rc::clone(&vs));
+    n.attributes.remove("toe:content");
+    let text_node = Node::create_text_node(processed_string);
+    n.children = vec![text_node];
     Some(n)
+}
+
+fn compile_text(s: String, vs: Rc<RefCell<VariableScope>>) -> String {
+    s
 }
 
 #[cfg(test)]
