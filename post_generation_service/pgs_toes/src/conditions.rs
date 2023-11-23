@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::variable_scope::VariableScope;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -16,9 +18,14 @@ pub(crate) struct ConditionNode {
 
 
 impl ConditionNode {
-    pub fn compute(&self, variable_scope: VariableScope) -> bool {
+    pub fn compute(&self, variable_scope: Rc<RefCell<VariableScope>>) -> bool {
         if self.contents.len() > 0 {
-
+            if self.contents == String::from("true") {
+                return true;
+            }
+            if self.contents == String::from("false") {
+                return true;
+            }
             false
         } else if self.junctions.len() + 1 == self.children.len() {
 
@@ -29,7 +36,7 @@ impl ConditionNode {
     }
 }
 
-pub(crate) fn process_condition(graphemes: Vec<&str>, variable_scope: VariableScope) -> bool {
+pub(crate) fn process_condition(graphemes: Vec<&str>, variable_scope: Rc<RefCell<VariableScope>>) -> bool {
     let mut node = parse_condition_tree(graphemes);
     node.compute(variable_scope)
 }
@@ -279,17 +286,32 @@ mod node_tests {
 
 #[cfg(test)]
 mod condition_resolving_tests {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use unicode_segmentation::UnicodeSegmentation;
     use super::*;
 
     #[test]
     fn resolve_true_boolean_node() {
-        let vs = VariableScope::create();
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
         let node = ConditionNode {
             contents: "true".to_string(),
             junctions: vec![],
             children: vec![],
         };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
 
+    #[test]
+    fn resolve_false_boolean_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: "false".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
     }
 }
