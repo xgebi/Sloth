@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
 use crate::variable_scope::VariableScope;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -26,6 +27,44 @@ impl ConditionNode {
             if self.contents == String::from("false") {
                 return true;
             }
+            let chs = self.contents.graphemes(true).collect::<Vec<&str>>();
+            let mut parts = vec![String::new()];
+            let mut in_quotes = false;
+            let mut quote = "";
+            for ch in chs {
+                match ch {
+                    " " => {
+                        if !in_quotes {
+                            parts.push(String::new());
+                        }
+                    }
+                    "\"" => {
+                        if !in_quotes {
+                            quote = "\"";
+                        }
+                        in_quotes = !in_quotes;
+                    }
+                    "'" => {
+                        if !in_quotes {
+                            quote = "'";
+                        }
+                        in_quotes = !in_quotes;
+                    }
+                    _ => {
+                        parts.last_mut().unwrap().push_str(ch.clone());
+                    }
+                }
+            }
+            parts.retain(|part| part.clone().trim().len() > 0);
+
+
+            // 1. check if it's a number
+            // 2. check if it starts with
+
+            // unsafe {
+            //     let mut x = Rc::clone(&vs);
+            //     x.borrow_mut().create_variable("toe_file".to_string(), path);
+            // }
             false
         } else if self.junctions.len() + 1 == self.children.len() {
 
