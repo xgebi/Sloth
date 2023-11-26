@@ -60,11 +60,10 @@ impl ConditionNode {
                     result = self.children[idx].compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
                 } else {
                     let temp = self.children[idx].compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
-                    println!("{:?}", self.junctions);
+
                     match self.junctions[idx - 1] {
                         JunctionType::None => { panic!("Incorrect junction occurred") }
                         JunctionType::And => {
-                            // TODO check not var_name
                             result = result && temp;
                             if !temp {
                                 break;
@@ -303,15 +302,17 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
                 while graphemes[local_end - 1] == " " {
                      local_end -= 1;
                 }
-                println!("start {start}, end {local_end} {} {}, {:?}", graphemes[start], graphemes[local_end - 2], graphemes);
+
                 if graphemes[start] == "(" && graphemes[local_end - 1] == ")" {
-                    node.contents = graphemes[start + 1..local_end - 1].join("").trim().to_string();
-                    println!("a");
+                    let try_parsing_inner = parse_condition_tree(graphemes[start + 1..local_end - 1].to_vec());
+                    if try_parsing_inner.contents.clone().len() == 0 {
+                        node = try_parsing_inner.clone();
+                    } else {
+                        node.contents = graphemes[start + 1..local_end - 1].join("").trim().to_string();
+                    }
                 } else {
-                    println!("b");
                     node.contents = graphemes[start..local_end].join("").trim().to_string();
                 }
-                println!("contents: {}", node.contents);
             }
         }
     }
@@ -520,7 +521,6 @@ mod node_tests {
         assert_eq!(res.junctions[0], JunctionType::And);
     }
 
-    // TODO complicated conditions
     #[test]
     fn parse_with_one_parenthesis_one_or_in_parenthesis_to_node() {
         let cond = "1 eq 1 and (not my_var or my_var)".graphemes(true).collect::<Vec<&str>>();
@@ -529,6 +529,10 @@ mod node_tests {
         assert_eq!(res.children.len(), 2);
         assert_eq!(res.children[0].contents, "1 eq 1");
         assert_eq!(res.children[1].contents, "");
+        assert_eq!(res.children[1].children.len(), 2);
+        assert_eq!(res.children[1].children[0].contents, "not my_var");
+        assert_eq!(res.children[1].children[1].contents, "my_var");
+        assert_eq!(res.children[1].junctions[0], JunctionType::Or);
         assert_eq!(res.contents, String::from(""));
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
