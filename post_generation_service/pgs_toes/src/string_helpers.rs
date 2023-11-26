@@ -4,21 +4,33 @@ use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::variable_scope::VariableScope;
 
-pub fn process_string_with_variables(s: String, quote: &str, vs: Rc<RefCell<VariableScope>>) -> String {
+pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>) -> String {
     let chars = s.graphemes(true).collect::<Vec<&str>>();
-    let result = String::new();
 
     let mut idx = 0;
-    let mut temp_buffer = String::new();
+    let mut result = String::new();
     while idx < chars.len() {
         match chars[idx] {
             "\"" => {
                 let mut jdx = idx + 1;
                 while jdx < chars.len() {
                     if chars[jdx] == "\"" && chars[jdx - 1] != "\\"{
-                        temp_buffer = format!("{}{}", temp_buffer, chars[idx + 1..jdx].join(""));
+                        result = format!("{}{}", result, chars[idx + 1..jdx].join(""));
                         idx = jdx + 1;
                         break;
+                    } else {
+                        jdx += 1;
+                    }
+                }
+                if jdx == chars.len() {
+                    let num_str = chars[idx..jdx].join("");
+                    let num = num_str.parse::<i64>();
+                    if num.is_ok() {
+                        result = format!("{}{} ", result, num.unwrap());
+                        idx = jdx + 1;
+                        break;
+                    } else {
+                        panic!("Error parsing condition")
                     }
                 }
             }
@@ -26,9 +38,22 @@ pub fn process_string_with_variables(s: String, quote: &str, vs: Rc<RefCell<Vari
                 let mut jdx = idx + 1;
                 while jdx < chars.len() {
                     if chars[jdx] == "'" && chars[jdx - 1] != "\\"{
-                        temp_buffer = format!("{}{}", temp_buffer, chars[idx + 1..jdx].join(""));
+                        result = format!("{}{}", result, chars[idx + 1..jdx].join(""));
                         idx = jdx + 1;
                         break;
+                    } else {
+                        jdx += 1;
+                    }
+                }
+                if jdx == chars.len() {
+                    let num_str = chars[idx..jdx].join("");
+                    let num = num_str.parse::<i64>();
+                    if num.is_ok() {
+                        result = format!("{}{} ", result, num.unwrap());
+                        idx = jdx + 1;
+                        break;
+                    } else {
+                        panic!("Error parsing condition")
                     }
                 }
             }
@@ -42,12 +67,25 @@ pub fn process_string_with_variables(s: String, quote: &str, vs: Rc<RefCell<Vari
                             let num_str = chars[idx + 1..jdx].join("");
                             let num = num_str.parse::<i64>();
                             if num.is_ok() {
-                                temp_buffer = format!("{}{} ", temp_buffer, num.unwrap());
+                                result = format!("{}{} ", result, num.unwrap());
                                 idx = jdx + 1;
+                                break;
                             } else {
                                 panic!("Error parsing condition")
                             }
+                        } else {
+                            jdx += 1;
+                        }
+                    }
+                    if jdx == chars.len() {
+                        let num_str = chars[idx..jdx].join("");
+                        let num = num_str.parse::<i64>();
+                        if num.is_ok() {
+                            result = format!("{}{} ", result, num.unwrap());
+                            idx = jdx + 1;
                             break;
+                        } else {
+                            panic!("Error parsing condition")
                         }
                     }
                 } else {
@@ -59,18 +97,44 @@ pub fn process_string_with_variables(s: String, quote: &str, vs: Rc<RefCell<Vari
                             match l {
                                 Ok(ref_vs) => {
                                     let k = ref_vs.deref().clone();
-                                    k.find_variable(String::from(var_name));
+                                    let var_val = k.find_variable(String::from(var_name));
+                                    if var_val.is_some() {
+                                        result = format!("{}{} ", result, var_val.unwrap());
+                                        idx = jdx + 1;
+                                        break;
+                                    }
                                 }
                                 Err(_) => {
                                     panic!("Error parsing condition")
                                 }
                             }
+                            idx = jdx + 1;
                         }
                     }
                 }
             }
         }
     }
+    result.trim().to_string()
+}
 
-    result
+#[cfg(test)]
+mod node_tests {
+    use super::*;
+
+    #[test]
+    fn parse_number() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let test_str = String::from("11");
+        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs));
+        assert_eq!(result, test_str);
+    }
+
+    #[test]
+    fn parse_string() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let test_str = String::from("'string'");
+        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs));
+        assert_eq!(result, "string");
+    }
 }
