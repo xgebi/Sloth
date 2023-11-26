@@ -110,18 +110,49 @@ impl ConditionNode {
                     let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
                     let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(self.contents.len() - comp.location.unwrap() - comp.clone().name.len()).collect();
 
-                    let processed_left = process_string_with_variables(left, Rc::clone(&vs), None);
-                    let processed_right = process_string_with_variables(right, Rc::clone(&vs), None);
-                    // TODO improve this for numbers
+                    let processed_left = process_string_with_variables(left, Rc::clone(&vs), None, Some(true));
+                    let processed_right = process_string_with_variables(right, Rc::clone(&vs), None, Some(true));
+
+                    let processed_left_as_num = processed_left.parse::<f64>();
+                    let processed_right_as_num = processed_right.parse::<f64>();
+
                     match comp.name.as_str() {
                         " gt " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() > processed_right_as_num.unwrap());
+                            }
                             return Some(processed_left > processed_right);
                         }
-                        " gte " => { return Some(processed_left >= processed_right); }
-                        " lt " => { return Some(processed_left < processed_right); }
-                        " lte " => { return Some(processed_left <= processed_right); }
-                        " eq " => { return Some(processed_left == processed_right); }
-                        " neq " => { return Some(processed_left != processed_right); }
+                        " gte " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() >= processed_right_as_num.unwrap());
+                            }
+                            return Some(processed_left >= processed_right);
+                        }
+                        " lt " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() < processed_right_as_num.unwrap());
+                            }
+                            return Some(processed_left < processed_right);
+                        }
+                        " lte " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() <= processed_right_as_num.unwrap());
+                            }
+                            return Some(processed_left <= processed_right);
+                        }
+                        " eq " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() == processed_right_as_num.unwrap());
+                            }
+                            return Some(processed_left == processed_right);
+                        }
+                        " neq " => {
+                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                return Some(processed_left_as_num.unwrap() != processed_right_as_num.unwrap());
+                            }
+                            return Some(processed_left != processed_right);
+                        }
                         _ => {
                             panic!("Something in comparisons went wrong")
                         }
@@ -133,8 +164,13 @@ impl ConditionNode {
         match l {
             Ok(ref_vs) => {
                 let k = ref_vs.deref().clone();
-                let var_val = k.find_variable(self.contents.clone());
-                return Some(var_val.is_some() && var_val.unwrap() != "false");
+                return if self.contents.starts_with("not ") {
+                    let var_val = k.find_variable(self.contents.chars().skip(4).take(self.contents.len() - 4).collect());
+                    Some(var_val.is_some() && var_val.unwrap() != "true")
+                } else {
+                    let var_val = k.find_variable(self.contents.clone());
+                    Some(var_val.is_some() && var_val.unwrap() != "false")
+                }
             }
             Err(_) => {
                 panic!("Error parsing condition")
@@ -479,6 +515,38 @@ mod condition_resolving_tests {
         };
         let res = node.compute(Rc::clone(&vs));
         assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_var_boolean_not_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "true".to_string());
+        }
+        let node = ConditionNode {
+            contents: "not test".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_var_boolean_not_false_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "false".to_string());
+        }
+        let node = ConditionNode {
+            contents: "not test".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
     }
 
     #[test]
