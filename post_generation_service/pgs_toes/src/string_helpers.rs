@@ -65,8 +65,14 @@ pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>, 
             }
             _ => {
                 let parsed_number = chars[idx].parse::<i64>();
-                let next_parsed_number = chars[idx + 1].parse::<i64>();
-                if (chars[idx] == "-" && next_parsed_number.is_ok()) || parsed_number.is_ok() {
+                let mut next_parsed_number = None;
+                if idx + 1 < chars.len() {
+                    let temp_next_parsed_number = chars[idx + 1].parse::<i64>();
+                    if temp_next_parsed_number.is_ok() {
+                        next_parsed_number = Some(temp_next_parsed_number.unwrap());
+                    }
+                }
+                if (chars[idx] == "-" && next_parsed_number.is_some()) || parsed_number.is_ok() {
                     let mut jdx = idx + 1;
                     while jdx < chars.len() {
                         if chars[jdx] == " " {
