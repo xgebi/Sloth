@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
+use crate::string_helpers::process_string_with_variables;
 use crate::variable_scope::VariableScope;
 
 #[derive(Clone, Debug)]
@@ -72,16 +73,19 @@ impl ConditionNode {
                 }
                 comp_in_use.sort();
                 for comp in comp_in_use {
-                    if Self::is_in_quotes(self.contents.clone(), comp.name) {
+                    if Self::is_in_quotes(self.contents.clone(), comp.clone().name) {
                         let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
-                        let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.name.len()).take(comp.location.unwrap()).collect();
+                        let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(comp.location.unwrap()).collect();
+
+                        let processed_left = process_string_with_variables(left, Rc::clone(&vs), None);
+                        let processed_right = process_string_with_variables(right, Rc::clone(&vs), None);
                         match comp.name.as_str() {
-                            " gt " => {}
-                            " gte " => {}
-                            " lt " => {}
-                            " lte " => {}
-                            " eq " => {}
-                            " neq " => {}
+                            " gt " => { return processed_left > processed_right; }
+                            " gte " => { return processed_left >= processed_right; }
+                            " lt " => { return processed_left < processed_right; }
+                            " lte " => { return processed_left <= processed_right; }
+                            " eq " => { return processed_left == processed_right; }
+                            " neq " => { return processed_left != processed_right; }
                             _ => {
                                 panic!("Something in comparisons went wrong")
                             }
@@ -89,8 +93,8 @@ impl ConditionNode {
                     }
                 }
             }
-
-            false
+            // TODO check if it is a variable
+            self.contents.len() > 0
         } else if self.junctions.len() + 1 == self.children.len() {
 
             false
@@ -122,30 +126,6 @@ impl ConditionNode {
             }
             return in_quote;
         }
-        false
-    }
-
-    fn process_gt(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
-        false
-    }
-
-    fn process_gte(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
-        false
-    }
-
-    fn process_lt(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
-        false
-    }
-
-    fn process_lte(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
-        false
-    }
-
-    fn process_eq(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
-        false
-    }
-
-    fn process_neq(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
         false
     }
 }
