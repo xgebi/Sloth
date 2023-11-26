@@ -695,6 +695,54 @@ mod condition_resolving_tests {
     }
 
     #[test]
+    fn resolve_eq_greater_number_first_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: "3 eq 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_eq_same_number_first_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: "2 eq 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_neq_greater_number_first_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: "3 neq 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_neq_same_number_first_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: "2 neq 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
     fn resolve_gt_var_false_node() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
