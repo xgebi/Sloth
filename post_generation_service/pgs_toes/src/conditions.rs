@@ -296,7 +296,22 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
             if node.children.len() > 0 {
                 node.children.push(parse_condition_tree(graphemes[start..end].to_vec()));
             } else {
-                node.contents = graphemes[start..end].join("").trim().to_string();
+                let mut local_end = end;
+                while graphemes[start] == " " {
+                    start += 1;
+                }
+                while graphemes[local_end - 1] == " " {
+                     local_end -= 1;
+                }
+                println!("start {start}, end {local_end} {} {}, {:?}", graphemes[start], graphemes[local_end - 2], graphemes);
+                if graphemes[start] == "(" && graphemes[local_end - 1] == ")" {
+                    node.contents = graphemes[start + 1..local_end - 1].join("").trim().to_string();
+                    println!("a");
+                } else {
+                    println!("b");
+                    node.contents = graphemes[start..local_end].join("").trim().to_string();
+                }
+                println!("contents: {}", node.contents);
             }
         }
     }
@@ -431,7 +446,6 @@ mod node_tests {
         let cond = "my_var and not_my_var".graphemes(true).collect::<Vec<&str>>();
         let res = parse_condition_tree(cond);
 
-        println!("{:?}", res);
         assert_eq!(res.children.len(), 2);
         assert_eq!(res.children[0].contents, "my_var");
         assert_eq!(res.children[1].contents, "not_my_var");
@@ -452,6 +466,72 @@ mod node_tests {
         assert_eq!(res.contents, String::from(""));
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::Or);
+    }
+
+    #[test]
+    fn parse_with_parenthesis_to_node() {
+        let cond = "(my_var) and not_my_var".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, "my_var");
+        assert_eq!(res.children[1].contents, "not_my_var");
+        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.junctions.len(), 1);
+        assert_eq!(res.junctions[0], JunctionType::And);
+    }
+
+    #[test]
+    fn parse_with_two_parenthesis_to_node() {
+        let cond = "(my_var) and (not my_var)".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, "my_var");
+        assert_eq!(res.children[1].contents, "not my_var");
+        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.junctions.len(), 1);
+        assert_eq!(res.junctions[0], JunctionType::And);
+    }
+
+    #[test]
+    fn parse_with_two_parenthesis_one_eq_to_node() {
+        let cond = "(1 eq 1) and (not my_var)".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, "1 eq 1");
+        assert_eq!(res.children[1].contents, "not my_var");
+        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.junctions.len(), 1);
+        assert_eq!(res.junctions[0], JunctionType::And);
+    }
+
+    #[test]
+    fn parse_with_one_parenthesis_one_eq_to_node() {
+        let cond = "1 eq 1 and (not my_var)".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, "1 eq 1");
+        assert_eq!(res.children[1].contents, "not my_var");
+        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.junctions.len(), 1);
+        assert_eq!(res.junctions[0], JunctionType::And);
+    }
+
+    // TODO complicated conditions
+    #[test]
+    fn parse_with_one_parenthesis_one_or_in_parenthesis_to_node() {
+        let cond = "1 eq 1 and (not my_var or my_var)".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, "1 eq 1");
+        assert_eq!(res.children[1].contents, "");
+        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.junctions.len(), 1);
+        assert_eq!(res.junctions[0], JunctionType::And);
     }
 }
 
