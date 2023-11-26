@@ -9,6 +9,7 @@ mod compiler;
 mod parser;
 mod variable_scope;
 mod conditions;
+mod string_helpers;
 
 pub fn render_page_from_string(s: String, data: HashMap<String, String>) -> String {
     let parsed_nodes = parse_toe(s);

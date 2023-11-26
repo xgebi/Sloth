@@ -1,4 +1,5 @@
-use std::cell::RefCell;
+use std::cell::{BorrowError, Ref, RefCell};
+use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::variable_scope::VariableScope;
@@ -19,7 +20,7 @@ pub(crate) struct ConditionNode {
 
 
 impl ConditionNode {
-    pub fn compute(&self, variable_scope: Rc<RefCell<VariableScope>>) -> bool {
+    pub fn compute(&self, vs: Rc<RefCell<VariableScope>>) -> bool {
         if self.contents.len() > 0 {
             if self.contents == String::from("true") {
                 return true;
@@ -56,15 +57,14 @@ impl ConditionNode {
                 }
             }
             parts.retain(|part| part.clone().trim().len() > 0);
+            for part in parts {
+                let res_numeric = part.parse::<i64>();
+                if res_numeric.is_ok() {
 
+                } else {
 
-            // 1. check if it's a number
-            // 2. check if it starts with
-
-            // unsafe {
-            //     let mut x = Rc::clone(&vs);
-            //     x.borrow_mut().create_variable("toe_file".to_string(), path);
-            // }
+                }
+            }
             false
         } else if self.junctions.len() + 1 == self.children.len() {
 
