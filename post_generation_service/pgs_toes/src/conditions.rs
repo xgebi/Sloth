@@ -49,58 +49,95 @@ pub(crate) struct ConditionNode {
 impl ConditionNode {
     pub fn compute(&self, vs: Rc<RefCell<VariableScope>>) -> bool {
         if self.contents.len() > 0 {
-            if self.contents == String::from("true") {
-                return true;
+            if let Some(value) = self.compute_condition_content(Rc::clone(&vs)) {
+                return value;
             }
-            if self.contents == String::from("false") {
-                return true;
-            }
-            // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
-            let mut comp_vec = vec![];
-            comp_vec.push(Comparison { location: self.contents.find(" gt "), name: String::from(" gt ") });
-            comp_vec.push(Comparison { location: self.contents.find(" gte "), name: String::from(" gte ") });
-            comp_vec.push(Comparison { location: self.contents.find(" lt "), name: String::from(" lt ") });
-            comp_vec.push(Comparison { location: self.contents.find(" lte "), name: String::from(" lte ") });
-            comp_vec.push(Comparison { location: self.contents.find(" eq "), name: String::from(" eq ") });
-            comp_vec.push(Comparison { location: self.contents.find(" neq "), name: String::from(" neq ") });
-
-            if comp_vec.len() > 0 {
-                let mut comp_in_use = vec![];
-                for comp in comp_vec {
-                    if comp.location.is_some() {
-                        comp_in_use.push(comp.clone());
+        } else if self.junctions.len() + 1 == self.children.len() {
+            let mut result = false;
+            let mut idx = 0;
+            while idx < self.children.len() {
+                if idx == 0 {
+                    result = self.compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
+                } else {
+                    let temp = self.compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
+                    match self.junctions[idx] {
+                        JunctionType::None => { panic!("Incorrect junction occured") }
+                        JunctionType::And => {
+                            // TODO check not var_name
+                            result = result && temp;
+                            if !temp {
+                                break;
+                            }
+                        }
+                        JunctionType::Or => {
+                            result = result || temp;
+                        }
                     }
                 }
-                comp_in_use.sort();
-                for comp in comp_in_use {
-                    if Self::is_in_quotes(self.contents.clone(), comp.clone().name) {
-                        let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
-                        let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(comp.location.unwrap()).collect();
+                idx += 1;
+            }
+            return result;
+        }
+        false
+    }
 
-                        let processed_left = process_string_with_variables(left, Rc::clone(&vs), None);
-                        let processed_right = process_string_with_variables(right, Rc::clone(&vs), None);
-                        match comp.name.as_str() {
-                            " gt " => { return processed_left > processed_right; }
-                            " gte " => { return processed_left >= processed_right; }
-                            " lt " => { return processed_left < processed_right; }
-                            " lte " => { return processed_left <= processed_right; }
-                            " eq " => { return processed_left == processed_right; }
-                            " neq " => { return processed_left != processed_right; }
-                            _ => {
-                                panic!("Something in comparisons went wrong")
-                            }
+    fn compute_condition_content(&self, vs: Rc<RefCell<VariableScope>>) -> Option<bool> {
+        if self.contents == String::from("true") {
+            return Some(true);
+        }
+        if self.contents == String::from("false") {
+            return Some(true);
+        }
+        // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
+        let mut comp_vec = vec![];
+        comp_vec.push(Comparison { location: self.contents.find(" gt "), name: String::from(" gt ") });
+        comp_vec.push(Comparison { location: self.contents.find(" gte "), name: String::from(" gte ") });
+        comp_vec.push(Comparison { location: self.contents.find(" lt "), name: String::from(" lt ") });
+        comp_vec.push(Comparison { location: self.contents.find(" lte "), name: String::from(" lte ") });
+        comp_vec.push(Comparison { location: self.contents.find(" eq "), name: String::from(" eq ") });
+        comp_vec.push(Comparison { location: self.contents.find(" neq "), name: String::from(" neq ") });
+
+        if comp_vec.len() > 0 {
+            let mut comp_in_use = vec![];
+            for comp in comp_vec {
+                if comp.location.is_some() {
+                    comp_in_use.push(comp.clone());
+                }
+            }
+            comp_in_use.sort();
+            for comp in comp_in_use {
+                if Self::is_in_quotes(self.contents.clone(), comp.clone().name) {
+                    let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
+                    let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(comp.location.unwrap()).collect();
+
+                    let processed_left = process_string_with_variables(left, Rc::clone(&vs), None);
+                    let processed_right = process_string_with_variables(right, Rc::clone(&vs), None);
+                    match comp.name.as_str() {
+                        " gt " => { return Some(processed_left > processed_right); }
+                        " gte " => { return Some(processed_left >= processed_right); }
+                        " lt " => { return Some(processed_left < processed_right); }
+                        " lte " => { return Some(processed_left <= processed_right); }
+                        " eq " => { return Some(processed_left == processed_right); }
+                        " neq " => { return Some(processed_left != processed_right); }
+                        _ => {
+                            panic!("Something in comparisons went wrong")
                         }
                     }
                 }
             }
-            // TODO check if it is a variable
-            self.contents.len() > 0
-        } else if self.junctions.len() + 1 == self.children.len() {
-
-            false
-        } else {
-            false
         }
+        let l = vs.try_borrow();
+        match l {
+            Ok(ref_vs) => {
+                let k = ref_vs.deref().clone();
+                let var_val = k.find_variable(self.contents.clone());
+                return Some(var_val.is_some() && var_val.unwrap() != "false");
+            }
+            Err(_) => {
+                panic!("Error parsing condition")
+            }
+        }
+        None
     }
 
     fn is_in_quotes(s: String, comparison: String) -> bool {
