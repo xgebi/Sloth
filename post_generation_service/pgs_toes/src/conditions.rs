@@ -57,10 +57,11 @@ impl ConditionNode {
             let mut idx = 0;
             while idx < self.children.len() {
                 if idx == 0 {
-                    result = self.compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
+                    result = self.children[idx].compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
                 } else {
-                    let temp = self.compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
-                    match self.junctions[idx] {
+                    let temp = self.children[idx].compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
+                    println!("{:?}", self.junctions);
+                    match self.junctions[idx - 1] {
                         JunctionType::None => { panic!("Incorrect junction occurred") }
                         JunctionType::And => {
                             // TODO check not var_name
@@ -787,6 +788,98 @@ mod condition_resolving_tests {
             contents: "test gt other".to_string(),
             junctions: vec![],
             children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_eq_and_eq_both_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: String::new(),
+            junctions: vec![JunctionType::And],
+            children: vec![
+                ConditionNode {
+                    contents: "1 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: "1 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_eq_and_eq_one_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: String::new(),
+            junctions: vec![JunctionType::And],
+            children: vec![
+                ConditionNode {
+                    contents: "2 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: "1 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_eq_or_eq_both_false() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: String::new(),
+            junctions: vec![JunctionType::Or],
+            children: vec![
+                ConditionNode {
+                    contents: "2 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: "2 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_eq_or_eq_one_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: String::new(),
+            junctions: vec![JunctionType::Or],
+            children: vec![
+                ConditionNode {
+                    contents: "1 eq 2".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: "1 eq 1".to_string(),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
         };
         let res = node.compute(Rc::clone(&vs));
         assert_eq!(res, true);
