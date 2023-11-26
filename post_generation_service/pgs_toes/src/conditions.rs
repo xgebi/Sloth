@@ -108,13 +108,15 @@ impl ConditionNode {
             for comp in comp_in_use {
                 if !Self::is_in_quotes(self.contents.clone(), comp.clone().name) {
                     let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
-                    let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(comp.location.unwrap()).collect();
+                    let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(self.contents.len() - comp.location.unwrap() - comp.clone().name.len()).collect();
 
                     let processed_left = process_string_with_variables(left, Rc::clone(&vs), None);
                     let processed_right = process_string_with_variables(right, Rc::clone(&vs), None);
                     // TODO improve this for numbers
                     match comp.name.as_str() {
-                        " gt " => { return Some(processed_left > processed_right); }
+                        " gt " => {
+                            return Some(processed_left > processed_right);
+                        }
                         " gte " => { return Some(processed_left >= processed_right); }
                         " lt " => { return Some(processed_left < processed_right); }
                         " lte " => { return Some(processed_left <= processed_right); }
@@ -621,5 +623,104 @@ mod condition_resolving_tests {
         };
         let res = node.compute(Rc::clone(&vs));
         assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_false_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "1".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_false_equal_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "2".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "3".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt 2".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_false_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "1".to_string());
+            x.borrow_mut().create_variable("other".to_string(), "2".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt other".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_equal_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "2".to_string());
+            x.borrow_mut().create_variable("other".to_string(), "2".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt other".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), "3".to_string());
+            x.borrow_mut().create_variable("other".to_string(), "2".to_string());
+        }
+        let node = ConditionNode {
+            contents: "test gt other".to_string(),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
     }
 }
