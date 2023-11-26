@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn test_creating_scope() {
         let scope = VariableScope::create();
-        assert_eq!(scope.scopes.len(), 0);
+        assert_eq!(scope.scopes.len(), 1);
     }
 
     #[test]

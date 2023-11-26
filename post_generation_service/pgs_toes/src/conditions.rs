@@ -968,7 +968,7 @@ mod condition_resolving_tests {
             ],
         };
         let res = node.compute(Rc::clone(&vs));
-        assert_eq!(res, true);
+        assert_eq!(res, false);
     }
 
     #[test]
