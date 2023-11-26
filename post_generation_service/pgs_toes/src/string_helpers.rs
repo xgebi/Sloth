@@ -104,9 +104,12 @@ pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>, 
                     let mut jdx = idx + 1;
                     while jdx < chars.len() {
                         if chars[jdx] == " " {
-                            let var_name = chars[idx + 1..jdx].join("");
+                            let var_name = chars[idx..jdx].join("");
                             if var_name == "not" && is_condition.is_some() {
                                 result = format!("{}{} ", result, var_name);
+                                jdx += 1;
+                                idx = jdx;
+                                jdx += 1;
                             } else {
                                 let l = vs.try_borrow();
                                 match l {
@@ -131,18 +134,22 @@ pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>, 
                     }
                     if jdx == chars.len() {
                         let var_name = chars[idx..jdx].join("");
-                        let l = vs.try_borrow();
-                        match l {
-                            Ok(ref_vs) => {
-                                let k = ref_vs.deref().clone();
-                                let var_val = k.find_variable(String::from(var_name));
-                                if var_val.is_some() {
-                                    result = format!("{}{} ", result, var_val.unwrap());
-                                    break;
+                        if var_name == "not" && is_condition.is_some() {
+                                result = format!("{}{} ", result, var_name);
+                            } else {
+                            let l = vs.try_borrow();
+                            match l {
+                                Ok(ref_vs) => {
+                                    let k = ref_vs.deref().clone();
+                                    let var_val = k.find_variable(String::from(var_name));
+                                    if var_val.is_some() {
+                                        result = format!("{}{} ", result, var_val.unwrap());
+                                        break;
+                                    }
                                 }
-                            }
-                            Err(_) => {
-                                panic!("Error parsing condition")
+                                Err(_) => {
+                                    panic!("Error parsing condition")
+                                }
                             }
                         }
                         idx = jdx;
@@ -207,7 +214,21 @@ mod node_tests {
     fn parse_not_string() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("not");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, None);
-        assert_eq!(result, "23string");
+        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
+        assert_eq!(result, "not");
+    }
+
+    #[test]
+    fn parse_not_with_var_string() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let test_str = String::from("not test");
+        let var_str = String::from("true");
+        let var_name = String::from("test");
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable(var_name.clone(), var_str.clone());
+        }
+        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
+        assert_eq!(result, "not true");
     }
 }
