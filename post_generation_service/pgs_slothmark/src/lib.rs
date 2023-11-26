@@ -644,14 +644,18 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "strong");
         assert_eq!(result.0[0].children.len(), 2);
+        assert_eq!(result.0[0].children[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].name, "em");
         assert_eq!(result.0[0].children[1].content, " def");
     }
 
+    // TODO look at these below
     #[test]
     fn process_bold_italic_content_b() {
         let result = process_content("*Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
+        println!("{:?}", result.0);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
         // assert_eq!(result.0[0].children[1].content, " def");

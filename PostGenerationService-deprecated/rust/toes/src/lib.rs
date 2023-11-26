@@ -1,11 +1,6 @@
 #![feature(in_band_lifetimes)]
 #![cfg_attr(test, feature(proc_macro_hygiene))]
 
-mod markdown;
-mod toes;
-mod post;
-mod common;
-
 use std::io::Write;
 use std::error::Error;
 use pyo3::prelude::*;
