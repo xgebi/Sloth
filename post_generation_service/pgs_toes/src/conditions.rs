@@ -1,8 +1,35 @@
 use std::cell::{BorrowError, Ref, RefCell};
+use std::cmp::Ordering;
 use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::variable_scope::VariableScope;
+
+#[derive(Clone, Debug)]
+pub(crate) struct Comparison {
+    name: String,
+    location: Option<usize>
+}
+
+impl Eq for Comparison {}
+
+impl Ord for Comparison {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.location.unwrap().cmp(&other.location.unwrap())
+    }
+}
+
+impl PartialOrd for Comparison {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Comparison {
+    fn eq(&self, other: &Self) -> bool {
+        self.location.unwrap() == other.location.unwrap()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum JunctionType {
@@ -18,7 +45,6 @@ pub(crate) struct ConditionNode {
     children: Vec<ConditionNode>,
 }
 
-
 impl ConditionNode {
     pub fn compute(&self, vs: Rc<RefCell<VariableScope>>) -> bool {
         if self.contents.len() > 0 {
@@ -28,43 +54,42 @@ impl ConditionNode {
             if self.contents == String::from("false") {
                 return true;
             }
-            let chs = self.contents.graphemes(true).collect::<Vec<&str>>();
-            let mut parts = vec![String::new()];
-            let mut in_quotes = false;
-            let mut quote = "";
-            for ch in chs {
-                match ch {
-                    " " => {
-                        if !in_quotes {
-                            parts.push(String::new());
-                        }
+            // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
+            let mut comp_vec = vec![];
+            comp_vec.push(Comparison { location: self.contents.find(" gt "), name: String::from(" gt ") });
+            comp_vec.push(Comparison { location: self.contents.find(" gte "), name: String::from(" gte ") });
+            comp_vec.push(Comparison { location: self.contents.find(" lt "), name: String::from(" lt ") });
+            comp_vec.push(Comparison { location: self.contents.find(" lte "), name: String::from(" lte ") });
+            comp_vec.push(Comparison { location: self.contents.find(" eq "), name: String::from(" eq ") });
+            comp_vec.push(Comparison { location: self.contents.find(" neq "), name: String::from(" neq ") });
+
+            if comp_vec.len() > 0 {
+                let mut comp_in_use = vec![];
+                for comp in comp_vec {
+                    if comp.location.is_some() {
+                        comp_in_use.push(comp.clone());
                     }
-                    "\"" => {
-                        if !in_quotes {
-                            quote = "\"";
+                }
+                comp_in_use.sort();
+                for comp in comp_in_use {
+                    if Self::is_in_quotes(self.contents.clone(), comp.name) {
+                        let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
+                        let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.name.len()).take(comp.location.unwrap()).collect();
+                        match comp.name.as_str() {
+                            " gt " => {}
+                            " gte " => {}
+                            " lt " => {}
+                            " lte " => {}
+                            " eq " => {}
+                            " neq " => {}
+                            _ => {
+                                panic!("Something in comparisons went wrong")
+                            }
                         }
-                        in_quotes = !in_quotes;
-                    }
-                    "'" => {
-                        if !in_quotes {
-                            quote = "'";
-                        }
-                        in_quotes = !in_quotes;
-                    }
-                    _ => {
-                        parts.last_mut().unwrap().push_str(ch.clone());
                     }
                 }
             }
-            parts.retain(|part| part.clone().trim().len() > 0);
-            for part in parts {
-                let res_numeric = part.parse::<i64>();
-                if res_numeric.is_ok() {
 
-                } else {
-
-                }
-            }
             false
         } else if self.junctions.len() + 1 == self.children.len() {
 
@@ -72,6 +97,56 @@ impl ConditionNode {
         } else {
             false
         }
+    }
+
+    fn is_in_quotes(s: String, comparison: String) -> bool {
+        let single_quote_loc = s.find("'");
+        let double_quote_loc = s.find("\"");
+        let comparison_loc = s.find(comparison.as_str());
+        if comparison_loc.is_some() && (single_quote_loc.is_some() || double_quote_loc.is_some())  {
+            let chars = s.graphemes(true).collect::<Vec<&str>>();
+            let mut idx = 0;
+            let mut in_quote = false;
+            let mut current_quote = String::new();
+            while idx < comparison_loc.unwrap() {
+                if chars[idx] == "'" || chars[idx] == "\"" {
+                    if in_quote && (chars[idx] == current_quote && idx > 0 && chars[idx - 1] != "\"") {
+                        in_quote = false;
+                        current_quote = String::new();
+                    } else {
+                        in_quote = true;
+                        current_quote = String::from(chars[idx]);
+                    }
+                }
+                idx += 1;
+            }
+            return in_quote;
+        }
+        false
+    }
+
+    fn process_gt(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
+    }
+
+    fn process_gte(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
+    }
+
+    fn process_lt(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
+    }
+
+    fn process_lte(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
+    }
+
+    fn process_eq(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
+    }
+
+    fn process_neq(s: String, vs: Rc<RefCell<VariableScope>>) -> bool {
+        false
     }
 }
 
