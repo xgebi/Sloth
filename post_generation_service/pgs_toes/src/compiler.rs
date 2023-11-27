@@ -2,6 +2,7 @@ use std::cell::{RefCell};
 use std::collections::HashMap;
 use std::fs;
 use std::hash::Hash;
+use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
 use pgs_common::node::{Node, NodeType};
@@ -46,13 +47,13 @@ fn has_toe_attribute(hm: HashMap<String, Option<String>>) -> bool {
 
 fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
-
+    println!("{}", n.name);
     match n.name.to_lowercase().as_str() {
         "toe:import" => {
             res.append(process_import_tag(n.clone(), Rc::clone(&vs)).as_mut());
         }
         "toe:fragment" => {
-
+            println!("It's to fragment");
         }
         "toe:head" => {
 
@@ -74,19 +75,30 @@ fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     process_if_attribute(n.clone(), Rc::clone(&vs));
 
     let toe_file = String::from("toe_file");
-    let folder_path = Rc::try_unwrap(vs).unwrap().into_inner().find_variable(toe_file);
-    let cloned_n = n.clone();
-    if cloned_n.attributes.contains_key("file") && folder_path.is_some() {
-        let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
-        let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
-        let fp = Path::new(&formatted_path);
-        if fp.is_file() {
-            let contents = fs::read_to_string(fp);
-            if contents.is_ok() {
-                let result = parse_toe(contents.unwrap());
-                // TODO add compilation step here
-                if result.is_ok() {
-                    return result.unwrap().children;
+    let l = vs.try_borrow();
+    if l.is_ok() {
+        let ref_vs = l.unwrap();
+        let k = ref_vs.deref().clone();
+        let folder_path = k.find_variable(String::from(toe_file));
+        let cloned_n = n.clone();
+        if cloned_n.attributes.contains_key("file") && folder_path.is_some() {
+            let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
+            let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
+            let fp = Path::new(&formatted_path);
+            if fp.is_file() {
+                let contents = fs::read_to_string(fp);
+                if contents.is_ok() {
+                    let result_temp = parse_toe(contents.unwrap());
+                    if result_temp.is_ok() {
+                        println!("{:?}", result_temp.clone().unwrap());
+                        let mut res = Vec::new();
+                        for child in result_temp.unwrap().clone().children {
+                            println!("{:?}", child.clone());
+                            res.extend(compile_node(child.clone(), Rc::clone(&vs)));
+                            println!("{:?}", res.clone());
+                        }
+                        return res;
+                    }
                 }
             }
         }
@@ -274,7 +286,7 @@ mod import_tests {
     }
 
     #[test]
-    fn single_template_import_test() {
+    fn empty_fragment_import_test() {
         let mut node = Node {
             name: "toe:import".to_string(),
             node_type: NodeType::Root,
@@ -282,7 +294,28 @@ mod import_tests {
             children: vec![],
             content: "".to_string(),
         };
-        node.attributes.insert(String::from("file"), Some(String::from("single_template.toe.html")));
+        node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.html")));
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let cd = env::current_dir().unwrap();
+        let path = cd.join("test_data").to_str().unwrap().to_string();
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn fragment_with_div_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
         let path = cd.join("test_data").to_str().unwrap().to_string();
