@@ -7,6 +7,7 @@ use std::path::Path;
 use std::rc::Rc;
 use pgs_common::node::{Node, NodeType};
 use crate::parser::parse_toe;
+use crate::string_helpers::process_string_with_variables;
 use crate::variable_scope::VariableScope;
 
 // TODO for future Sarah, look for ways to remove the unsafe blocks
@@ -185,7 +186,7 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node
 fn process_text_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     // use https://docs.rs/html-escape/latest/html_escape/
     let content = n.attributes.get("toe:text").unwrap().clone().unwrap_or(String::new());
-    let mut processed_string = compile_text(content, Rc::clone(&vs));
+    let mut processed_string = process_string_with_variables(content.clone(), Rc::clone(&vs), Some(true), None);
     processed_string = html_escape::encode_safe(&processed_string).parse().unwrap();
     n.attributes.remove("toe:text");
     let text_node = Node::create_text_node(processed_string);
@@ -196,15 +197,11 @@ fn process_text_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option
 // toe:content does NOT escape html characters
 fn process_content_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     let content = n.attributes.get("toe:content").unwrap().clone().unwrap_or(String::new());
-    let processed_string = compile_text(content, Rc::clone(&vs));
+    let processed_string = process_string_with_variables(content.clone(), Rc::clone(&vs), Some(true), None);
     n.attributes.remove("toe:content");
     let text_node = Node::create_text_node(processed_string);
     n.children = vec![text_node];
     Some(n)
-}
-
-fn compile_text(s: String, vs: Rc<RefCell<VariableScope>>) -> String {
-    s
 }
 
 #[cfg(test)]
