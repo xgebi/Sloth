@@ -53,7 +53,8 @@ fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
             res.append(process_import_tag(n.clone(), Rc::clone(&vs)).as_mut());
         }
         "toe:fragment" => {
-            println!("It's to fragment");
+            let computed = process_fragment_tag(n.clone(), Rc::clone(&vs));
+            res.extend(computed);
         }
         "toe:head" => {
 
@@ -85,6 +86,7 @@ fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
             let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
             let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
             let fp = Path::new(&formatted_path);
+            println!("{:?}", fp);
             if fp.is_file() {
                 let contents = fs::read_to_string(fp);
                 if contents.is_ok() {
@@ -294,7 +296,7 @@ mod import_tests {
             children: vec![],
             content: "".to_string(),
         };
-        node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.html")));
+        node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.toe.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
         let path = cd.join("test_data").to_str().unwrap().to_string();
@@ -315,7 +317,7 @@ mod import_tests {
             children: vec![],
             content: "".to_string(),
         };
-        node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.html")));
+        node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.toe.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
         let path = cd.join("test_data").to_str().unwrap().to_string();
