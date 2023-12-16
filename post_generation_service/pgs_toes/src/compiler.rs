@@ -151,20 +151,15 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
 
     }
 
-    if n.attributes.contains_key("toe:href") {
+    if n.name == "script" && n.attributes.contains_key("toe:inline-js") {
 
     }
 
-    if n.attributes.contains_key("toe:alt") {
+    // href, alt and src probably could be sorted with one function
+    for (k, _) in n.attributes.clone() {
+        if k.starts_with("toe:") && ["toe:for", "toe:text", "toe:content", "toe:inline-js"].contains(&k.as_str()) {
 
-    }
-
-    if n.attributes.contains_key("toe:src") {
-
-    }
-
-    if n.attributes.contains_key("toe:inline-js") {
-
+        }
     }
 
     if processed_node.is_some() {
