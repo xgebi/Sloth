@@ -5,7 +5,9 @@ use std::hash::Hash;
 use std::ops::Deref;
 use std::path::Path;
 use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
+use crate::conditions::process_condition;
 use crate::parser::parse_toe;
 use crate::string_helpers::process_string_with_variables;
 use crate::variable_scope::VariableScope;
@@ -24,12 +26,14 @@ pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) 
 }
 
 fn compile_node(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    // TODO visualize on the paper how this should all work
     let mut res = Vec::new();
     // 1. check if it's a toe's meta node
     if n.name.to_lowercase().starts_with("toe:") {
         return process_toe_elements(n, vs);
     }
     // 2. check attributes for toe's attributes
+    // TODO figure out what's with this
     if has_toe_attribute(n.attributes) {
 
     }
@@ -136,29 +140,33 @@ fn handle_if_switch(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
 }
 
 fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    // TODO write test cases
     let mut res = Vec::new();
     let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
+    if processed_node.is_none() {
+        return res;
+    }
 
     if n.attributes.contains_key("toe:for") {
-        processed_node = process_for_attribute(n.clone(), Rc::clone(&vs));
+        processed_node = process_for_attribute(processed_node.unwrap().clone(), Rc::clone(&vs));
     }
 
     if n.attributes.contains_key("toe:text") {
-
+        processed_node = process_text_attribute(processed_node.unwrap().clone(), Rc::clone(&vs));
     }
 
     if n.attributes.contains_key("toe:content") {
-
+        processed_node = process_content_attribute(processed_node.unwrap().clone(), Rc::clone(&vs));
     }
 
     if n.name == "script" && n.attributes.contains_key("toe:inline-js") {
-
+        // TODO figure out how to parse <( variable_name )>
     }
 
     // href, alt and src probably could be sorted with one function
     for (k, _) in n.attributes.clone() {
         if k.starts_with("toe:") && ["toe:for", "toe:text", "toe:content", "toe:inline-js"].contains(&k.as_str()) {
-
+            // TODO this probably should be similar to toe:text but I need to sleep on this
         }
     }
 
@@ -170,10 +178,18 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
 }
 
 fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
-    Some(n)
+    // TODO write some tests
+    if !n.attributes.contains_key("toe:if") {
+        Some(n)
+    } else {
+        let m = n.attributes.get("toe:if").unwrap().unwrap();
+        let res = process_condition(m.graphemes(true).collect::<Vec<&str>>(), Rc::clone(&vs));
+        return if res { Some(n) } else { None }
+    }
 }
 
 fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    // TODO implement for loop
     Some(n)
 }
 
