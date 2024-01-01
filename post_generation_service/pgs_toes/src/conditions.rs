@@ -86,7 +86,7 @@ impl ConditionNode {
             return Some(true);
         }
         if self.contents == String::from("false") {
-            return Some(true);
+            return Some(false);
         }
         // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
         let mut comp_vec = vec![];
