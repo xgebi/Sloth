@@ -26,16 +26,14 @@ pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) 
 }
 
 fn compile_node(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-    // TODO visualize on the paper how this should all work
     let mut res = Vec::new();
     // 1. check if it's a toe's meta node
     if n.name.to_lowercase().starts_with("toe:") {
-        return process_toe_elements(n, vs);
+        return process_toe_elements(n.clone(), Rc::clone(&vs));
     }
     // 2. check attributes for toe's attributes
-    // TODO figure out what's with this
-    if has_toe_attribute(n.attributes) {
-
+    if has_toe_attribute(n.clone().attributes) {
+        res.extend(process_toe_attributes(n.clone(), Rc::clone(&vs)))
     }
     res
 }
@@ -62,13 +60,13 @@ fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
             res.extend(computed);
         }
         "toe:head" => {
-
+            // TODO can wait until post generation is ready
         }
         "toe:footer" => {
-
+            // TODO can wait until post generation is ready
         }
         _ => {
-
+            // TODO
         }
     }
 
@@ -161,12 +159,14 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
 
     if n.name == "script" && n.attributes.contains_key("toe:inline-js") {
         // TODO figure out how to parse <( variable_name )>
+        processed_node = process_inline_js(n.clone(), Rc::clone(&vs));
     }
 
     // href, alt and src probably could be sorted with one function
     for (k, _) in n.attributes.clone() {
         if k.starts_with("toe:") && ["toe:for", "toe:text", "toe:content", "toe:inline-js"].contains(&k.as_str()) {
             // TODO this probably should be similar to toe:text but I need to sleep on this
+            // process_string_with_variables
         }
     }
 
@@ -182,7 +182,7 @@ fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node>
     if !n.attributes.contains_key("toe:if") {
         Some(n)
     } else {
-        let m = n.attributes.get("toe:if").unwrap().unwrap();
+        let m = n.attributes.get("toe:if").clone().unwrap().as_ref().unwrap();
         let res = process_condition(m.graphemes(true).collect::<Vec<&str>>(), Rc::clone(&vs));
         return if res { Some(n) } else { None }
     }
@@ -197,11 +197,26 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node
 fn process_text_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     // use https://docs.rs/html-escape/latest/html_escape/
     let content = n.attributes.get("toe:text").unwrap().clone().unwrap_or(String::new());
+    println!("{content}");
     let mut processed_string = process_string_with_variables(content.clone(), Rc::clone(&vs), Some(true), None);
     processed_string = html_escape::encode_safe(&processed_string).parse().unwrap();
+    println!("{processed_string}");
     n.attributes.remove("toe:text");
     let text_node = Node::create_text_node(processed_string);
+    println!("{:?}", text_node);
     n.children = vec![text_node];
+
+    Some(n)
+}
+
+fn process_toe_attribute(mut n: Node, attribute_name: String, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    let content = n.attributes.get(attribute_name.as_str()).unwrap().clone().unwrap_or(String::new());
+    let mut processed_string = process_string_with_variables(content.clone(), Rc::clone(&vs), Some(true), None);
+    processed_string = html_escape::encode_safe(&processed_string).parse().unwrap();
+    n.attributes.remove(attribute_name.as_str());
+    let divider = attribute_name.clone().find(":").unwrap_or(0);
+    let attr = &attribute_name[divider.clone()..attribute_name.len()];
+    n.attributes.insert(String::from(attr), Some(String::from(processed_string)));
     Some(n)
 }
 
@@ -212,6 +227,10 @@ fn process_content_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Opt
     n.attributes.remove("toe:content");
     let text_node = Node::create_text_node(processed_string);
     n.children = vec![text_node];
+    Some(n)
+}
+
+fn process_inline_js(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     Some(n)
 }
 
@@ -369,4 +388,202 @@ mod check_toe_attributes_tests {
         let res = has_toe_attribute(hm);
         assert!(!res);
     }
+}
+
+#[cfg(test)]
+mod check_toe_text_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+    #[test]
+    fn has_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'val3'";
+        hm.insert(String::from("toe:text"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_text_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "val3");
+    }
+
+    #[test]
+    fn has_text_not_valid_html_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'<val3'";
+        hm.insert(String::from("toe:text"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_text_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "&lt;val3");
+    }
+
+    #[test]
+    fn has_text_with_variable_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3";
+        let test_val = "other_val";
+        hm.insert(String::from("toe:text"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable(test_text.to_string(), test_val.to_string());
+        }
+        let res = process_text_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, test_val);
+    }
+
+    #[test]
+    fn has_text_with_variable_and_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3 'is good'";
+        let test_val = "other_val";
+        hm.insert(String::from("toe:text"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+        }
+        let res = process_text_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "other_val is good");
+    }
+}
+
+#[cfg(test)]
+mod check_toe_content_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+    #[test]
+    fn has_content_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'val3'";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "val3");
+    }
+
+    #[test]
+    fn has_text_not_valid_html_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'<val3'";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "<val3");
+    }
+
+    #[test]
+    fn has_text_with_variable_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3";
+        let test_val = "other_val";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable(test_text.to_string(), test_val.to_string());
+        }
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, test_val);
+    }
+
+    #[test]
+    fn has_text_with_variable_and_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3 'is good'";
+        let test_val = "other_val";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+        }
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "other_val is good");
+    }
+}
+
+#[cfg(test)]
+mod check_toe_misc_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
 }
