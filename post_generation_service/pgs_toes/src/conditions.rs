@@ -1,4 +1,4 @@
-use std::cell::{BorrowError, Ref, RefCell};
+use std::cell::{RefCell};
 use std::cmp::Ordering;
 use std::ops::Deref;
 use std::rc::Rc;

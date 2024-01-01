@@ -109,11 +109,14 @@ fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
 fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res = Vec::new();
     return if n.attributes.contains_key("toe:if") || n.attributes.contains_key("toe:for") {
-        // I might have to rework this, ¿simplify?
+        if n.attributes.contains_key("toe:for") {
+            return process_for_attribute(n.clone(), Rc::clone(&vs));
+        }
+
         let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
 
-        if n.attributes.contains_key("toe:for") && processed_node.is_some() {
-            processed_node = process_for_attribute(processed_node.unwrap(), Rc::clone(&vs));
+        if processed_node.is_some() {
+            res.push(processed_node.unwrap());
         }
 
         res
@@ -141,7 +144,7 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
     }
 
     if n.attributes.contains_key("toe:for") {
-        processed_node = process_for_attribute(processed_node.unwrap().clone(), Rc::clone(&vs));
+        return process_for_attribute(processed_node.unwrap().clone(), Rc::clone(&vs));
     }
 
     if n.attributes.contains_key("toe:text") {
@@ -160,8 +163,7 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
     // href, alt and src probably could be sorted with one function
     for (k, _) in n.attributes.clone() {
         if k.starts_with("toe:") && ["toe:for", "toe:text", "toe:content", "toe:inline-js"].contains(&k.as_str()) {
-            // TODO this probably should be similar to toe:text but I need to sleep on this
-            // process_string_with_variables
+            processed_node = process_toe_attribute(n.clone(), k, Rc::clone(&vs));
         }
     }
 
@@ -173,7 +175,6 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
 }
 
 fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
-    // TODO write some tests
     if !n.attributes.contains_key("toe:if") {
         Some(n)
     } else {
@@ -183,9 +184,14 @@ fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node>
     }
 }
 
-fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     // TODO implement for loop
-    Some(n)
+    if !n.attributes.contains_key("toe:for") {
+        return vec![n];
+    } else {
+
+    }
+    vec![]
 }
 
 // toe:text escapes html characters
@@ -578,6 +584,55 @@ mod check_toe_content_attribute_tests {
 mod check_toe_misc_attribute_tests {
     use std::collections::HashMap;
     use super::*;
+
+    #[test]
+    fn has_alt_with_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'All is good'";
+
+        hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 1);
+        assert!(res.clone().unwrap().attributes.contains_key("alt"));
+        let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+        assert_eq!(mid_res, "All is good");
+    }
+
+    #[test]
+    fn has_alt_with_variable_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3";
+        let test_val = "other_val";
+
+        hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+        }
+        let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 1);
+        assert!(res.clone().unwrap().attributes.contains_key("alt"));
+        let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+        assert_eq!(mid_res, "other_val");
+    }
 
     #[test]
     fn has_alt_with_variable_and_text_attribute_test() {
