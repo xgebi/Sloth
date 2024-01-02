@@ -791,6 +791,21 @@ mod toe_inline_js_tests {
     }
 
     #[test]
+    fn has_inline_js_as_variable_string_test() {
+        let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
+        script_node.children.push(content_node);
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val".to_string(), "'abc'".to_string());
+        }
+        let res = process_inline_js(script_node, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.unwrap().clone().children[0].content, "const x = 'abc';");
+    }
+
+    #[test]
     #[should_panic]
     fn has_incomplete_inline_js_test() {
         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
