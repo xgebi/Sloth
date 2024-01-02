@@ -156,7 +156,6 @@ fn process_toe_attributes(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> 
     }
 
     if n.name == "script" && n.attributes.contains_key("toe:inline-js") {
-        // TODO figure out how to parse <( variable_name )>
         processed_node = process_inline_js(n.clone(), Rc::clone(&vs));
     }
 
@@ -228,7 +227,29 @@ fn process_content_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Opt
     Some(n)
 }
 
-fn process_inline_js(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+fn process_inline_js(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
+    if n.children.len() == 1 && n.children[0].node_type == NodeType::Text {
+        let mut i: usize = 0;
+        let mut res = String::new();
+        while i < n.children[0].content.len() {
+            let o_start = n.children[0].content[i..].find("<(");
+            let o_end = n.children[0].content[i..].find(")>");
+            if o_start.is_some() && o_end.is_some() {
+                let start = o_start.unwrap();
+                let end = o_end.unwrap();
+                let content = n.children[0].content[i + start + 2..i + end].to_string();
+                let processed_content = process_string_with_variables(content.clone().trim().to_string(), Rc::clone(&vs), Some(true), None);
+                res = format!("{}{}{}", res, n.children[0].content[i..start].to_string(), processed_content);
+                i += end + 2;
+            } else if o_start.is_some() && o_end.is_none() {
+                panic!("Invalid script");
+            } else {
+                res = format!("{}{}", res, n.children[0].content[i..].to_string().clone());
+                i = n.children[0].content.len();
+            }
+        }
+        n.children[0].content = res;
+    }
     Some(n)
 }
 
@@ -734,5 +755,48 @@ mod check_toe_if_attribute_tests {
         let res = process_if_attribute(n, Rc::clone(&vs));
         println!("{:?}", res);
         assert!(res.is_some());
+    }
+}
+
+#[cfg(test)]
+mod toe_inline_js_tests {
+    use std::collections::HashMap;
+    use pgs_common::node::NodeType;
+    use super::*;
+
+    #[test]
+    fn has_no_inline_js_test() {
+        let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let content_node = Node::create_text_node(String::from("const x = 1;"));
+        script_node.children.push(content_node);
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_inline_js(script_node, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.unwrap().clone().children[0].content, "const x = 1;");
+    }
+
+    #[test]
+    fn has_inline_js_as_variable_test() {
+        let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
+        script_node.children.push(content_node);
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val".to_string(), "12".to_string());
+        }
+        let res = process_inline_js(script_node, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.unwrap().clone().children[0].content, "const x = 12;");
+    }
+
+    #[test]
+    #[should_panic]
+    fn has_incomplete_inline_js_test() {
+        let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let content_node = Node::create_text_node(String::from("const x = <( 1;"));
+        script_node.children.push(content_node);
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_inline_js(script_node, Rc::clone(&vs));
     }
 }
