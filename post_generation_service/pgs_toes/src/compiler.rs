@@ -837,4 +837,34 @@ mod toe_for_tests {
         let res = process_for_attribute(node, Rc::clone(&vs));
         assert_eq!(res.len(), 0);
     }
+
+    #[test]
+    fn simple_array_test() {
+        let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+        attrs.insert("toe:for".to_string(), Some("[1, 2, 3]".to_string()));
+        attrs.insert("toe:text".to_string(), Some("itm".to_string()));
+        node.attributes = attrs;
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_for_attribute(node, Rc::clone(&vs));
+        assert_eq!(res.len(), 3);
+        assert_eq!(res[0].content, "1");
+        assert_eq!(res[1].content, "2");
+        assert_eq!(res[2].content, "3");
+    }
+
+    #[test]
+    fn array_of_objects_test() {
+        let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+        attrs.insert("toe:for".to_string(), Some("[{'item1': 'val1'},{'item2': 'val2'}]".to_string()));
+        attrs.insert("toe:text".to_string(), Some("itm".to_string()));
+        node.attributes = attrs;
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_for_attribute(node, Rc::clone(&vs));
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0].content, "val1");
+        assert_eq!(res[1].content, "val2");
+
+    }
 }
