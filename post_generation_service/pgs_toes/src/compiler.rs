@@ -184,13 +184,18 @@ fn process_if_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node>
 }
 
 fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-    // TODO implement for loop
-    if !n.attributes.contains_key("toe:for") {
-        return vec![n];
-    } else {
-
+    let mut res: Vec<Node> = vec![];
+    let cond = n.attributes.get("toe:for").unwrap().clone().unwrap();
+    let parts = cond.split(" in ");
+    let middle_vs = vs.try_borrow();
+    if let Ok(inner_vs) = middle_vs {
+        let arr_var = parts.last().unwrap();
+        let var_exists = inner_vs.clone().variable_exists(&arr_var.to_string());
+        if var_exists {
+            // TODO implement for loop
+        }
     }
-    vec![]
+    return res;
 }
 
 // toe:text escapes html characters
@@ -813,5 +818,23 @@ mod toe_inline_js_tests {
         script_node.children.push(content_node);
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let res = process_inline_js(script_node, Rc::clone(&vs));
+    }
+}
+
+#[cfg(test)]
+mod toe_for_tests {
+    use std::collections::HashMap;
+    use pgs_common::node::NodeType;
+    use super::*;
+
+    #[test]
+    fn invalid_test() {
+        let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+        let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+        attrs.insert("toe:for".to_string(), Some("invalid".to_string()));
+        node.attributes = attrs;
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_for_attribute(node, Rc::clone(&vs));
+        assert_eq!(res.len(), 0);
     }
 }
