@@ -34,6 +34,12 @@ impl VariableScope {
         }
     }
 
+    pub(crate) fn add_new_scope(mut self) {
+        self.scopes.push(SingleScope {
+            variables: HashMap::new(),
+        })
+    }
+
     pub(crate) fn find_variable(self, variable_name: String) -> Option<String> {
         for scope in self.scopes.iter().rev() {
             if scope.variables.contains_key(variable_name.as_str()) {

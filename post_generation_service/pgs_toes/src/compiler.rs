@@ -8,6 +8,7 @@ use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
 use crate::conditions::process_condition;
+use crate::for_iterator_wrapper::ForIteratorWrapper;
 use crate::parser::parse_toe;
 use crate::string_helpers::process_string_with_variables;
 use crate::variable_scope::VariableScope;
@@ -192,10 +193,44 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
         let arr_var = parts.last().unwrap();
         let var_exists = inner_vs.clone().variable_exists(&arr_var.to_string());
         if var_exists {
-            // TODO implement for loop
+            // add latest variable scope
+            let v = vs.try_borrow().unwrap().clone();
+            v.add_new_scope();
+            // parse array
+            let val = inner_vs.clone().find_variable(arr_var.to_string()).unwrap();
+            let fiw = parse_string_to_vec(val);
+            // loop through array
+            if fiw.map.is_some() {
+                let x = Rc::new(RefCell::new(v));
+                res = iterate_object_compile(n.clone(), fiw.map.unwrap().clone(), Rc::clone(&x))
+            } else if fiw.vector.is_some() {
+                // compile node
+            }
+            // remove latest variable scope
+            v.remove_last_scope()
+            // end
         }
     }
     return res;
+}
+
+fn iterate_simple_vector_compile(n: Node, v: Vec<String>, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let result = vec![];
+    for x in v {
+        // compile_node()
+    }
+    result
+}
+
+fn iterate_object_compile(n: Node, m: Vec<HashMap<String, String>>, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    vec![]
+}
+
+fn parse_string_to_vec(s: String) -> ForIteratorWrapper {
+    ForIteratorWrapper {
+        vector: None,
+        map: None,
+    }
 }
 
 // toe:text escapes html characters
