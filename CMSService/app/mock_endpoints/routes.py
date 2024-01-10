@@ -218,11 +218,12 @@ def get_endpoint(*args, connection: psycopg.Connection, path: str, **kwargs):
 						(path,))
 			temp_result = cur.fetchone()
 			if temp_result is not None:
-				result = temp_result['date']
+				result = temp_result['data']
 				content_type = temp_result['content_type']
 			else:
 				result = json.dumps({"error": "Missing data"})
 	except Exception as e:
+		print('Exception was raised when fetching end point')
 		print(e)
 		connection.close()
 		abort(500)

@@ -148,6 +148,7 @@ class PostGenerator:
 		# get post types
 		post_types_object = PostTypes()
 		post_types = post_types_object.get_post_type_list(self.connection)
+		print("languages to be generated")
 		# generate posts for languages
 		for language in self.languages:
 			self.generate_posts_for_language(language=language, post_types=post_types, generate_all=True)
@@ -186,6 +187,7 @@ class PostGenerator:
 	def generate_post_type(self, posts, output_path, post_type, language):
 		self.set_translatable_individual_settings_by_post_type(connection=self.connection, post_type=post_type["uuid"])
 		# generate posts
+		print("generating posts")
 		for post in posts:
 			self.generate_post(post=post, language=language, post_type=post_type, output_path=output_path,
 							   multiple=True)
@@ -224,6 +226,7 @@ class PostGenerator:
 				language_uuid=language['uuid']
 			)
 			self.delete_post_type_post_files(post_type=post_type, language=language)
+			print("Deletion successful")
 			self.generate_post_type(posts=posts, output_path=output_path, post_type=post_type, language=language)
 
 		# generate home
@@ -524,6 +527,7 @@ class PostGenerator:
 			multiple: bool = False,
 			**kwargs
 	):
+		print("generating single post")
 		for lib in post["libraries"]:
 			script = f"<script src=\"{lib['location']}\" async></script>"
 			if lib["hook_name"] == "head":
@@ -553,7 +557,8 @@ class PostGenerator:
 			language=language,
 			post_type_slug=post_type["slug"]
 		)
-
+		print(post["title"])
+		print("pre write")
 		with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
 			md_parser = MarkdownParser()
 			i = 0
@@ -614,7 +619,7 @@ class PostGenerator:
 				base_path=self.theme_path
 			)
 			f.write(rendered)
-
+		print("fuck yeah")
 		if post["js"] and len(post["js"]) > 0:
 			with open(os.path.join(post_path_dir, 'script.js'), 'w', encoding="utf-8") as f:
 				f.write(post["js"])
@@ -743,7 +748,8 @@ class PostGenerator:
 			)
 			post.update({
 				"categories": categories,
-				"tags": tags
+				"tags": tags,
+				"post_type_slug": post_type['slug'],
 			})
 
 		if taxonomy:
