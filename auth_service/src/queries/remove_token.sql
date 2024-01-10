@@ -1,0 +1,1 @@
+DELETE FROM sloth_tokens WHERE user_id = $1 AND user_token = $2;

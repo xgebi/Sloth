@@ -1,0 +1,1 @@
+SELECT * FROM sloth_tokens WHERE user_id = $1 AND user_token = $2 AND expiration > extract(epoch from now()) * 1000;

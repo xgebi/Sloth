@@ -1,35 +1,57 @@
-use postgres::{Client, Error, NoTls, Row};
-use dotenv::dotenv;
+// use postgres::{Client, NoTls, Row};
+use tokio_postgres::{NoTls, Client, Row, Socket, Connection};
 use std::env;
+use std::error::Error;
+use sloth_config_lib::{get_config, SlothConfig};
+use tokio_postgres::tls::NoTlsStream;
 use crate::models::post_status::PostStatus;
 use crate::models::single_post::SinglePost;
 
-fn connect() -> Result<Client, Error> {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    Client::connect("host=localhost user=postgres", NoTls)
-}
 
-pub fn get_single_post() -> Option<&Row> {
-    let mut db = connect()?;
-    let _stmt = include_str!("../sql/single_post.sql");
-    let result = db.query("SELECT id, name, data FROM person", &[]);
-    match result {
-        Ok(res) => {
-            if !res.is_empty() {
-                return res.get(0);
+pub async fn connect(conf: Option<SlothConfig>) -> Result<Client, ()> {
+    let config: SlothConfig = match conf {
+        Some(c) => { c }
+        None => {
+            if let Ok(c) = get_config() {
+                c
+            } else {
+                panic!()
             }
-            None
-        },
-        Err(_) => None
+        }
+    };
+
+    let conn_result =
+        tokio_postgres::connect("host=localhost user=postgres", NoTls).await;
+    match conn_result {
+        Ok((client, connection)) => {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+                return Err(());
+            }
+            Ok(client)
+        }
+        Err(_) => { return Err(())}
     }
 }
 
-pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
-    let mut db = connect()?;
-    let raw_result = db.query("SELECT id, name, data FROM person", &[]);
-    match raw_result {
-        Ok(res) => {
+pub async fn get_single_post(uuid: String) -> Option<SinglePost> {
+    let mut db_result = connect(None).await;
+    if let Ok(mut db) = db_result {
+        let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/single_post.sql"));
+        let result = db.query_one(&_stmt, &[&uuid]).await;
+        if let Ok(res) = result {
+            return Some(row_to_single_post(res));
+        }
+    }
+    None
+}
+
+pub async fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
+    let mut db_result = connect(None).await;
+    if let Ok(mut db) = db_result {
+        let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/post_type_archive.sql"));
+        let result = db.query(&_stmt, &[&post_type]).await;
+        if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
                 for row in res {
@@ -37,17 +59,17 @@ pub fn get_archive(post_type: String) -> Option<Vec<SinglePost>> {
                 }
                 return Some(result);
             }
-            None
-        },
-        Err(_) => None
+        }
     }
+    None
 }
 
-pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
-    let mut db = connect()?;
-    let raw_result = db.query("SELECT id, name, data FROM person", &[]);
-    match raw_result {
-        Ok(res) => {
+pub async fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<SinglePost>> {
+    let mut db_result = connect(None).await;
+    if let Ok(mut db) = db_result {
+        let _stmt = format!("{}{}", include_str!("queries/post/post.sql"), include_str!("queries/post/taxonomy_archive.sql"));
+        let result = db.query(&_stmt, &[&taxonomy, &post_type]).await;
+        if let Ok(res) = result {
             if !res.is_empty() {
                 let mut result = Vec::new();
                 for row in res {
@@ -55,10 +77,9 @@ pub fn get_taxonomy_archive(post_type: String, taxonomy: String) -> Option<Vec<S
                 }
                 return Some(result);
             }
-            None
-        },
-        Err(_) => None
+        }
     }
+    None
 }
 
 fn row_to_single_post(row: Row) -> SinglePost {

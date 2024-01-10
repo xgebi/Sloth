@@ -1,0 +1,1 @@
+UPDATE sloth_tokens SET expiration = $1 WHERE user_id = $2 AND user_token = $3;

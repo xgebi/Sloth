@@ -1,0 +1,22 @@
+# Organization
+
+- CMSService
+  - old Sloth code, meant for deprecation
+- admin_service
+  - the main service which interacts with the user
+- auth_service
+  - internal service to handle authentication and authorization
+- common_db_lib
+  - common functionality between services
+- post_generation_service
+  - new service to generate posts
+- post_lib
+  - library with common post data type
+- PostGenerationService-deprecated
+  - deprecated project, kept in case something is recyclable
+- scheduled_job
+  - service to deal with scheduled jobs
+- sloth-components
+  - front-end components, may be deprecated
+- sloth_config_lib
+  - library to get config
