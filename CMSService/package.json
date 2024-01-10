@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "browserify": "^17.0.0",
-    "cypress": "^12.2.0",
+    "cypress": "^13.4.0",
     "cypress-file-upload": "^5.0.8",
     "glob-parent": ">=5.1.2",
     "prettier": "^2.4.1",
