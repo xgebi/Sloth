@@ -1,8 +1,18 @@
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
+pub(crate) enum Value {
+    Boolean(bool),
+    Nil,
+    Number(f64),
+    String(String),
+    HashMap(HashMap<String, Value>),
+    Array(Vec<Value>)
+}
+
+#[derive(Clone, Debug)]
 struct SingleScope {
-    variables: HashMap<String, String>
+    variables: HashMap<String, Value>
 }
 
 #[derive(Clone, Debug)]
@@ -19,7 +29,7 @@ impl VariableScope {
         }
     }
 
-    pub(crate) fn create_from_hashmap(hm: HashMap<String, String>) -> VariableScope {
+    pub(crate) fn create_from_hashmap(hm: HashMap<String, Value>) -> VariableScope {
         let mut scopes = vec![SingleScope {
             variables: hm,
         }];
