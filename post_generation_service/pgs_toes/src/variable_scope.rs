@@ -1,5 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+use std::ptr::write;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, Ord)]
@@ -80,6 +82,22 @@ impl PartialOrd for Value {
             (Value::Number(a), Value::Number(b)) => a >= b,
             (Value::String(a), Value::String(b)) => a >= b,
             _ => false
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match (self) {
+            Value::Boolean(a) => write!(f, "{}", a.clone()),
+            Value::Nil => write!(f, "null"),
+            Value::Number(a) => write!(f, "{}", a.clone()),
+            Value::String(a) => write!(f, "{}", a.clone()),
+            Value::Array(a) => {
+                write!(f, "{}", a.join(", "))
+            }
+            Value::HashMap(a) => write!(f, "object"),
+            _ => write!(f, "unknown"),
         }
     }
 }
