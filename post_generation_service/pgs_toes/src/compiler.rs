@@ -198,13 +198,13 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
             v.add_new_scope();
             // parse array
             let val = inner_vs.clone().find_variable(arr_var.to_string()).unwrap();
-            let fiw = parse_string_to_vec(val);
-            // loop through array
-            if fiw.map.is_some() {
-                let x = Rc::new(RefCell::new(v));
-                res = iterate_object_compile(n.clone(), fiw.map.unwrap().clone(), Rc::clone(&x))
-            } else if fiw.vector.is_some() {
-                // compile node
+            match val {
+                Value::HashMap(hm) => {
+                    let x = Rc::new(RefCell::new(v));
+                    res = iterate_object_compile(n.clone(), Rc::clone(&x))
+                }
+                Value::Array(arr) => {}
+                _ => {}
             }
             // remove latest variable scope
             v.remove_last_scope()
@@ -214,15 +214,15 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     return res;
 }
 
-fn iterate_simple_vector_compile(n: Node, v: Vec<String>, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+fn iterate_simple_vector_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let result = vec![];
-    for x in v {
-        // compile_node()
-    }
+    // for x in v {
+    //     // compile_node()
+    // }
     result
 }
 
-fn iterate_object_compile(n: Node, m: Vec<HashMap<String, String>>, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+fn iterate_object_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     vec![]
 }
 
@@ -343,7 +343,7 @@ mod import_tests {
         };
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let path = cd.join("test_data").to_str().unwrap().to_string();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
         unsafe {
             let mut x = Rc::clone(&vs);
             x.borrow_mut().create_variable("toe_file".to_string(), path);
@@ -364,7 +364,7 @@ mod import_tests {
         node.attributes.insert(String::from("file"), Some(String::from("empty.toe.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let path = cd.join("test_data").to_str().unwrap().to_string();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
         unsafe {
             let mut x = Rc::clone(&vs);
             x.borrow_mut().create_variable("toe_file".to_string(), path);
@@ -385,7 +385,7 @@ mod import_tests {
         node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.toe.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let path = cd.join("test_data").to_str().unwrap().to_string();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
         unsafe {
             let mut x = Rc::clone(&vs);
             x.borrow_mut().create_variable("toe_file".to_string(), path);
@@ -406,7 +406,7 @@ mod import_tests {
         node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.toe.html")));
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let cd = env::current_dir().unwrap();
-        let path = cd.join("test_data").to_str().unwrap().to_string();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
         unsafe {
             let mut x = Rc::clone(&vs);
             x.borrow_mut().create_variable("toe_file".to_string(), path);
@@ -498,7 +498,7 @@ mod check_toe_text_attribute_tests {
     fn has_text_with_variable_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3";
-        let test_val = "other_val";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
         hm.insert(String::from("toe:text"), Some(String::from(test_text)));
         let n = Node {
             name: "p".to_string(),
@@ -510,7 +510,7 @@ mod check_toe_text_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(test_text.to_string(), test_val.to_string());
+            x.borrow_mut().create_variable(test_text.to_string(), test_val);
         }
         let res = process_text_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
@@ -523,7 +523,7 @@ mod check_toe_text_attribute_tests {
     fn has_text_with_variable_and_text_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3 ' is good'";
-        let test_val = "other_val";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
         hm.insert(String::from("toe:text"), Some(String::from(test_text)));
         let n = Node {
             name: "p".to_string(),
@@ -535,7 +535,7 @@ mod check_toe_text_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+            x.borrow_mut().create_variable("val3".to_string(), test_val);
         }
         let res = process_text_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
@@ -594,7 +594,7 @@ mod check_toe_content_attribute_tests {
     fn has_text_with_variable_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3";
-        let test_val = "other_val";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
         let n = Node {
             name: "p".to_string(),
@@ -606,7 +606,7 @@ mod check_toe_content_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(test_text.to_string(), test_val.to_string());
+            x.borrow_mut().create_variable(test_text.to_string(), test_val);
         }
         let res = process_content_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
@@ -619,7 +619,7 @@ mod check_toe_content_attribute_tests {
     fn has_text_with_variable_and_text_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3 ' is good'";
-        let test_val = "other_val";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
         let n = Node {
             name: "p".to_string(),
@@ -631,7 +631,7 @@ mod check_toe_content_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+            x.borrow_mut().create_variable("val3".to_string(), test_val);
         }
         let res = process_content_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
@@ -672,7 +672,7 @@ mod check_toe_misc_attribute_tests {
     fn has_alt_with_variable_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3";
-        let test_val = "other_val";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
 
         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
         let n = Node {
@@ -685,7 +685,7 @@ mod check_toe_misc_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
+            x.borrow_mut().create_variable("val3".to_string(), test_val);
         }
         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
         assert!(res.is_some());
@@ -699,8 +699,8 @@ mod check_toe_misc_attribute_tests {
     fn has_alt_with_variable_and_text_attribute_test() {
         let mut hm: HashMap<String, Option<String>> = HashMap::new();
         let test_text = "val3 ' is good ' val4";
-        let test_val = "other_val";
-        let test_val_2 = "as well";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+        let test_val_2 = Rc::new(Value::String(String::from("as well")));
 
         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
         let n = Node {
@@ -713,8 +713,8 @@ mod check_toe_misc_attribute_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val3".to_string(), test_val.to_string());
-            x.borrow_mut().create_variable("val4".to_string(), test_val_2.to_string());
+            x.borrow_mut().create_variable("val3".to_string(), test_val);
+            x.borrow_mut().create_variable("val4".to_string(), test_val_2);
         }
         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
         assert!(res.is_some());
@@ -823,7 +823,7 @@ mod toe_inline_js_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val".to_string(), "12".to_string());
+            x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::Number(12f64)));
         }
         let res = process_inline_js(script_node, Rc::clone(&vs));
         assert!(res.is_some());
@@ -838,7 +838,7 @@ mod toe_inline_js_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         unsafe {
             let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable("val".to_string(), "'abc'".to_string());
+            x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::String(String::from("'abc'"))));
         }
         let res = process_inline_js(script_node, Rc::clone(&vs));
         assert!(res.is_some());
