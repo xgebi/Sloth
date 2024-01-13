@@ -11,11 +11,11 @@ use crate::conditions::process_condition;
 use crate::for_iterator_wrapper::ForIteratorWrapper;
 use crate::parser::parse_toe;
 use crate::string_helpers::process_string_with_variables;
-use crate::variable_scope::VariableScope;
+use crate::variable_scope::{Value, VariableScope};
 
 // TODO for future Sarah, look for ways to remove the unsafe blocks
 
-pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, String>) -> Node {
+pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, Rc<Value>>) -> Node {
     let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
     // Done redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
     let var_scope = Rc::new(RefCell::new(VariableScope::create_from_hashmap(data)));
