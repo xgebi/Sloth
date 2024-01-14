@@ -8,7 +8,6 @@
 // use unicode_segmentation::UnicodeSegmentation;
 // use pgs_common::node::{Node, NodeType};
 // use crate::conditions::process_condition;
-// use crate::for_iterator_wrapper::ForIteratorWrapper;
 // use crate::parser::parse_toe;
 // use crate::string_helpers::process_string_with_variables;
 // use crate::variable_scope::{Value, VariableScope};
@@ -224,13 +223,6 @@
 //
 // fn iterate_object_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
 //     vec![]
-// }
-//
-// fn parse_string_to_vec(s: String) -> ForIteratorWrapper {
-//     ForIteratorWrapper {
-//         vector: None,
-//         map: None,
-//     }
 // }
 //
 // // toe:text escapes html characters
