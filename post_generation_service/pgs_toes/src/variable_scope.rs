@@ -290,56 +290,63 @@ mod tests {
         assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), true)
     }
 
-    // #[test]
-    // fn test_creating_variable_twice() {
-    //     let mut scope = VariableScope {
-    //         scopes: Vec::new()
-    //     };
-    //     let mut ss1 = SingleScope {
-    //         variables: HashMap::new()
-    //     };
-    //     scope.scopes.push(ss1);
-    //
-    //     assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), true);
-    //     assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), false);
-    // }
-    //
-    // #[test]
-    // fn test_assign_variable() {
-    //     let mut scope = VariableScope {
-    //         scopes: Vec::new()
-    //     };
-    //     let mut ss1 = SingleScope {
-    //         variables: HashMap::new()
-    //     };
-    //     scope.scopes.push(ss1);
-    //
-    //     assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), true);
-    //
-    //     let mut ss2 = SingleScope {
-    //         variables: HashMap::new()
-    //     };
-    //     scope.scopes.push(ss2);
-    //
-    //     assert_eq!(scope.assign_variable(String::from("var"), Rc::new(Value::String(String::from("b")))), true);
-    //     assert_eq!(scope.find_variable(String::from("var")), Some(String::from("b")));
-    // }
-    //
-    // #[test]
-    // fn test_fail_assign_variable() {
-    //     let mut scope = VariableScope {
-    //         scopes: Vec::new()
-    //     };
-    //     let mut ss1 = SingleScope {
-    //         variables: HashMap::new()
-    //     };
-    //     scope.scopes.push(ss1);
-    //
-    //     let mut ss2 = SingleScope {
-    //         variables: HashMap::new()
-    //     };
-    //     scope.scopes.push(ss2);
-    //
-    //     assert_eq!(scope.assign_variable(String::from("var"), Rc::new(Value::String(String::from("b")))), false);
-    // }
+    #[test]
+    fn test_creating_variable_twice() {
+        let mut scope = VariableScope {
+            scopes: Vec::new()
+        };
+        let mut ss1 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss1);
+
+        assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), true);
+        assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), false);
+    }
+
+    #[test]
+    fn test_assign_variable() {
+        let mut scope = VariableScope {
+            scopes: Vec::new()
+        };
+        let mut ss1 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss1);
+
+        assert_eq!(scope.create_variable(String::from("var"), Rc::new(Value::String(String::from("a")))), true);
+
+        let mut ss2 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss2);
+
+        assert_eq!(scope.assign_variable(String::from("var"), Rc::new(Value::String(String::from("b")))), true);
+
+        let result = scope.find_variable(String::from("var")).unwrap();
+
+        if let Value::String(value) = result.as_ref() {
+            assert_eq!(value, "b")
+        } else {
+            panic!()
+        }
+    }
+
+    #[test]
+    fn test_fail_assign_variable() {
+        let mut scope = VariableScope {
+            scopes: Vec::new()
+        };
+        let mut ss1 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss1);
+
+        let mut ss2 = SingleScope {
+            variables: HashMap::new()
+        };
+        scope.scopes.push(ss2);
+
+        assert_eq!(scope.assign_variable(String::from("var"), Rc::new(Value::String(String::from("b")))), false);
+    }
 }
