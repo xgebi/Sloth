@@ -48,44 +48,6 @@ impl PartialEq for Value {
     }
 }
 
-// impl PartialOrd for Value {
-//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-//         Some(self.cmp(other))
-//     }
-//
-//     fn lt(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Value::Number(a), Value::Number(b)) => a < b,
-//             (Value::String(a), Value::String(b)) => a < b,
-//             _ => false
-//         }
-//     }
-//
-//     fn le(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Value::Number(a), Value::Number(b)) => a <= b,
-//             (Value::String(a), Value::String(b)) => a <= b,
-//             _ => false
-//         }
-//     }
-//
-//     fn gt(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Value::Number(a), Value::Number(b)) => a > b,
-//             (Value::String(a), Value::String(b)) => a > b,
-//             _ => false
-//         }
-//     }
-//
-//     fn ge(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Value::Number(a), Value::Number(b)) => a >= b,
-//             (Value::String(a), Value::String(b)) => a >= b,
-//             _ => false
-//         }
-//     }
-// }
-
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match (self) {
