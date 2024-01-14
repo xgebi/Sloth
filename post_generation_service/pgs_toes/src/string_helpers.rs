@@ -204,10 +204,8 @@ mod node_tests {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let var_str = String::from("test val");
         let var_name = String::from("test");
-        unsafe {
-            let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
-        }
+        let mut x = Rc::clone(&vs);
+        x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
         let result = process_string_with_variables(var_name.clone(), Rc::clone(&vs), None, None);
         assert_eq!(result, var_str);
     }
@@ -226,10 +224,10 @@ mod node_tests {
         let test_str = String::from("not test");
         let var_str = String::from("true");
         let var_name = String::from("test");
-        unsafe {
-            let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
-        }
+
+        let mut x = Rc::clone(&vs);
+        x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
+
         let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
         assert_eq!(result, "not true");
     }
@@ -240,11 +238,11 @@ mod node_tests {
         let test_str = String::from("test 'st ' thing");
         let var_str = String::from("true");
         let var_name = String::from("test");
-        unsafe {
-            let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
-            x.borrow_mut().create_variable("thing".to_string(), Rc::new(Value::String("is true".to_string())));
-        }
+
+        let mut x = Rc::clone(&vs);
+        x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
+        x.borrow_mut().create_variable("thing".to_string(), Rc::new(Value::String("is true".to_string())));
+
         let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
         assert_eq!(result, "truest is true");
     }

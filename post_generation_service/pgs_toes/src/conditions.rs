@@ -161,27 +161,27 @@ impl ConditionNode {
             }
         }
         // TODO need to rework this
-        let l = vs.try_borrow();
-        match l {
-            Ok(ref_vs) => {
-                let k = ref_vs.deref().clone();
-                return if self.contents.starts_with("not ") {
-                    let var_val = k.find_variable(self.contents.chars().skip(4).take(self.contents.len() - 4).collect());
-                    if let Some(val) = var_val {
-                        if let Value::Boolean(v) = val.as_ref() {
-                            Some(*v)
-                        }
-                    }
-                    Some(false)
-                } else {
-                    let var_val = k.find_variable(self.contents.clone());
-                    Some(var_val.is_some() && var_val.unwrap().as_ref() != "false")
-                }
-            }
-            Err(_) => {
-                panic!("Error parsing condition")
-            }
-        }
+        // let l = vs.try_borrow();
+        // match l {
+        //     Ok(ref_vs) => {
+        //         let k = ref_vs.deref().clone();
+        //         return if self.contents.starts_with("not ") {
+        //             let var_val = k.find_variable(self.contents.chars().skip(4).take(self.contents.len() - 4).collect());
+        //             if let Some(val) = var_val {
+        //                 if let Value::Boolean(v) = val.as_ref() {
+        //                     Some(*v)
+        //                 }
+        //             }
+        //             Some(false)
+        //         } else {
+        //             let var_val = k.find_variable(self.contents.clone());
+        //             Some(var_val.is_some() && var_val.unwrap().as_ref() != "false")
+        //         }
+        //     }
+        //     Err(_) => {
+        //         panic!("Error parsing condition")
+        //     }
+        // }
         None
     }
 
