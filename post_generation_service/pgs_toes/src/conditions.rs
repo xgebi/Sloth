@@ -1,5 +1,6 @@
 use std::cell::{RefCell};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
@@ -40,8 +41,55 @@ pub enum JunctionType {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) enum ConditionContents {
+    Variable(String),
+    Boolean(bool),
+    Nil,
+    Number(f64),
+    String(String),
+    HashMap(HashMap<String, Rc<crate::variable_scope::Value>>),
+    Array(Vec<Rc<crate::variable_scope::Value>>)
+}
+
+impl PartialEq for ConditionContents {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ConditionContents::Boolean(a), ConditionContents::Boolean(b)) => a == b,
+            (ConditionContents::Nil, ConditionContents::Nil) => true,
+            (ConditionContents::Number(a), ConditionContents::Number(b)) => a == b,
+            (ConditionContents::String(a), ConditionContents::String(b)) => a == b,
+            (ConditionContents::Array(a), ConditionContents::Array(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                for i in 0..a.len() {
+                    if a[i] != b[i] {
+                        return false;
+                    }
+                }
+                true
+            }
+            (ConditionContents::HashMap(a), ConditionContents::HashMap(b)) => {
+                if a.keys().len() != b.keys().len() {
+                    return false;
+                }
+                for i in a.keys() {
+                    if b.get(i).is_none() {
+                        return false;
+                    }
+                }
+                true
+            }
+            (ConditionContents::Variable(a), ConditionContents::Variable(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
 pub(crate) struct ConditionNode {
-    contents: String,
+    contents: ConditionContents,
     junctions: Vec<JunctionType>,
     children: Vec<ConditionNode>,
 }
@@ -82,10 +130,10 @@ impl ConditionNode {
     }
 
     fn compute_condition_content(&self, vs: Rc<RefCell<VariableScope>>) -> Option<bool> {
-        if self.contents == String::from("true") {
+        if self.contents == ConditionContents::Boolean(true) {
             return Some(true);
         }
-        if self.contents == String::from("false") {
+        if self.contents == ConditionContents::Boolean(false) {
             return Some(false);
         }
         // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
@@ -219,7 +267,7 @@ pub(crate) fn process_condition(graphemes: Vec<&str>, variable_scope: Rc<RefCell
 
 fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
     let mut node = ConditionNode {
-        contents: String::new(),
+        contents: ConditionContents::Nil,
         junctions: Vec::new(),
         children: Vec::new(),
     };
@@ -545,25 +593,25 @@ mod node_tests {
     }
 }
 
-// #[cfg(test)]
-// mod condition_resolving_tests {
-//     use std::cell::RefCell;
-//     use std::rc::Rc;
-//     use unicode_segmentation::UnicodeSegmentation;
-//     use super::*;
-//
-//     #[test]
-//     fn resolve_true_boolean_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: "true".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
+#[cfg(test)]
+mod condition_resolving_tests {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use unicode_segmentation::UnicodeSegmentation;
+    use super::*;
+
+    #[test]
+    fn resolve_true_boolean_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Boolean(true),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
 //     #[test]
 //     fn resolve_false_boolean_node() {
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
@@ -1022,4 +1070,4 @@ mod node_tests {
 //         let res = node.compute(Rc::clone(&vs));
 //         assert_eq!(res, true);
 //     }
-// }
+}
