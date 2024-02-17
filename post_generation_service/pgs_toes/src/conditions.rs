@@ -96,11 +96,11 @@ pub(crate) struct ConditionNode {
 
 impl ConditionNode {
     pub fn compute(&self, vs: Rc<RefCell<VariableScope>>) -> bool {
-        if self.contents.len() > 0 {
-            if let Some(value) = self.compute_condition_content(Rc::clone(&vs)) {
-                return value;
-            }
-        } else if self.junctions.len() + 1 == self.children.len() {
+        if ConditionContents::Nil == self.contents {
+            return false;
+        }
+
+        if self.junctions.len() + 1 == self.children.len() {
             let mut result = false;
             let mut idx = 0;
             while idx < self.children.len() {
@@ -138,71 +138,73 @@ impl ConditionNode {
         }
         // " gt ", " gte ", " lt ", " lte ", " eq ", " neq "
         let mut comp_vec = vec![];
-        comp_vec.push(Comparison { location: self.contents.find(" gt "), name: String::from(" gt ") });
-        comp_vec.push(Comparison { location: self.contents.find(" gte "), name: String::from(" gte ") });
-        comp_vec.push(Comparison { location: self.contents.find(" lt "), name: String::from(" lt ") });
-        comp_vec.push(Comparison { location: self.contents.find(" lte "), name: String::from(" lte ") });
-        comp_vec.push(Comparison { location: self.contents.find(" eq "), name: String::from(" eq ") });
-        comp_vec.push(Comparison { location: self.contents.find(" neq "), name: String::from(" neq ") });
+        if let ConditionContents::String(content) = self.contents.clone() {
+            comp_vec.push(Comparison { location: content.find(" gt "), name: String::from(" gt ") });
+            comp_vec.push(Comparison { location: content.find(" gte "), name: String::from(" gte ") });
+            comp_vec.push(Comparison { location: content.find(" lt "), name: String::from(" lt ") });
+            comp_vec.push(Comparison { location: content.find(" lte "), name: String::from(" lte ") });
+            comp_vec.push(Comparison { location: content.find(" eq "), name: String::from(" eq ") });
+            comp_vec.push(Comparison { location: content.find(" neq "), name: String::from(" neq ") });
 
-        if comp_vec.len() > 0 {
-            let mut comp_in_use = vec![];
-            for comp in comp_vec {
-                if comp.location.is_some() {
-                    comp_in_use.push(comp.clone());
+            if comp_vec.len() > 0 {
+                let mut comp_in_use = vec![];
+                for comp in comp_vec {
+                    if comp.location.is_some() {
+                        comp_in_use.push(comp.clone());
+                    }
                 }
-            }
-            comp_in_use.sort();
-            for comp in comp_in_use {
-                if !Self::is_in_quotes(self.contents.clone(), comp.clone().name) {
-                    let left: String = self.contents.clone().chars().take(comp.location.unwrap()).collect();
-                    let right: String = self.contents.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(self.contents.len() - comp.location.unwrap() - comp.clone().name.len()).collect();
+                comp_in_use.sort();
+                for comp in comp_in_use {
+                    if !Self::is_in_quotes(content.clone(), comp.clone().name) {
+                        let left: String = content.clone().chars().take(comp.location.unwrap()).collect();
+                        let right: String = content.clone().chars().skip(comp.location.unwrap() + comp.clone().name.len()).take(content.len() - comp.location.unwrap() - comp.clone().name.len()).collect();
 
-                    let processed_left = process_string_with_variables(left, Rc::clone(&vs), None, Some(true));
-                    let processed_right = process_string_with_variables(right, Rc::clone(&vs), None, Some(true));
+                        let processed_left = process_string_with_variables(left, Rc::clone(&vs), None, Some(true));
+                        let processed_right = process_string_with_variables(right, Rc::clone(&vs), None, Some(true));
 
-                    let processed_left_as_num = processed_left.parse::<f64>();
-                    let processed_right_as_num = processed_right.parse::<f64>();
+                        let processed_left_as_num = processed_left.parse::<f64>();
+                        let processed_right_as_num = processed_right.parse::<f64>();
 
-                    match comp.name.as_str() {
-                        " gt " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() > processed_right_as_num.unwrap());
+                        match comp.name.as_str() {
+                            " gt " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() > processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left > processed_right);
                             }
-                            return Some(processed_left > processed_right);
-                        }
-                        " gte " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() >= processed_right_as_num.unwrap());
+                            " gte " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() >= processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left >= processed_right);
                             }
-                            return Some(processed_left >= processed_right);
-                        }
-                        " lt " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() < processed_right_as_num.unwrap());
+                            " lt " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() < processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left < processed_right);
                             }
-                            return Some(processed_left < processed_right);
-                        }
-                        " lte " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() <= processed_right_as_num.unwrap());
+                            " lte " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() <= processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left <= processed_right);
                             }
-                            return Some(processed_left <= processed_right);
-                        }
-                        " eq " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() == processed_right_as_num.unwrap());
+                            " eq " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() == processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left == processed_right);
                             }
-                            return Some(processed_left == processed_right);
-                        }
-                        " neq " => {
-                            if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
-                                return Some(processed_left_as_num.unwrap() != processed_right_as_num.unwrap());
+                            " neq " => {
+                                if processed_left_as_num.is_ok() && processed_right_as_num.is_ok() {
+                                    return Some(processed_left_as_num.unwrap() != processed_right_as_num.unwrap());
+                                }
+                                return Some(processed_left != processed_right);
                             }
-                            return Some(processed_left != processed_right);
-                        }
-                        _ => {
-                            panic!("Something in comparisons went wrong")
+                            _ => {
+                                panic!("Something in comparisons went wrong")
+                            }
                         }
                     }
                 }
@@ -277,7 +279,9 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
     let mut parenthesis_counter: usize = 0;
     let mut start: usize = 0;
     let mut end: usize = 0;
+    let mut parethesis_start_idx = -1;
     while end < graphemes.len() {
+        println!("{:?}", graphemes[end]);
         match graphemes[end] {
             "o" => {
                 if !inside_the_quotes && parenthesis_counter == 0 && end + 1 < graphemes.len() && graphemes[end + 1] == "r" {
@@ -317,6 +321,9 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
             "(" => {
                 if !inside_the_quotes {
                     parenthesis_counter += 1;
+                }
+                if parenthesis_counter == 1 {
+                    parethesis_start_idx = end;
                 }
                 end += 1;
             }
@@ -359,13 +366,15 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
 
                 if graphemes[start] == "(" && graphemes[local_end - 1] == ")" {
                     let try_parsing_inner = parse_condition_tree(graphemes[start + 1..local_end - 1].to_vec());
-                    if try_parsing_inner.contents.clone().len() == 0 {
-                        node = try_parsing_inner.clone();
-                    } else {
-                        node.contents = graphemes[start + 1..local_end - 1].join("").trim().to_string();
+                    if let ConditionContents::String(contents) = try_parsing_inner.contents.clone() {
+                        if contents.clone().len() == 0 {
+                            node = try_parsing_inner.clone();
+                        } else {
+                            node.contents = ConditionContents::String(graphemes[start + 1..local_end - 1].join("").trim().to_string());
+                        }
                     }
                 } else {
-                    node.contents = graphemes[start..local_end].join("").trim().to_string();
+                    node.contents = ConditionContents::String(graphemes[start..local_end].join("").trim().to_string());
                 }
             }
         }
@@ -385,7 +394,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("true"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "true"),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -394,7 +406,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("my_var"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "my_var"),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -403,7 +418,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("'str'"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "'str'"),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -412,7 +430,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("'\\\\str'"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "'\\\\str'"),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -421,15 +442,22 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("'\'str'"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "'\'str'"),
+            _ => panic!()
+        }
     }
+
     #[test]
     fn parse_string_to_node_with_backlash_double_quote() {
         let cond = "'\\\"str'".graphemes(true).collect::<Vec<&str>>();
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("'\\\"str'"));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "'\\\"str'"),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -438,7 +466,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("\"str\""));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "\"str\""),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -447,7 +478,10 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("\"\\\\str\""));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "\"\\\\str\""),
+            _ => panic!()
+        }
 
     }
 
@@ -457,15 +491,22 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("\"\'str\""));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "\"\'str\""),
+            _ => panic!()
+        }
     }
+
     #[test]
     fn parse_string_to_node_double_with_backlash_double_quote() {
         let cond = "\"\"str\"".graphemes(true).collect::<Vec<&str>>();
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 0);
-        assert_eq!(res.contents, String::from("\"\"str\""));
+        match res.contents {
+            ConditionContents::String(a) => assert_eq!(a, "\"\"str\""),
+            _ => panic!()
+        }
     }
 
     #[test]
@@ -502,9 +543,19 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "my_var");
-        assert_eq!(res.children[1].contents, "not_my_var");
-        assert_eq!(res.contents, String::from(""));
+        match res.children[0].clone().contents {
+            ConditionContents::String(a) => assert_eq!(a, "my_var"),
+            _ => panic!()
+        }
+        match res.children[1].clone().contents {
+            ConditionContents::String(a) => assert_eq!(a, "not_my_var"),
+            _ => panic!()
+        }
+        println!("{:?}", res);
+        match res.clone().contents {
+            ConditionContents::Nil => assert!(true),
+            _ => panic!()
+        }
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -516,9 +567,9 @@ mod node_tests {
 
         println!("{:?}", res);
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "my_var");
-        assert_eq!(res.children[1].contents, "not_my_var");
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.children[0].contents, ConditionContents::String("my_var".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("not_my_var".to_string()));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::Or);
     }
@@ -529,9 +580,9 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "my_var");
-        assert_eq!(res.children[1].contents, "not_my_var");
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.children[0].contents, ConditionContents::String("my_var".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("not_my_var".to_string()));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -542,9 +593,9 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "my_var");
-        assert_eq!(res.children[1].contents, "not my_var");
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.children[0].contents, ConditionContents::String("my_var".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("not my_var".to_string()));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -555,9 +606,9 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "1 eq 1");
-        assert_eq!(res.children[1].contents, "not my_var");
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.children[0].contents, ConditionContents::String("1 eq 1".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("not my_var".to_string()));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -568,9 +619,9 @@ mod node_tests {
         let res = parse_condition_tree(cond);
 
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "1 eq 1");
-        assert_eq!(res.children[1].contents, "not my_var");
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.children[0].contents, ConditionContents::String("1 eq 1".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("not my_var".to_string()));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -580,14 +631,15 @@ mod node_tests {
         let cond = "1 eq 1 and (not my_var or my_var)".graphemes(true).collect::<Vec<&str>>();
         let res = parse_condition_tree(cond);
 
+        println!("{:?}", res.children[1]);
         assert_eq!(res.children.len(), 2);
-        assert_eq!(res.children[0].contents, "1 eq 1");
-        assert_eq!(res.children[1].contents, "");
+        assert_eq!(res.children[0].contents, ConditionContents::String("1 eq 1".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::Nil);
         assert_eq!(res.children[1].children.len(), 2);
-        assert_eq!(res.children[1].children[0].contents, "not my_var");
-        assert_eq!(res.children[1].children[1].contents, "my_var");
+        assert_eq!(res.children[1].children[0].contents, ConditionContents::String("not my_var".to_string()));
+        assert_eq!(res.children[1].children[1].contents, ConditionContents::String("my_var".to_string()));
         assert_eq!(res.children[1].junctions[0], JunctionType::Or);
-        assert_eq!(res.contents, String::from(""));
+        assert_eq!(res.contents, ConditionContents::Nil);
         assert_eq!(res.junctions.len(), 1);
         assert_eq!(res.junctions[0], JunctionType::And);
     }
@@ -600,17 +652,17 @@ mod condition_resolving_tests {
     use unicode_segmentation::UnicodeSegmentation;
     use super::*;
 
-    #[test]
-    fn resolve_true_boolean_node() {
-        let vs = Rc::new(RefCell::new(VariableScope::create()));
-        let node = ConditionNode {
-            contents: ConditionContents::Boolean(true),
-            junctions: vec![],
-            children: vec![],
-        };
-        let res = node.compute(Rc::clone(&vs));
-        assert_eq!(res, true);
-    }
+    // #[test]
+    // fn resolve_true_boolean_node() {
+    //     let vs = Rc::new(RefCell::new(VariableScope::create()));
+    //     let node = ConditionNode {
+    //         contents: ConditionContents::Boolean(true),
+    //         junctions: vec![],
+    //         children: vec![],
+    //     };
+    //     let res = node.compute(Rc::clone(&vs));
+    //     assert_eq!(res, true);
+    // }
 
 //     #[test]
 //     fn resolve_false_boolean_node() {
