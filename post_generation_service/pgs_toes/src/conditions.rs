@@ -125,8 +125,12 @@ impl ConditionNode {
                 idx += 1;
             }
             return result;
-        } else if let ConditionContents::Boolean(val) = self.contents {
+        } else if let ConditionContents::Boolean(val) = self.contents.clone() {
             return val;
+        } else if let ConditionContents::String(val) = self.contents.clone() {
+            return val.len() > 0;
+        } else if let ConditionContents::Number(val) = self.contents.clone() {
+            return val > 0.0;
         }
         false
     }
@@ -693,82 +697,35 @@ mod condition_resolving_tests {
         assert_eq!(res, false);
     }
 
-//     #[test]
-//     fn resolve_var_boolean_true_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "true".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
-//     #[test]
-//     fn resolve_var_boolean_false_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "false".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_var_boolean_not_true_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "true".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "not test".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_var_boolean_not_false_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "false".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "not test".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_numbers_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: "1 gt 2".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
+    #[test]
+    fn resolve_var_boolean_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String(String::from("test"))));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        println!("{:?}", res);
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_gt_numbers_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::String("1 gt 2".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
 //     #[test]
 //     fn resolve_gt_equal_false_numbers_node() {
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
