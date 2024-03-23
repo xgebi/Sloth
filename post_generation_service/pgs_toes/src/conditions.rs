@@ -279,7 +279,7 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
     let mut parenthesis_counter: usize = 0;
     let mut start: usize = 0;
     let mut end: usize = 0;
-    let mut parethesis_start_idx = -1;
+    let mut parethesis_start_idx = -1isize;
     while end < graphemes.len() {
         println!("{:?}", graphemes[end]);
         match graphemes[end] {
@@ -319,11 +319,11 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
                 }
             }
             "(" => {
+                if parenthesis_counter == 1 && end <= isize::MAX as usize{
+                    parethesis_start_idx = end as isize;
+                }
                 if !inside_the_quotes {
                     parenthesis_counter += 1;
-                }
-                if parenthesis_counter == 1 {
-                    parethesis_start_idx = end;
                 }
                 end += 1;
             }
@@ -372,6 +372,8 @@ fn parse_condition_tree(graphemes: Vec<&str>) -> ConditionNode {
                         } else {
                             node.contents = ConditionContents::String(graphemes[start + 1..local_end - 1].join("").trim().to_string());
                         }
+                    } else if try_parsing_inner.children.len() > 0 {
+                        node = try_parsing_inner.clone();
                     }
                 } else {
                     node.contents = ConditionContents::String(graphemes[start..local_end].join("").trim().to_string());
@@ -627,11 +629,24 @@ mod node_tests {
     }
 
     #[test]
+    fn parse_with_one_or_in_parenthesis_to_node() {
+        let cond = "(not my_var or my_var)".graphemes(true).collect::<Vec<&str>>();
+        let res = parse_condition_tree(cond);
+
+        println!("{:?}", res);
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children.len(), 2);
+        assert_eq!(res.children[0].contents, ConditionContents::String("not my_var".to_string()));
+        assert_eq!(res.children[1].contents, ConditionContents::String("my_var".to_string()));
+        assert_eq!(res.junctions[0], JunctionType::Or);
+    }
+
+    #[test]
     fn parse_with_one_parenthesis_one_or_in_parenthesis_to_node() {
         let cond = "1 eq 1 and (not my_var or my_var)".graphemes(true).collect::<Vec<&str>>();
         let res = parse_condition_tree(cond);
 
-        println!("{:?}", res.children[1]);
+        println!("{:?}", res.children);
         assert_eq!(res.children.len(), 2);
         assert_eq!(res.children[0].contents, ConditionContents::String("1 eq 1".to_string()));
         assert_eq!(res.children[1].contents, ConditionContents::Nil);
