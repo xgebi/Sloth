@@ -125,6 +125,8 @@ impl ConditionNode {
                 idx += 1;
             }
             return result;
+        } else if let ConditionContents::Boolean(val) = self.contents {
+            return val;
         }
         false
     }
@@ -667,30 +669,30 @@ mod condition_resolving_tests {
     use unicode_segmentation::UnicodeSegmentation;
     use super::*;
 
-    // #[test]
-    // fn resolve_true_boolean_node() {
-    //     let vs = Rc::new(RefCell::new(VariableScope::create()));
-    //     let node = ConditionNode {
-    //         contents: ConditionContents::Boolean(true),
-    //         junctions: vec![],
-    //         children: vec![],
-    //     };
-    //     let res = node.compute(Rc::clone(&vs));
-    //     assert_eq!(res, true);
-    // }
+    #[test]
+    fn resolve_true_boolean_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Boolean(true),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
 
-//     #[test]
-//     fn resolve_false_boolean_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: "false".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
+    #[test]
+    fn resolve_false_boolean_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Boolean(false),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
 //     #[test]
 //     fn resolve_var_boolean_true_node() {
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
