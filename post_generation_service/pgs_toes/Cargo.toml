@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 pgs_common = { path = "../pgs_common" }
-unicode-segmentation = "1.10.1"
-regex = "1.9.3"
+unicode-segmentation = "1.11.0"
+regex = "1.10.4"
 html-escape = "0.2.13"

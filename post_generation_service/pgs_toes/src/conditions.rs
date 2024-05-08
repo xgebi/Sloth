@@ -125,13 +125,16 @@ impl ConditionNode {
                 idx += 1;
             }
             return result;
-        } else if let ConditionContents::Boolean(val) = self.contents.clone() {
-            return val;
-        } else if let ConditionContents::String(val) = self.contents.clone() {
-            return val.len() > 0;
-        } else if let ConditionContents::Number(val) = self.contents.clone() {
-            return val > 0.0;
+        } else {
+            return self.compute_condition_content(Rc::clone(&vs)).unwrap_or(false);
         }
+        // } else if let ConditionContents::Boolean(val) = self.contents.clone() {
+        //     return val;
+        // } else if let ConditionContents::String(val) = self.contents.clone() {
+        //     return val.len() > 0;
+        // } else if let ConditionContents::Number(val) = self.contents.clone() {
+        //     return val > 0.0;
+        // }
         false
     }
 

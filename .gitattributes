@@ -2,3 +2,4 @@
 *.sql linguist-language=sql
 
 *.toe linguist-detectable=true
+*.toe linguist-language=html
