@@ -6,41 +6,41 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-confy = "0.5.1"
+confy = "0.6.1"
 sloth_config_lib = { path = "../sloth_config_lib" }
 pwhash = "1.0.0"
-orion = "0.17.3"
-tonic = "0.8.3"
-bytes = "1.3.0"
-prost = "0.11.5"
-prost-derive = "0.11.5"
-prost-types = "0.11.5"
-futures-core = "0.3.25"
-futures-util = "0.3.25"
+orion = "0.17.8"
+tonic = "0.12.3"
+bytes = "1.9.0"
+prost = "0.13.4"
+prost-derive = "0.13.4"
+prost-types = "0.13.4"
+futures-core = "0.3.31"
+futures-util = "0.3.31"
 futures-preview = { version = "0.3.0-alpha.19", default-features = false, features = ["alloc"]}
-tokio = { version = "1.24.2", features = ["full"] }
-tokio-stream = "0.1.11"
-async-stream = "0.3.3"
-http = "0.2.8"
-tower = "0.4.13"
-rand = "0.8.5"
-config = "0.13.3"
-deadpool-postgres = "0.10.3"
-derive_more = "0.99.17"
+tokio = { version = "1.43.0", features = ["full"] }
+tokio-stream = "0.1.17"
+async-stream = "0.3.6"
+http = "1.2.0"
+tower = "0.5.2"
+rand = "0.9.0"
+config = "0.15.6"
+deadpool-postgres = "0.14.1"
+derive_more = "1.0.0"
 dotenv = "0.15.0"
-serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.91"
-serde_derive = "1.0.152"
-console = "0.15.3"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.137"
+serde_derive = "1.0.217"
+console = "0.15.10"
 tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
-tokio-postgres = "0.7.6"
-chrono = "0.4.9"
-async-trait = "0.1.64"
+tokio-postgres = "0.7.12"
+chrono = "0.4.39"
+async-trait = "0.1.85"
 common_db_lib = { path = "../common_db_lib" }
 
 [dependencies.uuid]
-version = "1.3.0"
+version = "1.12.1"
 features = [
     "serde",
     "v4",                # Lets you generate random UUIDs
@@ -50,5 +50,5 @@ features = [
 
 # Help you use gRPC protobuf files in Rust.
 [build-dependencies]
-tonic-build = "0.8.4"
+tonic-build = "0.12.3"
 

@@ -433,6 +433,7 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
             let mut j = next_new_line + 3;
             while j < c.len() {
                 if c[j] != " " && c[j] != "\t" {
+                    println!("{:?}", c);
                     this_level = c[next_new_line+2..j].len();
                     next_new_line = c[j..c.len()].join("").find("\n").unwrap_or(c.len());
                     if next_new_line == c.len() {
