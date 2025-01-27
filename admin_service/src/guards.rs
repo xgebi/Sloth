@@ -9,8 +9,7 @@ use crate::auth_service::LoggedInRequest;
 pub struct LoggedInGuard;
 
 impl Guard for LoggedInGuard {
-    fn check(&self, ctx: &GuardContext<'_>) -> bool {
-        let context = ctx.clone();
+    fn check(&self, context: &GuardContext<'_>) -> bool {
         let mut token = "".to_string();
 
         if context.head().headers.contains_key("authorization") {

@@ -1,4 +1,4 @@
-mod endpoints;
-mod forms;
-mod libraries;
-mod media;
+pub(crate) mod endpoints;
+pub(crate) mod forms;
+pub(crate) mod libraries;
+pub(crate) mod media;

@@ -1,1 +1,1 @@
-mod post_type;
+pub(crate) mod post_type;

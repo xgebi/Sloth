@@ -1,3 +1,3 @@
-mod dashboard;
-mod analytics;
-mod messages;
+pub(crate) mod dashboard;
+pub(crate) mod analytics;
+pub(crate) mod messages;
