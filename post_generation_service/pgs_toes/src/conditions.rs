@@ -96,7 +96,7 @@ pub(crate) struct ConditionNode {
 
 impl ConditionNode {
     pub fn compute(&self, vs: Rc<RefCell<VariableScope>>) -> bool {
-        if ConditionContents::Nil == self.contents {
+        if ConditionContents::Nil == self.contents && self.junctions.len() == 0 {
             return false;
         }
 
@@ -927,151 +927,151 @@ mod condition_resolving_tests {
         assert_eq!(res, false);
     }
 
-//     #[test]
-//     fn resolve_gt_var_false_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "1".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt 2".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_var_false_equal_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "2".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt 2".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_var_true_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "3".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt 2".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_var_two_vars_false_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "1".to_string());
-//             x.borrow_mut().create_variable("other".to_string(), "2".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt other".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_var_two_vars_equal_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "2".to_string());
-//             x.borrow_mut().create_variable("other".to_string(), "2".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt other".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_gt_var_two_vars_true_node() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("test".to_string(), "3".to_string());
-//             x.borrow_mut().create_variable("other".to_string(), "2".to_string());
-//         }
-//         let node = ConditionNode {
-//             contents: "test gt other".to_string(),
-//             junctions: vec![],
-//             children: vec![],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
-//     #[test]
-//     fn resolve_eq_and_eq_both_true() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: String::new(),
-//             junctions: vec![JunctionType::And],
-//             children: vec![
-//                 ConditionNode {
-//                     contents: "1 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 },
-//                 ConditionNode {
-//                     contents: "1 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 }
-//             ],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
-//
-//     #[test]
-//     fn resolve_eq_and_eq_one_true() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: String::new(),
-//             junctions: vec![JunctionType::And],
-//             children: vec![
-//                 ConditionNode {
-//                     contents: "2 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 },
-//                 ConditionNode {
-//                     contents: "1 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 }
-//             ],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
+    #[test]
+    fn resolve_gt_var_false_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String(String::from("1".to_string()))));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt 2".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_false_equal_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String(String::from("2".to_string()))));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt 2".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String(String::from("3".to_string()))));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt 2".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_false_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String("1".to_string())));
+            x.borrow_mut().create_variable("other".to_string(), Rc::new(Value::String("2".to_string())));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt other".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_equal_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String(String::from("2".to_string()))));
+            x.borrow_mut().create_variable("other".to_string(), Rc::new(Value::String(String::from("2".to_string()))));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt other".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_gt_var_two_vars_true_node() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("test".to_string(), Rc::new(Value::String("3".to_string())));
+            x.borrow_mut().create_variable("other".to_string(), Rc::new(Value::String("2".to_string())));
+        }
+        let node = ConditionNode {
+            contents: ConditionContents::String("test gt other".to_string()),
+            junctions: vec![],
+            children: vec![],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_eq_and_eq_both_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Nil,
+            junctions: vec![JunctionType::And],
+            children: vec![
+                ConditionNode {
+                    contents: ConditionContents::String("1 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: ConditionContents::String("1 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn resolve_eq_and_eq_one_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Nil,
+            junctions: vec![JunctionType::And],
+            children: vec![
+                ConditionNode {
+                    contents: ConditionContents::String("2 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: ConditionContents::String("1 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
 //     #[test]
 //     fn resolve_eq_or_eq_both_false() {
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
