@@ -103,10 +103,11 @@ impl VariableScope {
         }
     }
 
-    pub(crate) fn add_new_scope(mut self) {
+    pub(crate) fn add_new_scope(mut self) -> Self {
         self.scopes.push(SingleScope {
             variables: HashMap::new(),
-        })
+        });
+        self
     }
 
     pub(crate) fn find_variable(self, variable_name: String) -> Option<Rc<Value>> {

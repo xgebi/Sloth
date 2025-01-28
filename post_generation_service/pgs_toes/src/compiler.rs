@@ -1,43 +1,43 @@
-// use std::cell::{RefCell};
-// use std::collections::HashMap;
-// use std::fs;
-// use std::hash::Hash;
-// use std::ops::Deref;
-// use std::path::Path;
-// use std::rc::Rc;
-// use unicode_segmentation::UnicodeSegmentation;
-// use pgs_common::node::{Node, NodeType};
-// use crate::conditions::process_condition;
-// use crate::parser::parse_toe;
-// use crate::string_helpers::process_string_with_variables;
-// use crate::variable_scope::{Value, VariableScope};
-//
-// // TODO for future Sarah, look for ways to remove the unsafe blocks
-//
-// pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, Rc<Value>>) -> Node {
-//     let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
-//     // Done redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
-//     let var_scope = Rc::new(RefCell::new(VariableScope::create_from_hashmap(data)));
-//     for child in root_node.children {
-//         compiled_root_node.children.append(&mut compile_node(child, Rc::clone(&var_scope)));
-//     }
-//
-//     compiled_root_node
-// }
-//
-// fn compile_node(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-//     let mut res = Vec::new();
-//     // 1. check if it's a toe's meta node
-//     if n.name.to_lowercase().starts_with("toe:") {
-//         return process_toe_elements(n.clone(), Rc::clone(&vs));
-//     }
-//     // 2. check attributes for toe's attributes
-//     if has_toe_attribute(n.clone().attributes) {
-//         res.extend(process_toe_attributes(n.clone(), Rc::clone(&vs)))
-//     }
-//     res
-// }
-//
+use std::cell::{RefCell};
+use std::collections::HashMap;
+use std::fs;
+use std::hash::Hash;
+use std::ops::Deref;
+use std::path::Path;
+use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
+use pgs_common::node::{Node, NodeType};
+use crate::conditions::process_condition;
+use crate::parser::parse_toe;
+use crate::string_helpers::process_string_with_variables;
+use crate::variable_scope::{Value, VariableScope};
+
+// TODO for future Sarah, look for ways to remove the unsafe blocks
+
+pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, Rc<Value>>) -> Node {
+    let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
+    // Done redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
+    let var_scope = Rc::new(RefCell::new(VariableScope::create_from_hashmap(data)));
+    for child in root_node.children {
+        compiled_root_node.children.append(&mut compile_node(child, Rc::clone(&var_scope)));
+    }
+
+    compiled_root_node
+}
+
+fn compile_node(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let mut res = Vec::new();
+    // 1. check if it's a toe's meta node
+    if n.name.to_lowercase().starts_with("toe:") {
+        return process_toe_elements(n.clone(), Rc::clone(&vs));
+    }
+    // 2. check attributes for toe's attributes
+    // if has_toe_attribute(n.clone().attributes) {
+    //     res.extend(process_toe_attributes(n.clone(), Rc::clone(&vs)))
+    // }
+    res
+}
+
 // fn has_toe_attribute(hm: HashMap<String, Option<String>>) -> bool {
 //     let res = false;
 //     for key in hm.keys() {
@@ -47,84 +47,87 @@
 //     }
 //     res
 // }
-//
-// fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-//     let mut res = Vec::new();
-//     match n.name.to_lowercase().as_str() {
-//         "toe:import" => {
-//             res.append(process_import_tag(n.clone(), Rc::clone(&vs)).as_mut());
-//         }
-//         "toe:fragment" => {
-//             let computed = process_fragment_tag(n.clone(), Rc::clone(&vs));
-//             res.extend(computed);
-//         }
-//         "toe:head" => {
-//             // TODO can wait until post generation is ready
-//         }
-//         "toe:footer" => {
-//             // TODO can wait until post generation is ready
-//         }
-//         _ => {
-//             // TODO
-//         }
-//     }
-//
-//     res
-// }
-//
-// fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-//     let res = Vec::new();
-//
-//     process_if_attribute(n.clone(), Rc::clone(&vs));
-//
-//     let toe_file = String::from("toe_file");
-//     let l = vs.try_borrow();
-//     if l.is_ok() {
-//         let ref_vs = l.unwrap();
-//         let k = ref_vs.deref().clone();
-//         let folder_path = k.find_variable(String::from(toe_file));
-//         let cloned_n = n.clone();
-//         if cloned_n.attributes.contains_key("file") && folder_path.is_some() {
-//             let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
-//             let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
-//             let fp = Path::new(&formatted_path);
-//             if fp.is_file() {
-//                 let contents = fs::read_to_string(fp);
-//                 if contents.is_ok() {
-//                     let result_temp = parse_toe(contents.unwrap());
-//                     if result_temp.is_ok() {
-//                         let mut res = Vec::new();
-//                         for child in result_temp.unwrap().clone().children {
-//                             res.extend(compile_node(child.clone(), Rc::clone(&vs)));
-//                         }
-//                         return res;
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     res
-// }
-//
-// fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
-//     let mut res = Vec::new();
-//     return if n.attributes.contains_key("toe:if") || n.attributes.contains_key("toe:for") {
-//         if n.attributes.contains_key("toe:for") {
-//             return process_for_attribute(n.clone(), Rc::clone(&vs));
-//         }
-//
-//         let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
-//
-//         if processed_node.is_some() {
-//             res.push(processed_node.unwrap());
-//         }
-//
-//         res
-//     } else {
-//         n.children.clone()
-//     }
-// }
-//
+
+fn process_toe_elements(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let mut res = Vec::new();
+    match n.name.to_lowercase().as_str() {
+        "toe:import" => {
+            // res.append(process_import_tag(n.clone(), Rc::clone(&vs)).as_mut());
+        }
+        "toe:fragment" => {
+            let computed = process_fragment_tag(n.clone(), Rc::clone(&vs));
+            res.extend(computed);
+        }
+        "toe:head" => {
+            // TODO can wait until post generation is ready
+        }
+        "toe:footer" => {
+            // TODO can wait until post generation is ready
+        }
+        _ => {
+            // TODO
+        }
+    }
+
+    res
+}
+
+fn process_import_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let res = Vec::new();
+
+    // process_if_attribute(n.clone(), Rc::clone(&vs));
+
+    let toe_file = String::from("toe_file");
+    let l = vs.try_borrow();
+    if l.is_ok() {
+        let ref_vs = l.unwrap();
+        let k = ref_vs.deref().clone();
+        let folder_path = k.find_variable(String::from(toe_file));
+        let cloned_n = n.clone();
+        if cloned_n.attributes.contains_key("file") && folder_path.is_some() {
+            let f = cloned_n.attributes.get("file").unwrap().to_owned().unwrap();
+            let formatted_path = format!("{}/{}", folder_path.unwrap(), f);
+            let fp = Path::new(&formatted_path);
+            if fp.is_file() {
+                let contents = fs::read_to_string(fp);
+                if contents.is_ok() {
+                    let result_temp = parse_toe(contents.unwrap());
+                    println!("{:?}", result_temp);
+                    if result_temp.is_ok() {
+                        let mut res = Vec::new();
+                        for child in result_temp.unwrap().clone().children {
+                            println!("{:?}", child);
+                            res.extend(compile_node(child.clone(), Rc::clone(&vs)));
+                        }
+                        return res;
+                    }
+                }
+            }
+        }
+    }
+    res
+}
+
+fn process_fragment_tag(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+    let mut res = Vec::new();
+    if n.attributes.contains_key("toe:if") || n.attributes.contains_key("toe:for") {
+        // if n.attributes.contains_key("toe:for") {
+        //     return process_for_attribute(n.clone(), Rc::clone(&vs));
+        // }
+
+        let processed_node = Some(n.clone()); // To be removed
+        // let mut processed_node: Option<Node> = handle_if_switch(n.clone(), Rc::clone(&vs));
+
+        if processed_node.is_some() {
+            res.push(processed_node.unwrap());
+        }
+
+        res
+    } else {
+        n.children.clone()
+    }
+}
+
 // fn handle_if_switch(n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
 //     if n.attributes.contains_key("toe:if") {
 //         let processed_node = process_if_attribute(n.clone(), Rc::clone(&vs));
@@ -194,23 +197,23 @@
 //         if var_exists {
 //             // add latest variable scope
 //             let v = vs.try_borrow().unwrap().clone();
-//             v.add_new_scope();
+//             let v1 = v.add_new_scope();
 //             // parse array
-//             let val = inner_vs.clone().find_variable(arr_var.to_string()).unwrap().as_ref();
+//             let val = inner_vs.clone().find_variable(arr_var.to_string()).unwrap().clone();
 //             match val {
 //                 Value::HashMap(hm) => {
-//                     let x = Rc::new(RefCell::new(v));
+//                     let x = Rc::new(RefCell::new(v1.clone()));
 //                     res = iterate_object_compile(n.clone(), Rc::clone(&x))
 //                 }
 //                 Value::Array(arr) => {}
 //                 _ => {}
 //             }
 //             // remove latest variable scope
-//             v.remove_last_scope()
+//             v1.remove_last_scope()
 //             // end
 //         }
 //     }
-//     return res;
+//     res
 // }
 //
 // fn iterate_simple_vector_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
@@ -284,129 +287,129 @@
 //     }
 //     Some(n)
 // }
-//
-// #[cfg(test)]
-// mod compile_basic_tests {
-//     use std::collections::HashMap;
-//     use super::*;
-//
-//     #[test]
-//     fn compile_root_node() {
-//         let root_node = Node {
-//             name: "".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         let mut vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let res = compile_node(root_node, vs);
-//         assert_eq!(res.len(), 0);
-//     }
-// }
-//
-// #[cfg(test)]
-// mod import_tests {
-//     use super::*;
-//     use std::env;
-//
-//     #[test]
-//     fn path_is_not_defined_test() {
-//         let node = Node {
-//             name: "toe:import".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let res = process_import_tag(node, vs);
-//         assert_eq!(res.len(), 0);
-//     }
-//
-//     #[test]
-//     fn path_is_defined_file_missing_test() {
-//         let node = Node {
-//             name: "toe:import".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let cd = env::current_dir().unwrap();
-//         let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("toe_file".to_string(), path);
-//         }
-//         let res = process_import_tag(node, vs);
-//         assert_eq!(res.len(), 0);
-//     }
-//
-//     #[test]
-//     fn empty_import_test() {
-//         let mut node = Node {
-//             name: "toe:import".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         node.attributes.insert(String::from("file"), Some(String::from("empty.toe.html")));
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let cd = env::current_dir().unwrap();
-//         let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("toe_file".to_string(), path);
-//         }
-//         let res = process_import_tag(node, vs);
-//         assert_eq!(res.len(), 0);
-//     }
-//
-//     #[test]
-//     fn empty_fragment_import_test() {
-//         let mut node = Node {
-//             name: "toe:import".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.toe.html")));
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let cd = env::current_dir().unwrap();
-//         let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("toe_file".to_string(), path);
-//         }
-//         let res = process_import_tag(node, vs);
-//         assert_eq!(res.len(), 0);
-//     }
-//
-//     #[test]
-//     fn fragment_with_div_import_test() {
-//         let mut node = Node {
-//             name: "toe:import".to_string(),
-//             node_type: NodeType::Root,
-//             attributes: HashMap::new(),
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.toe.html")));
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let cd = env::current_dir().unwrap();
-//         let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("toe_file".to_string(), path);
-//         }
-//         let res = process_import_tag(node, vs);
-//         assert_eq!(res.len(), 1);
-//     }
-// }
+
+#[cfg(test)]
+mod compile_basic_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+    #[test]
+    fn compile_root_node() {
+        let root_node = Node {
+            name: "".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        let mut vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = compile_node(root_node, vs);
+        assert_eq!(res.len(), 0);
+    }
+}
+
+#[cfg(test)]
+mod import_tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn path_is_not_defined_test() {
+        let node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn path_is_defined_file_missing_test() {
+        let node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let cd = env::current_dir().unwrap();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn empty_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("empty.toe.html")));
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let cd = env::current_dir().unwrap();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn empty_fragment_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("empty_fragment.toe.html")));
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let cd = env::current_dir().unwrap();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 0);
+    }
+
+    #[test]
+    fn fragment_with_div_import_test() {
+        let mut node = Node {
+            name: "toe:import".to_string(),
+            node_type: NodeType::Root,
+            attributes: HashMap::new(),
+            children: vec![],
+            content: "".to_string(),
+        };
+        node.attributes.insert(String::from("file"), Some(String::from("fragment_with_div.toe.html")));
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let cd = env::current_dir().unwrap();
+        let path = Rc::new(Value::String(cd.join("test_data").to_str().unwrap().to_string()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("toe_file".to_string(), path);
+        }
+        let res = process_import_tag(node, vs);
+        assert_eq!(res.len(), 1);
+    }
+}
 //
 // #[cfg(test)]
 // mod check_toe_attributes_tests {

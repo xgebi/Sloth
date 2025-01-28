@@ -163,38 +163,39 @@ impl ConditionNode {
                     }
                 }
                 if comp_in_use.is_empty() {
-                    // TODO need to rework this
                     let l = vs.try_borrow();
                     match l {
                         Ok(ref_vs) => {
                             let k = ref_vs.clone();
                             match self.contents.clone() {
-                                ConditionContents::Variable(_) => {}
-                                ConditionContents::Boolean(b) => { return Some(b) }
-                                ConditionContents::Nil => { return None }
+                                ConditionContents::Variable(v) => {
+                                    if ref_vs.clone().variable_exists(&v) {
+                                        let v = ref_vs.clone().find_variable(v).unwrap();
+                                        return match v.as_ref() {
+                                            Value::Boolean(b) => { Some(b.clone()) }
+                                            Value::Nil => { None }
+                                            Value::Number(n) => { Some(n.clone() != 0.0) }
+                                            Value::String(s) => {
+                                                Some(s.len() > 0)
+                                            }
+                                            Value::HashMap(hm) => {
+                                                Some(!hm.is_empty())
+                                            }
+                                            Value::Array(a) => { Some(a.len() > 0) }
+                                        }
+                                    }
+                                }
+                                ConditionContents::Boolean(b) => { return Some(b); }
+                                ConditionContents::Nil => { return None; }
                                 ConditionContents::Number(n) => { return Some(n != 0.0) }
                                 ConditionContents::String(s) => {
                                     return Some(s.len() > 0);
                                 }
-                                ConditionContents::HashMap(_) => {}
+                                ConditionContents::HashMap(hm) => {
+                                    return Some(!hm.is_empty());
+                                }
                                 ConditionContents::Array(a) => { return Some(a.len() > 0) }
                             }
-                            // if self.contents.starts_with("not ") {
-                            //
-                            // }
-                    //         let k = ref_vs.deref().clone();
-                    //         return if self.contents.starts_with("not ") {
-                    //             let var_val = k.find_variable(self.contents.chars().skip(4).take(self.contents.len() - 4).collect());
-                    //             if let Some(val) = var_val {
-                    //                 if let Value::Boolean(v) = val.as_ref() {
-                    //                     Some(*v)
-                    //                 }
-                    //             }
-                    //             Some(false)
-                    //         } else {
-                    //             let var_val = k.find_variable(self.contents.clone());
-                    //             Some(var_val.is_some() && var_val.unwrap().as_ref() != "false")
-                    //         }
                         }
                         Err(_) => {
                             panic!("Error parsing condition")
@@ -1072,49 +1073,49 @@ mod condition_resolving_tests {
         assert_eq!(res, false);
     }
 
-//     #[test]
-//     fn resolve_eq_or_eq_both_false() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: String::new(),
-//             junctions: vec![JunctionType::Or],
-//             children: vec![
-//                 ConditionNode {
-//                     contents: "2 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 },
-//                 ConditionNode {
-//                     contents: "2 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 }
-//             ],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, false);
-//     }
-//
-//     #[test]
-//     fn resolve_eq_or_eq_one_true() {
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let node = ConditionNode {
-//             contents: String::new(),
-//             junctions: vec![JunctionType::Or],
-//             children: vec![
-//                 ConditionNode {
-//                     contents: "1 eq 2".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 },
-//                 ConditionNode {
-//                     contents: "1 eq 1".to_string(),
-//                     junctions: vec![],
-//                     children: vec![],
-//                 }
-//             ],
-//         };
-//         let res = node.compute(Rc::clone(&vs));
-//         assert_eq!(res, true);
-//     }
+    #[test]
+    fn resolve_eq_or_eq_both_false() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Nil,
+            junctions: vec![JunctionType::Or],
+            children: vec![
+                ConditionNode {
+                    contents: ConditionContents::String("2 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: ConditionContents::String("2 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn resolve_eq_or_eq_one_true() {
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let node = ConditionNode {
+            contents: ConditionContents::Nil,
+            junctions: vec![JunctionType::Or],
+            children: vec![
+                ConditionNode {
+                    contents: ConditionContents::String("1 eq 2".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                },
+                ConditionNode {
+                    contents: ConditionContents::String("1 eq 1".to_string()),
+                    junctions: vec![],
+                    children: vec![],
+                }
+            ],
+        };
+        let res = node.compute(Rc::clone(&vs));
+        assert_eq!(res, true);
+    }
 }

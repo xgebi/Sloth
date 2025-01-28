@@ -10,7 +10,9 @@ pub(crate) fn parse_toe(sm: String) -> Result<Node, ()> {
         patterns.locate("double_line").unwrap().value.as_str()
     );
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
-    process_nodes(grapheme_vector)
+    let res = process_nodes(grapheme_vector);
+    println!("{:?}", res);
+    res
 }
 
 fn process_nodes(graphemes: Vec<&str>) -> Result<Node, ()> {
@@ -555,5 +557,46 @@ mod node_tests {
             }
             Err(_) => { panic!(); }
         }
+    }
+}
+
+#[cfg(test)]
+mod top_level_tests {
+    use super::*;
+
+    #[test]
+    fn processes_div() {
+        let s = "<div></div>".to_string();
+        let result = parse_toe(s);
+        assert_eq!(result.is_ok(), true);
+        let unwrapped_result = result.unwrap();
+        assert_eq!(unwrapped_result.children.len(), 1);
+        assert_eq!(unwrapped_result.children[0].name, "div");
+    }
+
+    #[test]
+    fn processes_toe_fragment_with_two_divs() {
+        let s = "<toe:fragment><div></div><div></div></toe:fragment>".to_string();
+        let result = parse_toe(s);
+        assert_eq!(result.is_ok(), true);
+        let unwrapped_result = result.unwrap();
+        assert_eq!(unwrapped_result.children.len(), 1);
+        assert_eq!(unwrapped_result.children[0].name, "toe:fragment");
+        assert_eq!(unwrapped_result.children[0].children.len(), 2);
+        assert_eq!(unwrapped_result.children[0].children[0].name, "div");
+        assert_eq!(unwrapped_result.children[0].children[1].name, "div");
+    }
+
+    #[test]
+    fn processes_toe_fragment_with_img() {
+        let s = "<toe:fragment><div></div><img/></toe:fragment>".to_string();
+        let result = parse_toe(s);
+        assert_eq!(result.is_ok(), true);
+        let unwrapped_result = result.unwrap();
+        assert_eq!(unwrapped_result.children.len(), 1);
+        assert_eq!(unwrapped_result.children[0].name, "toe:fragment");
+        assert_eq!(unwrapped_result.children[0].children.len(), 2);
+        assert_eq!(unwrapped_result.children[0].children[0].name, "div");
+        assert_eq!(unwrapped_result.children[0].children[1].name, "img");
     }
 }
