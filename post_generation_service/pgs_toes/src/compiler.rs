@@ -639,12 +639,107 @@ mod check_toe_misc_attribute_tests {
     use std::collections::HashMap;
     use super::*;
 
+    #[test]
+    fn has_alt_with_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'All is good'";
+
+        hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 1);
+        assert!(res.clone().unwrap().attributes.contains_key("alt"));
+        let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+        assert_eq!(mid_res, "All is good");
+    }
+
+    #[test]
+    fn has_alt_with_variable_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+
+        hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        {
+            vs.borrow_mut().create_variable("val3".to_string(), test_val);
+        }
+        let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 1);
+        assert!(res.clone().unwrap().attributes.contains_key("alt"));
+        let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+        assert_eq!(mid_res, "other_val");
+    }
+
+    #[test]
+    fn has_alt_with_variable_and_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3 ' is good ' val4";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+        let test_val_2 = Rc::new(Value::String(String::from("as well")));
+
+        hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            vs.borrow_mut().create_variable("val3".to_string(), test_val);
+            vs.borrow_mut().create_variable("val4".to_string(), test_val_2);
+        }
+        let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 1);
+        assert!(res.clone().unwrap().attributes.contains_key("alt"));
+        let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+        assert_eq!(mid_res, "other_val is good as well");
+    }
+}
+
+#[cfg(test)]
+mod check_toe_if_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+    #[test]
+    fn has_no_if_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_if_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+    }
+
 //     #[test]
-//     fn has_alt_with_text_attribute_test() {
+//     fn has_false_if_attribute_test() {
 //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-//         let test_text = "'All is good'";
-//
-//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         hm.insert(String::from("toe:if"), Some(String::from("false")));
 //         let n = Node {
 //             name: "p".to_string(),
 //             node_type: NodeType::Node,
@@ -653,21 +748,15 @@ mod check_toe_misc_attribute_tests {
 //             content: "".to_string(),
 //         };
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
-//         assert!(res.is_some());
-//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-//         assert_eq!(mid_res, "All is good");
+//         let res = process_if_attribute(n, Rc::clone(&vs));
+//         println!("{:?}", res);
+//         assert!(res.is_none());
 //     }
 //
 //     #[test]
-//     fn has_alt_with_variable_attribute_test() {
+//     fn has_true_if_attribute_test() {
 //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-//         let test_text = "val3";
-//         let test_val = Rc::new(Value::String(String::from("other_val")));
-//
-//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         hm.insert(String::from("toe:if"), Some(String::from("true")));
 //         let n = Node {
 //             name: "p".to_string(),
 //             node_type: NodeType::Node,
@@ -676,26 +765,15 @@ mod check_toe_misc_attribute_tests {
 //             content: "".to_string(),
 //         };
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("val3".to_string(), test_val);
-//         }
-//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+//         let res = process_if_attribute(n, Rc::clone(&vs));
+//         println!("{:?}", res);
 //         assert!(res.is_some());
-//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-//         assert_eq!(mid_res, "other_val");
 //     }
 //
 //     #[test]
-//     fn has_alt_with_variable_and_text_attribute_test() {
+//     fn has_conditional_if_attribute_test() {
 //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-//         let test_text = "val3 ' is good ' val4";
-//         let test_val = Rc::new(Value::String(String::from("other_val")));
-//         let test_val_2 = Rc::new(Value::String(String::from("as well")));
-//
-//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         hm.insert(String::from("toe:if"), Some(String::from("1 gt 0")));
 //         let n = Node {
 //             name: "p".to_string(),
 //             node_type: NodeType::Node,
@@ -704,194 +782,114 @@ mod check_toe_misc_attribute_tests {
 //             content: "".to_string(),
 //         };
 //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         unsafe {
-//             let mut x = Rc::clone(&vs);
-//             x.borrow_mut().create_variable("val3".to_string(), test_val);
-//             x.borrow_mut().create_variable("val4".to_string(), test_val_2);
-//         }
-//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+//         let res = process_if_attribute(n, Rc::clone(&vs));
+//         println!("{:?}", res);
 //         assert!(res.is_some());
-//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-//         assert_eq!(mid_res, "other_val is good as well");
 //     }
 }
 
-// // #[cfg(test)]
-// // mod check_toe_if_attribute_tests {
-// //     use std::collections::HashMap;
-// //     use super::*;
-// //
-// //     #[test]
-// //     fn has_no_if_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_if_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //     }
-// //
-// //     #[test]
-// //     fn has_false_if_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         hm.insert(String::from("toe:if"), Some(String::from("false")));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_if_attribute(n, Rc::clone(&vs));
-// //         println!("{:?}", res);
-// //         assert!(res.is_none());
-// //     }
-// //
-// //     #[test]
-// //     fn has_true_if_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         hm.insert(String::from("toe:if"), Some(String::from("true")));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_if_attribute(n, Rc::clone(&vs));
-// //         println!("{:?}", res);
-// //         assert!(res.is_some());
-// //     }
-// //
-// //     #[test]
-// //     fn has_conditional_if_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         hm.insert(String::from("toe:if"), Some(String::from("1 gt 0")));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_if_attribute(n, Rc::clone(&vs));
-// //         println!("{:?}", res);
-// //         assert!(res.is_some());
-// //     }
-// // }
-// //
-// // #[cfg(test)]
-// // mod toe_inline_js_tests {
-// //     use std::collections::HashMap;
-// //     use pgs_common::node::NodeType;
-// //     use super::*;
-// //
-// //     #[test]
-// //     fn has_no_inline_js_test() {
-// //         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let content_node = Node::create_text_node(String::from("const x = 1;"));
-// //         script_node.children.push(content_node);
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_inline_js(script_node, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.unwrap().clone().children[0].content, "const x = 1;");
-// //     }
-// //
-// //     #[test]
-// //     fn has_inline_js_as_variable_test() {
-// //         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
-// //         script_node.children.push(content_node);
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::Number(12f64)));
-// //         }
-// //         let res = process_inline_js(script_node, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.unwrap().clone().children[0].content, "const x = 12;");
-// //     }
-// //
-// //     #[test]
-// //     fn has_inline_js_as_variable_string_test() {
-// //         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
-// //         script_node.children.push(content_node);
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::String(String::from("'abc'"))));
-// //         }
-// //         let res = process_inline_js(script_node, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.unwrap().clone().children[0].content, "const x = 'abc';");
-// //     }
-// //
-// //     #[test]
-// //     #[should_panic]
-// //     fn has_incomplete_inline_js_test() {
-// //         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let content_node = Node::create_text_node(String::from("const x = <( 1;"));
-// //         script_node.children.push(content_node);
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_inline_js(script_node, Rc::clone(&vs));
-// //     }
-// // }
-// //
-// // #[cfg(test)]
-// // mod toe_for_tests {
-// //     use std::collections::HashMap;
-// //     use pgs_common::node::NodeType;
-// //     use super::*;
-// //
-// //     #[test]
-// //     fn invalid_test() {
-// //         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
-// //         attrs.insert("toe:for".to_string(), Some("invalid".to_string()));
-// //         node.attributes = attrs;
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_for_attribute(node, Rc::clone(&vs));
-// //         assert_eq!(res.len(), 0);
-// //     }
-// //
-// //     #[test]
-// //     fn simple_array_test() {
-// //         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
-// //         attrs.insert("toe:for".to_string(), Some("[1, 2, 3]".to_string()));
-// //         attrs.insert("toe:text".to_string(), Some("itm".to_string()));
-// //         node.attributes = attrs;
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_for_attribute(node, Rc::clone(&vs));
-// //         assert_eq!(res.len(), 3);
-// //         assert_eq!(res[0].content, "1");
-// //         assert_eq!(res[1].content, "2");
-// //         assert_eq!(res[2].content, "3");
-// //     }
-// //
-// //     #[test]
-// //     fn array_of_objects_test() {
-// //         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
-// //         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
-// //         attrs.insert("toe:for".to_string(), Some("[{'item1': 'val1'},{'item2': 'val2'}]".to_string()));
-// //         attrs.insert("toe:text".to_string(), Some("itm".to_string()));
-// //         node.attributes = attrs;
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_for_attribute(node, Rc::clone(&vs));
-// //         assert_eq!(res.len(), 2);
-// //         assert_eq!(res[0].content, "val1");
-// //         assert_eq!(res[1].content, "val2");
-// //
-// //     }
-// // }
+// #[cfg(test)]
+// mod toe_inline_js_tests {
+//     use std::collections::HashMap;
+//     use pgs_common::node::NodeType;
+//     use super::*;
+//
+//     #[test]
+//     fn has_no_inline_js_test() {
+//         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let content_node = Node::create_text_node(String::from("const x = 1;"));
+//         script_node.children.push(content_node);
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_inline_js(script_node, Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.unwrap().clone().children[0].content, "const x = 1;");
+//     }
+//
+//     #[test]
+//     fn has_inline_js_as_variable_test() {
+//         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
+//         script_node.children.push(content_node);
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         unsafe {
+//             let mut x = Rc::clone(&vs);
+//             x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::Number(12f64)));
+//         }
+//         let res = process_inline_js(script_node, Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.unwrap().clone().children[0].content, "const x = 12;");
+//     }
+//
+//     #[test]
+//     fn has_inline_js_as_variable_string_test() {
+//         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let content_node = Node::create_text_node(String::from("const x = <( val )>;"));
+//         script_node.children.push(content_node);
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         unsafe {
+//             let mut x = Rc::clone(&vs);
+//             x.borrow_mut().create_variable("val".to_string(), Rc::new(Value::String(String::from("'abc'"))));
+//         }
+//         let res = process_inline_js(script_node, Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.unwrap().clone().children[0].content, "const x = 'abc';");
+//     }
+//
+//     #[test]
+//     #[should_panic]
+//     fn has_incomplete_inline_js_test() {
+//         let mut script_node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let content_node = Node::create_text_node(String::from("const x = <( 1;"));
+//         script_node.children.push(content_node);
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_inline_js(script_node, Rc::clone(&vs));
+//     }
+// }
+//
+// #[cfg(test)]
+// mod toe_for_tests {
+//     use std::collections::HashMap;
+//     use pgs_common::node::NodeType;
+//     use super::*;
+//
+//     #[test]
+//     fn invalid_test() {
+//         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+//         attrs.insert("toe:for".to_string(), Some("invalid".to_string()));
+//         node.attributes = attrs;
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_for_attribute(node, Rc::clone(&vs));
+//         assert_eq!(res.len(), 0);
+//     }
+//
+//     #[test]
+//     fn simple_array_test() {
+//         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+//         attrs.insert("toe:for".to_string(), Some("[1, 2, 3]".to_string()));
+//         attrs.insert("toe:text".to_string(), Some("itm".to_string()));
+//         node.attributes = attrs;
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_for_attribute(node, Rc::clone(&vs));
+//         assert_eq!(res.len(), 3);
+//         assert_eq!(res[0].content, "1");
+//         assert_eq!(res[1].content, "2");
+//         assert_eq!(res[2].content, "3");
+//     }
+//
+//     #[test]
+//     fn array_of_objects_test() {
+//         let mut node = Node::create_node(Some("script".to_string()), Some(NodeType::Node));
+//         let mut attrs: HashMap<String, Option<String>> = HashMap::new();
+//         attrs.insert("toe:for".to_string(), Some("[{'item1': 'val1'},{'item2': 'val2'}]".to_string()));
+//         attrs.insert("toe:text".to_string(), Some("itm".to_string()));
+//         node.attributes = attrs;
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_for_attribute(node, Rc::clone(&vs));
+//         assert_eq!(res.len(), 2);
+//         assert_eq!(res[0].content, "val1");
+//         assert_eq!(res[1].content, "val2");
+//
+//     }
+// }
