@@ -504,224 +504,220 @@ mod check_toe_text_attribute_tests {
         };
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         {
-            vs.borrow_mut().create_variable(test_text.to_string(), test_val);
+            vs.borrow_mut().create_variable(test_text.to_string(), test_val.clone());
         }
         let res = process_text_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
         println!("{:?}", res);
         assert_eq!(res.clone().unwrap().attributes.len(), 0);
         assert_eq!(res.clone().unwrap().children.len(), 1);
-        // assert_eq!(res.clone().unwrap().children[0].content, test_val);
+        assert_eq!(Value::String(res.clone().unwrap().children[0].clone().content), test_val.clone().as_ref().clone());
     }
-} // to delete
+
+    #[test]
+    fn has_text_with_variable_and_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3 ' is good'";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+        hm.insert(String::from("toe:text"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        unsafe {
+            let mut x = Rc::clone(&vs);
+            x.borrow_mut().create_variable("val3".to_string(), test_val);
+        }
+        let res = process_text_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "other_val is good");
+    }
+}
+
+#[cfg(test)]
+mod check_toe_content_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+    #[test]
+    fn has_content_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'val3'";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "val3");
+    }
+
+    #[test]
+    fn has_text_not_valid_html_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "'<val3'";
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(res.clone().unwrap().children[0].content, "<val3");
+    }
+
+    #[test]
+    fn has_text_with_variable_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        {
+            vs.borrow_mut().create_variable(test_text.to_string(), test_val.clone());
+        }
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(Value::String(res.clone().unwrap().children[0].clone().content), test_val.clone().as_ref().clone());
+    }
+
+    #[test]
+    fn has_text_with_variable_and_text_attribute_test() {
+        let mut hm: HashMap<String, Option<String>> = HashMap::new();
+        let test_text = "val3 ' is good'";
+        let test_val = Rc::new(Value::String(String::from("other_val")));
+        hm.insert(String::from("toe:content"), Some(String::from(test_text)));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        {
+            vs.borrow_mut().create_variable("val3".to_string(), test_val);
+        }
+        let res = process_content_attribute(n, Rc::clone(&vs));
+        assert!(res.is_some());
+        assert_eq!(res.clone().unwrap().attributes.len(), 0);
+        assert_eq!(res.clone().unwrap().children.len(), 1);
+        assert_eq!(Value::String(res.clone().unwrap().children[0].clone().content), Value::String("other_val is good".to_string()));
+    }
+}
+
+#[cfg(test)]
+mod check_toe_misc_attribute_tests {
+    use std::collections::HashMap;
+    use super::*;
+
+//     #[test]
+//     fn has_alt_with_text_attribute_test() {
+//         let mut hm: HashMap<String, Option<String>> = HashMap::new();
+//         let test_text = "'All is good'";
 //
-// //     #[test]
-// //     fn has_text_with_variable_and_text_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "val3 ' is good'";
-// //         let test_val = Rc::new(Value::String(String::from("other_val")));
-// //         hm.insert(String::from("toe:text"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val3".to_string(), test_val);
-// //         }
-// //         let res = process_text_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 0);
-// //         assert_eq!(res.clone().unwrap().children.len(), 1);
-// //         assert_eq!(res.clone().unwrap().children[0].content, "other_val is good");
-// //     }
-// // }
-// //
-// // #[cfg(test)]
-// // mod check_toe_content_attribute_tests {
-// //     use std::collections::HashMap;
-// //     use super::*;
-// //
-// //     #[test]
-// //     fn has_content_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "'val3'";
-// //         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_content_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 0);
-// //         assert_eq!(res.clone().unwrap().children.len(), 1);
-// //         assert_eq!(res.clone().unwrap().children[0].content, "val3");
-// //     }
-// //
-// //     #[test]
-// //     fn has_text_not_valid_html_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "'<val3'";
-// //         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_content_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 0);
-// //         assert_eq!(res.clone().unwrap().children.len(), 1);
-// //         assert_eq!(res.clone().unwrap().children[0].content, "<val3");
-// //     }
-// //
-// //     #[test]
-// //     fn has_text_with_variable_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "val3";
-// //         let test_val = Rc::new(Value::String(String::from("other_val")));
-// //         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable(test_text.to_string(), test_val);
-// //         }
-// //         let res = process_content_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 0);
-// //         assert_eq!(res.clone().unwrap().children.len(), 1);
-// //         assert_eq!(res.clone().unwrap().children[0].content, test_val);
-// //     }
-// //
-// //     #[test]
-// //     fn has_text_with_variable_and_text_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "val3 ' is good'";
-// //         let test_val = Rc::new(Value::String(String::from("other_val")));
-// //         hm.insert(String::from("toe:content"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val3".to_string(), test_val);
-// //         }
-// //         let res = process_content_attribute(n, Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 0);
-// //         assert_eq!(res.clone().unwrap().children.len(), 1);
-// //         assert_eq!(res.clone().unwrap().children[0].content, "other_val is good");
-// //     }
-// }
+//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         let n = Node {
+//             name: "p".to_string(),
+//             node_type: NodeType::Node,
+//             attributes: hm,
+//             children: vec![],
+//             content: "".to_string(),
+//         };
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
+//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
+//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+//         assert_eq!(mid_res, "All is good");
+//     }
 //
-// // #[cfg(test)]
-// // mod check_toe_misc_attribute_tests {
-// //     use std::collections::HashMap;
-// //     use super::*;
-// //
-// //     #[test]
-// //     fn has_alt_with_text_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "'All is good'";
-// //
-// //         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-// //         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-// //         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-// //         assert_eq!(mid_res, "All is good");
-// //     }
-// //
-// //     #[test]
-// //     fn has_alt_with_variable_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "val3";
-// //         let test_val = Rc::new(Value::String(String::from("other_val")));
-// //
-// //         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val3".to_string(), test_val);
-// //         }
-// //         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-// //         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-// //         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-// //         assert_eq!(mid_res, "other_val");
-// //     }
-// //
-// //     #[test]
-// //     fn has_alt_with_variable_and_text_attribute_test() {
-// //         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-// //         let test_text = "val3 ' is good ' val4";
-// //         let test_val = Rc::new(Value::String(String::from("other_val")));
-// //         let test_val_2 = Rc::new(Value::String(String::from("as well")));
-// //
-// //         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
-// //         let n = Node {
-// //             name: "p".to_string(),
-// //             node_type: NodeType::Node,
-// //             attributes: hm,
-// //             children: vec![],
-// //             content: "".to_string(),
-// //         };
-// //         let vs = Rc::new(RefCell::new(VariableScope::create()));
-// //         unsafe {
-// //             let mut x = Rc::clone(&vs);
-// //             x.borrow_mut().create_variable("val3".to_string(), test_val);
-// //             x.borrow_mut().create_variable("val4".to_string(), test_val_2);
-// //         }
-// //         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
-// //         assert!(res.is_some());
-// //         assert_eq!(res.clone().unwrap().attributes.len(), 1);
-// //         assert!(res.clone().unwrap().attributes.contains_key("alt"));
-// //         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
-// //         assert_eq!(mid_res, "other_val is good as well");
-// //     }
-// // }
-// //
-// //
+//     #[test]
+//     fn has_alt_with_variable_attribute_test() {
+//         let mut hm: HashMap<String, Option<String>> = HashMap::new();
+//         let test_text = "val3";
+//         let test_val = Rc::new(Value::String(String::from("other_val")));
+//
+//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         let n = Node {
+//             name: "p".to_string(),
+//             node_type: NodeType::Node,
+//             attributes: hm,
+//             children: vec![],
+//             content: "".to_string(),
+//         };
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         unsafe {
+//             let mut x = Rc::clone(&vs);
+//             x.borrow_mut().create_variable("val3".to_string(), test_val);
+//         }
+//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
+//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
+//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+//         assert_eq!(mid_res, "other_val");
+//     }
+//
+//     #[test]
+//     fn has_alt_with_variable_and_text_attribute_test() {
+//         let mut hm: HashMap<String, Option<String>> = HashMap::new();
+//         let test_text = "val3 ' is good ' val4";
+//         let test_val = Rc::new(Value::String(String::from("other_val")));
+//         let test_val_2 = Rc::new(Value::String(String::from("as well")));
+//
+//         hm.insert(String::from("toe:alt"), Some(String::from(test_text)));
+//         let n = Node {
+//             name: "p".to_string(),
+//             node_type: NodeType::Node,
+//             attributes: hm,
+//             children: vec![],
+//             content: "".to_string(),
+//         };
+//         let vs = Rc::new(RefCell::new(VariableScope::create()));
+//         unsafe {
+//             let mut x = Rc::clone(&vs);
+//             x.borrow_mut().create_variable("val3".to_string(), test_val);
+//             x.borrow_mut().create_variable("val4".to_string(), test_val_2);
+//         }
+//         let res = process_toe_attribute(n, String::from("toe:alt"), Rc::clone(&vs));
+//         assert!(res.is_some());
+//         assert_eq!(res.clone().unwrap().attributes.len(), 1);
+//         assert!(res.clone().unwrap().attributes.contains_key("alt"));
+//         let mid_res = res.clone().unwrap().attributes.clone().get("alt").unwrap().clone().unwrap();
+//         assert_eq!(mid_res, "other_val is good as well");
+//     }
+}
+
 // // #[cfg(test)]
 // // mod check_toe_if_attribute_tests {
 // //     use std::collections::HashMap;
