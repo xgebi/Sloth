@@ -190,10 +190,26 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     let mut res: Vec<Node> = vec![];
     let cond = n.attributes.get("toe:for").unwrap().clone().unwrap();
     let parts = cond.split(" in ");
-//     let middle_vs = vs.try_borrow();
-//     if let Ok(inner_vs) = middle_vs {
-//         let arr_var = parts.last().unwrap();
-//         let var_exists = inner_vs.clone().variable_exists(&arr_var.to_string());
+    let result_vs = vs.try_borrow();
+    if result_vs.is_err() {
+        return res;
+    }
+    // if let Ok(inner_vs) = result_vs {
+    let borrowed_vs = result_vs.unwrap();
+    let arr_var = parts.last().unwrap();
+    let var_exists = borrowed_vs.clone().variable_exists(&arr_var.to_string());
+    if var_exists {
+        borrowed_vs.clone().add_new_scope();
+        let val = borrowed_vs.clone().find_variable(arr_var.to_string()).unwrap().clone().as_ref();
+        match val {
+            Value::HashMap(hm) => {
+                let x = Rc::new(RefCell::new(borrowed_vs.clone()));
+                res = iterate_object_compile(n.clone(), Rc::clone(&x))
+            }
+            Value::Array(_) => {}
+            _ => {}
+        }
+    }
 //         if var_exists {
 //             // add latest variable scope
 //             let v = vs.try_borrow().unwrap().clone();
