@@ -312,4 +312,6 @@ mod tests {
 
         assert_eq!(scope.assign_variable(String::from("var"), Rc::new(Value::String(String::from("b")))), false);
     }
+
+    // TODO add different values other than strings
 }

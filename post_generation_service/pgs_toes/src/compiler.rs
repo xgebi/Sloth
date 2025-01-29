@@ -12,11 +12,8 @@ use crate::parser::parse_toe;
 use crate::string_helpers::process_string_with_variables;
 use crate::variable_scope::{Value, VariableScope};
 
-// TODO for future Sarah, look for ways to remove the unsafe blocks
-
 pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, Rc<Value>>) -> Node {
     let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
-    // Done redo the Rc to be mutable https://stackoverflow.com/questions/58599539/cannot-borrow-in-a-rc-as-mutable
     let var_scope = Rc::new(RefCell::new(VariableScope::create_from_hashmap(data)));
     for child in root_node.children {
         compiled_root_node.children.append(&mut compile_node(child, Rc::clone(&var_scope)));
@@ -194,45 +191,32 @@ fn process_for_attribute(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
     if result_vs.is_err() {
         return res;
     }
-    // if let Ok(inner_vs) = result_vs {
     let borrowed_vs = result_vs.unwrap();
     let arr_var = parts.last().unwrap();
     let var_exists = borrowed_vs.clone().variable_exists(&arr_var.to_string());
     if var_exists {
-        borrowed_vs.clone().add_new_scope();
-        let val = borrowed_vs.clone().find_variable(arr_var.to_string()).unwrap().clone().as_ref();
-        match val {
+        // {
+        //     let ref_vs = borrowed_vs.
+        // }
+        let mut with_new_scope = borrowed_vs.clone().add_new_scope();
+        let val = borrowed_vs.clone().find_variable(arr_var.to_string()).unwrap().clone().to_owned();
+        match val.deref() {
             Value::HashMap(hm) => {
-                let x = Rc::new(RefCell::new(borrowed_vs.clone()));
-                res = iterate_object_compile(n.clone(), Rc::clone(&x))
+                let x = Rc::new(RefCell::new(with_new_scope.clone()));
+                res = iterate_object_compile(n.clone(), Rc::clone(&x), arr_var.to_string())
             }
-            Value::Array(_) => {}
+            Value::Array(_) => {
+                let x = Rc::new(RefCell::new(with_new_scope.clone()));
+                res = iterate_simple_vector_compile(n.clone(), Rc::clone(&x), arr_var.to_string())
+            }
             _ => {}
         }
+        with_new_scope.remove_last_scope();
     }
-//         if var_exists {
-//             // add latest variable scope
-//             let v = vs.try_borrow().unwrap().clone();
-//             let v1 = v.add_new_scope();
-//             // parse array
-//             let val = inner_vs.clone().find_variable(arr_var.to_string()).unwrap().clone();
-//             match val {
-//                 Value::HashMap(hm) => {
-//                     let x = Rc::new(RefCell::new(v1.clone()));
-//                     res = iterate_object_compile(n.clone(), Rc::clone(&x))
-//                 }
-//                 Value::Array(arr) => {}
-//                 _ => {}
-//             }
-//             // remove latest variable scope
-//             v1.remove_last_scope()
-//             // end
-//         }
-//     }
     res
 }
 
-fn iterate_simple_vector_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+fn iterate_simple_vector_compile(n: Node, vs: Rc<RefCell<VariableScope>>, var_name: String) -> Vec<Node> {
     let result = vec![];
     // for x in v {
     //     // compile_node()
@@ -240,7 +224,7 @@ fn iterate_simple_vector_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec
     result
 }
 
-fn iterate_object_compile(n: Node, vs: Rc<RefCell<VariableScope>>) -> Vec<Node> {
+fn iterate_object_compile(n: Node, vs: Rc<RefCell<VariableScope>>, var_name: String) -> Vec<Node> {
     vec![]
 }
 
@@ -519,9 +503,8 @@ mod check_toe_text_attribute_tests {
             content: "".to_string(),
         };
         let vs = Rc::new(RefCell::new(VariableScope::create()));
-        unsafe {
-            let mut x = Rc::clone(&vs);
-            x.borrow_mut().create_variable(test_text.to_string(), test_val);
+        {
+            vs.borrow_mut().create_variable(test_text.to_string(), test_val);
         }
         let res = process_text_attribute(n, Rc::clone(&vs));
         assert!(res.is_some());
