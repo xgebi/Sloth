@@ -49,6 +49,27 @@ impl From<HashMap<String, String>> for Value {
     }
 }
 
+impl From<Vec<String>> for Value {
+    fn from(values: Vec<String>) -> Self {
+        let mut res: Vec<Rc<Value>> = vec![];
+        for value in values {
+            res.push(Rc::from(Value::String(value.clone())));
+        }
+        Value::Array(res)
+    }
+}
+
+impl From<Vec<HashMap<String, String>>> for Value {
+    fn from(values: Vec<HashMap<String, String>>) -> Self {
+        let mut res = vec![];
+        for value in values {
+            let val = value.clone();
+            res.push(Rc::from(Value::from(value.clone())));
+        }
+        Value::Array(res)
+    }
+}
+
 #[cfg(test)]
 mod value_tests {
     use crate::value::Value;
