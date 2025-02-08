@@ -7,10 +7,11 @@ use std::path::Path;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use pgs_common::node::{Node, NodeType};
+use pgs_common::value::Value;
 use crate::conditions::process_condition;
 use crate::parser::parse_toe;
 use crate::string_helpers::process_string_with_variables;
-use crate::variable_scope::{Value, VariableScope};
+use crate::variable_scope::{VariableScope};
 
 pub(crate) fn compile_node_tree(root_node: Node, data: HashMap<String, Rc<Value>>) -> Node {
     let mut compiled_root_node = Node::create_node(None, Some(NodeType::Root));
@@ -736,23 +737,23 @@ mod check_toe_if_attribute_tests {
         assert!(res.is_some());
     }
 
-//     #[test]
-//     fn has_false_if_attribute_test() {
-//         let mut hm: HashMap<String, Option<String>> = HashMap::new();
-//         hm.insert(String::from("toe:if"), Some(String::from("false")));
-//         let n = Node {
-//             name: "p".to_string(),
-//             node_type: NodeType::Node,
-//             attributes: hm,
-//             children: vec![],
-//             content: "".to_string(),
-//         };
-//         let vs = Rc::new(RefCell::new(VariableScope::create()));
-//         let res = process_if_attribute(n, Rc::clone(&vs));
-//         println!("{:?}", res);
-//         assert!(res.is_none());
-//     }
-//
+    #[test]
+    fn has_false_if_attribute_test() {
+        let mut hm: HashMap<String, Option<Value>> = HashMap::new();
+        hm.insert(String::from("toe:if"), Some(String::from("false")));
+        let n = Node {
+            name: "p".to_string(),
+            node_type: NodeType::Node,
+            attributes: hm,
+            children: vec![],
+            content: "".to_string(),
+        };
+        let vs = Rc::new(RefCell::new(VariableScope::create()));
+        let res = process_if_attribute(n, Rc::clone(&vs));
+        println!("{:?}", res);
+        assert!(res.is_none());
+    }
+
 //     #[test]
 //     fn has_true_if_attribute_test() {
 //         let mut hm: HashMap<String, Option<String>> = HashMap::new();

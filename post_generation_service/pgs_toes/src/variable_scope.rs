@@ -3,71 +3,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ptr::write;
 use std::rc::Rc;
-
-#[derive(Clone, Debug)]
-pub(crate) enum Value {
-    Boolean(bool),
-    Nil,
-    Number(f64),
-    String(String),
-    HashMap(HashMap<String, Rc<Value>>),
-    Array(Vec<Rc<Value>>)
-}
-
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Value::Boolean(a), Value::Boolean(b)) => a == b,
-            (Value::Nil, Value::Nil) => true,
-            (Value::Number(a), Value::Number(b)) => a == b,
-            (Value::String(a), Value::String(b)) => a == b,
-            (Value::Array(a), Value::Array(b)) => {
-                if a.len() != b.len() {
-                    return false;
-                }
-                for i in 0..a.len() {
-                    if a[i] != b[i] {
-                        return false;
-                    }
-                }
-                true
-            }
-            (Value::HashMap(a), Value::HashMap(b)) => {
-                if a.keys().len() != b.keys().len() {
-                    return false;
-                }
-                for i in a.keys() {
-                    if b.get(i).is_none() {
-                        return false;
-                    }
-                }
-                true
-            }
-            _ => false,
-        }
-    }
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match (self) {
-            Value::Boolean(a) => write!(f, "{}", a.clone()),
-            Value::Nil => write!(f, "null"),
-            Value::Number(a) => write!(f, "{}", a.clone()),
-            Value::String(a) => write!(f, "{}", a.clone()),
-            Value::Array(a) => {
-                let mut res = String::new();
-                for item in a {
-                    res += ",";
-                    res += item.as_ref().to_string().as_str();
-                }
-                write!(f, "{}", res)
-            }
-            Value::HashMap(a) => write!(f, "object"),
-            _ => write!(f, "unknown"),
-        }
-    }
-}
+use pgs_common::value::Value;
 
 #[derive(Clone, Debug)]
 struct SingleScope {
