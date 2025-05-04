@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::iter::Filter;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -170,5 +171,84 @@ impl Display for Value {
             Value::HashMap(a) => write!(f, "object"),
             _ => write!(f, "unknown"),
         }
+    }
+}
+
+impl Iterator for Value {
+    type Item = ();
+
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized
+    {
+        todo!()
+    }
+
+    fn last(self) -> Option<Self::Item>
+    where
+        Self: Sized
+    {
+        todo!()
+    }
+
+    fn for_each<F>(self, f: F)
+    where
+        Self: Sized,
+        F: FnMut(Self::Item)
+    {
+        todo!()
+    }
+
+    fn filter<P>(self, predicate: P) -> Filter<Self, P>
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool
+    {
+        todo!()
+    }
+
+    fn find<P>(&mut self, predicate: P) -> Option<Self::Item>
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool
+    {
+        todo!()
+    }
+
+    fn position<P>(&mut self, predicate: P) -> Option<usize>
+    where
+        Self: Sized,
+        P: FnMut(Self::Item) -> bool
+    {
+        todo!()
+    }
+
+    fn rposition<P>(&mut self, predicate: P) -> Option<usize>
+    where
+        P: FnMut(Self::Item) -> bool,
+        Self: Sized + ExactSizeIterator + DoubleEndedIterator
+    {
+        todo!()
+    }
+
+    fn is_sorted(self) -> bool
+    where
+        Self: Sized,
+        Self::Item: PartialOrd
+    {
+        todo!()
+    }
+}
+
+impl<I: Iterator> IntoIterator for Value {
+    type Item = ();
+    type IntoIter = ();
+
+    fn into_iter(self) -> Self::IntoIter {
+        todo!()
     }
 }

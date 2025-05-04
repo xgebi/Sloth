@@ -2,10 +2,11 @@ use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
+use pgs_common::value::Value;
 use crate::variable_scope::VariableScope;
 
-pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>, ignore_spaces: Option<bool>, is_condition: Option<bool>) -> String {
-    let chars = s.graphemes(true).collect::<Vec<&str>>();
+pub fn process_string_with_variables(s: Value, vs: Rc<RefCell<VariableScope>>, ignore_spaces: Option<bool>, is_condition: Option<bool>) -> String {
+    let chars = s.to_string().graphemes(true).collect::<Vec<&str>>();
 
     let mut idx = 0;
     let mut result = String::new();
@@ -164,14 +165,14 @@ pub fn process_string_with_variables(s: String, vs: Rc<RefCell<VariableScope>>, 
 
 #[cfg(test)]
 mod node_tests {
-    use crate::variable_scope::Value;
+    use pgs_common::value::Value;
     use super::*;
 
     #[test]
     fn parse_number() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("11");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, None);
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, None);
         assert_eq!(result, test_str);
     }
 
@@ -179,7 +180,7 @@ mod node_tests {
     fn parse_string() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("'string'");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, None);
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, None);
         assert_eq!(result, "string");
     }
 
@@ -187,7 +188,7 @@ mod node_tests {
     fn parse_string_number() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("'string' 23");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, None);
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, None);
         assert_eq!(result, "string23");
     }
 
@@ -195,7 +196,7 @@ mod node_tests {
     fn parse_number_string() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("23 'string'");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, None);
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, None);
         assert_eq!(result, "23string");
     }
 
@@ -206,7 +207,7 @@ mod node_tests {
         let var_name = String::from("test");
         let mut x = Rc::clone(&vs);
         x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
-        let result = process_string_with_variables(var_name.clone(), Rc::clone(&vs), None, None);
+        let result = process_string_with_variables(Value::String(var_name.clone()), Rc::clone(&vs), None, None);
         assert_eq!(result, var_str);
     }
 
@@ -214,7 +215,7 @@ mod node_tests {
     fn parse_not_string() {
         let vs = Rc::new(RefCell::new(VariableScope::create()));
         let test_str = String::from("not");
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, Some(true));
         assert_eq!(result, "not");
     }
 
@@ -228,7 +229,7 @@ mod node_tests {
         let mut x = Rc::clone(&vs);
         x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
 
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, Some(true));
         assert_eq!(result, "not true");
     }
 
@@ -243,7 +244,7 @@ mod node_tests {
         x.borrow_mut().create_variable(var_name.clone(), Rc::new(Value::String(var_str.clone())));
         x.borrow_mut().create_variable("thing".to_string(), Rc::new(Value::String("is true".to_string())));
 
-        let result = process_string_with_variables(test_str.clone(), Rc::clone(&vs), None, Some(true));
+        let result = process_string_with_variables(Value::from(test_str.clone()), Rc::clone(&vs), None, Some(true));
         assert_eq!(result, "truest is true");
     }
 }

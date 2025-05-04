@@ -16,7 +16,7 @@ pub enum NodeType {
 pub struct Node {
     pub name: String,
     pub node_type: NodeType,
-    pub attributes: HashMap<String, Option<Value>>,
+    pub attributes: Value,
     pub children: Vec<Node>,
     pub content: String,
 }
@@ -36,7 +36,7 @@ impl Node {
         Node {
             name: name.unwrap_or_default(),
             node_type: node_type.unwrap_or_else(|| NodeType::Node),
-            attributes: HashMap::new(),
+            attributes: Value::HashMap(HashMap::new()),
             content: String::new(),
             children: Vec::new(),
         }
@@ -46,7 +46,7 @@ impl Node {
         Node{
             name: String::new(),
             node_type: NodeType::Processing,
-            attributes: HashMap::new(),
+            attributes: Value::HashMap(HashMap::new()),
             content: String::new(),
             children: Vec::new(),
         }
@@ -56,7 +56,7 @@ impl Node {
         Node {
             name: String::new(),
             node_type: NodeType::Text,
-            attributes: HashMap::new(),
+            attributes: Value::HashMap(HashMap::new()),
             content,
             children: Vec::new()
         }
@@ -66,7 +66,7 @@ impl Node {
         Node {
             name: String::new(),
             node_type: NodeType::Comment,
-            attributes: HashMap::new(),
+            attributes: Value::HashMap(HashMap::new()),
             content,
             children: Vec::new()
         }
@@ -100,7 +100,7 @@ impl Node {
     fn node_to_string(&self) -> String {
         let mut result = String::new();
         result += &*format!("<{} ", self.name.clone());
-        for (key, value) in self.attributes.iter() {
+        for (key, value) in self.attributes {
             if let Some(v) = value {
                 result += &*format!("{}=\"{}\"", key, v);
             } else {

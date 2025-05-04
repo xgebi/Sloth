@@ -5,7 +5,8 @@ use std::ops::Deref;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::string_helpers::process_string_with_variables;
-use crate::variable_scope::{Value, VariableScope};
+use crate::variable_scope::{VariableScope};
+use pgs_common::value::Value;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Comparison {
@@ -47,8 +48,8 @@ pub(crate) enum ConditionContents {
     Nil,
     Number(f64),
     String(String),
-    HashMap(HashMap<String, Rc<crate::variable_scope::Value>>),
-    Array(Vec<Rc<crate::variable_scope::Value>>)
+    HashMap(HashMap<String, Rc<Value>>),
+    Array(Vec<Rc<Value>>)
 }
 
 impl PartialEq for ConditionContents {

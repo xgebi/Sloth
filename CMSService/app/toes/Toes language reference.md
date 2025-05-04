@@ -34,4 +34,6 @@ This attribute can be used when there's a need to use a variable passed from Pyt
 
 #### `toe:text`
 
+- HTML escaping
+
 #### `toe:content`

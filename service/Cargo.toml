@@ -1,0 +1,13 @@
+[workspace]
+resolver = "3"
+members = ["interpreters"]
+
+[package]
+name = "service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web = "4.10.2"
+env_logger = "0.11.8"
+log = "0.4.27"

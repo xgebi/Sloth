@@ -232,7 +232,7 @@ fn iterate_object_compile(n: Node, vs: Rc<RefCell<VariableScope>>, var_name: Str
 // toe:text escapes html characters
 fn process_text_attribute(mut n: Node, vs: Rc<RefCell<VariableScope>>) -> Option<Node> {
     // use https://docs.rs/html-escape/latest/html_escape/
-    let content = n.attributes.get("toe:text").unwrap().clone().unwrap_or(String::new());
+    let content = n.attributes.get("toe:text").unwrap().clone().unwrap_or(Value::String(String::new()));
     let mut processed_string = process_string_with_variables(content.clone(), Rc::clone(&vs), Some(true), None);
     processed_string = html_escape::encode_safe(&processed_string).parse().unwrap();
     n.attributes.remove("toe:text");
