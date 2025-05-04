@@ -222,6 +222,7 @@ def get_endpoint(*args, connection: psycopg.Connection, path: str, **kwargs):
 				content_type = temp_result['content_type']
 			else:
 				result = json.dumps({"error": "Missing data"})
+				content_type = "application/json"
 	except Exception as e:
 		print('Exception was raised when fetching end point')
 		print(e)

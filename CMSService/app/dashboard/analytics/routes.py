@@ -138,9 +138,9 @@ def get_pages_in_time_data(*args, permission_level: int, connection: psycopg.Con
                         FROM sloth_analytics 
                         GROUP BY pathname 
                         ORDER BY count(uuid) DESC""")
-		most_visited = json.dumps(cur.fetchall())
-		response = make_response(most_visited)
-		code = 200
+			most_visited = json.dumps(cur.fetchall())
+			response = make_response(most_visited)
+			code = 200
 	except psycopg.errors.DatabaseError as e:
 		print(e)
 		traceback.print_exc()
