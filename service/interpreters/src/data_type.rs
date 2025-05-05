@@ -27,7 +27,7 @@ impl Display for DataType {
                     res.push_str(format!("{}", item.to_string()).as_str());
                 }
                 res.push_str("]");
-                write!(f, "{}", res) 
+                write!(f, "{}", res)
             }
             DataType::HashMap(_) => { write!(f, "{}", todo!()) }
         }
@@ -93,11 +93,11 @@ impl From<String> for DataType {
             for item in res_string {
                 res.push(DataType::from(item));
             }
-            
+
             return DataType::Array(res);
         }
-        
-        
+
+
         DataType::Nil
     }
 }
@@ -111,37 +111,37 @@ mod from_tests {
         let res = DataType::from(String::new());
         assert_eq!(res, DataType::Nil);
     }
-    
+
     #[test]
     fn test_from_boolean_true_string() {
         let res = DataType::from(String::from("true"));
         assert_eq!(res, DataType::Boolean(true));
     }
-    
+
     #[test]
     fn test_from_boolean_false_string() {
         let res = DataType::from(String::from("false"));
         assert_eq!(res, DataType::Boolean(false));
     }
-    
+
     #[test]
     fn test_from_float_string() {
         let res = DataType::from(String::from("1.0"));
         assert_eq!(res, DataType::Float(1.0));
     }
-    
+
     #[test]
     fn test_from_int_string() {
         let res = DataType::from(String::from("12"));
         assert_eq!(res, DataType::Int(12));
     }
-    
+
     #[test]
     fn test_from_string() {
         let res = DataType::from(String::from("'1.0'"));
         assert_eq!(res, DataType::String(String::from("1.0")));
     }
-    
+
     #[test]
     fn test_from_boolean_array_string() {
         let res = DataType::from(String::from("[true, false]"));
@@ -173,68 +173,68 @@ mod into_tests {
         let res = DataType::Nil;
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_empty_string_string() {
         let res = DataType::String("".to_string());
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_non_empty_string_string() {
         let res = DataType::String(" ".to_string());
         assert_eq!(<DataType as Into<bool>>::into(res), true);
     }
-    
+
     #[test]
     fn test_bool_string() {
         let res = DataType::Boolean(false);
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_zero_float_string() {
         let res = DataType::Float(0.0);
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_non_zero_float_string() {
         let res = DataType::Float(0.1);
         assert_eq!(<DataType as Into<bool>>::into(res), true);
     }
-    
+
     #[test]
     fn test_zero_int_string() {
         let res = DataType::Int(0);
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_non_zero_int_string() {
         let res = DataType::Int(1);
         assert_eq!(<DataType as Into<bool>>::into(res), true);
     }
-    
+
     #[test]
     fn test_empty_array_string() {
         let res = DataType::Array(vec![]);
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_non_empty_array_string() {
         let res = DataType::Array(vec![DataType::Nil]);
         assert_eq!(<DataType as Into<bool>>::into(res), true);
     }
-    
+
     #[test]
     fn test_empty_hash_map_string() {
         let hm = HashMap::new();
         let res = DataType::HashMap(hm);
         assert_eq!(<DataType as Into<bool>>::into(res), false);
     }
-    
+
     #[test]
     fn test_non_empty_hash_map_string() {
         let mut hm = HashMap::new();

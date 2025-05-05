@@ -139,7 +139,6 @@ pub(crate) fn scan_condition(cond_str: String) -> ConditionTree {
 }
 
 pub(crate) fn resolve_condition_tree(cond_tree: ConditionTree, variable_scope: VariableScope) -> bool {
-    println!("{:?}", cond_tree);
     if cond_tree.condition_joints == ConditionJoints::None && cond_tree.condition_comparison == ConditionComparison::None {
         
     }

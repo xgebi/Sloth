@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt::format;
+use std::thread::current;
 use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::data_type::DataType;
@@ -13,7 +15,7 @@ mod toe_commands;
 
 pub fn scan_toes(template: String) -> Node {
     let template_graphemes = template.graphemes(true).collect::<Vec<&str>>();
-    let mut idx: usize = 0;
+
     let mut root_node = Node {
         name: "".to_string(),
         attributes: Default::default(),
@@ -22,32 +24,181 @@ pub fn scan_toes(template: String) -> Node {
         text_content: String::new(),
     };
 
-    let mut current_node = &mut root_node;
-    
-    // let x = String::from("this is a test string");
-    // let slice = &x[1..3];
-    // println!("{}", slice); <!p>
+    inner_scan(template_graphemes, root_node)
+}
+
+fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // figure out what to return, this function will be called recursively
+    let mut idx: usize = 0;
+    let mut current_node = Node::create("".to_string(), HashMap::new(), NodeType::Normal);
+    let mut node_name = String::new();
 
     while template_graphemes.len() > idx {
         match template_graphemes[idx] {
             "<" => {
                 if template_graphemes.len() >= idx + 8 && template_graphemes[idx..idx + 9].join("").starts_with("<![CDATA[") {
-                    // handle CDATA
+                    // create CDATA <![CDATA[cdata text content]]>
+                    let mut jdx = idx + 9;
+                    let mut content = String::new();
+                    while template_graphemes.len() > jdx {
+                        if template_graphemes[jdx] == "]" && template_graphemes[jdx + 1] == "]" && template_graphemes[jdx + 2] == ">" {
+                            jdx += 3;
+                            break;
+                        } else {
+                            content.push(template_graphemes[jdx].parse().unwrap());
+                            jdx += 1;
+                        }
+                    }
+                    idx = jdx;
+                    root_node.children.push(Node {
+                        name: String::new(),
+                        attributes: Default::default(),
+                        children: vec![],
+                        node_type: NodeType::CDATA,
+                        text_content: content,
+                    });
                 } else if template_graphemes.len() >= idx + 3 && template_graphemes[idx..idx + 4].join("").starts_with("<!--") {
                     // handle comments
+                    let mut content = String::new();
+                    let mut jdx = idx + 4;
+                    while template_graphemes.len() > jdx {
+                        if template_graphemes.len() > jdx + 2 && template_graphemes[jdx] == "-" &&
+                            template_graphemes[jdx + 1] == "-" &&
+                            template_graphemes[jdx + 2] == ">" {
+                            break;
+                        } else {
+                            content.push(template_graphemes[jdx].parse().unwrap());
+                            jdx += 1;
+                        }
+                    }
+                    idx = jdx + 3;
+                    root_node.children.push(Node {
+                        name: "".to_string(),
+                        attributes: Default::default(),
+                        children: vec![],
+                        node_type: NodeType::Comment,
+                        text_content: content,
+                    });
                 } else {
-                    match template_graphemes[idx + 1] { 
+                    match template_graphemes[idx + 1] {
                         "!" => {
-                            
+                            current_node = Node::create_by_type(NodeType::DocumentTypeDefinition);
+                            idx += 1;
                         },
                         "?" => {
-                            
+                            current_node = Node::create_by_type(NodeType::DocumentTypeDefinition);
+                            idx += 1;
                         },
                         &_ => {
-                            
+                            current_node = Node::create_by_type(NodeType::Normal);
                         }
                     }
                     // common code
+                    let mut jdx = idx + 1;
+                    let mut no_attributes = false;
+                    while jdx < template_graphemes.len() {
+                        if template_graphemes[jdx] == " " || template_graphemes[jdx] == ">" {
+                            current_node.name = node_name.clone();
+                            node_name = String::new();
+                            no_attributes = template_graphemes[jdx] == ">";
+                            jdx += 1;
+                            break;
+                        } else {
+                            node_name.push_str(template_graphemes[jdx]);
+                        }
+                        jdx += 1;
+                    }
+                    let mut key = String::new();
+                    let mut value = String::new();
+                    let mut is_key = true;
+                    let mut quote = String::new();
+                    while jdx < template_graphemes.len() && !no_attributes {
+                        if (template_graphemes[jdx] == ">" || template_graphemes[jdx..jdx+2].join("") == "/>") && quote.trim().is_empty() {
+                            break;
+                        }
+                        if is_key {
+                            if template_graphemes[jdx] == "=" || template_graphemes[jdx] == " " {
+                                if template_graphemes[jdx] == "=" {
+                                    is_key = false;
+                                    if template_graphemes[jdx + 1] == "\"" || template_graphemes[jdx + 1] == "'" {
+                                        quote = String::from(template_graphemes[jdx + 1]);
+                                    } else {
+                                        quote = String::from(" ");
+                                    }
+                                    jdx += 1
+                                }
+                                if template_graphemes[jdx] == " " {
+                                    current_node.attributes.insert(key.clone(), DataType::Nil);
+                                    key = String::new();
+                                }
+                            } else {
+                                key.push_str(template_graphemes[jdx]);
+                            }
+                        } else {
+                            if template_graphemes[jdx] == quote {
+                                let data_type_value = DataType::from(format!("'{}'", value.clone()));
+                                current_node.attributes.insert(key.clone(), data_type_value);
+                                quote = String::new();
+                                is_key = true;
+                            } else {
+                                value.push_str(template_graphemes[jdx]);
+                            }
+                        }
+                        jdx += 1;
+                    }
+                    idx = jdx;
+                    if current_node.node_type == NodeType::Normal && template_graphemes[jdx..jdx+2].join("") != "/>" {
+                        let mut current_name_counter = 0;
+                        let start_index = idx;
+                        let mut end_index = idx - 1;
+                        let mut next_index = idx;
+                        let mut rest = template_graphemes[next_index..].join("");
+                        let mut next_end = rest.find(format!("</{}>", current_node.name.clone()).as_str());
+                        if next_end.is_some() {
+                            end_index = start_index + next_end.unwrap();
+                            next_end = Some(end_index);
+                        }
+                        let mut start_inbetween = rest.find(format!("<{}", current_node.name.clone()).as_str());
+                        current_name_counter = rest.matches(format!("<{}", current_node.name.clone()).as_str()).count();
+                        while next_end.is_some() && current_name_counter > 0 {
+                            next_index = next_end.unwrap() + 1;
+                            rest = template_graphemes[next_index..].join("");
+                            next_end = rest.find(format!("</{}>", current_node.name.clone()).as_str());
+
+                            if next_end.is_some() {
+                                end_index = next_index + next_end.unwrap();
+                            }
+
+                            let from_start = template_graphemes[start_index..end_index + 1].join("");
+                            current_name_counter = from_start.matches(format!("<{}", current_node.name.clone()).as_str()).count();
+                            let current_close_name_counter = from_start.matches(format!("</{}>", current_node.name.clone()).as_str()).count();
+
+                            if current_name_counter == current_close_name_counter {
+                                break;
+                            }
+                        }
+                        if start_index < end_index {
+                            let child_string = &template_graphemes[start_index..end_index];
+                            // process child string
+                            let end_tag_string = format!("</{}>", current_node.clone().name).len();
+                            let inner_scan_result = inner_scan(child_string.to_owned(), current_node);
+                            println!("{:?}", inner_scan_result);
+                            // idx move to end of </tag>
+                            jdx += end_index + end_tag_string;
+                            root_node.children.push(inner_scan_result);
+                        } else {
+                            let end_tag_string = format!("</{}>", current_node.clone().name).len();
+                            jdx += end_tag_string + 1;
+                            root_node.children.push(current_node);
+                        }
+                    } else {
+                        root_node.children.push(current_node);
+                        if jdx + 2 <= template_graphemes.len() && template_graphemes[jdx..jdx+2].join("") == "/>" {
+                            jdx += 2;
+                        } else {
+                            jdx += 1;
+                        }
+                    }
+                    idx = jdx;
                 }
             }
             &_ => {
@@ -64,7 +215,7 @@ pub fn scan_toes(template: String) -> Node {
                     }
                 }
                 idx = jdx;
-                current_node.children.push(Node {
+                root_node.children.push(Node {
                     name: "".to_string(),
                     attributes: Default::default(),
                     children: vec![],
@@ -169,6 +320,7 @@ mod node_parsing_tests {
     fn single_self_closing_tag_works() {
         let text = String::from("<img />");
         let result = scan_toes(text);
+        println!("{:?}", result);
         assert_eq!(result.children.len(), 1);
         assert_eq!(result.children[0].node_type, NodeType::Normal);
     }
@@ -185,7 +337,44 @@ mod node_parsing_tests {
     fn single_closed_tag_with_content_works() {
         let text = String::from("<a>content</a>");
         let result = scan_toes(text);
+        println!("{:?}", result);
         assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].node_type, NodeType::Normal);
+    }
+
+    #[test]
+    fn single_closed_tag_with_another_tag_and_content_work() {
+        let text = String::from("<b><a>content</a></b>");
+        let result = scan_toes(text);
+        println!("{:?}", result);
+        assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].node_type, NodeType::Normal);
+    }
+
+    #[test]
+    fn single_closed_tag_with_two_tags_and_content_work() {
+        let text = String::from("<a><b>content A</b><u>content B</u></a>");
+        let result = scan_toes(text);
+        println!("{:?}", result);
+        assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].node_type, NodeType::Normal);
+    }
+
+    #[test]
+    fn single_closed_tag_with_same_name_tag_and_content_work() {
+        let text = String::from("<a><a>content</a></a>");
+        let result = scan_toes(text);
+        println!("{:?}", result);
+        assert_eq!(result.children.len(), 1);
+        assert_eq!(result.children[0].node_type, NodeType::Normal);
+    }
+
+    #[test]
+    fn sibling_closed_tags_with_content_work() {
+        let text = String::from("<a>content A</a><b>content B</b>");
+        let result = scan_toes(text);
+        println!("{:?}", result);
+        assert_eq!(result.children.len(), 2);
         assert_eq!(result.children[0].node_type, NodeType::Normal);
     }
 
@@ -206,7 +395,7 @@ mod node_parsing_tests {
         assert_eq!(result.children[0].node_type, NodeType::DocumentTypeDefinition);
         println!("{:?}", result);
     }
-    
+
     #[test]
     fn doctype_lower_case_works_temp() {
         let text = String::from("<!doctype html=\"4.0\">");
@@ -232,17 +421,18 @@ mod node_parsing_tests {
         assert_eq!(result.children[0].node_type, NodeType::Comment);
         assert_eq!(result.children[0].text_content, " comment text ");
     }
-    
+
     #[test]
     fn normal_node_with_attribute() {
         let text = String::from("<html lang=\"en\"></html>");
         let result = scan_toes(text);
+        println!("{:?}", result);
         assert_eq!(result.children.len(), 1);
         assert_eq!(result.children[0].node_type, NodeType::Normal);
         assert_eq!(result.children[0].attributes.len(), 1);
         assert_eq!(result.children[0].attributes.get("lang").unwrap().clone(), DataType::String("en".to_string()));
     }
-    
+
     #[test]
     fn normal_node_with_attribute_single_quotes() {
         let text = String::from("<html lang='en'></html>");
