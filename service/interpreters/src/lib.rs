@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use std::thread::current;
 use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::data_type::DataType;
@@ -113,6 +111,8 @@ fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // f
                     let mut quote = String::new();
                     while jdx < template_graphemes.len() && !no_attributes {
                         if (template_graphemes[jdx] == ">" || template_graphemes[jdx..jdx+2].join("") == "/>") && quote.trim().is_empty() {
+                            let local_value = if value.is_empty() { DataType::Nil } else { DataType::from(format!("'{}'", value)) };
+                            current_node.attributes.insert(key.clone(), local_value);
                             break;
                         }
                         if is_key {
@@ -157,7 +157,7 @@ fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // f
                             end_index = start_index + next_end.unwrap();
                             next_end = Some(end_index);
                         }
-                        let mut start_inbetween = rest.find(format!("<{}", current_node.name.clone()).as_str());
+                        
                         current_name_counter = rest.matches(format!("<{}", current_node.name.clone()).as_str()).count();
                         while next_end.is_some() && current_name_counter > 0 {
                             next_index = next_end.unwrap() + 1;
@@ -181,9 +181,9 @@ fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // f
                             // process child string
                             let end_tag_string = format!("</{}>", current_node.clone().name).len();
                             let inner_scan_result = inner_scan(child_string.to_owned(), current_node);
-                            println!("{:?}", inner_scan_result);
+
                             // idx move to end of </tag>
-                            jdx += end_index + end_tag_string;
+                            jdx = end_index + end_tag_string;
                             root_node.children.push(inner_scan_result);
                         } else {
                             let end_tag_string = format!("</{}>", current_node.clone().name).len();
@@ -297,6 +297,7 @@ pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataTyp
 
 #[cfg(test)]
 mod node_parsing_tests {
+    use crate::conditions::scan_condition;
     use crate::node_type::NodeType;
     use super::*;
 
@@ -385,6 +386,8 @@ mod node_parsing_tests {
         println!("{:?}", result);
         assert_eq!(result.children.len(), 1);
         assert_eq!(result.children[0].node_type, NodeType::DocumentTypeDefinition);
+        println!("{:?}", result.children[0].attributes.get("html"));
+        assert_eq!(result.children[0].attributes.get("html").is_some(), true);
     }
 
     #[test]
@@ -441,6 +444,33 @@ mod node_parsing_tests {
         assert_eq!(result.children[0].node_type, NodeType::Normal);
         assert_eq!(result.children[0].attributes.len(), 1);
         assert_eq!(result.children[0].attributes.get("lang").unwrap().clone(), DataType::String("en".to_string()));
+    }
+    
+    #[test]
+    fn basic_page() {
+        let template = String::from("<!doctype html><html><head><title>Basic page</title></head><body><h1>Basic page</h1><div><div>Some text in nested divs</div></div></body></html>");
+        let result = scan_toes(template);
+        
+        assert_eq!(result.children.len(), 2);
+        assert_eq!(result.children[0].name, "doctype");
+        assert_eq!(result.children[1].name, "html");
+        assert_eq!(result.children[1].children.len(), 2);
+        assert_eq!(result.children[1].children[0].name, "head");
+        assert_eq!(result.children[1].children[0].children.len(), 1);
+        assert_eq!(result.children[1].children[0].children[0].name, "title");
+        assert_eq!(result.children[1].children[0].children[0].children.len(), 1);
+        assert_eq!(result.children[1].children[0].children[0].children[0].text_content, "Basic page");
+        assert_eq!(result.children[1].children[1].name, "body");
+        assert_eq!(result.children[1].children[1].children.len(), 2);
+        assert_eq!(result.children[1].children[1].children[0].name, "h1");
+        assert_eq!(result.children[1].children[1].children[0].children.len(), 1);
+        assert_eq!(result.children[1].children[1].children[0].children[0].text_content, "Basic page");
+        assert_eq!(result.children[1].children[1].children[1].name, "div");
+        assert_eq!(result.children[1].children[1].children[1].children.len(), 1);
+        assert_eq!(result.children[1].children[1].children[1].children[0].name, "div");
+        assert_eq!(result.children[1].children[1].children[1].children[0].children.len(), 1);
+        assert_eq!(result.children[1].children[1].children[1].children[0].children[0].text_content, "Some text in nested divs");
+        
     }
 }
 
