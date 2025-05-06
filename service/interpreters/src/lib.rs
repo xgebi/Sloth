@@ -3,6 +3,7 @@ use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::data_type::DataType;
 use crate::node_type::NodeType;
+use crate::variable_scope::VariableScope;
 
 mod node;
 mod data_type;
@@ -23,6 +24,10 @@ pub fn scan_toes(template: String) -> Node {
     };
 
     inner_scan(template_graphemes, root_node)
+}
+
+pub fn compile_toes(root_node: Node, variable_scope: VariableScope, config: HashMap<String, DataType>) -> String {
+    String::new()
 }
 
 fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // figure out what to return, this function will be called recursively
@@ -297,7 +302,6 @@ pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataTyp
 
 #[cfg(test)]
 mod node_parsing_tests {
-    use crate::conditions::scan_condition;
     use crate::node_type::NodeType;
     use super::*;
 

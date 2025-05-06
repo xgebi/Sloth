@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{format, Display};
 use crate::data_type::DataType;
 use crate::node_type::NodeType;
 
@@ -22,7 +22,7 @@ impl Node {
             text_content: "".to_string(),
         }
     }
-    
+
     pub fn create(name: String, attributes: HashMap<String, DataType>, node_type: NodeType) -> Self {
         Node {
             name,
@@ -36,14 +36,40 @@ impl Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let unpaired = vec!["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input", "link"];
         let mut result = String::from("<");
         match self.node_type {
-            _ => {
-                result.push(self.name.parse().unwrap());
+            NodeType::DocumentTypeDefinition => {
+                result.push_str("!");
             }
+            NodeType::Processing => {
+                result.push_str("?");
+            }
+            _ => {
+                
+            }
+        }
+        result.push_str(self.name.as_str());
+        if !self.attributes.is_empty() {
+            result.push_str(" ");
         }
         for attribute in self.attributes.clone() {
             result.push_str(format!("{}=\"{}\"", attribute.0, attribute.1).as_str());
+            result.push_str(" ");
+        }
+        result = result.trim().to_string();
+        if unpaired.contains(&self.name.as_str()) {
+            result.push_str("/>");
+        } else {
+            result.push_str(">");
+            if self.children.clone().is_empty() {
+                result.push_str(self.text_content.as_str());
+            } else {
+                for child in self.children.clone() {
+                    result.push_str(child.to_string().as_str());
+                }
+            }
+            result.push_str(format!("</{}>", self.name).as_str());
         }
         write!(f, "{}", result)
     }
@@ -60,5 +86,47 @@ mod tests {
         assert_eq!(n.name, tag);
         assert_eq!(n.attributes.len(), 0);
         assert_eq!(n.children.len(), 0);
+    }
+    
+    #[test]
+    fn display_node() {
+        let mut attributes = HashMap::new();
+        attributes.insert(String::from("key"), DataType::from("'value'".to_string()));
+        
+        let n = Node {
+            name: "my-tag".to_string(),
+            attributes,
+            children: vec![],
+            node_type: NodeType::Normal,
+            text_content: "Node's text content".to_string(),
+        };
+        
+        let result = n.to_string();
+        assert_eq!(result, "<my-tag key=\"value\">Node's text content</my-tag>");
+    }
+    
+    #[test]
+    fn display_node_with_child_node() {
+        let mut attributes = HashMap::new();
+        attributes.insert(String::from("key"), DataType::from("'value'".to_string()));
+        
+        let child = Node {
+            name: "my-tag".to_string(),
+            attributes: Default::default(),
+            children: vec![],
+            node_type: NodeType::Normal,
+            text_content: "Node's text content".to_string(),
+        };
+        
+        let n = Node {
+            name: "my-tag".to_string(),
+            attributes,
+            children: vec![child],
+            node_type: NodeType::Normal,
+            text_content: "Node's text content".to_string(),
+        };
+        
+        let result = n.to_string();
+        assert_eq!(result, "<my-tag key=\"value\"><my-tag>Node's text content</my-tag></my-tag>");
     }
 }

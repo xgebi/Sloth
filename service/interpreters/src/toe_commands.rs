@@ -22,7 +22,11 @@ pub(crate) fn process_toe_import(url_to_import: String, variable_scope: Variable
 
 pub(crate) fn process_toe_fragment(node: Node, variable_scope: VariableScope, config: HashMap<String, String>) -> Vec<Node> {
     // check for toe:if
-    // check for toe:for
+    let if_result_node = process_toe_if(node, variable_scope.clone(), config.clone());
+    if if_result_node.is_some() {
+        // check for toe:for
+        return process_toe_for(if_result_node.unwrap(), variable_scope, config);
+    }
     vec![]
 }
 
