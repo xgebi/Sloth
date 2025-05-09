@@ -4,7 +4,8 @@ import json
 from uuid import uuid4
 import psycopg
 
-from flask import abort, request, redirect, current_app, make_response, escape
+from flask import abort, request, redirect, current_app, make_response
+from markupsafe import escape
 from werkzeug import utils as w_utils
 from app.authorization.authorize import authorize_web
 from app.utilities.db_connection import db_connection

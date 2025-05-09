@@ -1,5 +1,6 @@
 import psycopg
-from flask import escape, abort, make_response, request
+from flask import abort, make_response, request
+from markupsafe import escape
 import json
 import uuid
 import os

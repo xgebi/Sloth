@@ -11,7 +11,8 @@ from typing import List, Dict
 import threading
 
 import psycopg
-from flask import request, current_app, abort, redirect, render_template, escape
+from flask import request, current_app, abort, redirect, render_template
+from markupsafe import escape
 
 from app.authorization.authorize import authorize_rest, authorize_web
 from app.routes.post import post
