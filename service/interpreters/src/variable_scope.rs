@@ -8,12 +8,12 @@ struct SingleScope {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct VariableScope {
+pub struct VariableScope {
     scopes: Vec<SingleScope>
 }
 
 impl VariableScope {
-    pub(crate) fn create() -> VariableScope {
+    fn create() -> VariableScope {
         VariableScope {
             scopes: vec![SingleScope {
                 variables: HashMap::new(),

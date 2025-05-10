@@ -3,6 +3,7 @@ use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::data_type::DataType;
 use crate::node_type::NodeType;
+use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};
 use crate::variable_scope::VariableScope;
 
 mod node;
@@ -27,6 +28,7 @@ pub fn scan_toes(template: String) -> Node {
 }
 
 pub fn compile_toes(root_node: Node, variable_scope: VariableScope, config: HashMap<String, DataType>) -> String {
+    
     String::new()
 }
 
@@ -231,6 +233,24 @@ fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // f
         }
     }
     root_node
+}
+
+fn compile_node(node: Node, variable_scope: VariableScope, config: HashMap<String, String>) -> Vec<Node> {
+    if node.name == "toe:fragment" {
+        return process_toe_fragment(node.clone(), variable_scope, config);
+    } else {
+        let mut working_node = Some(node.clone());
+        if node.clone().attributes.contains_key("toe:if") {
+            working_node = process_toe_if(node.clone(), variable_scope.clone(), config.clone());
+        }
+        if working_node.is_some() {
+            let unwrapped_working_node = working_node.unwrap();
+            if unwrapped_working_node.attributes.contains_key("toe:for") {
+                return process_toe_for(node.clone(), variable_scope.clone(), config.clone());
+            }
+        }
+    }
+    vec![node]
 }
 
 pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataType> {
