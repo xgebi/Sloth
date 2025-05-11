@@ -106,7 +106,12 @@ def import_wordpress_content(*args, connection: psycopg.Connection, **kwargs):
 				)
 			shutil.rmtree(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", "uploaded"))
 
-			os.remove(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename))
+			base_path = os.path.normpath(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp"))
+			full_path = os.path.normpath(os.path.join(current_app.config["OUTPUT_PATH"], "sloth-content", "temp", uploads.filename));
+			if not full_path.startswith(base_path):
+				raise Exception("not allowed")
+
+			os.remove(full_path)
 
 	processed_state = -1
 	if request.files.get("data"):
