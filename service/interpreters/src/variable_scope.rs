@@ -4,16 +4,16 @@ use crate::data_type::DataType;
 
 #[derive(Clone, Debug)]
 struct SingleScope {
-    variables: HashMap<String, DataType>
+    pub variables: HashMap<String, DataType>
 }
 
 #[derive(Clone, Debug)]
 pub struct VariableScope {
-    scopes: Vec<SingleScope>
+    pub scopes: Vec<SingleScope>
 }
 
 impl VariableScope {
-    fn create() -> VariableScope {
+    pub fn create() -> VariableScope {
         VariableScope {
             scopes: vec![SingleScope {
                 variables: HashMap::new(),
@@ -21,7 +21,7 @@ impl VariableScope {
         }
     }
 
-    pub(crate) fn create_from_hashmap(hm: HashMap<String, DataType>) -> VariableScope {
+    pub fn create_from_hashmap(hm: HashMap<String, DataType>) -> VariableScope {
         let scopes = vec![SingleScope {
             variables: hm,
         }];

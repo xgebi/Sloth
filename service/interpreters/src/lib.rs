@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::data_type::DataType;
+pub use crate::data_type::DataType;
 use crate::node_type::NodeType;
 use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};
-use crate::variable_scope::VariableScope;
+pub use crate::variable_scope::VariableScope;
 
 mod node;
 mod data_type;
