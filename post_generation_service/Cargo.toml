@@ -7,18 +7,18 @@ edition = "2021"
 
 [workspace]
 members = [
-    "pgs_common",
+    "pgs_common_TO_EXPLORE",
     "pgs_toes",
-    "pgs_slothmark",
+    "pgs_slothmark_TO_EXPLORE",
 ]
 
 [dependencies]
 confy = "0.6.1"
 sloth_config_lib = { path = "../sloth_config_lib" }
 common_db_lib = { path = "../common_db_lib" }
-pgs_common = { path = "pgs_common" }
+pgs_common = { path = "pgs_common_TO_EXPLORE" }
 pgs_toes = { path = "pgs_toes" }
-pgs_slothmark = { path = "pgs_slothmark" }
+pgs_slothmark = { path = "pgs_slothmark_TO_EXPLORE" }
 tonic = "0.12.3"
 bytes = "1.9.0"
 prost = "0.13.4"

@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pgs_common = { path = "../pgs_common" }
+pgs_common = { path = "../pgs_common_TO_EXPLORE" }
 unicode-segmentation = "1.11.0"
 regex = "1.10.4"
 html-escape = "0.2.13"

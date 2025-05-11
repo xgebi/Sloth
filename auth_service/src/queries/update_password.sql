@@ -1,1 +1,0 @@
-UPDATE sloth_password SET alg = $1, password = $2 WHERE uuid = $1;

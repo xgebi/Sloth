@@ -1,1 +1,0 @@
-SELECT alg, password FROM sloth_password WHERE uuid = $1;
