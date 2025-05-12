@@ -32,6 +32,16 @@ impl Node {
             text_content: String::new(),
         }
     }
+    
+    pub fn is_unpaired(tag_name: String) -> bool {
+        let unpaired_tags = ["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input", "link"];
+        unpaired_tags.contains(&&*tag_name)
+    }
+
+    fn is_always_paired(tag_name: String) -> bool {
+        let paired_tags = ["script"];
+        paired_tags.contains(&&*tag_name)
+    }
 }
 
 impl Display for Node {
@@ -58,9 +68,11 @@ impl Display for Node {
             result.push_str(" ");
         }
         result = result.trim().to_string();
-        if unpaired.contains(&self.name.as_str()) {
-            result.push_str("/>");
-        } else {
+        if !Node::is_unpaired(self.name.clone()) ||
+            Node::is_always_paired(self.name.clone()) {
+            if self.node_type == NodeType::Processing {
+                result.push_str("?");
+            }
             result.push_str(">");
             if self.children.clone().is_empty() {
                 result.push_str(self.text_content.as_str());
@@ -70,6 +82,8 @@ impl Display for Node {
                 }
             }
             result.push_str(format!("</{}>", self.name).as_str());
+        } else {
+            result.push_str("/>");
         }
         write!(f, "{}", result)
     }
