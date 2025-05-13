@@ -6,6 +6,7 @@ use crate::patterns::Patterns;
 use crate::node::Node;
 use crate::node_type::NodeType;
 use regex::Regex;
+use crate::DataType;
 
 enum ListType {
     Ordered,
@@ -216,7 +217,7 @@ fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     if let Some(mi) = middle_index {
         let level = c[0..mi].join("").match_indices("#").count();
         if level == mi {
-            let mut headline = Node::create_node(Some(String::from(format!("h{}", level))), Some(NodeType::Node));
+            let mut headline = Node::create_normal_node(String::from(format!("h{}", level)));
             let content = process_content(c[mi + 1..end_index].to_vec(), true);
             headline.children.extend(content.0);
             return (Some(headline), content.1, end_index + 1);
@@ -241,15 +242,15 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
                     ei += temp;
                 }
             }
-            let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
-            img.attributes.insert("src".parse().unwrap(), Some(c[mi + 2..si].join("")));
-            img.attributes.insert("alt".parse().unwrap(), Some(c[2..mi].join("")));
-            img.attributes.insert("title".parse().unwrap(), Some(c[si + 2..ei].join("")));
+            let mut img = Node::create_normal_node(String::from("img"));
+            img.attributes.insert("src".parse().unwrap(), DataType::String(c[mi + 2..si].join("")));
+            img.attributes.insert("alt".parse().unwrap(), DataType::String(c[2..mi].join("")));
+            img.attributes.insert("title".parse().unwrap(), DataType::String(c[si + 2..ei].join("")));
             (Some(img), ei + 2)
         } else if space_index.is_none() && end_index.is_some() {
-            let mut img = Node::create_node(Some(String::from("img")), Some(NodeType::Node));
-            img.attributes.insert("src".parse().unwrap(), Some(c[mi + 2..end_index.unwrap() + 1].join("")));
-            img.attributes.insert("alt".parse().unwrap(), Some(c[2..mi].join("")));
+            let mut img = Node::create_normal_node(String::from("img"));
+            img.attributes.insert("src".parse().unwrap(), DataType::String(c[mi + 2..end_index.unwrap() + 1].join("")));
+            img.attributes.insert("alt".parse().unwrap(), DataType::String(c[2..mi].join("")));
             (Some(img), end_index.unwrap() + 2)
         } else {
             panic!();
@@ -263,7 +264,7 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     let middle_index = c[1..c.len()].join("").find("](");
     let end_index = c[1..c.len()].join("").find(")");
     if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
-        let mut link_node = Node::create_node(Some(String::from("a")), Some(NodeType::Node));
+        let mut link_node = Node::create_normal_node(String::from("a"));
 
         let mut mi = middle_index.unwrap() + 1;
         let mut ei = end_index.unwrap() + 1;
@@ -287,7 +288,7 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
                 break;
             }
         }
-        link_node.attributes.insert(String::from("href"), Some(c[mi + 2..ei].join("")));
+        link_node.attributes.insert(String::from("href"), DataType::String(c[mi + 2..ei].join("")));
         let r = process_content(c[1..mi].to_vec(), true);
         link_node.children.extend(r.0);
         return (Some(link_node), r.1, ei + 2);
@@ -298,7 +299,7 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
 fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
     let possible_end = c[1..c.len()].join("").find("`");
     if let Some(end) = possible_end {
-        let mut code = Node::create_node(Some("code".parse().unwrap()), Some(NodeType::Node));
+        let mut code = Node::create_normal_node("code".to_string());
         let code_content = Node::create_text_node(c[1..end + 1].join(""));
         code.children.push(code_content);
         (Some(code), end + 1)
@@ -315,13 +316,13 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
             panic!();
         }
         // pre -> code
-        let mut pre = Node::create_node(Some("pre".parse().unwrap()), Some(NodeType::Node));
-        let mut code = Node::create_node(Some("code".parse().unwrap()), Some(NodeType::Node));
+        let mut pre = Node::create_normal_node("pre".to_string());
+        let mut code = Node::create_normal_node("code".to_string());
         let code_content = Node::create_text_node(c[first_end_line.unwrap()..end + 3].join("").trim().to_string());
 
         if c[first_end_line.unwrap()] != "\"" {
-            pre.attributes.insert("class".parse().unwrap(), Some(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
-            code.attributes.insert("class".parse().unwrap(), Some(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
+            pre.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
+            code.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
         }
 
         code.children.push(code_content);
@@ -343,15 +344,15 @@ fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 
     let number = c[1..end_number_char].join("");
-    let mut sup = Node::create_node(Some("sup".parse().unwrap()), Some(NodeType::Node));
-    let mut link = Node::create_node(Some("a".to_string()), Some(NodeType::Node));
-    link.attributes.insert("href".to_string(), Some(format!("footnote-{}", number)));
+    let mut sup = Node::create_normal_node("sup".to_string());
+    let mut link = Node::create_normal_node("a".to_string());
+    link.attributes.insert("href".to_string(), DataType::String(format!("footnote-{}", number)));
     let link_content = Node::create_text_node(number);
 
     link.children.push(link_content);
     sup.children.push(link);
 
-    let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
+    let mut li = Node::create_normal_node("li".to_string());
     while c[0..possible_end + 1].join("").match_indices("[").count() != c[0..possible_end + 1].join("").match_indices("]").count() {
         possible_end += 1 + c[possible_end + 1..c.len()].join("").find("]").unwrap();
         let c = 3;
@@ -373,7 +374,7 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
             if c[2..c.len()].join("").find("***").is_some() && c[2..c.len()].join("").find("***").unwrap() == i {
                 i += 1
             }
-            let mut bold = Node::create_node(Some(String::from("strong")), Some(NodeType::Node));
+            let mut bold = Node::create_normal_node(String::from("strong"));
             let r = process_content(c[2..i+2].to_vec(), true);
             bold.children.extend(r.0);
             (Some(bold), r.1, i + 4)
@@ -396,7 +397,7 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
                     i += 1
                 }
             }
-            let mut italic = Node::create_node(Some(String::from("em")), Some(NodeType::Node));
+            let mut italic = Node::create_normal_node(String::from("em"));
             let r = process_content(c[1..i+1].to_vec(), true);
             italic.children.extend(r.0);
             (Some(italic), r.1, i + 2)
@@ -417,7 +418,7 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
             next_new_line += i;
         }
 
-        let mut li = Node::create_node(Some("li".to_string()), Some(NodeType::Node));
+        let mut li = Node::create_normal_node("li".to_string());
         let li_content_start = i + c[i..c.len()].join("").find(" ").unwrap() + 1;
 
         let mut this_level = 0;
@@ -477,24 +478,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn renders_empty() {
-        let result = render_markup(String::from(""));
-        assert_eq!(result, String::from(""));
-    }
-
-    #[test]
-    fn renders_paragraph() {
-        let result = render_markup(String::from("Abc"));
-        assert_eq!(result, String::from("<p>Abc</p>"));
-    }
-
-    #[test]
-    fn renders_two_paragraphs() {
-        let result = render_markup(String::from("Abc\n\ndef"));
-        assert_eq!(result, String::from("<p>Abc</p><p>def</p>"));
-    }
-
-    #[test]
     fn process_empty_content() {
         let result = process_content("".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 0);
@@ -512,8 +495,8 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
-        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("href").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].text_content, "Abc");
     }
@@ -524,8 +507,8 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
-        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("href").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "strong");
     }

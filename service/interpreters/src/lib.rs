@@ -334,6 +334,29 @@ pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataTyp
 }
 
 #[cfg(test)]
+mod slothmark_tests {
+    use super::*;
+
+    #[test]
+    fn renders_empty() {
+        let result = render_markup(String::from(""));
+        assert_eq!(result, String::from(""));
+    }
+
+    #[test]
+    fn renders_paragraph() {
+        let result = render_markup(String::from("Abc"));
+        assert_eq!(result, String::from("<p>Abc</p>"));
+    }
+
+    #[test]
+    fn renders_two_paragraphs() {
+        let result = render_markup(String::from("Abc\n\ndef"));
+        assert_eq!(result, String::from("<p>Abc</p><p>def</p>"));
+    }
+}
+
+#[cfg(test)]
 mod node_parsing_tests {
     use crate::node_type::NodeType;
     use super::*;

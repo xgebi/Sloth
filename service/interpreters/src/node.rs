@@ -32,6 +32,16 @@ impl Node {
             text_content: "".to_string(),
         }
     }
+    
+    pub fn create_text_node(text_content: String) -> Self {
+        Node {
+            name: "".to_string(),
+            attributes: Default::default(),
+            children: vec![],
+            node_type: NodeType::Normal,
+            text_content,
+        }
+    }
 
     pub fn create(name: String, attributes: HashMap<String, DataType>, node_type: NodeType) -> Self {
         Node {
