@@ -809,6 +809,7 @@ name = "interpreters"
 version = "0.1.0"
 dependencies = [
  "html-escape",
+ "regex",
  "unicode-segmentation",
 ]
 

@@ -1,8 +1,10 @@
 
 use std::thread::current;
 use unicode_segmentation::UnicodeSegmentation;
-use pgs_common::node::{Node, NodeType};
-use pgs_common::patterns::Patterns;
+// use pgs_common::node::{Node, NodeType};
+use crate::patterns::Patterns;
+use crate::node::Node;
+use crate::node_type::NodeType;
 use regex::Regex;
 
 enum ListType {
@@ -10,17 +12,7 @@ enum ListType {
     Unordered
 }
 
-pub fn render_markup(md: String) -> String {
-    // 1. parse markdown to nodes
-    let res_node = parse_slothmark(md);
-    // 2. call node::to_string() to create result
-    if res_node.1.children.len() > 0 {
-        return format!("{}{}", res_node.0.to_string(), res_node.1.to_string());
-    }
-    format!("{}", res_node.0.to_string())
-}
-
-fn parse_slothmark(sm: String) -> (Node, Node) {
+pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
     let patterns = Patterns::new();
     let processed_new_lines = sm.replace(
         patterns.locate("double_line_win").unwrap().value.as_str(),
@@ -28,8 +20,8 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
     );
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
-    let mut root_node = Node::create_node(None, Some(NodeType::Root));
-    let mut footnotes = Node::create_node(Some(String::from("ul")), Some(NodeType::Node));
+    let mut root_node = Node::create_by_type(NodeType::ToeRoot);
+    let mut footnotes = Node::create_normal_node("ul".to_string());
     let mut current_node = &root_node;
     let mut i: usize = 0;
     while i < grapheme_vector.len() {
@@ -47,7 +39,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
         } else if (grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
             grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) && // there's a bug here for ordered lists
             ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
-            let mut list = Node::create_node(Some("ul".to_string()), Some(NodeType::Node));
+            let mut list = Node::create_normal_node("ul".to_string());
 
             // case for unordered list
             let t = process_list_items(
@@ -61,7 +53,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
         } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
             ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
             // Add if case for ordered list
-            let mut list = Node::create_node(Some(String::from("ol")), None);
+            let mut list = Node::create_normal_node(String::from("ol"));
             let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"));
             i += t.2;
             list.children.extend(t.0);
@@ -71,7 +63,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
             root_node.children.push(list);
         } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
-            let mut p = Node::create_node(Some(String::from("img")), None);
+            let mut p = Node::create_normal_node(String::from("img"));
             let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
             if let Some(image) = t.0 {
                 root_node.children.push(image);
@@ -85,7 +77,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
                 i += t.1;
             }
         } else if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
-            let mut p = Node::create_node(Some(String::from("p")), None);
+            let mut p = Node::create_normal_node(String::from("p"));
             let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec(), true);
             i += t.2;
             p.children.extend(t.0);
@@ -102,7 +94,7 @@ fn parse_slothmark(sm: String) -> (Node, Node) {
 fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) {
     let patterns = Patterns::new();
     let mut i: usize = 0;
-    let mut current_node = Node::create_text_node(String::new());
+    let mut current_node = Node::create_by_type(NodeType::Text);
     let mut nodes = Vec::new();
     let mut footnotes = Vec::new();
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
@@ -115,9 +107,9 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             nodes.push(current_node);
             return (nodes, footnotes, i + 2);
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
             // clause for bold
             let r = process_bold(c[i..c.len()].to_vec());
@@ -129,11 +121,11 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
                 i += 1; // just to be safe
             }
         } else if c[i] == "*" {
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
-            current_node = Node::create_text_node(String::new());
+            current_node = Node::create_by_type(NodeType::Text);
             // clause for italic
             let r = process_italic(c[i..c.len()].to_vec());
             // current_node.children.push(r.0.unwrap());
@@ -151,9 +143,9 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             c[i..c[i..c.len()].join("").find(" ").unwrap() + 1].join("").as_str()
         ) {
             // clause for footnotes
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
             let r = process_footnote(c[i..c.len()].to_vec());
             if let Some(footnote) = r.0 {
@@ -165,9 +157,9 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             }
         } else if c[i] == "[" {
             // clause for links
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
             let r = process_link(c[i..c.len()].to_vec());
             if let Some(link) = r.0 {
@@ -179,9 +171,9 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             }
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
             let r = process_image(c[i..c.len()].to_vec());
             if let Some(image) = r.0 {
@@ -191,11 +183,11 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
                 i += 1;
             }
         } else if c[i] == "`" {
-            if current_node.content.len() > 0 || current_node.children.len() > 0 {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
-                current_node = Node::create_text_node(String::new());
+                current_node = Node::create_by_type(NodeType::Text);
             }
-            current_node = Node::create_text_node(String::new());
+            current_node = Node::create_by_type(NodeType::Text);
             // clause for italic
             let r = process_inline_code(c[i..c.len()].to_vec());
             if let Some(em) = r.0 {
@@ -205,14 +197,14 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
                 i += 1; // just to be safe
             }
         } else if c[i] != "\n" || c[i] != "\r" {
-            current_node.content = format!("{}{}", current_node.content, c[i]);
+            current_node.text_content = format!("{}{}", current_node.text_content, c[i]);
             i += 1;
         } else {
-            current_node.content = format!("{}{}", current_node.content, " ");
+            current_node.text_content = format!("{}{}", current_node.text_content, " ");
             i += 1;
         }
     }
-    if current_node.content.len() > 0 || current_node.children.len() > 0 {
+    if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
         nodes.push(current_node);
     }
     (nodes, footnotes, c.len())
@@ -523,7 +515,7 @@ mod tests {
         let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
         assert_eq!(attr, "def");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -626,7 +618,7 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "em");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -635,7 +627,7 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "strong");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -645,9 +637,9 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "strong");
         assert_eq!(result.0[0].children.len(), 2);
-        assert_eq!(result.0[0].children[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc");
         assert_eq!(result.0[0].children[0].name, "em");
-        assert_eq!(result.0[0].children[1].content, " def");
+        assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
     // TODO look at these below
@@ -659,7 +651,7 @@ mod tests {
         println!("{:?}", result.0);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].content, " def");
+        // assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
     #[test]
@@ -669,7 +661,7 @@ mod tests {
         assert_eq!(result.0.len(), 3);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].content, " def");
+        // assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
     #[test]
@@ -679,7 +671,7 @@ mod tests {
         assert_eq!(result.0.len(), 2);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].content, " def");
+        // assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
     #[test]
@@ -689,7 +681,7 @@ mod tests {
         assert_eq!(result.0.len(), 2);
         // assert_eq!(result.0[0].name, "strong");
         // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].content, " def");
+        // assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
     #[test]
@@ -700,11 +692,11 @@ mod tests {
         assert_eq!(result.0[0].children[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "a");
         assert_eq!(result.0[0].children[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].children[0].content, "1");
+        assert_eq!(result.0[0].children[0].children[0].text_content, "1");
 
         assert_eq!(result.1[0].children.len(), 1);
         assert_eq!(result.1[0].name, "li");
-        assert_eq!(result.1[0].children[0].content, "Abc");
+        assert_eq!(result.1[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -715,18 +707,18 @@ mod tests {
         assert_eq!(result.0[0].children[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "a");
         assert_eq!(result.0[0].children[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].children[0].content, "1");
+        assert_eq!(result.0[0].children[0].children[0].text_content, "1");
 
         println!("{:?}", result.1);
         assert_eq!(result.1.len(), 1);
         assert_eq!(result.1[0].name, "li");
         assert_eq!(result.1[0].children.len(), 2);
         assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
-        assert_eq!(result.1[0].children[0].content, "Abc ");
-        assert_eq!(result.1[0].children[1].node_type, NodeType::Node);
+        assert_eq!(result.1[0].children[0].text_content, "Abc ");
+        assert_eq!(result.1[0].children[1].node_type, NodeType::Normal);
         assert_eq!(result.1[0].children[1].children.len(), 1);
         assert_eq!(result.1[0].children[1].name, "a");
-        assert_eq!(result.1[0].children[1].children[0].content, "abc");
+        assert_eq!(result.1[0].children[1].children[0].text_content, "abc");
     }
 
     #[test]
@@ -737,15 +729,15 @@ mod tests {
         assert_eq!(result.0[0].children[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "a");
         assert_eq!(result.0[0].children[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].children[0].content, "1");
+        assert_eq!(result.0[0].children[0].children[0].text_content, "1");
 
         println!("{:?}", result.1);
         assert_eq!(result.1.len(), 1);
         assert_eq!(result.1[0].name, "li");
         assert_eq!(result.1[0].children.len(), 2);
         assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
-        assert_eq!(result.1[0].children[0].content, "Abc ");
-        assert_eq!(result.1[0].children[1].node_type, NodeType::Node);
+        assert_eq!(result.1[0].children[0].text_content, "Abc ");
+        assert_eq!(result.1[0].children[1].node_type, NodeType::Normal);
         assert_eq!(result.1[0].children[1].name, "img");
 
         assert_eq!(result.1[0].children[1].attributes.contains_key("src"), true);
@@ -763,7 +755,7 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "code");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].content, "Abc");
+        assert_eq!(result.0[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -784,7 +776,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h1");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -793,7 +785,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h2");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h3() {
@@ -801,7 +793,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h3");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h4() {
@@ -809,7 +801,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h4");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h5() {
@@ -817,7 +809,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h5");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h6() {
@@ -825,7 +817,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h6");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -834,7 +826,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h1");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -843,7 +835,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h2");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h3_end_line() {
@@ -851,7 +843,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h3");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h4_end_line() {
@@ -859,7 +851,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h4");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h5_end_line() {
@@ -867,7 +859,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h5");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
     #[test]
     fn parses_h6_end_line() {
@@ -875,7 +867,7 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "h6");
         assert_eq!(result.0.children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -886,7 +878,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "code");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -905,7 +897,7 @@ mod tests {
         let attr = result.0.children[0].children[0].attributes.get("class").unwrap().to_owned().unwrap();
         assert_eq!(attr, "language-css");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "Abc");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -916,7 +908,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
     }
 
     #[test]
@@ -928,10 +920,10 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 2);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
 
     #[test]
@@ -942,7 +934,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
     }
 
     #[test]
@@ -953,10 +945,10 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 2);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
 
     // doesn't work yet
@@ -971,15 +963,15 @@ mod tests {
 
         assert_eq!(result.0.children[0].children[0].children[0].name, "p");
         assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
 
         assert_eq!(result.0.children[0].children[0].children[1].name, "p");
         assert_eq!(result.0.children[0].children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
 
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
 
 
@@ -994,21 +986,21 @@ mod tests {
 
         assert_eq!(result.0.children[0].children[0].children[0].name, "p");
         assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
 
         assert_eq!(result.0.children[0].children[0].children[1].name, "p");
         assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
 
         assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].content, "nested list");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
 
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
 
     #[test]
@@ -1022,20 +1014,20 @@ mod tests {
 
         assert_eq!(result.0.children[0].children[0].children[0].name, "p");
         assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].content, "test");
+        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
 
         assert_eq!(result.0.children[0].children[0].children[1].name, "p");
         assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].content, "second line");
+        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
 
         assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ol");
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].content, "nested list");
+        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
 
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].content, "another");
+        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
 }

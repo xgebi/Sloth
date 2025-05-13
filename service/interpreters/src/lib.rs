@@ -3,6 +3,7 @@ use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 pub use crate::data_type::DataType;
 use crate::node_type::NodeType;
+use crate::slothmark::parse_slothmark;
 use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};
 pub use crate::variable_scope::VariableScope;
 
@@ -12,6 +13,18 @@ mod node_type;
 mod conditions;
 mod variable_scope;
 mod toe_commands;
+mod slothmark;
+mod patterns;
+
+pub fn render_markup(md: String) -> String {
+    // 1. parse markdown to nodes
+    let res_node = parse_slothmark(md);
+    // 2. call node::to_string() to create result
+    if res_node.1.children.len() > 0 {
+        return format!("{}{}", res_node.0.to_string(), res_node.1.to_string());
+    }
+    format!("{}", res_node.0.to_string())
+}
 
 pub fn scan_toes(template: String) -> Node {
     let template_graphemes = template.graphemes(true).collect::<Vec<&str>>();

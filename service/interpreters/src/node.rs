@@ -22,6 +22,16 @@ impl Node {
             text_content: "".to_string(),
         }
     }
+    
+    pub fn create_normal_node(name: String) -> Self {
+        Node {
+            name,
+            attributes: Default::default(),
+            children: vec![],
+            node_type: NodeType::Normal,
+            text_content: "".to_string(),
+        }
+    }
 
     pub fn create(name: String, attributes: HashMap<String, DataType>, node_type: NodeType) -> Self {
         Node {
@@ -100,6 +110,26 @@ mod tests {
         assert_eq!(n.name, tag);
         assert_eq!(n.attributes.len(), 0);
         assert_eq!(n.children.len(), 0);
+    }
+    
+    #[test]
+    fn is_tag_paired() {
+        assert_eq!(Node::is_always_paired(String::from("script")), true);
+    }
+
+    #[test]
+    fn is_not_tag_paired() {
+        assert_eq!(Node::is_always_paired(String::from("br")), false);
+    }
+
+    #[test]
+    fn is_tag_unpaired() {
+        assert_eq!(Node::is_unpaired(String::from("br")), true);
+    }
+
+    #[test]
+    fn is_not_tag_unpaired() {
+        assert_eq!(Node::is_unpaired(String::from("div")), false);
     }
     
     #[test]
