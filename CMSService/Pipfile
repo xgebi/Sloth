@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 python-dateutil = { version = " 2.9.0.post0"}
 pytz = { version = "2025.2"}
-authlib = { version = "1.5.2"}
 requests = { version = "2.32.3"}
 psycopg = {version = "3.2.7"}
 flask = "==3.0.0"

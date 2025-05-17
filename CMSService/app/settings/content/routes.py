@@ -261,7 +261,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 
 				# images
 				content = re.sub(f"{base_import_link}/wp-content/uploads/", f"{site_url}/sloth-content/", content)
-				content = re.sub(f"-(\d+)x(\d+)\.", ".", content)
+				content = re.sub(r"-(\d+)x(\d+)\.", ".", content)
 
 				# wp:status (CDATA) (publish -> published, draft, scheduled?, private -> published)
 				status = item.getElementsByTagName('wp:status')[0].firstChild.wholeText
