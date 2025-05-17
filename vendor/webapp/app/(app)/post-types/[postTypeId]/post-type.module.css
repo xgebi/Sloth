@@ -1,0 +1,13 @@
+.post-table {
+	border-spacing: 0 .25rem;
+
+	td:first-child {
+		width: 25rem;
+	}
+
+	tbody {
+		tr:nth-child(odd) {
+			background: #ddd;
+		}
+	}
+}

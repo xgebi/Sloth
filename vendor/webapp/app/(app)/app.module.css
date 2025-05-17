@@ -1,0 +1,7 @@
+.sBody {
+	display: grid;
+	grid-template-columns: 15rem auto;
+	margin: 0;
+	gap: 2rem;
+	min-height: 100vh;
+}
