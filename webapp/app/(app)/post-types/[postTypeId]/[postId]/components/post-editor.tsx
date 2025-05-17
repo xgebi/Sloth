@@ -206,7 +206,7 @@ export function PostEditor({post, media, libraries, categories}: PostEditorProps
 	function changePublishTime(ev: SyntheticEvent) {
 		console.log((ev.target as HTMLInputElement).value);
 		if (statePost.publish_date) {
-			console.log(statePost)
+
 		}
 	}
 	
