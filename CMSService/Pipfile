@@ -11,7 +11,7 @@ pytz = { version = "2025.2"}
 requests = { version = "2.32.3"}
 psycopg = {version = "3.2.7"}
 flask = "==3.0.0"
-flask-cors = "==5.0.1"
+flask-cors = "==6.0.0"
 bcrypt = "==4.3.0"
 flask-bcrypt = "==1.0.1"
 markupsafe = "*"
