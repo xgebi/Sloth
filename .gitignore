@@ -45,6 +45,6 @@ toes.pyd
 
 out
 
-/post_generation_service/target/
+/post_generation_service-kept-for-learning-purposes/target/
 
 .parcel-cache/
