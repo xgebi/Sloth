@@ -1,4 +1,3 @@
-import Link from "next/link";
 import styles from './dashboard.module.css';
 import {getPosts} from "@/app/services/post.service";
 

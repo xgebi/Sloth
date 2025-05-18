@@ -5,6 +5,7 @@ import {createEmptyFullPost, FullPost} from "@/app/interfaces/post";
 import {getFullPost} from "@/app/services/post.service";
 import {getMedia} from "@/app/services/media.service";
 import {getLibraries} from "@/app/services/library.service";
+
 type PostPageParams = Promise<{postId: string, postTypeId: string}>
 
 export default async function PostPage({ params }: { params: PostPageParams }) {

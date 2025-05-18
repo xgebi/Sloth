@@ -13,7 +13,9 @@ function formatDate(d: Date | null | number) {
 	return `${d.getFullYear()}-${d.getMonth() <= 9 ? `0${d.getMonth()}` : d.getMonth()}-${d.getDay() <= 9 ? `0${d.getDay()}` : d.getDay()} ${d.getHours() <= 9 ? `0${d.getHours()}` : d.getHours()}:${d.getMinutes() <= 9 ? `0${d.getMinutes()}` : d.getMinutes()}`;
 }
 
-export default async function SettingsPage({ params }: { params: { postTypeId : string }}) {
+type PostTypePageParams = Promise<{postTypeId: string}>
+
+export default async function SettingsPage({ params }: { params: PostTypePageParams }) {
 	const uuid = (await params).postTypeId;
 	const postType = await getPostType(uuid);
 	const posts = await getPostsByType(uuid);

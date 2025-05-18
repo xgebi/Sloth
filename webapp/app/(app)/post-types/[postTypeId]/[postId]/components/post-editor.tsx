@@ -20,6 +20,8 @@ interface PostEditorProps {
 	categories: Category[]
 }
 
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function PostEditor({post, media, libraries, categories}: PostEditorProps) {
 	const [statePost, setStatePost] = useState(post);
 	const [thumbnailData, setThumbnailData] = useState({
