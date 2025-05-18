@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:prep": "npm run build && npm run start",
+    "test:prep": "npm run build && npm run start -p 3002",
     "cypress:open": "cypress open --e2e",
     "cy:run": "cypress run"
   },
@@ -28,7 +28,6 @@
     "@types/react-dom": "^19",
     "@types/slug": "^5.0.9",
     "cypress": "^14.3.3",
-    "cypress-ssr-localhost-mocker": "^0.0.4",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "typescript": "^5"
