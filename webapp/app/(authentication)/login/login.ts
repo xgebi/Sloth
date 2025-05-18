@@ -12,10 +12,10 @@ export async function processLogin(formData: FormData) {
 			username: username.toString(),
 			password: password.toString(),
 		});
-		console.log(result);
 		if (result.hasOwnProperty('uuid')) {
-			console.log('def');
 			redirect("/dashboard");
+		} else {
+			redirect("/login?error=credentials");
 		}
 	}
 }

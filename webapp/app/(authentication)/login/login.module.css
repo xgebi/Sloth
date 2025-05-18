@@ -23,4 +23,13 @@
 			}
 		}
 	}
+
+	.error-box {
+		margin-block-start: 0;
+		font-size: 1.125rem;
+		background: var(--button-danger-background);
+		padding: .25rem .5rem;
+		color: var(--white);
+		border-radius: .4rem;
+	}
 }
