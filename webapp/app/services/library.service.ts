@@ -1,3 +1,5 @@
+import 'server-only'
+
 import {getLibraries as dbGetLibraries} from "@/app/repository/library.repository";
 import Library from "@/app/interfaces/library";
 

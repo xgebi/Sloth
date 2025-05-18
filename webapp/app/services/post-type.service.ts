@@ -1,3 +1,5 @@
+import 'server-only'
+
 import {getPostTypes as dbGetPostTypes, getPostType as dbGetPostType} from "@/app/repository/post-types.repository";
 import PostType from "@/app/interfaces/post-type";
 

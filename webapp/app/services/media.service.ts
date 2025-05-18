@@ -1,3 +1,5 @@
+import 'server-only'
+
 import {getMedia as dbGetMedia, getMediaAlts} from "@/app/repository/media.repository";
 import {Media, MediaAlt} from "@/app/interfaces/media";
 

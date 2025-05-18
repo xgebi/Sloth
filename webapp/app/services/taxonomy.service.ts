@@ -1,3 +1,4 @@
+import 'server-only'
 
 import { getTaxonomyByPostType as dbGetTaxonomyByPostType, getTaxonomyKindOfTypeByPostType as dbGetTaxonomyKindOfTypeByPostType } from '../repository/taxonomy.repository'
 import Taxonomy from "@/app/interfaces/taxonomy";

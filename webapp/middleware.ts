@@ -1,12 +1,12 @@
 import {NextRequest, NextResponse} from "next/server";
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/post-types/:path*', '/settings/:path*', '/api/:path*'],
+  matcher: ['/', '/dashboard/:path*', '/post-types/:path*', '/settings/:path*', '/api/:path*'],
 }
 
 export function middleware(request: NextRequest) {
 	console.log('abc', request.nextUrl.pathname);
-	const token = request.cookies.get("slothAuthToken");
+	const token = request.cookies.get("sloth-admin-token");
 	if (!token) {
 		return NextResponse.redirect(new URL('/login', request.url))
 	}

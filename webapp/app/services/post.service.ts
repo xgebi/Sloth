@@ -1,3 +1,5 @@
+import 'server-only'
+
 import {getFullPost as dbGetPost, getPosts as dbGetPosts, getPostsByType as dbGetPostsByType} from "@/app/repository/posts.repository";
 import {FullPost, Post} from "@/app/interfaces/post";
 
