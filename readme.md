@@ -25,8 +25,3 @@ Actively developed parts:
 In limbo:
 
 - **sloth_config_lib**, **common_db_lib** these two packages either will be merged into **service** or deleted
-
-
-## Config
-
-There needs to be set an enviromental variable with path to the configuration file, see `sloth.toml`
