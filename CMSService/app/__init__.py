@@ -62,10 +62,10 @@ def create_app():  # dev, test, or prod
 	from app.routes.login import login
 	app.register_blueprint(login)
 
-	from app.dashboard import dashboard
+	from app.routes.dashboard import dashboard
 	app.register_blueprint(dashboard)
 
-	from app.dashboard.analytics import analytics
+	from app.routes.dashboard.analytics import analytics
 	app.register_blueprint(analytics)
 
 	from app.settings import settings

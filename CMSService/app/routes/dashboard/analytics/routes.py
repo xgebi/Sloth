@@ -11,7 +11,7 @@ import os
 import json
 import psycopg
 
-from app.dashboard.analytics import analytics
+from app.routes.dashboard.analytics import analytics
 
 
 @analytics.route('/dashboard/analytics')

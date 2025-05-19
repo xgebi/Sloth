@@ -1,6 +1,6 @@
 import datetime
 import unittest
-from app.dashboard.analytics.routes import month_delta
+from app.routes.dashboard.analytics.routes import month_delta
 
 
 class DashboardAnalyticsCase(unittest.TestCase):

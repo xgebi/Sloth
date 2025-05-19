@@ -236,7 +236,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 					existing_tags[returned[1]] = []
 					existing_categories[returned[1]] = []
 
-				post_slug = re.sub(r'(-)+', '-', re.sub('[^0-9a-zA-Z\-]+', '', re.sub(r'(\s+|,)', '-', title))).lower()
+				post_slug = re.sub(r"(-)+", "-", re.sub(r"[^0-9a-zA-Z\-]+", "", re.sub(r"(\s+|,)", "-", title))).lower()
 				cur.execute(
 					"""SELECT count(slug) FROM sloth_posts WHERE (slug LIKE %s OR slug LIKE %s) AND post_type = %s;""",
 					(f"{post_slug}-%", f"{post_slug}%", post_types[post_type]))
@@ -287,7 +287,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 								   existing_categories[post_types[post_type]]]]
 				if len(new_tags) > 0:
 					for new_tag in new_tags:
-						slug = re.sub("\s+", "-", new_tag.lower().strip())
+						slug = re.sub(r"\s+", "-", new_tag.lower().strip())
 						new_uuid = str(uuid4())
 						try:
 							cur.execute("""INSERT INTO sloth_taxonomy 
@@ -307,7 +307,7 @@ def process_posts(items: List, connection: psycopg.Connection, base_import_link:
 
 				if len(new_categories) > 0:
 					for new_category in new_categories:
-						slug = re.sub("\s+", "-", new_category.strip())
+						slug = re.sub(r"\s+", "-", new_category.strip())
 						new_uuid = str(uuid4())
 						try:
 							cur.execute("""INSERT INTO sloth_taxonomy (uuid, slug, display_name, post_type, taxonomy_type) 

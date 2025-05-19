@@ -118,7 +118,7 @@ class MarkdownParser:
 
 	def parse_square_brackets(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
 		j = self.get_end_boundary_within_characters(parsing_info.i, "[", "]", text)
-		footnote_pattern = re.compile("\[\d+\. .+?\]")
+		footnote_pattern = re.compile(r"\[\d+\. .+?\]")
 		if text[j+1] == "(":
 			k = self.get_end_boundary_within_characters(j + 1, "(", ")", text)
 			label = text[parsing_info.i + 1:j]
@@ -237,7 +237,7 @@ class MarkdownParser:
 		line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find(
 			"\n") != -1 else len(text)
 		line = text[line_start: line_end]
-		numeric_list_pattern = re.compile('^(\d+\. )')
+		numeric_list_pattern = re.compile(r"^(\d+\. )")
 		if numeric_list_pattern.match(line.strip()):
 			content_start = parsing_info.i + line.strip().find(' ') + 1
 			if parsing_info.list_info.level == -1:
@@ -290,7 +290,7 @@ class MarkdownParser:
 		line_end = text[parsing_info.i:].find("\n") + parsing_info.i if text[parsing_info.i:].find("\n") != -1 else len(
 			text)
 		line = text[line_start: line_end]
-		points_list_pattern = re.compile('^([\-|\*] )')
+		points_list_pattern = re.compile(r"^([\-|\*] )")
 		if points_list_pattern.match(line.strip()):
 			content_start = parsing_info.i + line.strip().find(' ') + 1
 			if parsing_info.list_info.level == -1:
@@ -500,7 +500,7 @@ class MarkdownParser:
 		return text, parsing_info
 
 	def parse_image(self, text: str, parsing_info: ParsingInfo) -> (str, ParsingInfo):
-		img_pattern = re.compile("!\[(.*)]\((.*)\)")
+		img_pattern = re.compile(r"!\[(.*)]\((.*)\)")
 		if img_pattern.match(text[parsing_info.i:]):
 			img_info = text[
 					   parsing_info.i:

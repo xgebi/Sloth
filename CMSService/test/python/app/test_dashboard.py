@@ -1,5 +1,5 @@
 import unittest
-from app.dashboard.routes import format_post_data, format_post_data_json
+from app.routes.dashboard.routes import format_post_data, format_post_data_json
 
 
 class DashboardTestCase(unittest.TestCase):

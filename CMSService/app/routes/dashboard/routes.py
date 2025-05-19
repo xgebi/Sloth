@@ -15,7 +15,7 @@ from typing import Tuple, List, Dict, Optional
 
 from app.back_office.post.post_types import PostTypes
 from app.toes.toes import render_toe_from_path
-from app.dashboard import dashboard
+from app.routes.dashboard import dashboard
 
 
 @dashboard.route('/dashboard')
@@ -68,7 +68,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name as post_type
+				"""SELECT A.uuid, A.post_type as post_type_uuid, A.title, A.publish_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.publish_date DESC LIMIT 10;""",
 				('published',)
@@ -76,7 +76,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 			recent_posts = cur.fetchall()
 
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.publish_date as date, B.display_name as post_type
+				"""SELECT A.uuid, A.post_type as post_type_uuid, A.title, A.publish_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.publish_date LIMIT 10;""",
 				('scheduled',)
@@ -84,7 +84,7 @@ def fetch_dashboard_data(*args, connection: psycopg.Connection, to_json: Optiona
 			upcoming_posts = cur.fetchall()
 
 			cur.execute(
-				"""SELECT A.uuid, A.title, A.update_date as date, B.display_name as post_type
+				"""SELECT A.uuid, A.post_type as post_type_uuid, A.title, A.update_date as date, B.display_name as post_type
 					FROM sloth_posts AS A INNER JOIN sloth_post_types AS B ON B.uuid = A.post_type 
 					WHERE post_status = %s ORDER BY A.update_date DESC LIMIT 10;""",
 				('draft',)
@@ -139,6 +139,7 @@ def dashboard_information(*args, connection: psycopg.Connection, **kwargs):
 	:param kwargs:
 	:return:
 	"""
+	print("it's getting here")
 	post_types = PostTypes()
 	post_types_result = post_types.get_post_type_list(connection)
 
@@ -171,8 +172,8 @@ def create_draft(*args, connection: psycopg.Connection, **kwargs):
 	"""
 	draft = json.loads(request.data)
 
-	slug = re.sub('\s+', '-', draft['title'])
-	slug = re.sub('[^0-9a-zA-Z\-]+', '', slug)
+	slug = re.sub(r"\s+", "-", draft['title'])
+	slug = re.sub(r"[^0-9a-zA-Z\-]+", '', slug)
 
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
@@ -214,6 +215,7 @@ def format_post_data_json(post_arr: List) -> List:
 		posts.append({
 			"uuid": post['uuid'],
 			"title": post['title'],
+			"post_type": post["post_type_uuid"],
 			"publishDate": post['date'],
 			"formattedPublishDate": datetime.datetime.fromtimestamp(float(post['date']) / 1000.0).strftime("%Y-%m-%d %H:%M"),
 			# "postType": post[3] # TODO investigate this, it makes no sense
