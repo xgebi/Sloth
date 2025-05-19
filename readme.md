@@ -11,13 +11,21 @@ Sloth is a content management system that should serve my two needs:
     
     This was a success.
 
-## Installation notes
+## Project structure
 
-1. project needs protobuf
+There are actively developed parts, for learning parts and parts in limbo.
 
-   To install it on Fedora use `sudo yum install protobuf`.
+Actively developed parts:
 
-   For other systems follow [tonic's documentation](https://github.com/hyperium/tonic#getting-started)
+- **CMSService** is the  main service that powers the blog (Python/Flask)
+- **webapp** is a Next.js app that should serve as the new UI, currently in development
+  - **webappMockBackend** is a backend for webapp for Cypress (Python/FastAPI)
+- **service** is a service, possibly in future PyO3 package, that should speed up slow parts of CMSService
+
+In limbo:
+
+- **sloth_config_lib**, **common_db_lib** these two packages either will be merged into **service** or deleted
+
 
 ## Config
 
