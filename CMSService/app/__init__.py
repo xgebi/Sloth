@@ -7,7 +7,6 @@ from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 from uuid import uuid4
-from app.scheduler import publish_posts
 
 from app.toes.hooks import Hooks, Hook
 
@@ -50,7 +49,7 @@ def create_app():  # dev, test, or prod
 	def not_found(error):
 		return "404 error", 404
 
-	from app.api.content_management import content_management
+	from app.routes.content_management import content_management
 	app.register_blueprint(content_management)
 
 	from app.root import root
@@ -89,7 +88,7 @@ def create_app():  # dev, test, or prod
 	from app.routes.messages import messages
 	app.register_blueprint(messages)
 
-	from app.site import site
+	from app.routes.site import site
 	app.register_blueprint(site)
 
 	from app.routes.post_type import post_type

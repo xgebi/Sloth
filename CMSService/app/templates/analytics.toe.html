@@ -8,7 +8,8 @@
                 },
                 body: JSON.stringify({
                     page: window.location.pathname,
-                    referrer: document.referrer
+                    referrer: document.referrer,
+										userAgent: window.navigator.userAgent
                 })
             }).then(response => {
                 return response.json()
