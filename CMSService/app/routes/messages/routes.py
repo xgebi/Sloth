@@ -32,7 +32,7 @@ def retrieve_message_list(*args, connection: psycopg.Connection, **kwargs):
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
 			cur.execute("""SELECT uuid, sent_date, status 
-                FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
+                FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC""")
 			message_list = cur.fetchall()
 	except psycopg.errors.DatabaseError as e:
 		print("db error d")
@@ -155,6 +155,47 @@ def show_message(*args, permission_level: int, connection: psycopg.Connection, m
 		},
 		hooks=Hooks()
 	)
+
+@messages.route("/api/messages/<msg>")
+@authorize_rest(0)
+@db_connection
+def retrieve_message(*args, connection: psycopg.Connection, msg, **kwargs):
+	"""
+	Renders a page with a message
+
+	:param args:
+	:param connection:
+	:param msg:
+	:param kwargs:
+	:return:
+	"""
+
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT sent_date, status FROM sloth_messages WHERE uuid = %s""", (msg,))
+			raw_message = cur.fetchone()
+			cur.execute("""SELECT name, value FROM sloth_message_fields WHERE message = %s""", (msg,))
+			raw_message_fields = cur.fetchall()
+			if len(raw_message) > 0:
+				cur.execute("""UPDATE sloth_messages SET status = 'read' WHERE uuid = %s""", (msg,))
+				connection.commit()
+	except psycopg.errors.DatabaseError:
+		print("db error e")
+		connection.close()
+		abort(500)
+
+	connection.close()
+
+	message = {
+		"sent_date": datetime.datetime.fromtimestamp(float(raw_message['sent_date']) / 1000.0).strftime("%Y-%m-%d"),
+		"status": raw_message['status'].strip(),
+		"items": [{
+			"name": item['name'].strip(),
+			"value": item['value'].strip()
+		} for item in raw_message_fields]
+	}
+
+	return json.dumps(message)
 
 
 @messages.route("/api/messages/delete", methods=["POST", "PUT", "DELETE"])

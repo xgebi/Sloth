@@ -12,7 +12,7 @@ export default async function SidePanel() {
 			<ul>
 				<li><MainNavLink href="/dashboard">Dashboard</MainNavLink>
 					<ul>
-						<li><MainNavLink href="/dashboard/messages">Messages</MainNavLink></li>
+						<li><MainNavLink href="/dashboard/messages" startsWith={true}>Messages</MainNavLink></li>
 						<li><MainNavLink href="/dashboard/statistics">Statistics</MainNavLink></li>
 					</ul>
 				</li>
@@ -21,7 +21,7 @@ export default async function SidePanel() {
 					<ul>
 						{postTypes.map((pt) => (
 										<li key={pt.uuid}>
-						<MainNavLink href={`/post-types/${pt.uuid}`}>{pt.display_name}</MainNavLink>
+						<MainNavLink href={`/post-types/${pt.uuid}`} startsWith={true}>{pt.display_name}</MainNavLink>
 							<ul>
 								<li key={`${pt.uuid}-new`}><MainNavLink href={`/post-types/${pt.uuid}/new`}>New post</MainNavLink></li>
 								<li key={`${pt.uuid}-tax`}><MainNavLink href={`/post-types/${pt.uuid}/taxonomy`}>Taxonomy</MainNavLink></li>

@@ -1,4 +1,3 @@
-import styles from "@/app/(app)/dashboard/dashboard.module.css";
 import commonBoxStyles from './common-box.module.css';
 import msgBoxStyles from './message-box.module.css';
 
