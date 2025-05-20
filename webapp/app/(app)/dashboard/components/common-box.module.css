@@ -1,0 +1,33 @@
+.card {
+	border: 1px solid lightgray;
+	width: 25rem;
+	padding: 1rem 0;
+	border-radius: .5rem;
+
+	h2 {
+		margin: 0;
+		padding-inline: 1rem;
+		margin-block-end: 1rem;
+	}
+
+	hr {
+		border-color: lightgray;
+  		border-top: 0;
+	}
+
+	article {
+		padding-inline: 1rem;
+	}
+
+	h3 {
+		margin: 0.25rem 0rem;
+		font-size: 1.125rem;
+		font-weight: normal;
+	}
+}
+
+.no-posts-message {
+	text-align: center;
+	height: calc(100% - 3rem);
+	align-content: center;
+}

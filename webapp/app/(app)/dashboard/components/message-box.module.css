@@ -1,0 +1,7 @@
+.message {
+
+
+	&.unread {
+		font-weight: 700;
+	}
+}
