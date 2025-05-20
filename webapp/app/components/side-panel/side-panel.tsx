@@ -1,5 +1,3 @@
-// 'use client'; // indicates if it's client side component
-
 import styles from "./side-panel.module.css";
 import MainNavLink from "./main-nav-link";
 import {getPostTypes} from "@/app/services/post-type.service";

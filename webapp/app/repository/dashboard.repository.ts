@@ -6,15 +6,16 @@ export async function fetchDashboardData() {
 	if (rawCookie) {
 		const cookie = JSON.parse(rawCookie.value);
 		console.log(`${process.env['BACKEND_URL']}/api/dashboard-information`);
-		const fetched = await fetch(`${process.env['BACKEND_URL']}/api/dashboard-information`, {
-			method: "GET",
-			headers: {
-				'authorization': `${cookie.displayName}:${cookie.uuid}:${cookie.token}`
-			},
-		});
-		console.log(fetched);
-		const result = await fetched.json()
-		console.log('lnh', result);
-		return result;
+		try {
+			const fetched = await fetch(`${process.env['BACKEND_URL']}/api/dashboard-information`, {
+				method: "GET",
+				headers: {
+					'authorization': `${cookie.displayName}:${cookie.uuid}:${cookie.token}`
+				},
+			});
+			return await fetched.json()
+		} catch (_) {
+			return { error: "Cannot connect to backend" }
+		}
 	}
 }

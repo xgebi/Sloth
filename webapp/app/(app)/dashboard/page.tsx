@@ -8,6 +8,9 @@ import MessageBox from "@/app/(app)/dashboard/components/message-box";
 
 export default async function DashboardPage() {
 	const posts = await getDashboardInformation();
+	if (posts.hasOwnProperty('error')) {
+		return <main>{posts.error}</main>
+	}
 	const cookieStore = await cookies()
 	const token = cookieStore.get(SlothConstants.Token)
 	if (!token) {
