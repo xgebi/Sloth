@@ -3,7 +3,10 @@ export interface Post {
 	uuid: string,
 	post_type: string,
 	publish_date: number | Date | null,
-	update_date: number | Date
+	formatedPublishDate?: string,
+	update_date: number | Date,
+	formatedUpdateDate?: string,
+	lang: string,
 }
 
 export interface PostLibrary {

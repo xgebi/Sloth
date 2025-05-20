@@ -127,7 +127,8 @@ def delete_language(*args, connection: psycopg.Connection, lang_id: str, **kwarg
 def get_language_list(*args, connection: psycopg.Connection, **kwargs):
 	try:
 		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
-			cur.execute("""SELECT uuid, long_name as longName, short_name as shortName FROM sloth_language_settings;""")
+			cur.execute("""SELECT uuid, long_name as long_name, short_name as short_name
+						   FROM sloth_language_settings;""")
 			res = cur.fetchall()
 			for lang in res:
 				lang.update({'default': False})

@@ -1,17 +1,10 @@
 import {getPostType} from "@/app/services/post-type.service";
 import {getPostsByType} from "@/app/services/post.service";
-import Link from "next/link";
-import styles from './post-type.module.css'
-
-function formatDate(d: Date | null | number) {
-	if (!d) {
-		return '';
-	}
-	if (typeof d === "number") {
-		d = new Date(d);
-	}
-	return `${d.getFullYear()}-${d.getMonth() <= 9 ? `0${d.getMonth()}` : d.getMonth()}-${d.getDay() <= 9 ? `0${d.getDay()}` : d.getDay()} ${d.getHours() <= 9 ? `0${d.getHours()}` : d.getHours()}:${d.getMinutes() <= 9 ? `0${d.getMinutes()}` : d.getMinutes()}`;
-}
+import {getLanguageData} from "@/app/services/language.service";
+import Language from "@/app/interfaces/language";
+import {PostTable} from "@/app/(app)/post-types/[postTypeId]/components/post-table";
+import {Post} from "@/app/interfaces/post";
+import {formatDate} from "@/app/utilities/date";
 
 type PostTypePageParams = Promise<{postTypeId: string}>
 
@@ -19,43 +12,19 @@ export default async function SettingsPage({ params }: { params: PostTypePagePar
 	const uuid = (await params).postTypeId;
 	const postType = await getPostType(uuid);
 	const posts = await getPostsByType(uuid);
-	if (postType) {
+	const languages = await getLanguageData();
+	const mainLanguage = (languages as Language[]).find((lang) => lang.default);
+
+	if (!posts.hasOwnProperty("error")) {
+		for (const post of posts as Post[]) {
+			post.formatedPublishDate = formatDate(post.publish_date);
+			post.formatedUpdateDate = formatDate(post.update_date);
+		}
 		return (
-			<main>
-				<h1>{postType.display_name}</h1>
-				<section>
-					<label htmlFor="language-picker">Choose language:</label>
-					<select id="language-picker">
-						<option>English</option>
-						<option>German</option>
-						<option>Spanish</option>
-					</select>
-					<button>Filter language</button>
-				</section>
-				<table className={styles['post-table']}>
-					<thead>
-						<tr>
-							<th>Title</th>
-							<th>Published date</th>
-							<th>Updated date</th>
-							<th>Edit</th>
-						</tr>
-					</thead>
-					<tbody>
-					{posts.map((post) => (
-						<tr key={post.uuid}>
-							<td>{post.title}</td>
-							<td>{formatDate(post.publish_date)}</td>
-							<td>{formatDate(post.update_date)}</td>
-							<td><Link href={`/post-types/${uuid}/${post.uuid}`}>edit</Link></td>
-						</tr>
-					))}
-					</tbody>
-				</table>
-			</main>
+			<div>
+				<PostTable mainLanguage={mainLanguage} languages={languages} posts={posts as Post[]} postType={postType}></PostTable>
+			</div>
 		)
 	}
-	return (
-		<h1>Wrong post type</h1>
-	)
+	return <div>No posts</div>
 }

@@ -113,6 +113,37 @@ def get_posts_list(*args, permission_level: int, connection: psycopg.Connection,
 		connection.close()
 		abort(500)
 
+@post.route("/api/post/<post_type>")
+@authorize_rest(0)
+@db_connection
+def get_all_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str,
+				   **kwargs):
+	"""
+	Gets a list of posts for default language
+
+	:param args:
+	:param permission_level:
+	:param connection:
+	:param post_type:
+	:param language:
+	:param kwargs:
+	:return:
+	"""
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT A.uuid, A.title, A.publish_date, A.update_date,
+             A.post_status, A.post_type,
+                            A.lang
+                            FROM sloth_posts AS A 
+                            WHERE A.post_type = %s ORDER BY A.update_date DESC""",
+						(post_type,))
+			return json.dumps(cur.fetchall())
+	except Exception as e:
+		print(e)
+		traceback.print_exc()
+		connection.close()
+		abort(500)
+
 
 @post.route("/post/<post_type>/<lang_id>")
 @authorize_web(0)

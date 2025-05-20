@@ -67,19 +67,19 @@ def create_app():  # dev, test, or prod
 	from app.routes.dashboard.analytics import analytics
 	app.register_blueprint(analytics)
 
-	from app.settings import settings
+	from app.routes.settings import settings
 	app.register_blueprint(settings)
 
-	from app.settings.themes import settings_themes
+	from app.routes.settings.themes import settings_themes
 	app.register_blueprint(settings_themes)
 
-	from app.settings.themes.menu import menu
+	from app.routes.settings.themes.menu import menu
 	app.register_blueprint(menu)
 
-	from app.settings.content import content
+	from app.routes.settings.content import content
 	app.register_blueprint(content)
 
-	from app.settings.users import settings_users
+	from app.routes.settings.users import settings_users
 	app.register_blueprint(settings_users)
 
 	from app.routes.post import post
@@ -106,13 +106,13 @@ def create_app():  # dev, test, or prod
 	from app.mock_endpoints import mock_endpoints
 	app.register_blueprint(mock_endpoints)
 
-	from app.settings.language_settings import language_settings
+	from app.routes.settings.language_settings import language_settings
 	app.register_blueprint(language_settings)
 
-	from app.settings.localized_settings import localized_settings
+	from app.routes.settings.localized_settings import localized_settings
 	app.register_blueprint(localized_settings)
 
-	from app.settings.dev import dev_settings
+	from app.routes.settings.dev import dev_settings
 	app.register_blueprint(dev_settings)
 
 	from app.libraries import libraries

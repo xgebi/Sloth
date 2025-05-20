@@ -1,23 +1,13 @@
 
-import {Row, RowList} from "postgres";
+import {Row} from "postgres";
 import sql from "@/app/db/db";
 import {FullPost, PostLibrary, PostSection} from "@/app/interfaces/post";
+import {simpleGet} from "@/app/repository/fetch";
 
-export async function getPosts(limit = -1): Promise<RowList<Row[]>> {
-	const limitStr = limit >= 0 ? sql`LIMIT ${limit}` : sql``;
-	return sql`
-      select title, uuid, post_type
-      from sloth_posts ${limitStr};
-	`;
+export async function fetchPostsByType(postTypeId: string) {
+	return simpleGet(`/api/post/${postTypeId}`);
 }
 
-export async function getPostsByType(postTypeId: string): Promise<RowList<Row[]>> {
-	return sql`
-      select title, uuid, post_type, publish_date, update_date
-      from sloth_posts WHERE post_type = ${postTypeId}
-      order by update_date DESC;
-	`;
-}
 
 export async function getFullPost(postId: string): Promise<Row | undefined> {
 	const fetchedPost = await sql`
