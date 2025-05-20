@@ -13,8 +13,39 @@ from app.toes.hooks import Hooks
 import os
 from app.toes.toes import render_toe_from_path
 
-from app.messages import messages
+from app.routes.messages import messages
 
+@messages.route("/api/messages")
+@authorize_rest(0)
+@db_connection
+def retrieve_message_list(*args, connection: psycopg.Connection, **kwargs):
+	"""
+	Returns json with list of messages
+
+	:param args:
+	:param permission_level:
+	:param connection:
+	:param kwargs:
+	:return:
+	"""
+
+	try:
+		with connection.cursor(row_factory=psycopg.rows.dict_row) as cur:
+			cur.execute("""SELECT uuid, sent_date, status 
+                FROM sloth_messages WHERE status != 'deleted' ORDER BY sent_date DESC LIMIT 10""")
+			message_list = cur.fetchall()
+	except psycopg.errors.DatabaseError as e:
+		print("db error d")
+		abort(500)
+	connection.close()
+
+	for message in message_list:
+		message.update({
+            "sent_date": datetime.datetime.fromtimestamp(float(message['sent_date']) / 1000.0).strftime(
+                "%Y-%m-%d %H:%M"),
+        })
+
+	return json.dumps(message_list)
 
 @messages.route("/messages")
 @authorize_web(0)

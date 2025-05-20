@@ -16,8 +16,8 @@ export default function LoginPage() {
 	if (rawCookie) {
 		console.log('abc')
 		const cookie = JSON.parse(rawCookie);
-		console.log('def', cookie, cookie.uuid, (cookie.expiryTime * 1000), (new Date()).getTime())
-		if (cookie.uuid && (cookie.expiryTime * 1000) > (new Date()).getTime()) {
+		console.log('def', cookie, cookie.uuid, (cookie.expiryTime), (new Date()).getTime(), (cookie.expiryTime) - (new Date()).getTime())
+		if (cookie.uuid && (cookie.expiryTime) > (new Date()).getTime()) {
 			// probably the best solution for the time being, router replace and push broken the website
 			return window.location.replace(`${window.location.origin}/dashboard`);
 		}

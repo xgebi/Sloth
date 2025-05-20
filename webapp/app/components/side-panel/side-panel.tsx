@@ -12,6 +12,7 @@ export default async function SidePanel() {
 			<ul>
 				<li><MainNavLink href="/dashboard">Dashboard</MainNavLink>
 					<ul>
+						<li><MainNavLink href="/dashboard/messages">Messages</MainNavLink></li>
 						<li><MainNavLink href="/dashboard/statistics">Statistics</MainNavLink></li>
 					</ul>
 				</li>

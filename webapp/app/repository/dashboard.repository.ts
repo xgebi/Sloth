@@ -12,6 +12,9 @@ export async function fetchDashboardData() {
 				'authorization': `${cookie.displayName}:${cookie.uuid}:${cookie.token}`
 			},
 		});
-		return fetched.json();
+		console.log(fetched);
+		const result = await fetched.json()
+		console.log('lnh', result);
+		return result;
 	}
 }
