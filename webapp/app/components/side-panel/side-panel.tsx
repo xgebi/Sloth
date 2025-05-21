@@ -29,7 +29,17 @@ export default async function SidePanel() {
 						))}
 					</ul>
 				</li>
-				<li><MainNavLink href="/app/settings">Settings</MainNavLink></li>
+				<li><MainNavLink href="/settings">Settings</MainNavLink>
+					<ul>
+						{/*when this is not single user CMS, this needs to be guarded/hidden at times*/}
+						<li><MainNavLink href={`/settings/users`}>Users</MainNavLink></li>
+						<li><MainNavLink href={`/settings/themes`}>Themes</MainNavLink></li>
+						<li><MainNavLink href={`/settings/menus`}>Menus</MainNavLink></li>
+						<li><MainNavLink href={`/settings/languages`}>Languages</MainNavLink></li>
+						<li><MainNavLink href={`/settings/localized`}>Localized name</MainNavLink></li>
+						<li><MainNavLink href={`/settings/dev`}>Dev settings</MainNavLink></li>
+					</ul>
+				</li>
 			</ul>
 		</nav>
 	)

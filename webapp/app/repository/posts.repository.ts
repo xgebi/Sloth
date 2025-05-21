@@ -3,9 +3,33 @@ import {Row} from "postgres";
 import sql from "@/app/db/db";
 import {FullPost, PostLibrary, PostSection} from "@/app/interfaces/post";
 import {simpleGet} from "@/app/repository/fetch";
+import {cookies} from "next/headers";
+import {ErrorMessage} from "@/app/interfaces/error-message";
+import {Message} from "@/app/interfaces/message";
 
 export async function fetchPostsByType(postTypeId: string) {
 	return simpleGet(`/api/post/${postTypeId}`);
+}
+
+export async function fetchFullPost(postId: string) {
+	const cookieStore = await cookies()
+  const rawCookie = cookieStore.get('sloth-admin-token')
+	if (rawCookie) {
+		const cookie = JSON.parse(rawCookie.value);
+		const result = await fetch(`${process.env['BACKEND_URL']}/api/post/${postId}`, {
+			method: "GET",
+			headers: {
+				'authorization': `${cookie.displayName}:${cookie.uuid}:${cookie.token}`
+			},
+		});
+		console.log('gdi', result.body);
+		const resultObj: object = await result.json();
+		console.log('abc', resultObj);
+		if (resultObj.hasOwnProperty('error')) {
+			return (resultObj as ErrorMessage);
+		}
+		return resultObj as Message;
+	}
 }
 
 

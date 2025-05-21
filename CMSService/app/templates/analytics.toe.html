@@ -1,6 +1,14 @@
 <toe:fragment xmlns:toe="https://xgebi.github.io/Sloth/">
     <script toe:inline-js>
+				function findUtmSource(str) {
+					for (const s of str) {
+						if (s.toLowerCase().indexOf("utm_source") === 0) {
+							return s.split("=")[1]
+						}
+					}
+				}
         document.addEventListener('DOMContentLoaded', (event) => {
+						const strs = window.location.search.substring(1).split("&");
             fetch('<(sloth_api_url)>/api/analytics', {
                 method: 'POST',
                 headers: {
@@ -9,7 +17,8 @@
                 body: JSON.stringify({
                     page: window.location.pathname,
                     referrer: document.referrer,
-										userAgent: window.navigator.userAgent
+										userAgent: window.navigator.userAgent,
+										source: window.location.search.length > 0 ? findUtmSource(strs) : ''
                 })
             }).then(response => {
                 return response.json()

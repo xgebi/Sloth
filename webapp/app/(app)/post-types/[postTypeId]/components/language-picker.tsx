@@ -3,6 +3,7 @@
 import Language from "@/app/interfaces/language";
 import {ErrorMessage} from "@/app/interfaces/error-message";
 import {SyntheticEvent} from "react";
+import styles from './language-picker.module.css';
 
 type LanguagePickerProps = {languages: Language[] | ErrorMessage, mainLanguage: Language | undefined, onLanguageChange: (uuid: string) => void}
 
@@ -11,7 +12,7 @@ export function LanguagePicker({ languages, mainLanguage, onLanguageChange }: La
 		return <section>Failed to load languages</section>
 	}
 	return (
-		<section>
+		<section className={styles['language-wrapper']}>
 					<label htmlFor="language-picker">Choose language:</label>
 					<select
 						id="language-picker"

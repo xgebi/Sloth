@@ -43,11 +43,11 @@ def update_analytics(*args, connection: psycopg.Connection, **kwargs):
 
 	try:
 		with connection.cursor() as cur:
-			cur.execute("""INSERT INTO sloth_analytics (uuid, pathname, last_visit, browser, browser_version, referrer) 
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
+			cur.execute("""INSERT INTO sloth_analytics (uuid, pathname, last_visit, browser, browser_version, referrer, source) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
 						(str(uuid.uuid4()), analytics_data["page"], time() * 1000, browser,
 						 browser_version,
-						 analytics_data["referrer"]))
+						 analytics_data["referrer"], analytics_data["source"]))
 			connection.commit()
 
 		response = make_response(json.dumps({"page_recorded": "ok"}))
