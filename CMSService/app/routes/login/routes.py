@@ -201,7 +201,7 @@ def api_login() -> Tuple[str, int]:
 	return json.dumps({"error": "Unable to login"}), 401
 
 
-@login.route("/api/logout")
+@login.route("/api/logout", methods="POST")
 @authorize_rest(0)
 def api_logout() -> Tuple[str, int]:
 	"""

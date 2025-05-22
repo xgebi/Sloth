@@ -113,7 +113,10 @@ def get_posts_list(*args, permission_level: int, connection: psycopg.Connection,
 		connection.close()
 		abort(500)
 
-@post.route("/api/post/<post_type>")
+# This URL might get changed. I need to rethink URLs for this project
+# They were created organically but now that some time has passed,
+# it might be the point to reconsider everything
+@post.route("/api/post/<post_type>/all")
 @authorize_rest(0)
 @db_connection
 def get_all_posts_list(*args, permission_level: int, connection: psycopg.Connection, post_type: str,
@@ -1449,6 +1452,7 @@ def is_generating(*args, **kwargs):
 	})
 
 
+# To be removed
 @post.route("/api/check-scheduled/<key>", methods=["GET"])
 @db_connection
 def check_scheduled(*args, key: str, connection: psycopg.Connection, **kwargs):

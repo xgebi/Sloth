@@ -161,7 +161,7 @@ def show_message(*args, permission_level: int, connection: psycopg.Connection, m
 @db_connection
 def retrieve_message(*args, connection: psycopg.Connection, msg, **kwargs):
 	"""
-	Renders a page with a message
+	Returns a json with a message
 
 	:param args:
 	:param connection:

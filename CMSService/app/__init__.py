@@ -8,8 +8,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 from flask_apscheduler import APScheduler
-from scheduled_jobs import scheduled_task
-
+from app.scheduled_jobs import scheduled_task
 from app.toes.hooks import Hooks, Hook
 
 bcrypt = Bcrypt()

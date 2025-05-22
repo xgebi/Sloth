@@ -8,7 +8,7 @@ import {ErrorMessage} from "@/app/interfaces/error-message";
 import {Message} from "@/app/interfaces/message";
 
 export async function fetchPostsByType(postTypeId: string) {
-	return simpleGet(`/api/post/${postTypeId}`);
+	return simpleGet(`/api/post/${postTypeId}/all`);
 }
 
 export async function fetchFullPost(postId: string) {
