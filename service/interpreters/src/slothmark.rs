@@ -520,8 +520,8 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
-        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("href").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "em");
     }
@@ -533,8 +533,8 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
-        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("href").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "strong");
     }
@@ -545,22 +545,22 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
-        let attr = result.0[0].attributes.get("href").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "vam");
+        let attr = result.0[0].attributes.get("href").unwrap().clone();
+        assert_eq!(attr, DataType::String("vam".to_string()));
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].name, "img");
 
         assert_eq!(result.0[0].children[0].attributes.contains_key("src"), true);
-        let attr = result.0[0].children[0].attributes.get("src").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].children[0].attributes.get("src").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
 
         assert_eq!(result.0[0].children[0].attributes.contains_key("title"), true);
-        let attr = result.0[0].children[0].attributes.get("title").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "jkl");
+        let attr = result.0[0].children[0].attributes.get("title").unwrap().clone();
+        assert_eq!(attr, DataType::String("jkl".to_string()));
 
         assert_eq!(result.0[0].children[0].attributes.contains_key("alt"), true);
-        let attr = result.0[0].children[0].attributes.get("alt").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "Abc");
+        let attr = result.0[0].children[0].attributes.get("alt").unwrap().clone();
+        assert_eq!(attr, DataType::String("Abc".to_string()));
     }
 
     #[test]
@@ -569,16 +569,16 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
         assert_eq!(result.0[0].attributes.contains_key("src"), true);
-        let attr = result.0[0].attributes.get("src").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("src").unwrap().to_owned().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
 
         assert_eq!(result.0[0].attributes.contains_key("title"), true);
-        let attr = result.0[0].attributes.get("title").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "jkl");
+        let attr = result.0[0].attributes.get("title").unwrap().to_owned().clone();
+        assert_eq!(attr, DataType::String("jkl".to_string()));
 
         assert_eq!(result.0[0].attributes.contains_key("alt"), true);
-        let attr = result.0[0].attributes.get("alt").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "Abc");
+        let attr = result.0[0].attributes.get("alt").unwrap().to_owned().clone();
+        assert_eq!(attr, DataType::String("Abc".to_string()));
     }
 
     #[test]
@@ -587,12 +587,12 @@ mod tests {
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
         assert_eq!(result.0[0].attributes.contains_key("src"), true);
-        let attr = result.0[0].attributes.get("src").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.0[0].attributes.get("src").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
 
         assert_eq!(result.0[0].attributes.contains_key("alt"), true);
-        let attr = result.0[0].attributes.get("alt").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "Abc");
+        let attr = result.0[0].attributes.get("alt").unwrap().clone();
+        assert_eq!(attr, DataType::String("Abc".to_string()));
     }
 
     #[test]
@@ -625,26 +625,33 @@ mod tests {
         assert_eq!(result.0[0].children[1].text_content, " def");
     }
 
-    // TODO look at these below
     #[test]
     fn process_bold_italic_content_b() {
         let result = process_content("*Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
-        println!("{:?}", result.0);
-        // assert_eq!(result.0[0].name, "strong");
-        // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].text_content, " def");
+        println!("{:?}", result.0[0]);
+        assert_eq!(result.0[0].name, "em");
+        assert_eq!(result.0[0].children.len(), 2);
+        assert_eq!(result.0[0].children[0].text_content, "Abc ".to_string());
+        assert_eq!(result.0[0].children[1].name, "strong");
+        assert_eq!(result.0[0].children[1].children.len(), 1);
+        assert_eq!(result.0[0].children[1].children[0].text_content, "def".to_string());
     }
 
     #[test]
     fn process_bold_italic_content_c() {
         let result = process_content("mno *Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
+        println!("{:?}", result.0[1]);
         assert_eq!(result.0.len(), 3);
-        // assert_eq!(result.0[0].name, "strong");
-        // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].text_content, " def");
+        assert_eq!(result.0[0].text_content, "mno ".to_string());
+        assert_eq!(result.0[1].name, "em");
+        assert_eq!(result.0[1].children.len(), 2);
+        assert_eq!(result.0[1].children[0].text_content, "Abc ");
+        assert_eq!(result.0[1].children[1].name, "strong");
+        assert_eq!(result.0[1].children[1].children.len(), 1);
+        assert_eq!(result.0[1].children[1].children[0].text_content, "def");
+        assert_eq!(result.0[2].text_content, " jkl".to_string());
     }
 
     #[test]
@@ -652,19 +659,13 @@ mod tests {
         let result = process_content("*Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 2);
-        // assert_eq!(result.0[0].name, "strong");
-        // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].text_content, " def");
-    }
-
-    #[test]
-    fn process_bold_italic_content_e() {
-        let result = process_content("mno *Abc **def***".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
-        assert_eq!(result.0.len(), 2);
-        // assert_eq!(result.0[0].name, "strong");
-        // assert_eq!(result.0[0].children.len(), 2);
-        // assert_eq!(result.0[0].children[1].text_content, " def");
+        assert_eq!(result.0[0].name, "em");
+        assert_eq!(result.0[0].children.len(), 2);
+        assert_eq!(result.0[0].children[0].text_content, "Abc ");
+        assert_eq!(result.0[0].children[1].name, "strong");
+        assert_eq!(result.0[0].children[1].children.len(), 1);
+        assert_eq!(result.0[0].children[1].children[0].text_content, "def");
+        assert_eq!(result.0[1].text_content, " jkl");
     }
 
     #[test]
@@ -724,12 +725,12 @@ mod tests {
         assert_eq!(result.1[0].children[1].name, "img");
 
         assert_eq!(result.1[0].children[1].attributes.contains_key("src"), true);
-        let attr = result.1[0].children[1].attributes.get("src").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "def");
+        let attr = result.1[0].children[1].attributes.get("src").unwrap().clone();
+        assert_eq!(attr, DataType::String("def".to_string()));
 
         assert_eq!(result.1[0].children[1].attributes.contains_key("alt"), true);
-        let attr = result.1[0].children[1].attributes.get("alt").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "abc");
+        let attr = result.1[0].children[1].attributes.get("alt").unwrap().clone();
+        assert_eq!(attr, DataType::String("abc".to_string()));
     }
 
     #[test]
@@ -739,18 +740,6 @@ mod tests {
         assert_eq!(result.0[0].name, "code");
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].children[0].text_content, "Abc");
-    }
-
-    #[test]
-    fn parse_ordered_list() {
-        let result = process_content("1. abc\n2. def".graphemes(true).collect::<Vec<&str>>(), false);
-        println!("{:?}", result);
-    }
-
-    #[test]
-    fn parse_unordered_list() {
-        let result = process_content("1. abc\n2. def".graphemes(true).collect::<Vec<&str>>(), false);
-        println!("{:?}", result);
     }
 
     #[test]
@@ -770,6 +759,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h3() {
         let result = parse_slothmark("### Abc".parse().unwrap());
@@ -778,6 +768,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h4() {
         let result = parse_slothmark("#### Abc".parse().unwrap());
@@ -786,6 +777,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h5() {
         let result = parse_slothmark("##### Abc".parse().unwrap());
@@ -794,6 +786,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h6() {
         let result = parse_slothmark("###### Abc".parse().unwrap());
@@ -820,6 +813,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h3_end_line() {
         let result = parse_slothmark("### Abc\n".parse().unwrap());
@@ -828,6 +822,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h4_end_line() {
         let result = parse_slothmark("#### Abc\n".parse().unwrap());
@@ -836,6 +831,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h5_end_line() {
         let result = parse_slothmark("##### Abc\n".parse().unwrap());
@@ -844,6 +840,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].text_content, "Abc");
     }
+
     #[test]
     fn parses_h6_end_line() {
         let result = parse_slothmark("###### Abc\n".parse().unwrap());
@@ -870,15 +867,17 @@ mod tests {
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "pre");
         assert_eq!(result.0.children[0].attributes.contains_key("class"), true);
-        let attr = result.0.children[0].attributes.get("class").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "language-css");
+        let attr = result.0.children[0].attributes.get("class").unwrap().clone();
+        assert_eq!(attr, DataType::String("language-css".to_string()));
         // assert_eq!(result.0.children[0].attributes.get("class").unwrap(), "language-css");
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "code");
         // assert_eq!(result.0.children[0].children[0].attributes.get("class").unwrap(), "language-css");
         assert_eq!(result.0.children[0].children[0].attributes.contains_key("class"), true);
-        let attr = result.0.children[0].children[0].attributes.get("class").unwrap().to_owned().unwrap();
-        assert_eq!(attr, "language-css");
+        let attr = result.0.children[0].children[0].attributes.get("class").clone();
+        assert_eq!(attr.is_some(), true);
+        let some_attr = attr.unwrap().clone();
+        assert_eq!(some_attr, DataType::String("language-css".to_string()));
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc");
     }
@@ -893,7 +892,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
     }
-
+    
     #[test]
     fn basic_two_items_unordered_list() {
         let result = parse_slothmark("- test\n- another".parse().unwrap());
@@ -908,7 +907,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
-
+    
     #[test]
     fn basic_ordered_list() {
         let result = parse_slothmark("1. test".parse().unwrap());
@@ -919,7 +918,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
     }
-
+    
     #[test]
     fn basic_two_items_ordered_list() {
         let result = parse_slothmark("1. test\n10. another".parse().unwrap());
@@ -933,7 +932,7 @@ mod tests {
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
-
+    
     // doesn't work yet
     #[test]
     fn basic_unordered_list_multi_line_item() {
@@ -943,74 +942,73 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 2);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 2);
-
+    
         assert_eq!(result.0.children[0].children[0].children[0].name, "p");
         assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-
+    
         assert_eq!(result.0.children[0].children[0].children[1].name, "p");
         assert_eq!(result.0.children[0].children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
-
+    
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
-
-
-    #[test]
-    fn basic_unordered_list_multi_line_item_nested_unordered_list() {
-        let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
-        assert_eq!(result.0.children.len(), 1);
-        assert_eq!(result.0.children[0].name, "ul");
-        assert_eq!(result.0.children[0].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].name, "li");
-        assert_eq!(result.0.children[0].children[0].children.len(), 2);
-
-        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-
-        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
-
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
-
-        assert_eq!(result.0.children[0].children[1].name, "li");
-        assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
-    }
-
-    #[test]
-    fn basic_unordered_list_multi_line_item_nested_ordered_list() {
-        let result = parse_slothmark("- test\n\n  second line\n\n  1. nested list\n- another".parse().unwrap());
-        assert_eq!(result.0.children.len(), 1);
-        assert_eq!(result.0.children[0].name, "ul");
-        assert_eq!(result.0.children[0].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].name, "li");
-        assert_eq!(result.0.children[0].children[0].children.len(), 2);
-
-        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-
-        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
-
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ol");
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
-
-        assert_eq!(result.0.children[0].children[1].name, "li");
-        assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
-    }
+    //
+    // #[test]
+    // fn basic_unordered_list_multi_line_item_nested_unordered_list() {
+    //     let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
+    //     assert_eq!(result.0.children.len(), 1);
+    //     assert_eq!(result.0.children[0].name, "ul");
+    //     assert_eq!(result.0.children[0].children.len(), 2);
+    //     assert_eq!(result.0.children[0].children[0].name, "li");
+    //     assert_eq!(result.0.children[0].children[0].children.len(), 2);
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+    //     assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
+    //
+    //     assert_eq!(result.0.children[0].children[1].name, "li");
+    //     assert_eq!(result.0.children[0].children[1].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
+    // }
+    //
+    // #[test]
+    // fn basic_unordered_list_multi_line_item_nested_ordered_list() {
+    //     let result = parse_slothmark("- test\n\n  second line\n\n  1. nested list\n- another".parse().unwrap());
+    //     assert_eq!(result.0.children.len(), 1);
+    //     assert_eq!(result.0.children[0].name, "ul");
+    //     assert_eq!(result.0.children[0].children.len(), 2);
+    //     assert_eq!(result.0.children[0].children[0].name, "li");
+    //     assert_eq!(result.0.children[0].children[0].children.len(), 2);
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+    //     assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
+    //
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ol");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
+    //
+    //     assert_eq!(result.0.children[0].children[1].name, "li");
+    //     assert_eq!(result.0.children[0].children[1].children.len(), 1);
+    //     assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
+    // }
 }
