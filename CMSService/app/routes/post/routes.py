@@ -1025,53 +1025,8 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 				publish_date = generate_publish_date(status=filled["post_status"], date=filled["publish_date"])
 
 				# save post
-				if filled["new"] and str(filled["new"]).lower() != 'none':
-					unique_post = False
-					while filled["new"] and not unique_post:
-						cur.execute("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s",
-									(filled["uuid"],))
-						if cur.fetchone()['count'] != 0:
-							filled["uuid"] = str(uuid.uuid4())
-						else:
-							unique_post = True
-
-					cur.execute(
-						"SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;",
-						(f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
-					similar = cur.fetchone()['count']
-					if int(similar) > 0:
-						filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
-
-					cur.execute("""INSERT INTO sloth_posts (uuid, slug, post_type, author, 
-                        title, css, js, thumbnail, publish_date, update_date, post_status, lang, password,
-                        original_lang_entry_uuid, post_format, meta_description, twitter_description, pinned) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-								(filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
-								 filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
-								 filled["post_status"], lang, filled["password"] if "password" in filled else None,
-								 filled["original_lang_entry_uuid"] if "original_lang_entry_uuid" in filled else "",
-								 filled["post_format"],
-								 filled["meta_description"], filled["twitter_description"], filled["pinned"]))
-					connection.commit()
-					taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
-																 tags=matched_tags)
-					result["uuid"] = filled["uuid"]
-				else:
-					# when editting this don't forget that last item needs to be uuid
-					cur.execute("""UPDATE sloth_posts SET slug = %s, title = %s, css = %s, js = %s,
-                         thumbnail = %s, publish_date = %s, update_date = %s, post_status = %s, import_approved = %s,
-                         password = %s, post_format = %s, meta_description = %s, twitter_description = %s,
-                          pinned = %s WHERE uuid = %s;""",
-								(filled["slug"], filled["title"], filled["css"], filled["js"],
-								 filled["thumbnail"] if filled["thumbnail"] != "None" else None,
-								 filled["publish_date"] if filled["publish_date"] is not None else publish_date,
-								 str(time() * 1000), filled["post_status"], filled["approved"],
-								 filled["password"] if "password" in filled else None, filled["post_format"],
-								 filled["meta_description"], filled["twitter_description"], filled["pinned"],
-								 filled["uuid"]))
-					connection.commit()
-					taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
-																 tags=matched_tags)
+				taxonomy_to_clean = save_individual_post(author, connection, cur, filled, lang, matched_tags,
+														 publish_date, result)
 
 				# save libraries
 				cur.execute("""DELETE FROM sloth_post_libraries WHERE post = %s;""",
@@ -1107,17 +1062,6 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 				if filled["post_status"] == 'published':
 					gen = PostGenerator(connection=connection)
 					gen.run(post=saved_post, regenerate_taxonomies=taxonomy_to_clean)
-				# (threading.Thread(
-				#     target=toes.generate_post,
-				#     args=[
-				#         get_connection_dict(current_app.config),
-				#         os.getcwd(),
-				#         generatable_post,
-				#         current_app.config["THEMES_PATH"],
-				#         current_app.config["OUTPUT_PATH"],
-				#         taxonomy_to_clean
-				#     ]
-				# )).start()
 
 				if filled["post_status"] == 'protected' or filled["post_status"] == 'scheduled':
 					# get post type slug
@@ -1144,6 +1088,71 @@ def save_post(*args, connection: psycopg.Connection, **kwargs):
 	result["saved"] = True
 	result["postType"] = saved_post["post_type"]
 	return json.dumps(result)
+
+
+def save_individual_post(author, connection, cur, filled, lang, matched_tags, publish_date, result):
+	if filled["new"] and str(filled["new"]).lower() != 'none':
+		unique_post = False
+		while filled["new"] and not unique_post:
+			cur.execute("SELECT count(uuid) FROM sloth_posts WHERE uuid = %s",
+						(filled["uuid"],))
+			if cur.fetchone()['count'] != 0:
+				filled["uuid"] = str(uuid.uuid4())
+			else:
+				unique_post = True
+
+		cur.execute(
+			"SELECT count(slug) FROM sloth_posts WHERE slug LIKE %s OR slug LIKE %s AND post_type=%s;",
+			(f"{filled['slug']}-%", f"{filled['slug']}%", filled["post_type_uuid"]))
+		similar = cur.fetchone()['count']
+		if int(similar) > 0:
+			filled['slug'] = f"{filled['slug']}-{str(int(similar) + 1)}"
+
+		cur.execute("""INSERT INTO sloth_posts (uuid, slug, post_type, author,
+                                                title, css, js, thumbnail, publish_date, update_date, post_status, lang,
+                                                password,
+                                                original_lang_entry_uuid, post_format, meta_description,
+                                                twitter_description, pinned)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+					(filled["uuid"], filled["slug"], filled["post_type_uuid"], author, filled["title"],
+					 filled["css"], filled["js"], filled["thumbnail"], publish_date, str(time() * 1000),
+					 filled["post_status"], lang, filled["password"] if "password" in filled else None,
+					 filled["original_lang_entry_uuid"] if "original_lang_entry_uuid" in filled else "",
+					 filled["post_format"],
+					 filled["meta_description"], filled["twitter_description"], filled["pinned"]))
+		connection.commit()
+		taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
+													 tags=matched_tags)
+		result["uuid"] = filled["uuid"]
+	else:
+		# when editting this don't forget that last item needs to be uuid
+		cur.execute("""UPDATE sloth_posts
+                       SET slug                = %s,
+                           title               = %s,
+                           css                 = %s,
+                           js                  = %s,
+                           thumbnail           = %s,
+                           publish_date        = %s,
+                           update_date         = %s,
+                           post_status         = %s,
+                           import_approved     = %s,
+                           password            = %s,
+                           post_format         = %s,
+                           meta_description    = %s,
+                           twitter_description = %s,
+                           pinned              = %s
+                       WHERE uuid = %s;""",
+					(filled["slug"], filled["title"], filled["css"], filled["js"],
+					 filled["thumbnail"] if filled["thumbnail"] != "None" else None,
+					 filled["publish_date"] if filled["publish_date"] is not None else publish_date,
+					 str(time() * 1000), filled["post_status"], filled["approved"],
+					 filled["password"] if "password" in filled else None, filled["post_format"],
+					 filled["meta_description"], filled["twitter_description"], filled["pinned"],
+					 filled["uuid"]))
+		connection.commit()
+		taxonomy_to_clean = sort_out_post_taxonomies(connection=connection, article=filled,
+													 tags=matched_tags)
+	return taxonomy_to_clean
 
 
 def process_sections(connection: psycopg.Connection, sections: List, post_uuid: str) -> List:
@@ -1195,8 +1204,10 @@ def process_taxonomy(connection: psycopg.Connection, post_tags: List, post_type_
                                     WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
 					(post_type_uuid, lang))
 		existing_tags = cur.fetchall()
-
-		existing_tags_slugs = [slug['slug'] for slug in existing_tags]
+		existing_tags_slugs = []
+		for tag in existing_tags:
+			tag['slug'] = tag['slug'].lower() # making sure the slugs are lower case
+			existing_tags.append(tag['slug'])
 
 		matched_tags = []
 		new_tags = []

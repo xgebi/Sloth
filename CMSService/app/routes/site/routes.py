@@ -31,7 +31,12 @@ def update_analytics(*args, connection: psycopg.Connection, **kwargs):
 		browser = "Firefox"
 		browser_version = analytics_data["userAgent"][analytics_data["userAgent"].rfind("/") + 1:]
 	elif "chrome" in browser_lower and "safari" in browser_lower:
-		browser = "Chrome"
+		if "googlebot" in browser_lower:
+			browser = "Bot - Google/Chrome"
+		elif "bingbot" in browser_lower:
+			browser = "Bot - Bingbot/Chrome"
+		else:
+			browser = "Chrome"
 		browser_version = analytics_data["userAgent"][analytics_data["userAgent"].find("Chrome"):analytics_data["userAgent"].find(" Safari")].split("/")[1]
 	elif "chrome" not in browser_lower and "safari" in browser_lower:
 		browser = "Safari"

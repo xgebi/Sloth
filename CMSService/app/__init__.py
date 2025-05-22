@@ -7,6 +7,8 @@ from flask_bcrypt import Bcrypt
 import os
 from pathlib import Path
 from uuid import uuid4
+from flask_apscheduler import APScheduler
+from scheduled_jobs import scheduled_task
 
 from app.toes.hooks import Hooks, Hook
 
@@ -28,6 +30,14 @@ def create_app():  # dev, test, or prod
 	app.config['CORS_HEADERS'] = 'Content-Type'
 
 	bcrypt.init_app(app)
+
+	scheduler = APScheduler()
+	scheduler.init_app(app)
+	scheduler.start()
+
+	@scheduler.task('cron', id='do_job_2', minute='*')
+	def job2():
+		scheduled_task()
 
 	@app.before_request
 	def before_first_request():
