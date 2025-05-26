@@ -5,18 +5,12 @@ import {SlothCookie} from "@/app/interfaces/sloth-cookie";
 import {keepLoggedInCheck} from "@/app/services/authn.service";
 
 export async function checkLoggingCookie() {
-	// TODO simplify
 	const cookieStore = await cookies()
 	const token = cookieStore.get(SlothConstants.Token);
-	if (!token) {
-		redirect("/login");
-	}
-	let parsedToken: SlothCookie | null = null;
 	if (token) {
+		let parsedToken: SlothCookie | null = null;
 		parsedToken = JSON.parse(token?.value);
-		if (parsedToken && (parsedToken.expiryTime!) < Date.now()) {
-			redirect("/login");
-		} else {
+		if (parsedToken && (parsedToken.expiryTime!) >= Date.now()) {
 			const status = await keepLoggedInCheck();
 			if (status && status.hasOwnProperty('status')) {
 				const newExpiry = Date.now() + (30 * 60 * 1000);
@@ -25,9 +19,9 @@ export async function checkLoggingCookie() {
 					expiryTime: newExpiry
 				};
 				cookieStore.set('sloth-admin-token', JSON.stringify(parsedToken), {secure: process.env['MODE'] !== 'dev'})
-			} else {
-				redirect("/login");
+				return;
 			}
 		}
 	}
+	redirect("/login");
 }
