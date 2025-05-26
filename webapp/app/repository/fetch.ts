@@ -2,8 +2,8 @@ import {ErrorMessage} from "@/app/interfaces/error-message";
 import {cookies} from "next/headers";
 
 export async function simpleGet(pathname: string): Promise<object | ErrorMessage> {
-	const cookieStore = await cookies()
-  const rawCookie = cookieStore.get('sloth-admin-token')
+	const cookieStore = await cookies();
+  const rawCookie = cookieStore.get('sloth-admin-token');
 	if (rawCookie) {
 		const cookie = JSON.parse(rawCookie.value);
 		try {

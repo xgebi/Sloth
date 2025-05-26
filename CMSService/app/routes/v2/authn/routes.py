@@ -16,7 +16,7 @@ def keep_logged_in(*args, permission_level, **kwargs):
 	:param kwargs:
 	:return:
 	"""
-	return json.dumps({"loggedIn": True})
+	return json.dumps({"status": True})
 
 
 @authn.route("/api/v2/login", methods=['POST'])
@@ -54,4 +54,4 @@ def api_logout() -> Tuple[str, int]:
 	token = data.get("token")
 	user = User(username, token)
 	user.logout_user()
-	return json.dumps({"status": "logged out"}), 200
+	return json.dumps({"status": False}), 200

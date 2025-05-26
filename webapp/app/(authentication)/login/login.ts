@@ -1,6 +1,6 @@
 "use server";
 
-import {loginUser} from "@/app/services/login.service";
+import {loginUser} from "@/app/services/authn.service";
 import {redirect} from "next/navigation";
 
 export async function processLogin(formData: FormData) {

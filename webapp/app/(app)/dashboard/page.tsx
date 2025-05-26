@@ -1,21 +1,15 @@
 import styles from './dashboard.module.css';
 import {getDashboardInformation} from "@/app/services/dashboard.service";
 import PostBox from "@/app/(app)/dashboard/components/post-box";
-import {cookies} from "next/headers";
-import SlothConstants from "@/constants";
-import {redirect} from "next/navigation";
 import MessageBox from "@/app/(app)/dashboard/components/message-box";
+import {checkLoggingCookie} from "@/app/common/cookie-handling";
 
 export default async function DashboardPage() {
 	const posts = await getDashboardInformation();
 	if (posts.hasOwnProperty('error')) {
 		return <main>{posts.error}</main>
 	}
-	const cookieStore = await cookies()
-	const token = cookieStore.get(SlothConstants.Token)
-	if (!token) {
-		redirect("/login");
-	}
+	await checkLoggingCookie();
 	return (
 		<main className={styles.main}>
 			<h1>Dashboard page</h1>

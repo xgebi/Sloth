@@ -1,11 +1,11 @@
 import 'server-only'
 
-import {LoginData, UserInfo} from "@/app/interfaces/login-data";
-import {authenticateUser} from "@/app/repository/login.repository";
+import {AuthnData, UserInfo} from "@/app/interfaces/authn-data";
+import {authenticateUser, keepLoggedIn} from "@/app/repository/authn.repository";
 import {cookies} from "next/headers";
 import {ErrorMessage} from "@/app/interfaces/error-message";
 
-export async function loginUser(loginData: LoginData): Promise<UserInfo | ErrorMessage> {
+export async function loginUser(loginData: AuthnData): Promise<UserInfo | ErrorMessage> {
 	const info = await authenticateUser(loginData);
 	if (info.hasOwnProperty('error')) {
 		return info;
@@ -13,4 +13,8 @@ export async function loginUser(loginData: LoginData): Promise<UserInfo | ErrorM
 	const cookieStore = await cookies()
 	cookieStore.set('sloth-admin-token', JSON.stringify(info), {secure: process.env['MODE'] !== 'dev'})
 	return info;
+}
+
+export async function keepLoggedInCheck() {
+	return keepLoggedIn();
 }

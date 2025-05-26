@@ -1,4 +1,4 @@
-export interface LoginData {
+export interface AuthnData {
 	username: string,
 	password: string,
 }
@@ -9,4 +9,8 @@ export interface UserInfo {
 	token: string,
 	expiry_time: string,
 	permissions_level: number
+}
+
+export interface LoginStatus {
+	status: boolean,
 }
