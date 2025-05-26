@@ -67,11 +67,11 @@ def create_app():  # dev, test, or prod
 	from app.registration import registration
 	app.register_blueprint(registration)
 
-	from app.routes.login import login
-	app.register_blueprint(login)
-
 	from app.routes.dashboard import dashboard
 	app.register_blueprint(dashboard)
+
+	from app.routes.login import login
+	app.register_blueprint(login)
 
 	from app.routes.dashboard.analytics import analytics
 	app.register_blueprint(analytics)
@@ -129,6 +129,13 @@ def create_app():  # dev, test, or prod
 
 	from app.lists import lists
 	app.register_blueprint(lists)
+
+	####################################
+	# API Version 2
+	####################################
+
+	from app.routes.v2.authn import authn
+	app.register_blueprint(authn)
 
 	if app.config["SCHEDULERS_ENABLED"]:
 		post_scheduler = threading.Thread(

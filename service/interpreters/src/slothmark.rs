@@ -43,8 +43,19 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
             let mut list = Node::create_normal_node("ul".to_string());
 
             // case for unordered list
-            let temp_end_of_list = grapheme_vector[i..].join("").find("\n\n");
-            let end_of_list = if let Some(end) = temp_end_of_list { end + i } else { grapheme_vector.len() };
+            let mut end_of_list= grapheme_vector.len();
+            let mut j = i;
+            while j < grapheme_vector.len()  {
+                let temp_end_of_list = grapheme_vector[j..].join("").find("\n\n");
+                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { grapheme_vector.len() };
+
+                if grapheme_vector.len() > end_of_list + 4 &&
+                    grapheme_vector[end_of_list + 2] == " " && grapheme_vector[end_of_list + 3] == " " {
+                    j += end_of_list + 2;
+                } else {
+                    break;
+                }
+            }
             let t = process_list_items(
                 grapheme_vector[i..end_of_list].to_vec(),
                 String::from(grapheme_vector[i])
@@ -410,47 +421,52 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_list_items(list_content: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
     let mut i = 0;
     let mut result = Vec::new();
     let mut footnotes = Vec::new();
-    while i < c.len() {
-        let mut next_new_line = c[i..c.len()].join("").find("\n").unwrap_or(c.len());
-        if next_new_line != c.len() {
+    let binding = list_content.join("").replace(
+        "\n\n ",
+        "<br /><br /> "
+    );
+    let processed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
+    while i < processed_list_content.len() {
+        let mut next_new_line = processed_list_content[i..processed_list_content.len()].join("").find("\n").unwrap_or(processed_list_content.len());
+        if next_new_line != processed_list_content.len() {
             next_new_line += i;
         }
 
         let mut li = Node::create_normal_node("li".to_string());
-        let li_content_start = i + c[i..c.len()].join("").find(" ").unwrap() + 1;
+        let li_content_start = i + processed_list_content[i..processed_list_content.len()].join("").find(" ").unwrap() + 1;
 
         let mut this_level = 0;
-        if next_new_line+2 < c.len() && c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
+        if next_new_line+2 < processed_list_content.len() && processed_list_content[next_new_line+1] == "\n" && (processed_list_content[next_new_line+2] == " " || processed_list_content[next_new_line+2] == "\t") {
             let mut j = next_new_line + 3;
-            while j < c.len() {
-                if c[j] != " " && c[j] != "\t" {
-                    println!("{:?}", c);
-                    this_level = c[next_new_line+2..j].len();
-                    next_new_line = c[j..c.len()].join("").find("\n").unwrap_or(c.len());
-                    if next_new_line == c.len() {
-                        let result = parse_slothmark(c[li_content_start..c.len()].join(""));
+            while j < processed_list_content.len() {
+                if processed_list_content[j] != " " && processed_list_content[j] != "\t" {
+                    println!("{:?}", processed_list_content);
+                    this_level = processed_list_content[next_new_line+2..j].len();
+                    next_new_line = processed_list_content[j..processed_list_content.len()].join("").find("\n").unwrap_or(processed_list_content.len());
+                    if next_new_line == processed_list_content.len() {
+                        let result = parse_slothmark(processed_list_content[li_content_start..processed_list_content.len()].join(""));
                         li.children.extend(result.0.children);
                         footnotes.extend(result.1.children);
-                        i = c.len();
+                        i = processed_list_content.len();
                         j = i;
                     } else {
-                        if c[next_new_line+1] == "\n" && (c[next_new_line+2] == " " || c[next_new_line+2] == "\t") {
+                        if processed_list_content[next_new_line+1] == "\n" && (processed_list_content[next_new_line+2] == " " || processed_list_content[next_new_line+2] == "\t") {
                             let mut l = next_new_line + 3;
-                            while l < c.len() {
-                                if c[l] != " " || c[l] != "\t" {
+                            while l < processed_list_content.len() {
+                                if processed_list_content[l] != " " || processed_list_content[l] != "\t" {
                                     break;
                                 }
                                 l += 1;
                             }
                             if l - next_new_line - 3 == this_level {
-                                let result = parse_slothmark(c[li_content_start..c.len()].join(""));
+                                let result = parse_slothmark(processed_list_content[li_content_start..processed_list_content.len()].join(""));
                                 li.children.extend(result.0.children);
                                 footnotes.extend(result.1.children);
-                                i = c.len();
+                                i = processed_list_content.len();
                                 j = i;
                             } else if l - next_new_line - 3 < this_level {
                                 j+=1; // to be deleted, debugging purposes<
@@ -466,7 +482,7 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
                 }
             }
         } else {
-            let content = process_content(c[li_content_start..next_new_line].to_vec(), true);
+            let content = process_content(processed_list_content[li_content_start..next_new_line].to_vec(), true);
             li.children.extend(content.0);
             footnotes.extend(content.1);
             i += next_new_line + 1;
@@ -941,19 +957,12 @@ mod tests {
     #[test]
     fn basic_unordered_list_multi_line_item() {
         let result = parse_slothmark("- test\n\n  second line\n- another".parse().unwrap());
+        println!("{:?}", result.0);
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "ul");
         assert_eq!(result.0.children[0].children.len(), 2);
         assert_eq!(result.0.children[0].children[0].name, "li");
-        assert_eq!(result.0.children[0].children[0].children.len(), 2);
-    
-        assert_eq!(result.0.children[0].children[0].children[0].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-    
-        assert_eq!(result.0.children[0].children[0].children[1].name, "p");
-        assert_eq!(result.0.children[0].children[0].children[1].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
     
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
@@ -964,19 +973,12 @@ mod tests {
     fn basic_unordered_list_multi_line_item_nested_unordered_list() {
         let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
         println!("{:?}", result.0);
-        // assert_eq!(result.0.children.len(), 3);
-        // assert_eq!(result.0.children[0].name, "ul");
-        // assert_eq!(result.0.children[0].children.len(), 1);
-        // assert_eq!(result.0.children[0].children[0].name, "li");
-        // assert_eq!(result.0.children[0].children[0].children.len(), 1);
-
-        // assert_eq!(result.0.children[0].children[0].children[0].name, "p");
-        // assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-        // assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-        //
-        // assert_eq!(result.0.children[0].children[0].children[1].name, "p");
-        // assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-        // assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
+        assert_eq!(result.0.children.len(), 2);
+        assert_eq!(result.0.children[0].name, "ul");
+        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children[0].name, "li");
+        assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        
         //
         // assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
         // assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);

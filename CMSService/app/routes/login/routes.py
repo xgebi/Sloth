@@ -14,7 +14,7 @@ from app.routes.login import login
 from app.utilities.db_connection import db_connection
 
 
-@login.route("/login")
+@login.route("/login", methods=["GET"])
 def show_login():
 	"""
 	Renders login page
@@ -33,7 +33,7 @@ def show_login():
 	)
 
 
-@login.route("/login/error")
+@login.route("/login/error", methods=["GET"])
 def show_login_error():
 	"""
 	Renders login page with error message
@@ -146,7 +146,7 @@ def process_login(*args, connection: psycopg.Connection, **kwargs):
 	return redirect("/login/error")
 
 
-@login.route("/logout")
+@login.route("/logout", methods=["GET"])
 @authorize_web(0)
 def logout(*args, permission_level: int, **kwargs):
 	"""
@@ -201,7 +201,7 @@ def api_login() -> Tuple[str, int]:
 	return json.dumps({"error": "Unable to login"}), 401
 
 
-@login.route("/api/logout", methods="POST")
+@login.route("/api/logout", methods=["POST"])
 @authorize_rest(0)
 def api_logout() -> Tuple[str, int]:
 	"""
