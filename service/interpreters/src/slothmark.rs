@@ -43,11 +43,13 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
             let mut list = Node::create_normal_node("ul".to_string());
 
             // case for unordered list
+            let temp_end_of_list = grapheme_vector[i..].join("").find("\n\n");
+            let end_of_list = if let Some(end) = temp_end_of_list { end + i } else { grapheme_vector.len() };
             let t = process_list_items(
-                grapheme_vector[i..grapheme_vector.len()].to_vec(),
+                grapheme_vector[i..end_of_list].to_vec(),
                 String::from(grapheme_vector[i])
             );
-            i += t.2;
+            i = end_of_list + 2;
             list.children.extend(t.0);
             root_node.children.push(list);
             footnotes.children.extend(t.1);
@@ -455,6 +457,8 @@ fn process_list_items(c: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>,
                             } else if l - next_new_line - 3 > this_level {
                                 j+=1; // to be deleted, debugging purposes<
                             }
+                        } else {
+                            j += 1;
                         }
                     }
                 } else {
@@ -955,35 +959,36 @@ mod tests {
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
-    //
-    // #[test]
-    // fn basic_unordered_list_multi_line_item_nested_unordered_list() {
-    //     let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
-    //     assert_eq!(result.0.children.len(), 1);
-    //     assert_eq!(result.0.children[0].name, "ul");
-    //     assert_eq!(result.0.children[0].children.len(), 2);
-    //     assert_eq!(result.0.children[0].children[0].name, "li");
-    //     assert_eq!(result.0.children[0].children[0].children.len(), 2);
-    //
-    //     assert_eq!(result.0.children[0].children[0].children[0].name, "p");
-    //     assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
-    //     assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
-    //
-    //     assert_eq!(result.0.children[0].children[0].children[1].name, "p");
-    //     assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
-    //
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
-    //     assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
-    //
-    //     assert_eq!(result.0.children[0].children[1].name, "li");
-    //     assert_eq!(result.0.children[0].children[1].children.len(), 1);
-    //     assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
-    // }
-    //
+
+    #[test]
+    fn basic_unordered_list_multi_line_item_nested_unordered_list() {
+        let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
+        println!("{:?}", result.0);
+        // assert_eq!(result.0.children.len(), 3);
+        // assert_eq!(result.0.children[0].name, "ul");
+        // assert_eq!(result.0.children[0].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[0].name, "li");
+        // assert_eq!(result.0.children[0].children[0].children.len(), 1);
+
+        // assert_eq!(result.0.children[0].children[0].children[0].name, "p");
+        // assert_eq!(result.0.children[0].children[0].children[0].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[0].children[0].children[0].text_content, "test");
+        //
+        // assert_eq!(result.0.children[0].children[0].children[1].name, "p");
+        // assert_eq!(result.0.children[0].children[0].children[1].children.len(), 2);
+        // assert_eq!(result.0.children[0].children[0].children[1].children[0].text_content, "second line");
+        //
+        // assert_eq!(result.0.children[0].children[0].children[1].children[1].name, "ul");
+        // assert_eq!(result.0.children[0].children[0].children[1].children[1].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].name, "li");
+        // assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[0].children[1].children[1].children[0].children[0].text_content, "nested list");
+
+        // assert_eq!(result.0.children[0].children[1].name, "li");
+        // assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
+    }
+
     // #[test]
     // fn basic_unordered_list_multi_line_item_nested_ordered_list() {
     //     let result = parse_slothmark("- test\n\n  second line\n\n  1. nested list\n- another".parse().unwrap());

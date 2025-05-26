@@ -3,11 +3,18 @@ use std::fs::{File, exists};
 use std::io::Read;
 use actix_web::{web, HttpResponse, Error};
 use serde::Deserialize;
-use interpreters::{scan_toes, compile_toes, VariableScope, DataType};
+use serde_json::json;
+use interpreters::{scan_toes, compile_toes, VariableScope, DataType, render_markup};
 
 #[derive(Clone, Deserialize, Debug)]
 pub(crate) struct Page {
     pub(crate) config: HashMap<String, String>,
+
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub(crate) struct Post {
+    pub(crate) content: String,
 
 }
 
@@ -35,4 +42,10 @@ pub(crate) async fn render(item: web::Json<Page>) -> Result<HttpResponse, Error>
         let compiled_node = compile_toes(result_node, VariableScope::create(), config);
     }
     Ok(HttpResponse::Ok().body(result))
+}
+
+pub(crate) async fn render_slothmark(item: web::Json<Post>) -> Result<HttpResponse, Error> {
+    let result = render_markup(item.clone().content);
+    let json_result = json!({"result": result}).to_string();
+    Ok(HttpResponse::Ok().body(json_result))
 }

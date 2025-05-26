@@ -66,8 +66,8 @@ impl Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let unpaired = vec!["base", "br", "meta", "hr", "img", "track", "source", "embed", "col", "input", "link"];
-        let mut result = String::from("<");
+        let no_angle_brackets = [NodeType::ToeRoot, NodeType::Text].contains(&self.node_type.clone());
+        let mut result = if no_angle_brackets { String::new() } else { String::from("<") };
         match self.node_type {
             NodeType::DocumentTypeDefinition => {
                 result.push_str("!");
@@ -93,7 +93,9 @@ impl Display for Node {
             if self.node_type == NodeType::Processing {
                 result.push_str("?");
             }
-            result.push_str(">");
+            if !no_angle_brackets {
+                result.push_str(">");
+            }
             if self.children.clone().is_empty() {
                 result.push_str(self.text_content.as_str());
             } else {
@@ -101,9 +103,11 @@ impl Display for Node {
                     result.push_str(child.to_string().as_str());
                 }
             }
-            result.push_str(format!("</{}>", self.name).as_str());
+            if !no_angle_brackets {
+                result.push_str(format!("</{}>", self.name).as_str());
+            }
         } else {
-            result.push_str("/>");
+            if !no_angle_brackets { result.push_str("/>"); };
         }
         write!(f, "{}", result)
     }
