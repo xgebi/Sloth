@@ -58,23 +58,24 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
             }
             let t = process_list_items(
                 grapheme_vector[i..end_of_list].to_vec(),
-                String::from(grapheme_vector[i])
+                String::from(grapheme_vector[i]),
+                0
             );
             i = end_of_list + 2;
             list.children.extend(t.0);
             root_node.children.push(list);
             footnotes.children.extend(t.1);
-        } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
-            ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
-            // Add if case for ordered list
-            let mut list = Node::create_normal_node(String::from("ol"));
-            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"));
-            i += t.2;
-            list.children.extend(t.0);
-            footnotes.children.extend(t.1);
-            current_node = &list;
-
-            root_node.children.push(list);
+        // } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
+        //     ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
+        //     // Add if case for ordered list
+        //     let mut list = Node::create_normal_node(String::from("ol"));
+        //     let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"), 0);
+        //     i += t.2;
+        //     list.children.extend(t.0);
+        //     footnotes.children.extend(t.1);
+        //     current_node = &list;
+        // 
+        //     root_node.children.push(list);
         } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
             let mut p = Node::create_normal_node(String::from("img"));
@@ -421,76 +422,67 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-fn process_list_items(list_content: Vec<&str>, list_type: String) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: usize) -> (Vec<Node>, Vec<Node>, bool) {
     let mut i = 0;
+    let mut append_to_parent = false;
     let mut result = Vec::new();
     let mut footnotes = Vec::new();
     let binding = list_content.join("").replace(
         "\n\n ",
         "<br /><br /> "
     );
-    let processed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
-    while i < processed_list_content.len() {
-        let mut next_new_line = processed_list_content[i..processed_list_content.len()].join("").find("\n").unwrap_or(processed_list_content.len());
-        if next_new_line != processed_list_content.len() {
+    let preprocessed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
+    while i < preprocessed_list_content.len() {
+        let mut next_new_line = preprocessed_list_content[i..].join("").find("\n").unwrap_or(preprocessed_list_content.len());
+        if next_new_line != preprocessed_list_content.len() {
             next_new_line += i;
         }
 
         let mut li = Node::create_normal_node("li".to_string());
-        let li_content_start = i + processed_list_content[i..processed_list_content.len()].join("").find(" ").unwrap() + 1;
+        let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap() + 1;
 
-        let mut this_level = 0;
-        if next_new_line+2 < processed_list_content.len() && processed_list_content[next_new_line+1] == "\n" && (processed_list_content[next_new_line+2] == " " || processed_list_content[next_new_line+2] == "\t") {
-            let mut j = next_new_line + 3;
-            while j < processed_list_content.len() {
-                if processed_list_content[j] != " " && processed_list_content[j] != "\t" {
-                    println!("{:?}", processed_list_content);
-                    this_level = processed_list_content[next_new_line+2..j].len();
-                    next_new_line = processed_list_content[j..processed_list_content.len()].join("").find("\n").unwrap_or(processed_list_content.len());
-                    if next_new_line == processed_list_content.len() {
-                        let result = parse_slothmark(processed_list_content[li_content_start..processed_list_content.len()].join(""));
-                        li.children.extend(result.0.children);
-                        footnotes.extend(result.1.children);
-                        i = processed_list_content.len();
-                        j = i;
-                    } else {
-                        if processed_list_content[next_new_line+1] == "\n" && (processed_list_content[next_new_line+2] == " " || processed_list_content[next_new_line+2] == "\t") {
-                            let mut l = next_new_line + 3;
-                            while l < processed_list_content.len() {
-                                if processed_list_content[l] != " " || processed_list_content[l] != "\t" {
-                                    break;
-                                }
-                                l += 1;
-                            }
-                            if l - next_new_line - 3 == this_level {
-                                let result = parse_slothmark(processed_list_content[li_content_start..processed_list_content.len()].join(""));
-                                li.children.extend(result.0.children);
-                                footnotes.extend(result.1.children);
-                                i = processed_list_content.len();
-                                j = i;
-                            } else if l - next_new_line - 3 < this_level {
-                                j+=1; // to be deleted, debugging purposes<
-                            } else if l - next_new_line - 3 > this_level {
-                                j+=1; // to be deleted, debugging purposes<
-                            }
-                        } else {
-                            j += 1;
-                        }
-                    }
+        let content = process_content(preprocessed_list_content[li_content_start..next_new_line].to_vec(), true);
+        li.children.extend(content.0);
+        footnotes.extend(content.1);
+        let mut temp_res = vec![li];
+        if preprocessed_list_content.len() > next_new_line + 1 && 
+            (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
+            let mut space_counter = 0;
+            let mut tab_counter = 0;
+            let mut child_list_type = list_type.clone();
+            while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
+                let counter = next_new_line + 1 + space_counter + tab_counter;
+                if preprocessed_list_content[counter] == " " {
+                    space_counter += 1;
+                } else if preprocessed_list_content[counter] == "\t" {
+                    tab_counter += 1;
                 } else {
-                    j+=1;
+                    child_list_type = preprocessed_list_content[counter].to_string();
+                    break;
                 }
             }
+            let level = (space_counter / 2) + tab_counter;
+            let option_new_next_new_line = preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..].join("").find("\n");
+            let new_next_new_line = if let Some(d) = option_new_next_new_line { d + next_new_line + 1 + space_counter + tab_counter } else { preprocessed_list_content.len() }; 
+            let local_result = process_list_items(preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..new_next_new_line].to_owned(),
+                                            child_list_type, level);
+            if list_level < level {
+                temp_res[0].children.extend(local_result.0);
+                footnotes.extend(local_result.1);
+            } else if list_level == level {
+                temp_res.extend(local_result.0);
+                footnotes.extend(local_result.1);
+            } else {
+                return (local_result.0, local_result.1, append_to_parent);
+            }
+            i = next_new_line + 1;
         } else {
-            let content = process_content(processed_list_content[li_content_start..next_new_line].to_vec(), true);
-            li.children.extend(content.0);
-            footnotes.extend(content.1);
-            i += next_new_line + 1;
+            i = next_new_line + 1;
         }
 
-        result.push(li);
+        result.extend(temp_res);
     }
-    (result, footnotes, i)
+    (result, footnotes, append_to_parent)
 }
 
 #[cfg(test)]
@@ -951,6 +943,21 @@ mod tests {
         assert_eq!(result.0.children[0].children[1].name, "li");
         assert_eq!(result.0.children[0].children[1].children.len(), 1);
         assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
+    }
+
+    #[test]
+    fn basic_two_items_one_nested_unordered_list() {
+        let result = parse_slothmark("- test\n\t- nested 1\n- another\n\t- nested".parse().unwrap());
+        println!("{:?}", result.0);
+        // assert_eq!(result.0.children.len(), 1);
+        // assert_eq!(result.0.children[0].name, "ol");
+        // assert_eq!(result.0.children[0].children.len(), 2);
+        // assert_eq!(result.0.children[0].children[0].name, "li");
+        // assert_eq!(result.0.children[0].children[0].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
+        // assert_eq!(result.0.children[0].children[1].name, "li");
+        // assert_eq!(result.0.children[0].children[1].children.len(), 1);
+        // assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     }
     
     // doesn't work yet

@@ -47,7 +47,7 @@ impl Patterns {
                 value: String::from("* "),
             },
             Pattern {
-                name: "new_line_ordered_list",
+                name: "new_line_unordered_list",
                 value: String::from(r"\n- "),
             },
             Pattern {
