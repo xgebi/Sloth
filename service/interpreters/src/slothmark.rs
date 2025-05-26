@@ -74,7 +74,7 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
         //     list.children.extend(t.0);
         //     footnotes.children.extend(t.1);
         //     current_node = &list;
-        // 
+        //
         //     root_node.children.push(list);
         } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
@@ -444,12 +444,15 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         let content = process_content(preprocessed_list_content[li_content_start..next_new_line].to_vec(), true);
         li.children.extend(content.0);
         footnotes.extend(content.1);
-        let mut temp_res = vec![li];
-        if preprocessed_list_content.len() > next_new_line + 1 && 
+        let temp_res = vec![li];
+        let mut child_list_element = "xl";
+        let mut child_list = Node::create_normal_node(child_list_element.to_string());
+        if preprocessed_list_content.len() > next_new_line + 1 &&
             (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
             let mut space_counter = 0;
             let mut tab_counter = 0;
             let mut child_list_type = list_type.clone();
+            // make loop somewhere here that checks all the list items on the same level
             while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
                 let counter = next_new_line + 1 + space_counter + tab_counter;
                 if preprocessed_list_content[counter] == " " {
@@ -462,20 +465,22 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
                 }
             }
             let level = (space_counter / 2) + tab_counter;
-            let option_new_next_new_line = preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..].join("").find("\n");
-            let new_next_new_line = if let Some(d) = option_new_next_new_line { d + next_new_line + 1 + space_counter + tab_counter } else { preprocessed_list_content.len() }; 
-            let local_result = process_list_items(preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..new_next_new_line].to_owned(),
-                                            child_list_type, level);
-            if list_level < level {
-                temp_res[0].children.extend(local_result.0);
-                footnotes.extend(local_result.1);
-            } else if list_level == level {
-                temp_res.extend(local_result.0);
-                footnotes.extend(local_result.1);
-            } else {
-                return (local_result.0, local_result.1, append_to_parent);
+            // TODO improve checks whether it's same, higher or lower level
+            if child_list_element == "xl" {
+                child_list_element = if let Ok(_) = child_list_type.parse::<usize>() { "ol" } else { "ul" };
+                child_list = Node::create_normal_node(child_list_element.to_string());
             }
-            i = next_new_line + 1;
+            if list_level < level {
+                let option_new_next_new_line = preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..].join("").find("\n");
+                let new_next_new_line = if let Some(d) = option_new_next_new_line { d + next_new_line + 1 + space_counter + tab_counter } else { preprocessed_list_content.len() };
+                let local_result = process_list_items(preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..new_next_new_line].to_owned(),
+                                            child_list_type, level);
+                child_list.children.extend(local_result.0);
+                footnotes.extend(local_result.1);
+                next_new_line = new_next_new_line;
+            } else {
+                return (vec![], vec![], false);
+            }
         } else {
             i = next_new_line + 1;
         }
