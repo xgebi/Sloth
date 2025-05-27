@@ -432,6 +432,7 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         "<br /><br /> "
     );
     let preprocessed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
+    // code below should be considered as a first draft. It seems to work but(t)
     while i < preprocessed_list_content.len() {
         let mut next_new_line = preprocessed_list_content[i..].join("").find("\n").unwrap_or(preprocessed_list_content.len());
         if next_new_line != preprocessed_list_content.len() {
@@ -444,7 +445,7 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         let content = process_content(preprocessed_list_content[li_content_start..next_new_line].to_vec(), true);
         li.children.extend(content.0);
         footnotes.extend(content.1);
-        let temp_res = vec![li];
+        let mut temp_res = vec![li];
         let mut child_list_element = "xl";
         let mut child_list = Node::create_normal_node(child_list_element.to_string());
         if preprocessed_list_content.len() > next_new_line + 1 &&
@@ -452,7 +453,7 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
             let mut space_counter = 0;
             let mut tab_counter = 0;
             let mut child_list_type = list_type.clone();
-            // make loop somewhere here that checks all the list items on the same level
+            
             while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
                 let counter = next_new_line + 1 + space_counter + tab_counter;
                 if preprocessed_list_content[counter] == " " {
@@ -465,7 +466,6 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
                 }
             }
             let level = (space_counter / 2) + tab_counter;
-            // TODO improve checks whether it's same, higher or lower level
             if child_list_element == "xl" {
                 child_list_element = if let Ok(_) = child_list_type.parse::<usize>() { "ol" } else { "ul" };
                 child_list = Node::create_normal_node(child_list_element.to_string());
@@ -478,13 +478,15 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
                 child_list.children.extend(local_result.0);
                 footnotes.extend(local_result.1);
                 next_new_line = new_next_new_line;
-            } else {
-                return (vec![], vec![], false);
+                i = next_new_line + 1;
             }
         } else {
             i = next_new_line + 1;
         }
-
+        
+        if child_list.children.len() > 0 {
+            temp_res[0].children.push(child_list);
+        }
         result.extend(temp_res);
     }
     (result, footnotes, append_to_parent)
@@ -954,6 +956,7 @@ mod tests {
     fn basic_two_items_one_nested_unordered_list() {
         let result = parse_slothmark("- test\n\t- nested 1\n- another\n\t- nested".parse().unwrap());
         println!("{:?}", result.0);
+        println!("{}", result.0.to_string());
         // assert_eq!(result.0.children.len(), 1);
         // assert_eq!(result.0.children[0].name, "ol");
         // assert_eq!(result.0.children[0].children.len(), 2);
