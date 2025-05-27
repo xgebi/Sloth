@@ -445,15 +445,16 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         let content = process_content(preprocessed_list_content[li_content_start..next_new_line].to_vec(), true);
         li.children.extend(content.0);
         footnotes.extend(content.1);
+
         let mut temp_res = vec![li];
         let mut child_list_element = "xl";
         let mut child_list = Node::create_normal_node(child_list_element.to_string());
-        if preprocessed_list_content.len() > next_new_line + 1 &&
+        while preprocessed_list_content.len() > next_new_line + 1 &&
             (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
             let mut space_counter = 0;
             let mut tab_counter = 0;
             let mut child_list_type = list_type.clone();
-            
+
             while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
                 let counter = next_new_line + 1 + space_counter + tab_counter;
                 if preprocessed_list_content[counter] == " " {
@@ -480,10 +481,9 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
                 next_new_line = new_next_new_line;
                 i = next_new_line + 1;
             }
-        } else {
-            i = next_new_line + 1;
         }
-        
+        i = next_new_line + 1;
+
         if child_list.children.len() > 0 {
             temp_res[0].children.push(child_list);
         }
@@ -953,19 +953,15 @@ mod tests {
     }
 
     #[test]
-    fn basic_two_items_one_nested_unordered_list() {
+    fn basic_two_items_two_nested_unordered_list() {
         let result = parse_slothmark("- test\n\t- nested 1\n- another\n\t- nested".parse().unwrap());
-        println!("{:?}", result.0);
-        println!("{}", result.0.to_string());
-        // assert_eq!(result.0.children.len(), 1);
-        // assert_eq!(result.0.children[0].name, "ol");
-        // assert_eq!(result.0.children[0].children.len(), 2);
-        // assert_eq!(result.0.children[0].children[0].name, "li");
-        // assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        // assert_eq!(result.0.children[0].children[0].children[0].text_content, "test");
-        // assert_eq!(result.0.children[0].children[1].name, "li");
-        // assert_eq!(result.0.children[0].children[1].children.len(), 1);
-        // assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
+        assert_eq!(result.0.to_string(), "<ul><li>test<ul><li>nested 1</li></ul></li><li>another<ul><li>nested</li></ul></li></ul>");
+    }
+
+    #[test]
+    fn basic_two_items_three_nested_unordered_list() {
+        let result = parse_slothmark("- test\n\t- nested 1\n\t- nested 2\n- another\n\t- nested".parse().unwrap());
+        assert_eq!(result.0.to_string(), "<ul><li>test<ul><li>nested 1</li><li>nested 2</li></ul></li><li>another<ul><li>nested</li></ul></li></ul>");
     }
     
     // doesn't work yet
