@@ -1,1 +1,0 @@
-WHERE post_type = $1;

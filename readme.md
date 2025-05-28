@@ -20,8 +20,3 @@ Actively developed parts:
 - **CMSService** is the  main service that powers the blog (Python/Flask)
 - **webapp** is a Next.js app that should serve as the new UI, currently in development
   - **webappMockBackend** is a backend for webapp for Cypress (Python/FastAPI)
-- **service** is a service, possibly in future PyO3 package, that should speed up slow parts of CMSService
-
-In limbo:
-
-- **sloth_config_lib**, **common_db_lib** these two packages either will be merged into **service** or deleted

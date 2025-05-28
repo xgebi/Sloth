@@ -1,4 +1,4 @@
-# app/__init__.py
+# app/gens.py
 import threading
 
 from flask import Flask, request, redirect

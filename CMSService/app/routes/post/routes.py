@@ -9,6 +9,7 @@ from pathlib import Path
 from time import time
 from typing import List, Dict
 import threading
+from flask_cors import cross_origin
 
 import psycopg
 from flask import request, current_app, abort, redirect, render_template
@@ -1207,10 +1208,7 @@ def process_taxonomy(connection: psycopg.Connection, post_tags: List, post_type_
                                     WHERE post_type = %s AND taxonomy_type = 'tag' AND lang = %s;""",
 					(post_type_uuid, lang))
 		existing_tags = cur.fetchall()
-		existing_tags_slugs = []
-		for tag in existing_tags:
-			tag['slug'] = tag['slug'].lower() # making sure the slugs are lower case
-			existing_tags.append(tag['slug'])
+		existing_tags_slugs = [tag['slug'] for tag in existing_tags]
 
 		matched_tags = []
 		new_tags = []
@@ -1402,6 +1400,7 @@ def refresh_assets(*args, connection: psycopg.Connection, **kwargs):
 
 
 @post.route("/api/post/secret", methods=["POST"])
+@cross_origin()
 @db_connection
 def get_protected_post(*args, connection: psycopg.Connection, **kwargs):
 	"""

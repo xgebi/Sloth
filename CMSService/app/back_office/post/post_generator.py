@@ -24,6 +24,7 @@ from app.toes.hooks import Hooks, Hook
 from app.back_office.post.post_query_builder import build_post_query, normalize_post_from_query
 from app.services.post_services import get_translations, get_taxonomy_for_post_prepped_for_listing, \
 	get_available_translations
+import generators
 
 
 class PostGenerator:
@@ -846,13 +847,9 @@ class PostGenerator:
 
 				md_parser = MarkdownParser()
 				post["full_content"] = ""
-				footnotes = []
-				for section in sections:
-					section_content, section_footnotes = md_parser.to_html_string(section['content'])
-					post["full_content"] += section_content
-					footnotes.extend(section_footnotes)
 
-				post["full_content"] = combine_footnotes(text=post["full_content"], footnotes=footnotes)
+				for section in sections:
+					post["full_content"] += generators.rust_generators.render_slothmark(section['content'])
 
 				if post['thumbnail'] is not None:
 					cur.execute("""SELECT sm.file_path, sma.alt 
