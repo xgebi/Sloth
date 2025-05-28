@@ -65,17 +65,28 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
             list.children.extend(t.0);
             root_node.children.push(list);
             footnotes.children.extend(t.1);
-        // } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
-        //     ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
-        //     // Add if case for ordered list
-        //     let mut list = Node::create_normal_node(String::from("ol"));
-        //     let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"), 0);
-        //     i += t.2;
-        //     list.children.extend(t.0);
-        //     footnotes.children.extend(t.1);
-        //     current_node = &list;
-        //
-        //     root_node.children.push(list);
+        } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
+            ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
+            // Add if case for ordered list
+            let mut list = Node::create_normal_node(String::from("ol"));
+            let mut end_of_list= grapheme_vector.len();
+            let mut j = i;
+            while j < grapheme_vector.len()  {
+                let temp_end_of_list = grapheme_vector[j..].join("").find("\n\n");
+                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { grapheme_vector.len() };
+
+                if grapheme_vector.len() > end_of_list + 4 &&
+                    grapheme_vector[end_of_list + 2] == " " && grapheme_vector[end_of_list + 3] == " " {
+                    j += end_of_list + 2;
+                } else {
+                    break;
+                }
+            }
+            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"), 0);
+            i = end_of_list + 2;
+            list.children.extend(t.0);
+            root_node.children.push(list);
+            footnotes.children.extend(t.1);
         } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // Add if case for image
             let mut p = Node::create_normal_node(String::from("img"));
@@ -983,7 +994,7 @@ mod tests {
     #[test]
     fn basic_unordered_list_multi_line_item_nested_unordered_list() {
         let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
-        println!("{:?}", result.0);
+        println!("{:?}", result.0.to_string());
         assert_eq!(result.0.children.len(), 2);
         assert_eq!(result.0.children[0].name, "ul");
         assert_eq!(result.0.children[0].children.len(), 1);

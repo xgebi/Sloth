@@ -48,3 +48,4 @@ out
 /post_generation_service-kept-for-learning-purposes/target/
 
 .parcel-cache/
+/pyo3experiment
