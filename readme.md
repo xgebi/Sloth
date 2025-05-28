@@ -2,6 +2,8 @@
 
 TLDR: **Unless you are brave, don't use this project.**
 
+[![CodeQL](https://github.com/xgebi/Sloth/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/xgebi/Sloth/actions/workflows/codeql-analysis.yml) 
+
 Sloth is a content management system that serves my two needs:
 
 1. Replace WordPress
