@@ -5,16 +5,7 @@ pub use crate::data_type::DataType;
 use crate::node_type::NodeType;
 use crate::slothmark::parse_slothmark;
 use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};
-pub use crate::variable_scope::VariableScope;
-
-mod node;
-mod data_type;
-mod node_type;
-mod conditions;
-mod variable_scope;
-mod toe_commands;
-mod slothmark;
-mod patterns;
+pub use crate::variable_scope::VariableScope;   
 
 pub fn render_markup(md: String) -> String {
     // 1. parse markdown to nodes
@@ -41,7 +32,7 @@ pub fn scan_toes(template: String) -> Node {
 }
 
 pub fn compile_toes(root_node: Node, variable_scope: VariableScope, config: HashMap<String, DataType>) -> String {
-    
+
     String::new()
 }
 
@@ -177,7 +168,7 @@ fn inner_scan(template_graphemes: Vec<&str>, mut root_node: Node) -> Node { // f
                             end_index = start_index + next_end.unwrap();
                             next_end = Some(end_index);
                         }
-                        
+
                         current_name_counter = rest.matches(format!("<{}", current_node.name.clone()).as_str()).count();
                         while next_end.is_some() && current_name_counter > 0 {
                             next_index = next_end.unwrap() + 1;
@@ -505,12 +496,12 @@ mod node_parsing_tests {
         assert_eq!(result.children[0].attributes.len(), 1);
         assert_eq!(result.children[0].attributes.get("lang").unwrap().clone(), DataType::String("en".to_string()));
     }
-    
+
     #[test]
     fn basic_page() {
         let template = String::from("<!doctype html><html><head><title>Basic page</title></head><body><h1>Basic page</h1><div><div>Some text in nested divs</div></div></body></html>");
         let result = scan_toes(template);
-        
+
         assert_eq!(result.children.len(), 2);
         assert_eq!(result.children[0].name, "doctype");
         assert_eq!(result.children[1].name, "html");
@@ -530,7 +521,7 @@ mod node_parsing_tests {
         assert_eq!(result.children[1].children[1].children[1].children[0].name, "div");
         assert_eq!(result.children[1].children[1].children[1].children[0].children.len(), 1);
         assert_eq!(result.children[1].children[1].children[1].children[0].children[0].text_content, "Some text in nested divs");
-        
+
     }
 }
 

@@ -6,7 +6,7 @@ use crate::patterns::Patterns;
 use crate::node::Node;
 use crate::node_type::NodeType;
 use regex::Regex;
-use crate::DataType;
+use crate::{DataType, Footnote};
 
 enum ListType {
     Ordered,
@@ -19,6 +19,7 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
         patterns.locate("double_line_win").unwrap().value.as_str(),
         patterns.locate("double_line").unwrap().value.as_str()
     );
+    let footnotes: Vec<Footnote> = vec![];
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_by_type(NodeType::ToeRoot);
