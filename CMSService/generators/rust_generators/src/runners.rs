@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
-pub use crate::data_type::DataType;
+use crate::data_type::DataType;
 use crate::node_type::NodeType;
 use crate::slothmark::parse_slothmark;
 use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};

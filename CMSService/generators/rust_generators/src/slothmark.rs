@@ -6,7 +6,8 @@ use crate::patterns::Patterns;
 use crate::node::Node;
 use crate::node_type::NodeType;
 use regex::Regex;
-use crate::{DataType, Footnote};
+use crate::{Footnote};
+use crate::data_type::DataType;
 
 enum ListType {
     Ordered,

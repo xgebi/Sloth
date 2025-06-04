@@ -10,6 +10,7 @@ mod toe_commands;
 mod slothmark;
 mod patterns;
 
+#[pyclass]
 pub struct Footnote {
     text: String,
     index: isize,
@@ -38,5 +39,6 @@ fn rust_generators(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(render_slothmark, m)?)?;
     m.add_class::<SlothMarkResult>()?;
+    m.add_class::<Footnote>()?;
     Ok(())
 }
