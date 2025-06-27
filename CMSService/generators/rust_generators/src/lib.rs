@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use pyo3::prelude::*;
 
 mod runners;
@@ -11,12 +12,20 @@ mod slothmark;
 mod patterns;
 
 #[pyclass]
+#[derive(Debug, Clone)]
 pub struct Footnote {
     text: String,
     index: isize,
-} 
+}
+
+impl Display for Footnote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("<li>{}</li>", self.text))
+    }
+}
 
 #[pyclass]
+#[derive(Debug, Clone)]
 pub struct SlothMarkResult {
     pub text: String,
     pub footnotes: Vec<Footnote>

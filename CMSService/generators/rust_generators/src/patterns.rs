@@ -16,7 +16,7 @@ impl Patterns {
         let patterns = vec![
             Pattern {
                 name: "footnote",
-                value: String::from(r"\[\d+\. "),
+                value: String::from(r"^\[\d+\. "),
             },
             Pattern {
                 name: "double_line",

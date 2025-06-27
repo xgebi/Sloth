@@ -14,7 +14,7 @@ enum ListType {
     Unordered
 }
 
-pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
+pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
     let patterns = Patterns::new();
     let processed_new_lines = sm.replace(
         patterns.locate("double_line_win").unwrap().value.as_str(),
@@ -119,7 +119,7 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Node) {
     (root_node, footnotes)
 }
 
-fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) {
+fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Footnote>, usize) {
     let patterns = Patterns::new();
     let mut i: usize = 0;
     let mut current_node = Node::create_by_type(NodeType::Text);
@@ -168,7 +168,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
             c[i..c.len()].join("").find(" ").is_some() &&
             c[i..c.len()].join("").find(" ").unwrap() > i &&
             footnote_pattern.is_match(
-            c[i..c[i..c.len()].join("").find(" ").unwrap() + 1].join("").as_str()
+            c[i..c[i..c.len()].join("").find(" ").unwrap() + 1 + i].join("").as_str()
         ) {
             // clause for footnotes
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
@@ -238,7 +238,7 @@ fn process_content(c: Vec<&str>, inline: bool) -> (Vec<Node>, Vec<Node>, usize) 
     (nodes, footnotes, c.len())
 }
 
-fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let middle_index = c[0..c.len()].join("").find(" ");
     let end_index = c[0..c.len()].join("").find("\n").unwrap_or(c.len());
     if let Some(mi) = middle_index {
@@ -287,7 +287,7 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
     }
 }
 
-fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let middle_index = c[1..c.len()].join("").find("](");
     let end_index = c[1..c.len()].join("").find(")");
     if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
@@ -361,7 +361,7 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
     }
 }
 
-fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let end_number_char = c[0..c.len()].join("").find(".").unwrap();
     let mut possible_end = end_number_char + c[end_number_char..c.len()].join("").find("]").unwrap();
 
@@ -379,22 +379,18 @@ fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     link.children.push(link_content);
     sup.children.push(link);
 
-    let mut li = Node::create_normal_node("li".to_string());
-    while c[0..possible_end + 1].join("").match_indices("[").count() != c[0..possible_end + 1].join("").match_indices("]").count() {
-        possible_end += 1 + c[possible_end + 1..c.len()].join("").find("]").unwrap();
-        let c = 3;
-    }
+    let footnote_processed_content = process_content(c[end_number_char + 2.. possible_end].to_vec(), true);
+    let footnote = Footnote {
+        text: footnote_processed_content.0,
+        index: 0,
+    };
 
-    let footnote = process_content(c[end_number_char + 2.. possible_end].to_vec(), true);
-
-    li.children.extend(footnote.0);
-
-    let mut result = vec![li];
+    let mut result = vec![footnote];
     result.extend(footnote.1);
     (Some(sup), result, possible_end + 1)
 }
 
-fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let end_index = c[2..c.len()].join("").find("**");
     match end_index {
         Some(mut i) => {
@@ -412,7 +408,7 @@ fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
+fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let mut end_index = c[1..c.len()].join("").find("*");
     match end_index {
         Some(mut i) => {
@@ -435,7 +431,7 @@ fn process_italic(c: Vec<&str>) -> (Option<Node>, Vec<Node>, usize) {
     }
 }
 
-fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: usize) -> (Vec<Node>, Vec<Node>, bool) {
+fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: usize) -> (Vec<Node>, Vec<Footnote>, bool) {
     let mut i = 0;
     let mut append_to_parent = false;
     let mut result = Vec::new();
@@ -519,6 +515,7 @@ mod tests {
     fn process_paragraph_content() {
         let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 1);
+        println!("{:?}", result);
     }
 
     #[test]
@@ -763,6 +760,24 @@ mod tests {
         assert_eq!(result.1[0].children[1].attributes.contains_key("alt"), true);
         let attr = result.1[0].children[1].attributes.get("alt").unwrap().clone();
         assert_eq!(attr, DataType::String("abc".to_string()));
+    }
+    
+    // Doesn't work yet
+    #[test]
+    fn process_footnote_with_footnote() {
+        let result = process_content("i[1. Abc[2. Def]]".graphemes(true).collect::<Vec<&str>>(), false);
+        println!("{:?}", result);
+        // assert_eq!(result.0[0].children.len(), 1);
+        // assert_eq!(result.0[0].name, "sup");
+        // assert_eq!(result.0[0].children[0].children.len(), 1);
+        // assert_eq!(result.0[0].children[0].name, "a");
+        // assert_eq!(result.0[0].children[0].children.len(), 1);
+        // assert_eq!(result.0[0].children[0].children[0].text_content, "1");
+        //
+        // println!("{:?}", result.1[0]);
+        // assert_eq!(result.1[0].children.len(), 1);
+        // assert_eq!(result.1[0].name, "li");
+        // assert_eq!(result.1[0].children[0].text_content, "Abc");
     }
 
     #[test]

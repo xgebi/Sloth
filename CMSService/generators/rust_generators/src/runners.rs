@@ -11,7 +11,7 @@ pub fn render_markup(md: String) -> String {
     // 1. parse markdown to nodes
     let res_node = parse_slothmark(md);
     // 2. call node::to_string() to create result
-    if res_node.1.children.len() > 0 {
+    if res_node.1.len() > 0 {
         return format!("{}{}", res_node.0.to_string(), res_node.1.to_string());
     }
     format!("{}", res_node.0.to_string())
