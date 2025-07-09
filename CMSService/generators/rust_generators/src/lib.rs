@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use pyo3::prelude::*;
 
 mod runners;
@@ -11,8 +11,8 @@ mod toe_commands;
 mod slothmark;
 mod patterns;
 
-#[pyclass]
 #[derive(Debug, Clone)]
+#[pyclass]
 pub struct Footnote {
     text: String,
     index: isize,
@@ -22,6 +22,14 @@ impl Display for Footnote {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", format!("<li>{}</li>", self.text))
     }
+}
+
+pub(crate) fn display_vec_footnote(v: Vec<Footnote>) -> String {
+    let mut res: Vec<String> = vec![];
+    for footnote in v {
+        res.push(footnote.to_string());
+    }
+    res.join("")
 }
 
 #[pyclass]

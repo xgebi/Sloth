@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use crate::node::Node;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::data_type::DataType;
+use crate::display_vec_footnote;
 use crate::node_type::NodeType;
 use crate::slothmark::parse_slothmark;
 use crate::toe_commands::{process_toe_for, process_toe_fragment, process_toe_if};
@@ -12,7 +13,7 @@ pub fn render_markup(md: String) -> String {
     let res_node = parse_slothmark(md);
     // 2. call node::to_string() to create result
     if res_node.1.len() > 0 {
-        return format!("{}{}", res_node.0.to_string(), res_node.1.to_string());
+        return format!("{}{}", res_node.0.to_string(), display_vec_footnote(res_node.1));
     }
     format!("{}", res_node.0.to_string())
 }
