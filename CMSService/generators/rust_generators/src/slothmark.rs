@@ -1,4 +1,4 @@
-
+use std::fmt::format;
 use std::thread::current;
 use unicode_segmentation::UnicodeSegmentation;
 // use pgs_common::node::{Node, NodeType};
@@ -127,6 +127,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
     let mut footnotes = Vec::new();
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     let j = c.len();
+
     while i < j {
         // TODO when whole PGS is working, invert if-else to reduce duplicate code
         let l = c[i]; // todo remove, this is debugging only
@@ -166,7 +167,6 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             }
         } else if i < c.len() &&
             c[i..c.len()].join("").find(" ").is_some() &&
-            c[i..c.len()].join("").find(" ").unwrap() > i &&
             footnote_pattern.is_match(
             c[i..c[i..c.len()].join("").find(" ").unwrap() + 1 + i].join("").as_str()
         ) {
@@ -365,12 +365,29 @@ fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let end_number_char = c[0..c.len()].join("").find(".").unwrap();
     let mut possible_end = end_number_char + c[end_number_char..c.len()].join("").find("]").unwrap();
 
+    // find ]
+    // check that there's not [ in between
+    // if there is look for ] beyond first found
+    loop {
+        if c[..possible_end].join("").contains("[") {
+            let count_left_bracket = c[1..possible_end].iter().filter(|c| c.contains('[')).count();
+            let count_right_bracket = c[1..possible_end].iter().filter(|c| c.contains(']')).count();
+            if count_left_bracket == count_right_bracket {
+                break;
+            }
+            let local_possible_end = c[possible_end + 1..c.len()].join("").find("]").unwrap();
+            possible_end = end_number_char + local_possible_end + possible_end - 1;
+        }
+
+    }
+
     // [1. thing](address) vs [1. Abc [some](where)] vs [1. ![abc](something)]
     if possible_end + 1 < c.len() && c[possible_end + 1] == "(" && c[0..possible_end].join("").match_indices("[").count() == 0 {
         return process_link(c);
     }
 
     let number = c[1..end_number_char].join("");
+    let numeric_number = number.clone().parse::<isize>().unwrap();
     let mut sup = Node::create_normal_node("sup".to_string());
     let mut link = Node::create_normal_node("a".to_string());
     link.attributes.insert("href".to_string(), DataType::String(format!("footnote-{}", number)));
@@ -380,8 +397,16 @@ fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     sup.children.push(link);
 
     let res = process_content(c[end_number_char + 2.. possible_end].to_vec());
-
-    (Some(sup), res.1, possible_end + 1)
+    let mut footnotes = res.1;
+    let mut footnote_text = String::new();
+    for ftn in res.0 {
+        footnote_text = format!("{}{}", footnote_text, ftn.to_string());
+    }
+    footnotes.push(Footnote {
+            text: footnote_text,
+            index: numeric_number,
+        });
+    (Some(sup), footnotes, possible_end + 1)
 }
 
 fn process_bold(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
@@ -694,6 +719,7 @@ mod tests {
     #[test]
     fn process_footnote_content() {
         let result = process_content("[1. Abc]".graphemes(true).collect::<Vec<&str>>());
+        println!("{:?}", result);
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].name, "sup");
         assert_eq!(result.0[0].children[0].children.len(), 1);
@@ -709,6 +735,7 @@ mod tests {
     #[test]
     fn process_footnote_with_link_content() {
         let result = process_content("[1. Abc [abc](def)]".graphemes(true).collect::<Vec<&str>>());
+        println!("{:?}", result);
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].name, "sup");
         assert_eq!(result.0[0].children[0].children.len(), 1);
@@ -718,14 +745,8 @@ mod tests {
 
         println!("{:?}", result.1);
         assert_eq!(result.1.len(), 1);
-        // assert_eq!(result.1[0].name, "li");
-        // assert_eq!(result.1[0].children.len(), 2);
-        // assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
-        // assert_eq!(result.1[0].children[0].text_content, "Abc ");
-        // assert_eq!(result.1[0].children[1].node_type, NodeType::Normal);
-        // assert_eq!(result.1[0].children[1].children.len(), 1);
-        // assert_eq!(result.1[0].children[1].name, "a");
-        // assert_eq!(result.1[0].children[1].children[0].text_content, "abc");
+        assert_eq!(result.1[0].index, 1);
+        assert_eq!(result.1[0].text, "Abc <a href=\"def\">abc</a>");
     }
 
     #[test]
@@ -740,27 +761,15 @@ mod tests {
 
         println!("{:?}", result.1);
         assert_eq!(result.1.len(), 1);
-        // assert_eq!(result.1[0].name, "li");
-        // assert_eq!(result.1[0].children.len(), 2);
-        // assert_eq!(result.1[0].children[0].node_type, NodeType::Text);
-        // assert_eq!(result.1[0].children[0].text_content, "Abc ");
-        // assert_eq!(result.1[0].children[1].node_type, NodeType::Normal);
-        // assert_eq!(result.1[0].children[1].name, "img");
-
-        // assert_eq!(result.1[0].children[1].attributes.contains_key("src"), true);
-        // let attr = result.1[0].children[1].attributes.get("src").unwrap().clone();
-        // assert_eq!(attr, DataType::String("def".to_string()));
-
-        // assert_eq!(result.1[0].children[1].attributes.contains_key("alt"), true);
-        // let attr = result.1[0].children[1].attributes.get("alt").unwrap().clone();
-        // assert_eq!(attr, DataType::String("abc".to_string()));
+        assert_eq!(result.1[0].index, 1);
+        assert_eq!(result.1[0].text, "Abc <img alt=\"abc\" src=\"def\"/>");
     }
     
     // Doesn't work yet
     #[test]
     fn process_footnote_with_footnote() {
         let result = process_content("i[1. Abc[2. Def]]".graphemes(true).collect::<Vec<&str>>());
-        println!("{:?}", result);
+        println!("{:?}", result.1);
         // assert_eq!(result.0[0].children.len(), 1);
         // assert_eq!(result.0[0].name, "sup");
         // assert_eq!(result.0[0].children[0].children.len(), 1);

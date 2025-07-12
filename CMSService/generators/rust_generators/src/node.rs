@@ -38,7 +38,7 @@ impl Node {
             name: "".to_string(),
             attributes: Default::default(),
             children: vec![],
-            node_type: NodeType::Normal,
+            node_type: NodeType::Text,
             text_content,
         }
     }
