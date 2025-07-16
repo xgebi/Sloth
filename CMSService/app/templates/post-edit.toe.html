@@ -5,208 +5,212 @@
 <toe:import file="nav.toe.html"/>
 <main>
     <article class="post-edit">
-        <h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
-        <h1 class="full-width" toe:if="not data['new']" toe:text="'Edit ' + post_type_name"></h1>
-        <span
-                toe:if="data['original_lang_entry_uuid']"
-                id="uuid"
-                class="hidden"
-                toe:data-new="data['new']"
-                toe:data-uuid="data['uuid']"
-                toe:data-posttype-uuid="data['post_type']"
-                toe:data-original-post="data['original_lang_entry_uuid']"></span>
-        <span
-                toe:if="not data['original_lang_entry_uuid']"
-                id="uuid"
-                class="hidden"
-                toe:data-new="data['new']"
-                toe:data-uuid="data['uuid']"
-                toe:data-posttype-uuid="data['post_type']"></span>
-        <div class="first-column">
-            <label for="title">Title (may not be empty)</label>
-            <input id="title" toe:value="data['title']" required/>
-        </div>
-        <div class="first-column">
-            <label for="slug">Slug</label>
-            <input id="slug" toe:value="data['slug']"/>
-        </div>
+				<section class="first-column">
+					<h1 class="full-width" toe:if="data['new']" toe:text="'Add new ' + post_type_name"></h1>
+					<h1 class="full-width" toe:if="not data['new']" toe:text="'Edit ' + post_type_name"></h1>
+					<span
+									toe:if="data['original_lang_entry_uuid']"
+									id="uuid"
+									class="hidden"
+									toe:data-new="data['new']"
+									toe:data-uuid="data['uuid']"
+									toe:data-posttype-uuid="data['post_type']"
+									toe:data-original-post="data['original_lang_entry_uuid']"></span>
+					<span
+									toe:if="not data['original_lang_entry_uuid']"
+									id="uuid"
+									class="hidden"
+									toe:data-new="data['new']"
+									toe:data-uuid="data['uuid']"
+									toe:data-posttype-uuid="data['post_type']"></span>
+					<div>
+							<label for="title">Title (may not be empty)</label>
+							<input id="title" toe:value="data['title']" required/>
+					</div>
+					<div>
+							<label for="slug">Slug</label>
+							<input id="slug" toe:value="data['slug']"/>
+					</div>
 
-        <div toe:if="translations | length gt 0" class="first-column">
-            Translations
-            <a
-                    toe:for="translation in translations"
-                    toe:href="'/post/' + translation['post_uuid'] + '/edit'"
-                    toe:text="translation['long_name']"
-            ></a>
-        </div>
-        <div class="first-column">
-            <button id="gallery-opener">Open gallery</button>
-            <media-gallery in-post-editor="true" toe:language="current_lang_id"></media-gallery>
-        </div>
-        <div class="first-column">
-            <post-editor></post-editor>
-        </div>
-        <div class="first-column">
-            <label for="css">Custom CSS:</label>
-            <br/>
-            <textarea id="css" toe:content="data['css']"></textarea>
-            <input type="checkbox" id="use_theme_css" name="use_theme_css" toe:checked="data['use_theme_css']"/>
-            <label for="use_theme_css">Use theme's CSS</label>
-        </div>
-        <div class="first-column">
-            <label for="library-select">Libraries:</label>
-            <br/>
-            <select id="library-select">
-                <option value="" selected>---</option>
-                <option toe:for="lib in libs" toe:value="lib['uuid']" toe:text="lib['name'] + '@' + lib['version']"></option>
-            </select>
-            <label for="hook-select">Hook used:</label>
-            <br/>
-            <select id="hook-select">
-                <option toe:for="hook in hook_list" toe:value="hook" toe:text="hook"></option>
-            </select>
-            <button id="add-library">Add</button>
-            <div id="library-list">
-                <span toe:for="lib in data['libraries']"
-                      toe:text="lib['name'] + '@' + lib['version']"
-                      toe:data-lib-id="lib['uuid']"
-                      toe:data-hook="lib['hook']">
-                    <button>Remove</button>
-                </span>
-            </div>
-        </div>
-        <div class="first-column">
-            <label for="js">Custom JavaScript:</label>
-            <br/>
-            <textarea id="js" toe:content="data['js']"></textarea>
-            <input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']"/>
-            <label for="use_theme_js">Use theme's JS</label>
-        </div>
-        <div class="first-column">
-            <h3>SEO</h3>
-            <div>
-                <label for="meta-description">Meta description</label><br/>
-                <textarea toe:text="data['meta_description']" id="meta-description"></textarea>
-                <p id="meta-description-counter"></p>
-            </div>
-            <div>
-                <label for="social-description">Social description</label><br/>
-                <textarea toe:text="data['twitter_description']" id="social-description"></textarea>
-                <p id="social-description-counter"></p>
-            </div>
-        </div>
+					<div toe:if="translations | length gt 0">
+							Translations
+							<a
+											toe:for="translation in translations"
+											toe:href="'/post/' + translation['post_uuid'] + '/edit'"
+											toe:text="translation['long_name']"
+							></a>
+					</div>
+					<div>
+							<button id="gallery-opener" class="sl-button">Open gallery</button>
+							<media-gallery in-post-editor="true" toe:language="current_lang_id"></media-gallery>
+					</div>
+					<div>
+							<post-editor></post-editor>
+					</div>
+					<div>
+							<label for="css">Custom CSS:</label>
+							<br/>
+							<textarea id="css" toe:content="data['css']"></textarea>
+							<input type="checkbox" id="use_theme_css" name="use_theme_css" toe:checked="data['use_theme_css']"/>
+							<label for="use_theme_css">Use theme's CSS</label>
+					</div>
+					<div>
+							<label for="library-select">Libraries:</label>
+							<br/>
+							<select id="library-select">
+									<option value="" selected>---</option>
+									<option toe:for="lib in libs" toe:value="lib['uuid']" toe:text="lib['name'] + '@' + lib['version']"></option>
+							</select>
+							<label for="hook-select">Hook used:</label>
+							<br/>
+							<select id="hook-select">
+									<option toe:for="hook in hook_list" toe:value="hook" toe:text="hook"></option>
+							</select>
+							<button id="add-library">Add</button>
+							<div id="library-list">
+									<span toe:for="lib in data['libraries']"
+												toe:text="lib['name'] + '@' + lib['version']"
+												toe:data-lib-id="lib['uuid']"
+												toe:data-hook="lib['hook']">
+											<button>Remove</button>
+									</span>
+							</div>
+					</div>
+					<div>
+							<label for="js">Custom JavaScript:</label>
+							<br/>
+							<textarea id="js" toe:content="data['js']"></textarea>
+							<input type="checkbox" id="use_theme_js" name="use_theme_js" toe:checked="data['use_theme_js']"/>
+							<label for="use_theme_js">Use theme's JS</label>
+					</div>
+					<div>
+							<h3>SEO</h3>
+							<div>
+									<label for="meta-description">Meta description</label><br/>
+									<textarea toe:text="data['meta_description']" id="meta-description"></textarea>
+									<p id="meta-description-counter"></p>
+							</div>
+							<div>
+									<label for="social-description">Social description</label><br/>
+									<textarea toe:text="data['twitter_description']" id="social-description"></textarea>
+									<p id="social-description-counter"></p>
+							</div>
+					</div>
+				</section>
         <!-- TODO figure out something better than input -->
-        <div class="second-column thumbnail">
-            <label for="thumbnail">Thumbnail</label>
-            <figure id="thumbnail-wrapper">
-                <img toe:if="data['thumbnail']" toe:src="thumbnail_info['uri']" toe:alt="data['alt']"/>
-            </figure>
-            <button id="pick-thumbnail">Pick thumbnail</button>
-            <input id="thumbnail" class="hidden" toe:value="data['thumbnail']"/>
-        </div>
-        <div class="metadata second-column">
-            <label for="publish_date">Publish date</label>
-            <input id="publish_date" type="date" toe:value="data['publish_date_formatted']"/>
-            <label for="publish_time">Publish time</label>
-            <input id="publish_time" type="time" toe:value="data['publish_time_formatted']"/>
-            <label for="post_status">Status</label>
-            <select name="post_status" id="post_status">
-                <option toe:for="status in post_statuses" toe:value="status" toe:text="status"
-                        toe:selected="status eq data['post_status']"></option>
-            </select>
-            <toe:fragment toe:if="data['post_status'] neq 'protected'">
-                <label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
-                <input id="password_protection" type="text" class="hidden"/>
-                <!-- In this case type password is unnecessary, may change -->
-            </toe:fragment>
-            <toe:fragment toe:if="data['post_status'] eq 'protected'">
-                <label for="password_protection" id="password_protection_label">Password:</label>
-                <input id="password_protection" type="text" toe:value="data['password']"/>
-                <!-- In this case type password is necessary, may change -->
-            </toe:fragment>
-            <toe:fragment toe:if="data['imported']">
-                <label for="import_approved">Imported post approved:</label>
-                <input type="checkbox" id="import_approved" toe:checked="data['import_approved']"/>
-            </toe:fragment>
-            <toe:fragment toe:if="data['post_status'] eq 'draft'">
-                <button id="save-draft">Save draft</button>
-                <button id="publish-button">Publish post</button>
-                <toe:fragment toe:if="languages | length gt 0">
-                    <label for="create-lang">For language:</label>
-                    <select id="create-lang">
-                        <option value="" selected>---</option>
-                        <option toe:for="language in languages" toe:value="language['uuid']"
-                                toe:text="language['long_name']"></option>
-                    </select>
-                    <button id="save-create">Save and Create translation</button>
-                    <button id="publish-create">Publish and Create translation</button>
-                </toe:fragment>
-            </toe:fragment>
-            <toe:fragment
-                    toe:if="data['post_status'] eq 'published' or data['post_status'] eq 'scheduled' or data['post_status'] eq 'protected'">
-                <button id="update-button">Update post</button>
-                <select id="create-lang" toe:if="languages | length neq 0">
-                    <option value="" selected>---</option>
-                    <option toe:for="language in languages" toe:value="language['uuid']"
-                            toe:text="language['long_name']"></option>
-                </select>
-                <button toe:if="languages | length neq 0" id="update-create">Update and Create translation</button>
-            </toe:fragment>
-            <button id="schedule-button" class="schedule-button hidden">Schedule post</button>
-            <button id="delete-button">Delete post</button>
-        </div>
-        <div class="second-column tags">
-            <label for="tags">Tags</label>
-            <input id="tags-input"/>
-            <button id="add-tags">Add</button>
-            <div id="tags-div">
-                <toe:fragment toe:for="tag in data['tags']">
-                    <span
-                            toe:if="tag['selected']"
-                            toe:data-uuid="tag['uuid']"
-                            toe:data-slug="tag['slug']"
-                            toe:data-display-name="tag['display_name']"
-                            toe:content="tag['display_name'] + '<button class='delete-tag'>🚮</button>'"
-                    >
-                    </span>
-                </toe:fragment>
-            </div>
-        </div>
-        <div class="second-column categories">
-            <label for="categories">Categories</label>
-            <select id="categories" multiple="multiple">
-                <option toe:for="category in data['categories']"
-                        toe:value="category['uuid']"
-                        toe:selected="category['selected']"
-                        toe:text="category['display_name']"
-                ></option>
-            </select>
-            <div>
-                <label for="new-category">New category name:</label>
-                <input type="text" id="new-category">
-                <button id="create-category">Create new category</button>
-            </div>
-        </div>
-        <div class="second-column post-formats">
-            <fieldset id="post-formats">
-                <legend>Post format</legend>
-                <toe:fragment toe:for="pf in post_formats">
-                    <input type="radio"
-                           toe:id="pf['slug']"
-                           toe:value="pf['uuid']"
-                           toe:checked="data['post_format_uuid'] eq pf['uuid']"
-                           name="post-format"/>
-                    <label toe:attr-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
-                </toe:fragment>
-            </fieldset>
-        </div>
-        <div class="second-column post-pinned">
-            <input type="checkbox"
-                   id="post-pinned-check"
-                   toe:checked="data['pinned']"
-                   name="post-format"/>
-            <label for="post-pinned-check">Pin post</label><br/>
-        </div>
+				<aside class="second-column">
+					<div class="thumbnail">
+							<label for="thumbnail">Thumbnail</label>
+							<figure id="thumbnail-wrapper">
+									<img toe:if="data['thumbnail']" toe:src="thumbnail_info['uri']" toe:alt="data['alt']"/>
+							</figure>
+							<button id="pick-thumbnail" class="sl-button">Pick thumbnail</button>
+							<input id="thumbnail" class="hidden" toe:value="data['thumbnail']"/>
+					</div>
+					<div class="metadata">
+							<label for="publish_date">Publish date</label>
+							<input id="publish_date" type="date" toe:value="data['publish_date_formatted']"/>
+							<label for="publish_time">Publish time</label>
+							<input id="publish_time" type="time" toe:value="data['publish_time_formatted']"/>
+							<label for="post_status">Status</label>
+							<select name="post_status" id="post_status">
+									<option toe:for="status in post_statuses" toe:value="status" toe:text="status"
+													toe:selected="status eq data['post_status']"></option>
+							</select>
+							<toe:fragment toe:if="data['post_status'] neq 'protected'">
+									<label for="password_protection" id="password_protection_label" class="hidden">Password:</label>
+									<input id="password_protection" type="text" class="hidden"/>
+									<!-- In this case type password is unnecessary, may change -->
+							</toe:fragment>
+							<toe:fragment toe:if="data['post_status'] eq 'protected'">
+									<label for="password_protection" id="password_protection_label">Password:</label>
+									<input id="password_protection" type="text" toe:value="data['password']"/>
+									<!-- In this case type password is necessary, may change -->
+							</toe:fragment>
+							<toe:fragment toe:if="data['imported']">
+									<label for="import_approved">Imported post approved:</label>
+									<input type="checkbox" id="import_approved" toe:checked="data['import_approved']"/>
+							</toe:fragment>
+							<toe:fragment toe:if="data['post_status'] eq 'draft'">
+									<button id="save-draft" class="sl-button">Save draft</button>
+									<button id="publish-button" class="sl-button">Publish post</button>
+									<toe:fragment toe:if="languages | length gt 0">
+											<label for="create-lang">For language:</label>
+											<select id="create-lang">
+													<option value="" selected>---</option>
+													<option toe:for="language in languages" toe:value="language['uuid']"
+																	toe:text="language['long_name']"></option>
+											</select>
+											<button id="save-create" class="sl-button">Save and Create translation</button>
+											<button id="publish-create" class="sl-button">Publish and Create translation</button>
+									</toe:fragment>
+							</toe:fragment>
+							<toe:fragment
+											toe:if="data['post_status'] eq 'published' or data['post_status'] eq 'scheduled' or data['post_status'] eq 'protected'">
+									<button id="update-button" class="sl-button">Update post</button>
+									<select id="create-lang" toe:if="languages | length neq 0">
+											<option value="" selected>---</option>
+											<option toe:for="language in languages" toe:value="language['uuid']"
+															toe:text="language['long_name']"></option>
+									</select>
+									<button toe:if="languages | length neq 0" id="update-create" class="sl-button">Update and Create translation</button>
+							</toe:fragment>
+							<button id="schedule-button" class="schedule-button hidden" class="sl-button">Schedule post</button>
+							<button id="delete-button" class="sl-button">Delete post</button>
+					</div>
+					<div class="tags">
+							<label for="tags">Tags</label>
+							<input id="tags-input"/>
+							<button id="add-tags" class="sl-button">Add</button>
+							<div id="tags-div">
+									<toe:fragment toe:for="tag in data['tags']">
+											<span
+															toe:if="tag['selected']"
+															toe:data-uuid="tag['uuid']"
+															toe:data-slug="tag['slug']"
+															toe:data-display-name="tag['display_name']"
+															toe:content="tag['display_name'] + '<button class='delete-tag sl-button'>🚮</button>'"
+											>
+											</span>
+									</toe:fragment>
+							</div>
+					</div>
+					<div class="categories">
+							<label for="categories">Categories</label>
+							<select id="categories" multiple="multiple">
+									<option toe:for="category in data['categories']"
+													toe:value="category['uuid']"
+													toe:selected="category['selected']"
+													toe:text="category['display_name']"
+									></option>
+							</select>
+							<div>
+									<label for="new-category">New category name:</label>
+									<input type="text" id="new-category">
+									<button id="create-category" class="sl-button">Create new category</button>
+							</div>
+					</div>
+					<div class="post-formats">
+							<fieldset id="post-formats">
+									<legend>Post format</legend>
+									<toe:fragment toe:for="pf in post_formats">
+											<input type="radio"
+														 toe:id="pf['slug']"
+														 toe:value="pf['uuid']"
+														 toe:checked="data['post_format_uuid'] eq pf['uuid']"
+														 name="post-format"/>
+											<label toe:attr-for="pf['slug']" toe:text="pf['display_name']"></label><br/>
+									</toe:fragment>
+							</fieldset>
+					</div>
+					<div class="post-pinned">
+							<input type="checkbox"
+										 id="post-pinned-check"
+										 toe:checked="data['pinned']"
+										 name="post-format"/>
+							<label for="post-pinned-check">Pin post</label><br/>
+					</div>
+				</aside>
     </article>
 </main>
 <script toe:inline-js>

@@ -1,0 +1,27 @@
+:root {
+	--primary: #ffc600;
+	--primary-text: #000;
+
+	font-family: Cabin, sans-serif;
+}
+body {
+	font-family: Cabin, sans-serif;
+}
+.sl-button {
+	padding: .5rem 1rem;
+    border-radius: 1rem;
+    margin-block: .5rem;
+    width: fit-content;
+	border: 0;
+	background: var(--primary);
+	color: var(--primary-text);
+	font-family: Cabin, sans-serif;
+}
+
+input:not([type="button"]):not([type="submit"]),
+select {
+    border: 2px solid var(--primary);
+	border-radius: .5rem;
+	padding: .5rem 1rem;
+	font-family: Cabin, sans-serif;
+}

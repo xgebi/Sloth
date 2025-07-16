@@ -68,11 +68,6 @@ body {
 }
 
 /* Form elements */
-input:not([type="button"]):not([type="submit"]),
-select {
-    border: 2px solid var(--orange);
-}
-
 .button input {
     padding: .8rem 1.25rem;
     border: 0;
@@ -142,10 +137,16 @@ select {
 
 .post-edit .first-column {
     grid-column: 1 / 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .post-edit .second-column {
     grid-column: 2 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .post-edit .post-pinned {
