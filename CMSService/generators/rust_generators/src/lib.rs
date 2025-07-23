@@ -46,7 +46,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 }
 
 #[pyfunction]
-fn render_slothmark(input: String) -> String {
+fn render_slothmark(input: String) -> (String, Vec<Footnote>) {
     runners::render_markup(input)
 }
 

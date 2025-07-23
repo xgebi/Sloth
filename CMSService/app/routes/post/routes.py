@@ -9,6 +9,8 @@ from pathlib import Path
 from time import time
 from typing import List, Dict
 import threading
+
+import generators
 from flask_cors import cross_origin
 
 import psycopg
@@ -238,6 +240,20 @@ def return_post_list(*args, permission_level: int, connection: psycopg.Connectio
 			"post_type": post_type_info,
 		}
 	)
+
+@post.route("/api/post/<post_id>/preview")
+@authorize_rest(0)
+@db_connection
+def get_post_preview(*args, permission_level: int, connection: psycopg.Connection, post_id: str, **kwargs):
+	post_data, libs, media_data, post_libs, temp_thumbnail_info, post_type_name, temp_post_statuses, translatable, translations, post_formats, post_statuses = get_post_data(
+		connection=connection, post_id=post_id)
+	# generators.rust_generators.render_slothmark(post_data['sections'])
+	html_result = ""
+	for section in post_data['sections']:
+		result, footnotes = generators.rust_generators.render_slothmark(section["content"])
+		print(result)
+		html_result += result
+	return html_result
 
 
 @post.route("/api/post/<post_id>/edit")

@@ -16,6 +16,7 @@ body {
 	background: var(--primary);
 	color: var(--primary-text);
 	font-family: Cabin, sans-serif;
+	font-size: 1.25rem;
 }
 
 input:not([type="button"]):not([type="submit"]),
@@ -24,4 +25,10 @@ select {
 	border-radius: .5rem;
 	padding: .5rem 1rem;
 	font-family: Cabin, sans-serif;
+	font-size: 1.25rem;
+}
+
+.preview-dialog {
+	max-width: 90%;
+	width: 60ch;
 }

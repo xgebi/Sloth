@@ -68,16 +68,6 @@ body {
 }
 
 /* Form elements */
-.button input {
-    padding: .8rem 1.25rem;
-    border: 0;
-    font-size: 1.125rem;
-}
-
-.button.success input {
-    background: var(--green);
-    color: var(--black);
-}
 
 .inner-city {
     display: grid;

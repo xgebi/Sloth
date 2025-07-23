@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // 5. schedule button
     document.querySelector("#schedule-button")?.addEventListener('click', schedulePost);
 
+    // 6. preview button
+    document.querySelector("#preview-button")?.addEventListener('click', previewPost);
+
     document.querySelector("#title").addEventListener('blur', (event) => {
         document.querySelector("#slug").value = event.target?.value
             .trim()
@@ -149,9 +152,36 @@ function saveDraftCreate() {
 function updatePost() {
     const values = collectValues();
     if (!values) {
-        return;
+        return null;
     }
     savePost(values);
+    return values
+}
+
+async function previewPost(e) {
+    const values = updatePost()
+    if (values['uuid']) {
+        const fetched = await fetch(`/api/post/${values['uuid']}/preview`, {
+            method: 'GET',
+            headers: {
+                'authorization': document.cookie
+                  .split(';')
+                  .find(row => row.trim().startsWith('sloth_session'))
+                  .split('=')[1]
+            },
+        });
+        const text = await fetched.text()
+        const dialog = document.createElement('dialog')
+        dialog.setAttribute("open", "")
+        dialog.innerHTML = text
+        dialog.setAttribute("class", "preview-dialog")
+        const closeButton = document.createElement('button')
+        closeButton.addEventListener('click', () => e.target.parentElement.removeChild(dialog))
+        closeButton.textContent = "Close"
+        closeButton.setAttribute("class", "sl-button")
+        dialog.appendChild(closeButton)
+        e.target.parentElement.appendChild(dialog)
+    }
 }
 
 function updatePostCreate() {

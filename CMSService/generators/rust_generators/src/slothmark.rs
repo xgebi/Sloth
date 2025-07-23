@@ -318,7 +318,7 @@ fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
         link_node.attributes.insert(String::from("href"), DataType::String(c[mi + 2..ei].join("")));
         let r = process_content(c[1..mi].to_vec());
         link_node.children.extend(r.0);
-        return (Some(link_node), r.1, ei + 2);
+        return (Some(link_node), r.1, ei + 1);
     }
     (None, vec![], 0)
 }
