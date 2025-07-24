@@ -1094,7 +1094,7 @@ For</p>"#;
     }
 
     #[test]
-    fn debug_real() {
+    fn test_footnote_with_link() {
         let text = r#"I'll let [Ryosuke Niva explain](https://bugs.webkit.org/show_bug.cgi?id=160038#c3) [1. Nothing has changed in [six years](https://bugs.webkit.org/show_bug.cgi?id=249319#c3)]:"#;
         let result = parse_slothmark(text.to_string());
         println!("{}", result.0.to_string());

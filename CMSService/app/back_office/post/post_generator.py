@@ -845,15 +845,16 @@ class PostGenerator:
 					(uuid,))
 				sections = cur.fetchall()
 
-				md_parser = MarkdownParser()
 				post["full_content"] = ""
 				footnotes = []
 
 				for section in sections:
-					post["full_content"] += generators.rust_generators.render_slothmark(section['content'])
-					section_content, section_footnotes = md_parser.to_html_string(section['content'])
-					# post["full_content"] += section_content
-					footnotes.extend(section_footnotes)
+					section_content, ftns = generators.rust_generators.render_slothmark(section['content'])
+
+					post["full_content"] += section_content
+					footnotes.extend(ftns)
+
+				post["full_content"] += generators.rust_generators.display_vec_footnote(footnotes)
 
 				if post['thumbnail'] is not None:
 					cur.execute("""SELECT sm.file_path, sma.alt 
