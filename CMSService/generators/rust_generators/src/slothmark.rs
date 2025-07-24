@@ -20,7 +20,6 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
         patterns.locate("double_line_win").unwrap().value.as_str(),
         patterns.locate("double_line").unwrap().value.as_str()
     );
-    let footnotes: Vec<Footnote> = vec![];
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_by_type(NodeType::ToeRoot);
@@ -29,6 +28,7 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
     let mut i: usize = 0;
     while i < grapheme_vector.len() {
         // process paragraph
+        let x = grapheme_vector[i].clone();
         let p_pattern = Regex::new(patterns.locate("not_paragraph").unwrap().value.as_str()).unwrap();
         let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
         if grapheme_vector[i] == "#" {
@@ -113,10 +113,12 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
             current_node = &p;
 
             root_node.children.push(p);
+        } else {
+            i += 1
         }
     }
 
-    (root_node, footnotes)
+    (root_node, footnotes_list)
 }
 
 fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
@@ -329,7 +331,7 @@ fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
         let mut code = Node::create_normal_node("code".to_string());
         let code_content = Node::create_text_node(c[1..end + 1].join(""));
         code.children.push(code_content);
-        (Some(code), end + 1)
+        (Some(code), end + 2)
     } else {
         (None, 0)
     }
@@ -1060,4 +1062,44 @@ mod tests {
     //     assert_eq!(result.0.children[0].children[1].children.len(), 1);
     //     assert_eq!(result.0.children[0].children[1].children[0].text_content, "another");
     // }
+}
+
+#[cfg(test)]
+mod rw_test {
+    use crate::slothmark::parse_slothmark;
+
+    #[test]
+    fn test_inline_code_in_text() {
+        let text = r#"where `a = 1` and `z = 26`. Fortunately"#;
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
+        let expected = r#"<p>where <code>a = 1</code> and <code>z = 26</code>. Fortunately</p>"#;
+        assert_eq!(result.0.to_string(), expected);
+    }
+
+    #[test]
+    fn test_code_block_with_text_after() {
+        let text = r#"```
+Changing the behavior of elements like that based on context
+is anti-pattern in our opinion and should be discouraged.
+```
+
+For"#;
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
+        let expected = r#"<pre class="language-"><code class="language-">Changing the behavior of elements like that based on context
+is anti-pattern in our opinion and should be discouraged.</code></pre><p>
+For</p>"#;
+        assert_eq!(result.0.to_string(), expected);
+    }
+
+    #[test]
+    fn debug_real() {
+        let text = r#"I'll let [Ryosuke Niva explain](https://bugs.webkit.org/show_bug.cgi?id=160038#c3) [1. Nothing has changed in [six years](https://bugs.webkit.org/show_bug.cgi?id=249319#c3)]:"#;
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
+        let expected = r#"<p>I'll let <a href="https://bugs.webkit.org/show_bug.cgi?id=160038#c3">Ryosuke Niva explain</a> <sup><a href="footnote-1">1</a></sup>:</p>"#;
+        assert_eq!(result.0.to_string(), expected);
+        assert_eq!(result.1.len(), 1);
+    }
 }

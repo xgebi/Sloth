@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{format, Display, Formatter};
 use pyo3::prelude::*;
 
 mod runners;
@@ -24,12 +24,18 @@ impl Display for Footnote {
     }
 }
 
-pub(crate) fn display_vec_footnote(v: Vec<Footnote>) -> String {
-    let mut res: Vec<String> = vec![];
-    for footnote in v {
-        res.push(footnote.to_string());
+#[pyfunction]
+pub(crate) fn display_vec_footnote(mut v: Vec<Footnote>) -> String {
+    if v.is_empty() {
+        return String::new();
     }
-    res.join("")
+    v.sort_by(|a, b| a.index.cmp(&b.index));
+    let mut res = String::from("<h2>Footnotes</h2><ol>");
+    for footnote in v {
+        res = format!("{}<li>{}</li>", res, footnote.text);
+    }
+
+    format!("{}</ol>", res)
 }
 
 #[pyclass]
@@ -55,6 +61,7 @@ fn render_slothmark(input: String) -> (String, Vec<Footnote>) {
 fn rust_generators(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(render_slothmark, m)?)?;
+    m.add_function(wrap_pyfunction!(display_vec_footnote, m)?)?;
     m.add_class::<SlothMarkResult>()?;
     m.add_class::<Footnote>()?;
     Ok(())

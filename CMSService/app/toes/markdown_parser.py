@@ -25,7 +25,7 @@ def combine_footnotes(text: str, footnotes: List[Footnote]) -> str:
 	if footnotes is None:
 		return text
 	footnotes.sort(key=lambda f: f.index)
-	footnotes_str = "\n".join([footnote.footnote for footnote in footnotes])
+	footnotes_str = "\n".join([footnote.text for footnote in footnotes])
 	if len(footnotes) > 0:
 		return f"{text}<h2>Footnotes</h2><ol>{footnotes_str}</ol>"
 	return text

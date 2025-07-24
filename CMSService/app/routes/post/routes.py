@@ -8,7 +8,6 @@ import uuid
 from pathlib import Path
 from time import time
 from typing import List, Dict
-import threading
 
 import generators
 from flask_cors import cross_origin
@@ -249,10 +248,12 @@ def get_post_preview(*args, permission_level: int, connection: psycopg.Connectio
 		connection=connection, post_id=post_id)
 	# generators.rust_generators.render_slothmark(post_data['sections'])
 	html_result = ""
+	footnote_list = []
 	for section in post_data['sections']:
 		result, footnotes = generators.rust_generators.render_slothmark(section["content"])
-		print(result)
+		footnote_list.extend(footnotes)
 		html_result += result
+	html_result += generators.rust_generators.display_vec_footnote(footnote_list)
 	return html_result
 
 

@@ -32,7 +32,7 @@ impl Patterns {
             },
             Pattern {
                 name: "ordered_list",
-                value: String::from(r"\d+\. "),
+                value: String::from(r"^(\s+)?\d+\. "),
             },
             Pattern {
                 name: "new_line_ordered_list",
@@ -40,7 +40,7 @@ impl Patterns {
             },
             Pattern {
                 name: "unordered_list",
-                value: String::from("- "),
+                value: String::from("- "), // ^(- )
             },
             Pattern {
                 name: "unordered_list_alt",
