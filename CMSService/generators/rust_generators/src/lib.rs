@@ -1,5 +1,8 @@
-use std::fmt::{format, Display, Formatter};
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use pyo3::prelude::*;
+use crate::data_type::DataType;
+use crate::runners::scan_toes;
 
 mod runners;
 mod node;
@@ -19,7 +22,7 @@ pub struct Footnote {
 }
 
 impl Display for Footnote {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", format!("<li>{}</li>", self.text))
     }
 }
@@ -45,21 +48,20 @@ pub struct SlothMarkResult {
     pub footnotes: Vec<Footnote>
 }
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
-
 #[pyfunction]
 fn render_slothmark(input: String) -> (String, Vec<Footnote>) {
     runners::render_markup(input)
 }
 
+#[pyfunction]
+fn render_toe(input: String, data: HashMap<String, String>) -> PyResult<String> {
+    let result = scan_toes(input);
+    Ok(String::new())
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rust_generators(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(render_slothmark, m)?)?;
     m.add_function(wrap_pyfunction!(display_vec_footnote, m)?)?;
     m.add_class::<SlothMarkResult>()?;

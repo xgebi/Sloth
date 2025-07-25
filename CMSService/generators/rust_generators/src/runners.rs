@@ -288,7 +288,7 @@ pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataTyp
                 if attr_arr[idx] == "'" && attr_arr[idx - 1] != "\\" {
                     if current_value.is_empty() {
                     } else {
-                        result.insert(current_key.clone(), DataType::from(current_value.clone()));
+                        result.insert(current_key.clone(), DataType::from(format!("\"{}\"", current_value.clone())));
                         current_key = String::new();
                         current_value = String::new();
                         is_key_mode = true;
@@ -301,7 +301,7 @@ pub(crate) fn process_attributes(attr_string: String) -> HashMap<String, DataTyp
                 if attr_arr[idx] == "\"" && attr_arr[idx - 1] != "\\" {
                     if current_value.is_empty() {
                     } else {
-                        result.insert(current_key.clone(), DataType::from(current_value.clone()));
+                        result.insert(current_key.clone(), DataType::from(format!("\"{}\"", current_value.clone())));
                         current_key = String::new();
                         current_value = String::new();
                         is_key_mode = true;
@@ -539,6 +539,7 @@ mod attribute_parsing_tests {
         let attr = String::from("test");
         let result = process_attributes(attr.clone());
         assert_eq!(result.len(), 1);
+        assert_eq!(result.get("test").unwrap().clone(), DataType::Nil);
     }
 
     #[test]
@@ -546,6 +547,7 @@ mod attribute_parsing_tests {
         let attr = String::from("test another");
         let result = process_attributes(attr.clone());
         assert_eq!(result.len(), 2);
+        assert_eq!(result.get("test").unwrap().clone(), DataType::Nil);
     }
 
     #[test]
@@ -553,6 +555,7 @@ mod attribute_parsing_tests {
         let attr = String::from("test='abc'");
         let result = process_attributes(attr.clone());
         assert_eq!(result.len(), 1);
+        assert_eq!(result.get("test").unwrap().clone(), DataType::String("abc".parse().unwrap()));
     }
 
     #[test]
@@ -560,6 +563,7 @@ mod attribute_parsing_tests {
         let attr = String::from("test=\"abc\"");
         let result = process_attributes(attr.clone());
         assert_eq!(result.len(), 1);
+        assert_eq!(result.get("test").unwrap().clone(), DataType::String("abc".parse().unwrap()));
     }
 
     #[test]
@@ -583,6 +587,7 @@ mod attribute_parsing_tests {
     fn three_attributes_combo_works() {
         let attr = String::from("another test='abc' yet");
         let result = process_attributes(attr.clone());
+        println!("{:?}", result);
         assert_eq!(result.len(), 3);
         assert_eq!(result.get("test").unwrap().clone(), DataType::String("abc".parse().unwrap()));
     }

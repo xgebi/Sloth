@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{format, Display, Formatter};
+use pyo3::pyclass;
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,7 +41,8 @@ impl From<String> for DataType {
         if value_arr.len() == 0{
             return DataType::Nil;
         }
-        if value_arr[0] == "'" || value_arr[0] == "'" || value_arr[0] == "`" {
+        // This decision might have to be revised
+        if value_arr[0] == "\"" || value_arr[0] == "'" || value_arr[0] == "`" {
             let mut temp_value = value.clone();
             temp_value.remove(0);
             temp_value.remove(temp_value.len() - 1);
