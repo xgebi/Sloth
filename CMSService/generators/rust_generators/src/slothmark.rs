@@ -249,7 +249,8 @@ fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
             let mut headline = Node::create_normal_node(String::from(format!("h{}", level)));
             let content = process_content(c[mi + 1..end_index].to_vec());
             headline.children.extend(content.0);
-            return (Some(headline), content.1, end_index + 1);
+            let end_trail = if c[end_index + 1] == "\n" { 2 } else { 1 };
+            return (Some(headline), content.1, end_index + end_trail);
         } else {
             panic!();
         }
@@ -464,10 +465,14 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
     let preprocessed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
     // code below should be considered as a first draft. It seems to work but(t)
     while i < preprocessed_list_content.len() {
-        let mut next_new_line = i + preprocessed_list_content[i..].join("").find("\n").unwrap_or(preprocessed_list_content.len());
+        let option_next_new_line = preprocessed_list_content[i..].join("").find("\n");
+        let mut next_new_line = if option_next_new_line.is_none() { preprocessed_list_content.len() } else { i + option_next_new_line.unwrap() };
 
         let mut li = Node::create_normal_node("li".to_string());
         let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap() + 1;
+        if li_content_start > next_new_line {
+            break;
+        }
 
         let content = process_content(preprocessed_list_content[li_content_start..next_new_line].to_vec());
         li.children.extend(content.0);
@@ -1101,7 +1106,7 @@ For</p>"#;
     }
 
     #[test]
-    fn test_headline_after_list() {
+    fn test_headline_after_ordered_list() {
         let text = r#"1. I
 
 ## I"#;
@@ -1109,4 +1114,28 @@ For</p>"#;
         let result = parse_slothmark(text.to_string());
         println!("{}", result.0.to_string());
     }
+
+    #[test]
+    fn test_ordered_list() {
+        let text = r#"T:
+
+- `Inf`
+- `-Inf`"#;
+
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
+    }
+
+    #[test]
+    fn test_list_after_headline() {
+        let text = r#"## R
+
+- [a](https://www.postgresql.org/docs/current/datatype-numeric.html)
+- [b](https://www.postgresql.org/docs/current/datatype-money.html)
+- [c](https://www.postgresql.org/docs/current/locale.html#LOCALE-PROBLEMS)"#;
+
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
+    }
+
 }
