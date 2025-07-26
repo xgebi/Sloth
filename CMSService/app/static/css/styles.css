@@ -56,11 +56,15 @@ body {
 }
 
 .gatekeeper > main form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: .625rem;
-    column-gap: 0;
-    row-gap: .625rem;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 1rem;
+}
+
+.gatekeeper > main form section {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: .125rem;
 }
 
 .gatekeeper .button {

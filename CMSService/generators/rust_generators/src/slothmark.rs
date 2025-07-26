@@ -464,10 +464,7 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
     let preprocessed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
     // code below should be considered as a first draft. It seems to work but(t)
     while i < preprocessed_list_content.len() {
-        let mut next_new_line = preprocessed_list_content[i..].join("").find("\n").unwrap_or(preprocessed_list_content.len());
-        if next_new_line != preprocessed_list_content.len() {
-            next_new_line += i;
-        }
+        let mut next_new_line = i + preprocessed_list_content[i..].join("").find("\n").unwrap_or(preprocessed_list_content.len());
 
         let mut li = Node::create_normal_node("li".to_string());
         let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap() + 1;
@@ -1101,5 +1098,15 @@ For</p>"#;
         let expected = r#"<p>I'll let <a href="https://bugs.webkit.org/show_bug.cgi?id=160038#c3">Ryosuke Niva explain</a> <sup><a href="footnote-1">1</a></sup>:</p>"#;
         assert_eq!(result.0.to_string(), expected);
         assert_eq!(result.1.len(), 1);
+    }
+
+    #[test]
+    fn test_headline_after_list() {
+        let text = r#"1. I
+
+## I"#;
+
+        let result = parse_slothmark(text.to_string());
+        println!("{}", result.0.to_string());
     }
 }

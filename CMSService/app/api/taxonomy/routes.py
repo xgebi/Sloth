@@ -9,7 +9,7 @@ from app.utilities.db_connection import db_connection
 from app.api.taxonomy import taxonomy
 from app.routes.post.routes import separate_taxonomies
 
-
+# Route to audit
 @taxonomy.route("/api/taxonomy/category/new", methods=["POST"])
 @authorize_rest(0)
 @db_connection

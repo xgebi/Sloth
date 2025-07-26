@@ -9,11 +9,15 @@
     </section>
     <section class="registration-items">
         <form toe:if="redirect" toe:action="'/login/process?redirect=' + redirect" method="POST">
+					<section>
             <label for="name">Username:</label> <input type="text" name="username" id="name"/>
+					</section>
+					<section>
             <label for="password">Password:</label> <input type="password" name="password" id="password"/>
-            <span class="button success">
-					<input type="submit" class="sl-button" value="Log in"/>
-				</span>
+					</section>
+					<span class="button success">
+						<input type="submit" class="sl-button" value="Log in"/>
+					</span>
         </form>
         <form toe:if="not redirect" action="/login/process" method="POST">
             <label for="name">Username:</label> <input type="text" name="username" id="name"/>

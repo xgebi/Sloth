@@ -561,7 +561,6 @@ class PostGenerator:
 		print(post["title"])
 		print("pre write")
 		with codecs.open(os.path.join(post_path_dir, 'index.html'), "w", "utf-8") as f:
-			md_parser = MarkdownParser()
 			i = 0
 			content_with_forms = ""
 			excerpt_with_forms = ""
@@ -584,7 +583,7 @@ class PostGenerator:
 						partial_content_with_forms = self.get_form(section["content"])
 					else:
 						partial_content_with_forms = copy.deepcopy(section["content"])
-						partial_content_with_forms, partial_content_footnotes = md_parser.to_html_string(
+						partial_content_with_forms, partial_content_footnotes = generators.rust_generators.render_slothmark(
 							partial_content_with_forms)
 					content_with_forms += partial_content_with_forms
 					content_footnotes.extend(partial_content_footnotes)
@@ -596,9 +595,9 @@ class PostGenerator:
 			else:
 				post["has_form"] = False
 
-			post["excerpt"], excerpt_footnotes = md_parser.to_html_string(excerpt_with_forms)
+			post["excerpt"], excerpt_footnotes = generators.rust_generators.render_slothmark(excerpt_with_forms)
 			excerpt_footnotes.extend(content_footnotes)
-			post["content"] = combine_footnotes(text=content_with_forms, footnotes=excerpt_footnotes)
+			post["content"] = content_with_forms + generators.rust_generators.display_vec_footnote(excerpt_footnotes)
 
 			rendered = render_toe_from_string(
 				template=template,
@@ -1089,7 +1088,7 @@ class PostGenerator:
 							(post_type['uuid'], language['uuid'], False,
 							 int(self.settings['number_rss_posts']['settings_value']) - len(items)))
 						items.extend(cur.fetchall())
-					md_parser = MarkdownParser()
+
 					posts[post_type['slug']] = []
 
 					for item in items:
@@ -1103,7 +1102,7 @@ class PostGenerator:
 							res = cur.fetchone()
 							thumbnail_path = f"/{res['file_path']}"
 							thumbnail_alt = res['alt']
-						excerpt, excerpt_footnotes = md_parser.to_html_string(item['content'])
+						excerpt, excerpt_footnotes = generators.rust_generators.render_slothmark(item['content'])
 
 						categories, tags = get_taxonomy_for_post_prepped_for_listing(
 							connection=self.connection,
@@ -1308,18 +1307,17 @@ class PostGenerator:
 			post_item.appendChild(description)
 
 			content = doc.createElement('content:encoded')
-			md_parser = MarkdownParser()
 			content_text = doc.createCDATASection("")
 			if "sections" in post:
 				if not post_markdown:
 					footnotes = []
 					sections = []
 					for section in post["sections"]:
-						temp_text, temp_footnotes = md_parser.to_html_string(section["content"])
+						temp_text, temp_footnotes = generators.rust_generators.render_slothmark(section["content"])
 						footnotes.extend(temp_footnotes)
 						sections.append(temp_text)
 					content_text = doc.createCDATASection(
-						combine_footnotes(text="\n".join(sections), footnotes=footnotes)
+						"\n".join(sections) + generators.rust_generators.display_vec_footnote(footnotes)
 					)
 				else:
 					content_text = doc.createCDATASection(
@@ -1327,13 +1325,12 @@ class PostGenerator:
 					)
 			elif "content" in post or "excerpt" in post:
 				if len(post["excerpt"]) == 0:
-					post["content"], footnotes = md_parser.to_html_string(post["content"])
-					content_text = doc.createCDATASection(combine_footnotes(text=post['content'], footnotes=footnotes))
+					post["content"], footnotes = generators.rust_generators.render_slothmark(post["content"])
+					content_text = doc.createCDATASection(post['content'] + generators.rust_generators.display_vec_footnote(footnotes))
 				else:
-					post["excerpt"], ex_footnotes = md_parser.to_html_string(post["excerpt"])
-					post["content"], con_footnotes = md_parser.to_html_string(post["content"])
-					content_text = doc.createCDATASection(combine_footnotes(text=f"{post['excerpt']} {post['content']}",
-																			footnotes=ex_footnotes.extend(
+					post["excerpt"], ex_footnotes = generators.rust_generators.render_slothmark(post["excerpt"])
+					post["content"], con_footnotes = generators.rust_generators.render_slothmark(post["content"])
+					content_text = doc.createCDATASection(f"{post['excerpt']} {post['content']}" + generators.rust_generators.display_vec_footnote(ex_footnotes.extend(
 																				con_footnotes)))
 			content.appendChild(content_text)
 			post_item.appendChild(content)

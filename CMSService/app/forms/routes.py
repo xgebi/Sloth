@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from app.forms import forms
 
-
+# Route to audit
 # display form page
 @forms.route("/forms")
 @authorize_web(0)
@@ -64,7 +64,7 @@ def show_forms(*args, permission_level: int, connection: psycopg.Connection, **k
 		hooks=Hooks()
 	)
 
-
+# Route to audit
 @forms.route("/forms/<form_id>")
 @authorize_web(0)
 @db_connection
@@ -132,7 +132,7 @@ def show_form(*args, permission_level: int, connection: psycopg.Connection, form
 		hooks=Hooks()
 	)
 
-
+# Route to audit
 # save form
 @forms.route("/api/forms/<form_id>/save", methods=["POST"])
 @authorize_web(0)
@@ -185,7 +185,7 @@ def save_form(*args, permission_level: int, connection: psycopg.Connection, form
 	response.headers['Content-Type'] = 'application/json'
 	return response, code
 
-
+# Route to audit
 # delete form
 @forms.route("/api/forms/<form_id>/delete", methods=["POST", "DELETE"])
 @authorize_web(0)

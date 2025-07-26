@@ -16,7 +16,7 @@ from app.utilities.utilities import get_default_language
 
 from app.libraries import libraries
 
-
+# Route to audit
 # display libraries
 @libraries.route("/libraries")
 @authorize_web(0)
@@ -58,7 +58,7 @@ def show_libraries(permission_level: int, connection: psycopg.Connection):
 		hooks=Hooks()
 	)
 
-
+# Route to audit
 # add library
 @libraries.route("/libraries/new", methods=["POST"])
 @authorize_web(0)
