@@ -237,7 +237,17 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
                 }
             }
         } else if c[i] != "\n" || c[i] != "\r" {
-            if create_paragraph && (i == 0 || c[i - 1] == "\n") {
+            let m = c.len() > i + 1;
+            let n = i > 0 && c[i - 1] == "\n";
+            // let o = (c[i - 1] == "\n" && c.len() > i + 1 && !["#", "<"].contains(&c[i + 1]))
+            if create_paragraph &&
+                (i == 0 ||
+                    (c[i - 1] == "\n" &&
+                        ((c.len() > i + 1 &&
+                            !["#", "<"].contains(&c[i + 1]) &&
+                            (c.len() > i + 2 && c[i+1] != "-" && c[i+2] != " ")
+                        ) ||
+                        c.len() == i + 1))) {
                 let mut paragraph = Node::create_normal_node(String::from("p"));
                 let r = process_content(c[i..].to_vec(), false);
                 paragraph.children.extend(r.0);
@@ -1184,8 +1194,9 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<ul><li>Parent<ul><li><a href="https://example.com">One link's apostrophe</a></li><li><a href="https://example.com">Second link's apostrophe</a></li></ul></li></ul><h2>Personal</h2>
-<p>I</p>"#;
+        let expected = r#"<ul><li>Parent<ul><li><a href="https://example.com">One link's apostrophe</a></li><li><a href="https://example.com">Second link's apostrophe</a></li></ul></li></ul><h2>Personal</h2><p>I</p>
+
+"#;
         assert_eq!(str_res.contains("Personal"), true);
         assert_eq!(str_res, expected);
     }
@@ -1226,6 +1237,12 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
+        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty
+--------------------------------------+-----------------
+ ff095bf4-63bf-4059-beff-74ac085c616c | empty</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>
+
+"#;
+        assert_eq!(str_res, expected);
     }
 
     #[test]
@@ -1240,5 +1257,9 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
+        let expected = r#"<pre class="language-"><code class="language-"></code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>
+
+"#;
+        assert_eq!(str_res, expected);
     }
 }

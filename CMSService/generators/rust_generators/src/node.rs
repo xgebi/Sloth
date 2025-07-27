@@ -83,7 +83,9 @@ impl Display for Node {
         if !self.attributes.is_empty() {
             result.push_str(" ");
         }
-        for attribute in self.attributes.clone() {
+        let mut v: Vec<_> = self.attributes.clone().into_iter().collect();
+        v.sort_by(|x,y| x.0.cmp(&y.0));
+        for attribute in v {
             result.push_str(format!("{}=\"{}\"", attribute.0, attribute.1).as_str());
             result.push_str(" ");
         }
