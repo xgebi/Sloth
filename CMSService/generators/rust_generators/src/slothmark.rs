@@ -24,104 +24,19 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
         "’",
         "'"
     );
-    // ’
+    processed_new_lines = sm.replace(
+        " ",
+        " "
+    );
+    // ’  
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_by_type(NodeType::ToeRoot);
     let mut footnotes_list = vec![];
-    let mut current_node = &root_node;
-    let mut i: usize = 0;
-    while i < grapheme_vector.len() {
-        // process paragraph
-        let x = grapheme_vector[i].clone();
-        let p_pattern = Regex::new(patterns.locate("not_paragraph").unwrap().value.as_str()).unwrap();
-        let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
-        if grapheme_vector[i] == "#" {
-            // case for h*
-            let t = process_headline(grapheme_vector[i..grapheme_vector.len()].to_vec());
-            i += t.2;
-            footnotes_list.extend(t.1);
-            if let Some(headline) = t.0 {
-                root_node.children.push(headline);
-            }
-        } else if (grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
-            grapheme_vector[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) && // there's a bug here for ordered lists
-            ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) {
-            let mut list = Node::create_normal_node("ul".to_string());
 
-            // case for unordered list
-            let mut end_of_list= grapheme_vector.len();
-            let mut j = i;
-            while j < grapheme_vector.len()  {
-                let temp_end_of_list = grapheme_vector[j..].join("").find("\n\n");
-                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { grapheme_vector.len() };
-
-                if grapheme_vector.len() > end_of_list + 4 &&
-                    grapheme_vector[end_of_list + 2] == " " && grapheme_vector[end_of_list + 3] == " " {
-                    j += end_of_list + 2;
-                } else {
-                    break;
-                }
-            }
-            let t = process_list_items(
-                grapheme_vector[i..end_of_list].to_vec(),
-                String::from(grapheme_vector[i]),
-                0
-            );
-            i = end_of_list;
-            list.children.extend(t.0);
-            root_node.children.push(list);
-            footnotes_list.extend(t.1);
-        } else if ((i > 0 && grapheme_vector[i-1] == "\n") || i == 0) &&
-            ordered_list_regex.is_match_at(grapheme_vector[i..grapheme_vector.len()].join("").as_str(), 0) {
-            // Add if case for ordered list
-            let mut list = Node::create_normal_node(String::from("ol"));
-            let mut end_of_list= grapheme_vector.len();
-            let mut j = i;
-            while j < grapheme_vector.len()  {
-                let temp_end_of_list = grapheme_vector[j..].join("").find("\n\n");
-                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { grapheme_vector.len() };
-
-                if grapheme_vector.len() > end_of_list + 4 &&
-                    grapheme_vector[end_of_list + 2] == " " && grapheme_vector[end_of_list + 3] == " " {
-                    j += end_of_list + 2;
-                } else {
-                    break;
-                }
-            }
-            let t = process_list_items(grapheme_vector[i..grapheme_vector.len()].to_vec(), String::from(r"\d"), 0);
-            i = end_of_list + 2;
-            list.children.extend(t.0);
-            root_node.children.push(list);
-            footnotes_list.extend(t.1);
-        } else if i+1 < grapheme_vector.len() && grapheme_vector[i..i+2].join("") == patterns.locate("image").unwrap().value {
-            // Add if case for image
-            let mut p = Node::create_normal_node(String::from("img"));
-            let t = process_image(grapheme_vector[i..grapheme_vector.len()].to_vec());
-            if let Some(image) = t.0 {
-                root_node.children.push(image);
-                i += t.1;
-            }
-        } else if i + 2 < grapheme_vector.len() && grapheme_vector[i..i+3].join("") == patterns.locate("codeblock").unwrap().value {
-            // Add if case for code block
-            let t = process_code_block(grapheme_vector[i..grapheme_vector.len()].to_vec());
-            if let Some(codeblock) = t.0 {
-                root_node.children.push(codeblock);
-                i += t.1;
-            }
-        } else if (i == 0 || grapheme_vector[i - 1] == "\n") && !p_pattern.is_match(grapheme_vector[i]) {
-            let mut p = Node::create_normal_node(String::from("p"));
-            let t = process_content(grapheme_vector[i..grapheme_vector.len()].to_vec());
-            i += t.2;
-            p.children.extend(t.0);
-            footnotes_list.extend(t.1);
-            current_node = &p;
-
-            root_node.children.push(p);
-        } else {
-            i += 1
-        }
-    }
+    let t = process_content(grapheme_vector.to_vec());
+    root_node.children.extend(t.0);
+    footnotes_list.extend(t.1);
 
     (root_node, footnotes_list)
 }
@@ -133,6 +48,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
     let mut nodes = Vec::new();
     let mut footnotes = Vec::new();
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
+    let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
     let j = c.len();
 
     while i < j {
@@ -142,6 +58,59 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
         if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
             return (nodes, footnotes, i + 2);
+        // unordered list
+        } else if c.len() > i + 2 && (c[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
+            c[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) && // there's a bug here for ordered lists
+            ((i > 0 && c[i-1] == "\n") || i == 0) {
+            let mut list = Node::create_normal_node("ul".to_string());
+
+            // case for unordered list
+            let mut end_of_list= c.len();
+            let mut j = i;
+            while j < c.len()  {
+                let temp_end_of_list = c[j..].join("").find("\n\n");
+                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { c.len() };
+
+                if c.len() > end_of_list + 4 &&
+                    c[end_of_list + 2] == " " && c[end_of_list + 3] == " " {
+                    j += end_of_list + 2;
+                } else {
+                    break;
+                }
+            }
+            let t = process_list_items(
+                c[i..end_of_list].to_vec(),
+                String::from(c[i]),
+                0
+            );
+            i = end_of_list;
+            list.children.extend(t.0);
+            nodes.push(list);
+            footnotes.extend(t.1);
+        // ordered list
+        } else if ((i > 0 && c[i-1] == "\n") || i == 0) &&
+            ordered_list_regex.is_match_at(c[i..c.len()].join("").as_str(), 0) {
+            // Add if case for ordered list
+            let mut list = Node::create_normal_node(String::from("ol"));
+            let mut end_of_list= c.len();
+            let mut j = i;
+            while j < c.len()  {
+                let temp_end_of_list = c[j..].join("").find("\n\n");
+                end_of_list = if let Some(end) = temp_end_of_list { end + j } else { c.len() };
+
+                if c.len() > end_of_list + 4 &&
+                    c[end_of_list + 2] == " " && c[end_of_list + 3] == " " {
+                    j += end_of_list + 2;
+                } else {
+                    break;
+                }
+            }
+            let t = process_list_items(c[i..c.len()].to_vec(), String::from(r"\d"), 0);
+            i = end_of_list + 2;
+            list.children.extend(t.0);
+            nodes.push(list);
+            footnotes.extend(t.1);
+        // headline
         } else if c[i] == "#" && (i == 0 || c[i - 1] == "\n") {
             // case for h*
             let t = process_headline(c[i..c.len()].to_vec());
@@ -150,6 +119,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             if let Some(headline) = t.0 {
                 nodes.push(headline);
             }
+        // bold text
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
@@ -164,6 +134,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             } else {
                 i += 1; // just to be safe
             }
+        // italic text
         } else if c[i] == "*" {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
@@ -180,6 +151,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             } else {
                 i += 1; // just to be safe
             }
+        // footnotes
         } else if i < c.len() &&
             c[i..c.len()].join("").find(" ").is_some() &&
             footnote_pattern.is_match(
@@ -198,6 +170,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             } else {
                 i += 1;
             }
+        // links
         } else if c[i] == "[" {
             // clause for links
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
@@ -205,8 +178,8 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
                 current_node = Node::create_by_type(NodeType::Text);
             }
             let middle_index = c[i + 1..c.len()].join("").find("](");
-            if middle_index.is_some() && c[i + 1..middle_index.unwrap()].join("").match_indices("]").count() > 0 {
-                let end = i + 2 + c[i + 1..middle_index.unwrap()].join("").find("]").unwrap();
+            if middle_index.is_some() && c[i + 1..middle_index.unwrap() + i + 1].join("").match_indices("]").count() > 0 {
+                let end = i + 2 + c[i + 1..middle_index.unwrap() + i + 1].join("").find("]").unwrap();
                 let r = process_content(c[i + 1..end - 1].to_vec());
                 let start_node = Node::create_text_node(String::from("["));
                 let end_node = Node::create_text_node(String::from("]"));
@@ -225,6 +198,7 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
                     i += 1;
                 }
             }
+        // image
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
@@ -238,19 +212,29 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
             } else {
                 i += 1;
             }
+        // code
         } else if c[i] == "`" {
-            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
-                current_node = Node::create_by_type(NodeType::Text);
-            }
-            current_node = Node::create_by_type(NodeType::Text);
-            // clause for italic
-            let r = process_inline_code(c[i..c.len()].to_vec());
-            if let Some(em) = r.0 {
-                nodes.push(em);
-                i += r.1;
+            if c.len() > i + 2 && c[i+1]  == "`" && c[i+2]  == "`" {
+                // Add if case for code block
+                let t = process_code_block(c[i..c.len()].to_vec());
+                if let Some(codeblock) = t.0 {
+                    nodes.push(codeblock);
+                    i += t.1;
+                }
             } else {
-                i += 1; // just to be safe
+                if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
+                    nodes.push(current_node);
+                    current_node = Node::create_by_type(NodeType::Text);
+                }
+                current_node = Node::create_by_type(NodeType::Text);
+                // clause for italic
+                let r = process_inline_code(c[i..c.len()].to_vec());
+                if let Some(em) = r.0 {
+                    nodes.push(em);
+                    i += r.1;
+                } else {
+                    i += 1; // just to be safe
+                }
             }
         } else if c[i] != "\n" || c[i] != "\r" {
             current_node.text_content = format!("{}{}", current_node.text_content, c[i]);
@@ -792,7 +776,7 @@ mod tests {
         println!("{:?}", result.1);
         assert_eq!(result.1.len(), 1);
         assert_eq!(result.1[0].index, 1);
-        assert_eq!(result.1[0].text, "Abc <img alt=\"abc\" src=\"def\"/>");
+        assert_eq!(result.1[0].text, "Abc <img src=\"def\" alt=\"abc\"/>");
     }
     
     // Doesn't work yet
@@ -933,6 +917,7 @@ mod tests {
     #[test]
     fn parses_code_block() {
         let result = parse_slothmark("```\nAbc\n```".parse().unwrap());
+        println!("{:?}", result.0.to_string());
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "pre");
         assert_eq!(result.0.children[0].children.len(), 1);
@@ -991,6 +976,7 @@ mod tests {
     #[test]
     fn basic_ordered_list() {
         let result = parse_slothmark("1. test".parse().unwrap());
+        println!("{:?}", result.0);
         assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "ol");
         assert_eq!(result.0.children[0].children.len(), 1);
@@ -1186,7 +1172,7 @@ I"#;
 
 
     #[test]
-    fn test_real() {
+    fn test_square_brackets() {
         let text = r#"<table>
 <tbody>
 <tr>
@@ -1198,6 +1184,38 @@ I"#;
 ## Resources
 
 - [abc](https://example.com)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+    }
+
+    #[test]
+    fn test_real() {
+        let text = r#"```
+                 post                 |    is_empty     
+--------------------------------------+-----------------
+ ff095bf4-63bf-4059-beff-74ac085c616c | empty
+```
+
+## Resources
+
+- [CASE expression documentation](https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE)
+- [StackOverflow answer about quotes](https://stackoverflow.com/a/7651432)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+    }
+
+    #[test]
+    fn test_real_2() {
+        let text = r#"```
+ 
+```
+
+- [CASE expression documentation](https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE)
+- [StackOverflow answer about quotes](https://stackoverflow.com/a/7651432)"#;
 
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
