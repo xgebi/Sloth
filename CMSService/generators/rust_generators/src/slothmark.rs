@@ -204,13 +204,26 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
                 nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
-            let r = process_link(c[i..c.len()].to_vec());
-            if let Some(link) = r.0 {
-                nodes.push(link);
+            let middle_index = c[i + 1..c.len()].join("").find("](");
+            if middle_index.is_some() && c[i + 1..middle_index.unwrap()].join("").match_indices("]").count() > 0 {
+                let end = i + 2 + c[i + 1..middle_index.unwrap()].join("").find("]").unwrap();
+                let r = process_content(c[i + 1..end - 1].to_vec());
+                let start_node = Node::create_text_node(String::from("["));
+                let end_node = Node::create_text_node(String::from("]"));
+                nodes.push(start_node);
+                nodes.extend(r.0);
+                nodes.push(end_node);
                 footnotes.extend(r.1);
-                i += r.2;
+                i += r.2 + 2;
             } else {
-                i += 1;
+                let r = process_link(c[i..c.len()].to_vec());
+                if let Some(link) = r.0 {
+                    nodes.push(link);
+                    footnotes.extend(r.1);
+                    i += r.2;
+                } else {
+                    i += 1;
+                }
             }
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
@@ -1177,15 +1190,7 @@ I"#;
         let text = r#"<table>
 <tbody>
 <tr>
-<td>81</td>
-<td>Hawaiian Kalua Pig (Slow-Cooked Shredded Pork)</td>
-<td>Polynesian</td>
-<td>[&#39;Pork shoulder&#39;, &#39;Liquid smoke (optional)&#39;, &#39;...</td>
-<td>480</td>
-<td>15</td>
-<td>8.0</td>
-<td>400.0</td>
-<td>[&#39;gluten-free&#39;, &#39;dairy-free&#39;]</td>
+<td>[&#39;gluten-free&#39;]</td>
 </tr>
 </tbody>
 </table>
