@@ -16,10 +16,15 @@ enum ListType {
 
 pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
     let patterns = Patterns::new();
-    let processed_new_lines = sm.replace(
+    let mut processed_new_lines = sm.replace(
         patterns.locate("double_line_win").unwrap().value.as_str(),
         patterns.locate("double_line").unwrap().value.as_str()
     );
+    processed_new_lines = sm.replace(
+        "’",
+        "'"
+    );
+    // ’
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
     let mut root_node = Node::create_by_type(NodeType::ToeRoot);
@@ -63,7 +68,7 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
                 String::from(grapheme_vector[i]),
                 0
             );
-            i = end_of_list + 2;
+            i = end_of_list;
             list.children.extend(t.0);
             root_node.children.push(list);
             footnotes_list.extend(t.1);
@@ -137,6 +142,14 @@ fn process_content(c: Vec<&str>) -> (Vec<Node>, Vec<Footnote>, usize) {
         if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
             nodes.push(current_node);
             return (nodes, footnotes, i + 2);
+        } else if c[i] == "#" && (i == 0 || c[i - 1] == "\n") {
+            // case for h*
+            let t = process_headline(c[i..c.len()].to_vec());
+            i += t.2;
+            footnotes.extend(t.1);
+            if let Some(headline) = t.0 {
+                nodes.push(headline);
+            }
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 nodes.push(current_node);
@@ -249,7 +262,7 @@ fn process_headline(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
             let mut headline = Node::create_normal_node(String::from(format!("h{}", level)));
             let content = process_content(c[mi + 1..end_index].to_vec());
             headline.children.extend(content.0);
-            let end_trail = if c[end_index + 1] == "\n" { 2 } else { 1 };
+            let end_trail = if c.len() > end_index + 1 && c[end_index + 1] == "\n" { 2 } else { 1 };
             return (Some(headline), content.1, end_index + end_trail);
         } else {
             panic!();
@@ -469,7 +482,7 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         let mut next_new_line = if option_next_new_line.is_none() { preprocessed_list_content.len() } else { i + option_next_new_line.unwrap() };
 
         let mut li = Node::create_normal_node("li".to_string());
-        let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap() + 1;
+        let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap_or(preprocessed_list_content.len()) + 1;
         if li_content_start > next_new_line {
             break;
         }
@@ -1019,9 +1032,9 @@ mod tests {
     fn basic_unordered_list_multi_line_item_nested_unordered_list() {
         let result = parse_slothmark("- test\n\n  second line\n\n  - nested list\n- another".parse().unwrap());
         println!("{:?}", result.0.to_string());
-        assert_eq!(result.0.children.len(), 2);
+        assert_eq!(result.0.children.len(), 1);
         assert_eq!(result.0.children[0].name, "ul");
-        assert_eq!(result.0.children[0].children.len(), 1);
+        assert_eq!(result.0.children[0].children.len(), 2);
         assert_eq!(result.0.children[0].children[0].name, "li");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
         
@@ -1127,15 +1140,62 @@ For</p>"#;
     }
 
     #[test]
-    fn test_list_after_headline() {
-        let text = r#"## R
-
-- [a](https://www.postgresql.org/docs/current/datatype-numeric.html)
-- [b](https://www.postgresql.org/docs/current/datatype-money.html)
-- [c](https://www.postgresql.org/docs/current/locale.html#LOCALE-PROBLEMS)"#;
-
+    fn test_link_with_apostrophe() {
+        let text = r#"[Link with ’](https://example.com)"#;
         let result = parse_slothmark(text.to_string());
-        println!("{}", result.0.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
     }
 
+    #[test]
+    fn test_link_with_apostrophe_2() {
+        let text = r#"[Link with you’ve](https://example.com)"#;
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+    }
+
+    #[test]
+    fn test_list_after_headline() {
+        let text = r#"- Parent
+        - [One link’s apostrophe](https://example.com)
+        - [Second link’s apostrophe](https://example.com)
+
+## Personal
+
+I"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        assert_eq!(str_res.contains("Personal"), true);
+    }
+
+
+    #[test]
+    fn test_real() {
+        let text = r#"<table>
+<tbody>
+<tr>
+<td>81</td>
+<td>Hawaiian Kalua Pig (Slow-Cooked Shredded Pork)</td>
+<td>Polynesian</td>
+<td>[&#39;Pork shoulder&#39;, &#39;Liquid smoke (optional)&#39;, &#39;...</td>
+<td>480</td>
+<td>15</td>
+<td>8.0</td>
+<td>400.0</td>
+<td>[&#39;gluten-free&#39;, &#39;dairy-free&#39;]</td>
+</tr>
+</tbody>
+</table>
+
+## Resources
+
+- [abc](https://example.com)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+    }
 }
