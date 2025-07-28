@@ -377,8 +377,18 @@ fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
 }
 
 fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
-    let possible_end = c[3..c.len()].join("").find("```");
-    if let Some(end) = possible_end {
+    let possible_end = c[3..].join("").find("```");
+    let grapheme_comp: i64 = if possible_end.is_some() {
+        let x = c[3..].join("").len()  as i64;
+        let y = (c.len() - 3) as i64;
+        y - x
+    } else {
+        0
+    };
+    if let Some(mut end) = possible_end {
+        end = (end as isize + grapheme_comp as isize) as usize;
+        println!("{}", c[3..50].join(""));
+        end += 3;
         let first_end_line = c.join("").find("\n");
         if first_end_line.is_none() {
             panic!();
@@ -386,7 +396,8 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
         // pre -> code
         let mut pre = Node::create_normal_node("pre".to_string());
         let mut code = Node::create_normal_node("code".to_string());
-        let code_content = Node::create_text_node(c[first_end_line.unwrap()..end + 3].join("").trim().to_string());
+        let code_content_text = c[first_end_line.unwrap()..end].join("").trim().to_string();
+        let code_content = Node::create_text_node(code_content_text.clone());
 
         if c[first_end_line.unwrap()] != "\"" {
             pre.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
@@ -396,7 +407,9 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
         code.children.push(code_content);
         pre.children.push(code);
 
-        (Some(pre), end + 6)
+        let movement = end + 3;
+
+        (Some(pre), movement)
     } else {
         (None, 0)
     }
@@ -1258,7 +1271,7 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty     
+        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty
 --------------------------------------+-----------------
  ff095bf4-63bf-4059-beff-74ac085c616c | empty</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
         assert_eq!(str_res, expected);
@@ -1308,6 +1321,63 @@ Third"#;
         let str_res = result.0.to_string();
         println!("{}", str_res);
         let expected = r#"<p>First</p><p>Second</p><p>Third</p>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_math_2() {
+        let text = r#"```HTML
+∫
+```"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫</code></pre>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_math_1() {
+        let text = r#"```HTML
+∫
+```
+```CSS
+.a {
+	math-style: compact;
+}
+```"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫</code></pre><pre class="language-CSS"><code class="language-CSS">.a {
+	math-style: compact;
+}</code></pre> "#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_weird_chars() {
+        let text = r#"∫
+
+```HTML
+∫
+```
+
+```CSS
+.example-math-style-normal {
+	math-style: normal;
+}
+```
+"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<p>∫</p><pre class="language-HTML"><code class="language-HTML">∫</code></pre><pre class="language-CSS"><code class="language-CSS">.example-math-style-normal {
+	math-style: normal;
+}</code></pre>"#;
         assert_eq!(str_res, expected);
     }
 }
