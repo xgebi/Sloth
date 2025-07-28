@@ -1192,7 +1192,7 @@ is anti-pattern in our opinion and should be discouraged.</code></pre><p>For</p>
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        assert_eq!(result.0.to_string(), r#"<a href="https://example.com">Link with '</a>"#);
+        assert_eq!(result.0.to_string(), r#"<p><a href="https://example.com">Link with '</a></p>"#);
     }
 
     #[test]
@@ -1201,7 +1201,7 @@ is anti-pattern in our opinion and should be discouraged.</code></pre><p>For</p>
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        assert_eq!(result.0.to_string(), r#"<a href="https://example.com">Link with you've</a>"#)
+        assert_eq!(result.0.to_string(), r#"<p><a href="https://example.com">Link with you've</a></p>"#)
     }
 
     #[test]
@@ -1217,9 +1217,7 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<ul><li>Parent<ul><li><a href="https://example.com">One link's apostrophe</a></li><li><a href="https://example.com">Second link's apostrophe</a></li></ul></li></ul><h2>Personal</h2><p>I</p>
-
-"#;
+        let expected = r#"<ul><li>Parent<ul><li><a href="https://example.com">One link's apostrophe</a></li><li><a href="https://example.com">Second link's apostrophe</a></li></ul></li></ul><h2>Personal</h2><p>I</p>"#;
         assert_eq!(str_res.contains("Personal"), true);
         assert_eq!(str_res, expected);
     }
@@ -1260,11 +1258,9 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty
+        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty     
 --------------------------------------+-----------------
- ff095bf4-63bf-4059-beff-74ac085c616c | empty</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>
-
-"#;
+ ff095bf4-63bf-4059-beff-74ac085c616c | empty</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
         assert_eq!(str_res, expected);
     }
 
@@ -1280,9 +1276,7 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-"><code class="language-"></code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>
-
-"#;
+        let expected = r#"<pre class="language-"><code class="language-"></code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
         assert_eq!(str_res, expected);
     }
 
@@ -1298,8 +1292,7 @@ b { display: inline; }
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }</code></pre>
-"#;
+        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }</code></pre> "#;
         assert_eq!(str_res, expected);
     }
 
