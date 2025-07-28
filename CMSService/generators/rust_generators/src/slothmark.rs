@@ -1,7 +1,4 @@
-use std::fmt::format;
-use std::thread::current;
 use unicode_segmentation::UnicodeSegmentation;
-// use pgs_common::node::{Node, NodeType};
 use crate::patterns::Patterns;
 use crate::node::Node;
 use crate::node_type::NodeType;
@@ -46,19 +43,20 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
     let mut i: usize = 0;
     let mut current_node = Node::create_by_type(NodeType::Text);
     let mut nodes = Vec::new();
+    let mut inline_nodes = Vec::new();
     let mut footnotes = Vec::new();
     let footnote_pattern = Regex::new(patterns.locate("footnote").unwrap().value.as_str()).unwrap();
     let ordered_list_regex = Regex::new(patterns.locate("ordered_list").unwrap().value.as_str()).unwrap();
     let j = c.len();
-
+    let mut stuck_index = 0;
     while i < j {
-        // TODO when whole PGS is working, invert if-else to reduce duplicate code
         let l = c[i]; // todo remove, this is debugging only
-        // Add quit cases for headline, code block and lists
-        // if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("double_line").unwrap().value {
-        //     nodes.push(current_node);
-        //     return (nodes, footnotes, i + 2);
         // unordered list
+        if stuck_index == i && i > 0 {
+            print!("stuck")
+        } else {
+            stuck_index = i;
+        }
         if c.len() > i + 2 && (c[i..i+2].join("") == patterns.locate("unordered_list").unwrap().value ||
             c[i..i+2].join("") == patterns.locate("unordered_list_alt").unwrap().value) && // there's a bug here for ordered lists
             ((i > 0 && c[i-1] == "\n") || i == 0) {
@@ -122,13 +120,13 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         // bold text
         } else if i+2 < c.len() && c[i..i+2].join("") == "**" {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
+                inline_nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
             // clause for bold
             let r = process_bold(c[i..c.len()].to_vec());
             if let Some(strong) = r.0 {
-                nodes.push(strong);
+                inline_nodes.push(strong);
                 footnotes.extend(r.1);
                 i += r.2;
             } else {
@@ -137,7 +135,7 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         // italic text
         } else if c[i] == "*" {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
+                inline_nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
             current_node = Node::create_by_type(NodeType::Text);
@@ -145,7 +143,7 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
             let r = process_italic(c[i..c.len()].to_vec());
             // current_node.children.push(r.0.unwrap());
             if let Some(em) = r.0 {
-                nodes.push(em);
+                inline_nodes.push(em);
                 footnotes.extend(r.1);
                 i += r.2;
             } else {
@@ -159,12 +157,12 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         ) {
             // clause for footnotes
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
+                inline_nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
             let r = process_footnote(c[i..c.len()].to_vec());
             if let Some(footnote) = r.0 {
-                nodes.push(footnote);
+                inline_nodes.push(footnote);
                 footnotes.extend(r.1);
                 i += r.2;
             } else {
@@ -174,7 +172,7 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         } else if c[i] == "[" {
             // clause for links
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
+                inline_nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
             let middle_index = c[i + 1..c.len()].join("").find("](");
@@ -183,15 +181,15 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
                 let r = process_content(c[i + 1..end - 1].to_vec(), false);
                 let start_node = Node::create_text_node(String::from("["));
                 let end_node = Node::create_text_node(String::from("]"));
-                nodes.push(start_node);
-                nodes.extend(r.0);
-                nodes.push(end_node);
+                inline_nodes.push(start_node);
+                inline_nodes.extend(r.0);
+                inline_nodes.push(end_node);
                 footnotes.extend(r.1);
                 i += r.2 + 2;
             } else {
                 let r = process_link(c[i..c.len()].to_vec());
                 if let Some(link) = r.0 {
-                    nodes.push(link);
+                    inline_nodes.push(link);
                     footnotes.extend(r.1);
                     i += r.2;
                 } else {
@@ -202,12 +200,12 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         } else if i+1 < c.len() && c[i..i+2].join("") == patterns.locate("image").unwrap().value {
             // clause for images
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                nodes.push(current_node);
+                inline_nodes.push(current_node);
                 current_node = Node::create_by_type(NodeType::Text);
             }
             let r = process_image(c[i..c.len()].to_vec());
             if let Some(image) = r.0 {
-                nodes.push(image);
+                inline_nodes.push(image);
                 i += r.1;
             } else {
                 i += 1;
@@ -223,48 +221,59 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
                 }
             } else {
                 if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
-                    nodes.push(current_node);
+                    inline_nodes.push(current_node);
                     current_node = Node::create_by_type(NodeType::Text);
                 }
                 current_node = Node::create_by_type(NodeType::Text);
                 // clause for italic
                 let r = process_inline_code(c[i..c.len()].to_vec());
                 if let Some(em) = r.0 {
-                    nodes.push(em);
+                    inline_nodes.push(em);
                     i += r.1;
                 } else {
                     i += 1; // just to be safe
                 }
             }
-        } else if c[i] != "\n" || c[i] != "\r" {
-            let m = c.len() > i + 1;
-            let n = i > 0 && c[i - 1] == "\n";
-            // let o = (c[i - 1] == "\n" && c.len() > i + 1 && !["#", "<"].contains(&c[i + 1]))
-            if create_paragraph &&
-                (i == 0 ||
-                    (c[i - 1] == "\n" &&
-                        ((c.len() > i + 1 &&
-                            !["#", "<"].contains(&c[i + 1]) &&
-                            (c.len() > i + 2 && c[i+1] != "-" && c[i+2] != " ")
-                        ) ||
-                        c.len() == i + 1))) {
-                let mut paragraph = Node::create_normal_node(String::from("p"));
-                let r = process_content(c[i..].to_vec(), false);
-                paragraph.children.extend(r.0);
-                nodes.push(paragraph);
-                footnotes.extend(r.1);
-                i += r.2;
-            } else {
-                current_node.text_content = format!("{}{}", current_node.text_content, c[i]);
-                i += 1;
+        } else if c[i] != "\n" && c[i] != "\r" {
+            let formatted = format!("{}{}", current_node.text_content, c[i]);
+            current_node.text_content = formatted.clone();
+
+            if (c.len() == i + 1 && !formatted.trim().is_empty()) && create_paragraph {
+                let mut p = Node::create_normal_node(String::from("p"));
+                p.children.extend(inline_nodes.clone());
+                p.children.push(current_node.clone());
+                nodes.push(p);
+                current_node = Node::create_by_type(NodeType::Text);
+                inline_nodes = Vec::new();
             }
+            i += 1;
+        } else if (c.len() > i + 1 && c[i] == "\n" && c[i + 1] == "\n") || c.len() == i + 1  {
+            if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
+                let mut p = Node::create_normal_node(String::from("p"));
+                p.children.push(current_node.clone());
+                nodes.push(p);
+            }
+            current_node = Node::create_by_type(NodeType::Text);
+            i += 2
         } else {
             current_node.text_content = format!("{}{}", current_node.text_content, " ");
             i += 1;
         }
     }
-    if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
+    if inline_nodes.is_empty() && (current_node.text_content.len() > 0 || current_node.children.len() > 0) {
         nodes.push(current_node);
+    } else if !inline_nodes.is_empty() && create_paragraph {
+        let mut p = Node::create_normal_node(String::from("p"));
+        p.children.extend(inline_nodes);
+        if current_node.text_content.len() > 0 {
+            p.children.push(current_node);
+        }
+        nodes.push(p);
+    } else if !inline_nodes.is_empty() && !create_paragraph {
+        nodes.extend(inline_nodes);
+        if current_node.text_content.len() > 0 {
+            nodes.push(current_node);
+        }
     }
     (nodes, footnotes, c.len())
 }
@@ -566,6 +575,7 @@ mod tests {
     #[test]
     fn process_paragraph_content() {
         let result = process_content("Abc".graphemes(true).collect::<Vec<&str>>(), true);
+        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         println!("{:?}", result);
     }
@@ -585,7 +595,7 @@ mod tests {
 
     #[test]
     fn process_bold_link_content() {
-        let result = process_content("[**Abc**](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("[**Abc**](def)".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
@@ -597,7 +607,7 @@ mod tests {
 
     #[test]
     fn process_italic_link_content() {
-        let result = process_content("[*Abc*](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("[*Abc*](def)".graphemes(true).collect::<Vec<&str>>(), false);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
@@ -610,7 +620,7 @@ mod tests {
 
     #[test]
     fn process_bold_italic_link_content() {
-        let result = process_content("[***Abc***](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("[***Abc***](def)".graphemes(true).collect::<Vec<&str>>(), false);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
@@ -621,9 +631,10 @@ mod tests {
         assert_eq!(result.0[0].children[0].name, "strong");
     }
 
+    // TODO consider create paragraph to true
     #[test]
     fn process_image_link_content() {
-        let result = process_content("[![Abc](def \"jkl\")](vam)".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("[![Abc](def \"jkl\")](vam)".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
@@ -647,7 +658,7 @@ mod tests {
 
     #[test]
     fn process_image_with_title_content() {
-        let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("![Abc](def \"jkl\")".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
         assert_eq!(result.0[0].attributes.contains_key("src"), true);
@@ -665,7 +676,7 @@ mod tests {
 
     #[test]
     fn process_image_content() {
-        let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("![Abc](def)".graphemes(true).collect::<Vec<&str>>(), false);
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "img");
         assert_eq!(result.0[0].attributes.contains_key("src"), true);
@@ -681,31 +692,38 @@ mod tests {
     fn process_italic_content() {
         let result = process_content("*Abc*".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
-        assert_eq!(result.0[0].name, "em");
+        assert_eq!(result.0[0].name, "p");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].text_content, "Abc");
+        assert_eq!(result.0[0].children[0].name, "em");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc");
     }
 
     #[test]
     fn process_bold_content() {
-        let result = process_content("**Abc**".graphemes(true).collect::<Vec<&str>>(), false);
+        let result = process_content("**Abc**".graphemes(true).collect::<Vec<&str>>(), true);
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
-        assert_eq!(result.0[0].name, "strong");
+        assert_eq!(result.0[0].name, "p");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].text_content, "Abc");
+        assert_eq!(result.0[0].children[0].name, "strong");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc");
     }
 
     #[test]
     fn process_bold_italic_content_a() {
         let result = process_content("***Abc* def**".graphemes(true).collect::<Vec<&str>>(), true);
-        println!("{:?}", result.0);
+        println!("{:?}", result.0[0].to_string());
         assert_eq!(result.0.len(), 1);
-        assert_eq!(result.0[0].name, "strong");
-        assert_eq!(result.0[0].children.len(), 2);
-        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc");
-        assert_eq!(result.0[0].children[0].name, "em");
-        assert_eq!(result.0[0].children[1].text_content, " def");
+        assert_eq!(result.0[0].name, "p");
+        println!("{:?}", result.0[0].children[0].to_string());
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "strong");
+        assert_eq!(result.0[0].children[0].children.len(), 2);
+        assert_eq!(result.0[0].children[0].children[0].children[0].text_content, "Abc");
+        assert_eq!(result.0[0].children[0].children[0].name, "em");
+        assert_eq!(result.0[0].children[0].children[1].text_content, " def");
     }
 
     #[test]
@@ -714,18 +732,20 @@ mod tests {
         println!("{:?}", result.0);
         assert_eq!(result.0.len(), 1);
         println!("{:?}", result.0[0]);
-        assert_eq!(result.0[0].name, "em");
-        assert_eq!(result.0[0].children.len(), 2);
-        assert_eq!(result.0[0].children[0].text_content, "Abc ".to_string());
-        assert_eq!(result.0[0].children[1].name, "strong");
-        assert_eq!(result.0[0].children[1].children.len(), 1);
-        assert_eq!(result.0[0].children[1].children[0].text_content, "def".to_string());
+        assert_eq!(result.0[0].name, "p");
+        assert_eq!(result.0[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].name, "em");
+        assert_eq!(result.0[0].children[0].children.len(), 2);
+        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc ".to_string());
+        assert_eq!(result.0[0].children[0].children[1].name, "strong");
+        assert_eq!(result.0[0].children[0].children[1].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[1].children[0].text_content, "def".to_string());
     }
 
     #[test]
     fn process_bold_italic_content_c() {
         let result = process_content("mno *Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), false);
-        println!("{:?}", result.0[1]);
+        println!("{:?}", result.0);
         assert_eq!(result.0.len(), 3);
         assert_eq!(result.0[0].text_content, "mno ".to_string());
         assert_eq!(result.0[1].name, "em");
@@ -739,8 +759,10 @@ mod tests {
 
     #[test]
     fn process_bold_italic_content_d() {
-        let result = process_content("*Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("*Abc **def*** jkl".graphemes(true).collect::<Vec<&str>>(), false);
         println!("{:?}", result.0);
+        println!("{:?}", result.0[0].to_string());
+        println!("{:?}", result.0[1].to_string());
         assert_eq!(result.0.len(), 2);
         assert_eq!(result.0[0].name, "em");
         assert_eq!(result.0[0].children.len(), 2);
@@ -751,9 +773,10 @@ mod tests {
         assert_eq!(result.0[1].text_content, " jkl");
     }
 
+    // TODO consider create paragraph to true
     #[test]
     fn process_footnote_content() {
-        let result = process_content("[1. Abc]".graphemes(true).collect::<Vec<&str>>(), true);
+        let result = process_content("[1. Abc]".graphemes(true).collect::<Vec<&str>>(), false);
         println!("{:?}", result);
         assert_eq!(result.0[0].children.len(), 1);
         assert_eq!(result.0[0].name, "sup");
@@ -822,9 +845,11 @@ mod tests {
     fn process_inline_code_content() {
         let result = process_content("`Abc`".graphemes(true).collect::<Vec<&str>>(), true);
         assert_eq!(result.0.len(), 1);
-        assert_eq!(result.0[0].name, "code");
+        assert_eq!(result.0[0].name, "p");
         assert_eq!(result.0[0].children.len(), 1);
-        assert_eq!(result.0[0].children[0].text_content, "Abc");
+        assert_eq!(result.0[0].children[0].name, "code");
+        assert_eq!(result.0[0].children[0].children.len(), 1);
+        assert_eq!(result.0[0].children[0].children[0].text_content, "Abc");
     }
 
     #[test]
@@ -1124,9 +1149,7 @@ For"#;
         let result = parse_slothmark(text.to_string());
         println!("{}", result.0.to_string());
         let expected = r#"<pre class="language-"><code class="language-">Changing the behavior of elements like that based on context
-is anti-pattern in our opinion and should be discouraged.</code></pre><p>
-For</p>
-"#;
+is anti-pattern in our opinion and should be discouraged.</code></pre><p>For</p>"#;
         assert_eq!(result.0.to_string(), expected);
     }
 
@@ -1152,7 +1175,7 @@ For</p>
     }
 
     #[test]
-    fn test_ordered_list() {
+    fn test_unordered_list() {
         let text = r#"T:
 
 - `Inf`
@@ -1222,7 +1245,7 @@ I"#;
     }
 
     #[test]
-    fn test_real() {
+    fn test_table_in_pre() {
         let text = r#"```
                  post                 |    is_empty     
 --------------------------------------+-----------------
@@ -1246,7 +1269,7 @@ I"#;
     }
 
     #[test]
-    fn test_real_2() {
+    fn test_list_after_codeblock() {
         let text = r#"```
  
 ```
@@ -1260,6 +1283,38 @@ I"#;
         let expected = r#"<pre class="language-"><code class="language-"></code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>
 
 "#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_two_codeblocks() {
+        let text = r#"```CSS
+a { display: block; }
+```
+```CSS
+b { display: inline; }
+```"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }</code></pre>
+"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_three_paragraphs() {
+        let text = r#"First
+
+Second
+
+Third"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<p>First</p><p>Second</p><p>Third</p>"#;
         assert_eq!(str_res, expected);
     }
 }
