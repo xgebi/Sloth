@@ -250,8 +250,10 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
         } else if (c.len() > i + 1 && c[i] == "\n" && c[i + 1] == "\n") || c.len() == i + 1  {
             if current_node.text_content.len() > 0 || current_node.children.len() > 0 {
                 let mut p = Node::create_normal_node(String::from("p"));
+                p.children.extend(inline_nodes.clone());
                 p.children.push(current_node.clone());
                 nodes.push(p);
+                inline_nodes = Vec::new();
             }
             current_node = Node::create_by_type(NodeType::Text);
             i += 2
@@ -377,42 +379,38 @@ fn process_inline_code(c: Vec<&str>) -> (Option<Node>, usize) {
 }
 
 fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
-    let possible_end = c[3..].join("").find("```");
-    let grapheme_comp: i64 = if possible_end.is_some() {
-        let x = c[3..].join("").len()  as i64;
-        let y = (c.len() - 3) as i64;
-        y - x
-    } else {
-        0
-    };
-    if let Some(mut end) = possible_end {
-        end = (end as isize + grapheme_comp as isize) as usize;
-        println!("{}", c[3..50].join(""));
-        end += 3;
-        let first_end_line = c.join("").find("\n");
-        if first_end_line.is_none() {
+    let mut end = 4;
+    loop {
+        end += 1;
+        if c.len() > end + 2 && c[end] == "`" && c[end + 1] == "`" && c[end + 2] == "`" {
+            break;
+        }
+        if c.len() == end + 1 {
             panic!();
         }
-        // pre -> code
-        let mut pre = Node::create_normal_node("pre".to_string());
-        let mut code = Node::create_normal_node("code".to_string());
-        let code_content_text = c[first_end_line.unwrap()..end].join("").trim().to_string();
-        let code_content = Node::create_text_node(code_content_text.clone());
-
-        if c[first_end_line.unwrap()] != "\"" {
-            pre.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
-            code.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
-        }
-
-        code.children.push(code_content);
-        pre.children.push(code);
-
-        let movement = end + 3;
-
-        (Some(pre), movement)
-    } else {
-        (None, 0)
     }
+
+    let first_end_line = c.join("").find("\n");
+    if first_end_line.is_none() {
+        panic!();
+    }
+    // pre -> code
+    let mut pre = Node::create_normal_node("pre".to_string());
+    let mut code = Node::create_normal_node("code".to_string());
+    let code_content_text = c[first_end_line.unwrap()..end].join("").trim().to_string();
+    let code_content = Node::create_text_node(code_content_text.clone());
+
+    if c[first_end_line.unwrap()] != "\"" {
+        pre.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
+        code.attributes.insert("class".parse().unwrap(), DataType::String(format!("language-{}", c[3..first_end_line.unwrap()].join(""))));
+    }
+
+    code.children.push(code_content);
+    pre.children.push(code);
+
+    let movement = end + 3;
+
+    (Some(pre), movement)
 }
 
 fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
@@ -1378,6 +1376,22 @@ Third"#;
         let expected = r#"<p>∫</p><pre class="language-HTML"><code class="language-HTML">∫</code></pre><pre class="language-CSS"><code class="language-CSS">.example-math-style-normal {
 	math-style: normal;
 }</code></pre>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    // There's issue with text before html tag, see <section> and last generated thing
+    #[test]
+    fn test_compound_paragraph() {
+        let text = r#"The `compact`.
+
+<section>This is a text with a formula <math class="example-math-style-compact"><mrow><msubsup><mo movablelimits="false">∫</mo><mi>a</mi><mi>b</mi></msubsup><msup><mi>x</mi><mn>2</mn></msup><mspace width="0.1667em"></mspace><mi>d</mi><mi>x</mi></mrow>
+  </math> inside it because it is relevant.</section>"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<p>The <code>compact</code>.</p><p><section>This is a text with a formula <math class="example-math-style-compact"><mrow><msubsup><mo movablelimits="false">∫</mo><mi>a</mi><mi>b</mi></msubsup><msup><mi>x</mi><mn>2</mn></msup><mspace width="0.1667em"></mspace><mi>d</mi><mi>x</mi></mrow>   </math> inside it because it is relevant.</section></p>
+"#;
         assert_eq!(str_res, expected);
     }
 }
