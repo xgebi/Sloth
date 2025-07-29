@@ -21,10 +21,10 @@ pub(crate) fn parse_slothmark(sm: String) -> (Node, Vec<Footnote>) {
         "’",
         "'"
     );
-    processed_new_lines = processed_new_lines.replace(
-        " ",
-        " "
-    );
+    // processed_new_lines = processed_new_lines.replace(
+    //     " ",
+    //     " "
+    // );
     // ’  
     let grapheme_vector = processed_new_lines.graphemes(true).collect::<Vec<&str>>();
     // 1. loop through sm
@@ -176,8 +176,8 @@ fn process_content(c: Vec<&str>, create_paragraph: bool) -> (Vec<Node>, Vec<Foot
                 current_node = Node::create_by_type(NodeType::Text);
             }
             let middle_index = c[i + 1..c.len()].join("").find("](");
-            if middle_index.is_some() && c[i + 1..middle_index.unwrap() + i + 1].join("").match_indices("]").count() > 0 {
-                let end = i + 2 + c[i + 1..middle_index.unwrap() + i + 1].join("").find("]").unwrap();
+            if middle_index.is_some() && c[i + 1..middle_index.unwrap() + i].join("").match_indices("]").count() > 0 {
+                let end = i + 2 + c[i + 1..middle_index.unwrap() + i].join("").find("]").unwrap();
                 let r = process_content(c[i + 1..end - 1].to_vec(), false);
                 let start_node = Node::create_text_node(String::from("["));
                 let end_node = Node::create_text_node(String::from("]"));
@@ -331,13 +331,24 @@ fn process_image(c: Vec<&str>) -> (Option<Node>, usize) {
 }
 
 fn process_link(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
-    let middle_index = c[1..c.len()].join("").find("](");
-    let end_index = c[1..c.len()].join("").find(")");
-    if middle_index.is_some() && end_index.is_some() && middle_index.unwrap() < c.len() && middle_index.unwrap() < end_index.unwrap() && end_index.unwrap() < c.len() {
+    let mut middle_index = 0;
+    let mut end_index = 0;
+    let mut i = 1;
+    while i < c.len() {
+        if c[i] == "]" && c.len() > i + 1 && c[i+1] == "(" {
+            middle_index = i;
+        }
+        if c[i] == ")" && middle_index > end_index {
+            end_index = i;
+            break;
+        }
+        i+= 1;
+    }
+    if middle_index < end_index && middle_index < c.len() && middle_index < end_index && end_index < c.len() {
         let mut link_node = Node::create_normal_node(String::from("a"));
 
-        let mut mi = middle_index.unwrap() + 1;
-        let mut ei = end_index.unwrap() + 1;
+        let mut mi = middle_index;
+        let mut ei = end_index;
         loop {
             let image_middle = c[1..mi].join("").match_indices("](").count();
             let image = c[1..mi].join("").match_indices("![").count();
@@ -397,7 +408,7 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
     // pre -> code
     let mut pre = Node::create_normal_node("pre".to_string());
     let mut code = Node::create_normal_node("code".to_string());
-    let code_content_text = c[first_end_line.unwrap()..end].join("").trim().to_string();
+    let code_content_text = c[first_end_line.unwrap() + 1..end].join("").to_string();
     let code_content = Node::create_text_node(code_content_text.clone());
 
     if c[first_end_line.unwrap()] != "\"" {
@@ -415,22 +426,22 @@ fn process_code_block(c: Vec<&str>) -> (Option<Node>, usize) {
 
 fn process_footnote(c: Vec<&str>) -> (Option<Node>, Vec<Footnote>, usize) {
     let end_number_char = c[0..c.len()].join("").find(".").unwrap();
-    let mut possible_end = end_number_char + c[end_number_char..c.len()].join("").find("]").unwrap();
-
-    // find ]
-    // check that there's not [ in between
-    // if there is look for ] beyond first found
-    loop {
-        if c[..possible_end].join("").contains("[") {
-            let count_left_bracket = c[1..possible_end].iter().filter(|c| c.contains('[')).count();
-            let count_right_bracket = c[1..possible_end].iter().filter(|c| c.contains(']')).count();
-            if count_left_bracket == count_right_bracket {
-                break;
-            }
-            let local_possible_end = c[possible_end + 1..c.len()].join("").find("]").unwrap();
-            possible_end = end_number_char + local_possible_end + possible_end - 1;
+    let mut possible_end = 1;
+    let mut i = 1;
+    let mut opening_counter = 0;
+    let mut closing_counter = 0;
+    while i < c.len() {
+        if c[i] == "]" && opening_counter == closing_counter {
+            possible_end = i;
+            break;
         }
-
+        if c[i] == "[" {
+            opening_counter += 1;
+        }
+        if c[i] == "]" {
+            closing_counter += 1;
+        }
+        i+=1;
     }
 
     // [1. thing](address) vs [1. Abc [some](where)] vs [1. ![abc](something)]
@@ -514,8 +525,18 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
     let preprocessed_list_content = binding.graphemes(true).collect::<Vec<&str>>();
     // code below should be considered as a first draft. It seems to work but(t)
     while i < preprocessed_list_content.len() {
-        let option_next_new_line = preprocessed_list_content[i..].join("").find("\n");
-        let mut next_new_line = if option_next_new_line.is_none() { preprocessed_list_content.len() } else { i + option_next_new_line.unwrap() };
+        let mut next_new_line = i;
+        let mut j = i + 1;
+        while j < preprocessed_list_content.len() {
+            if preprocessed_list_content[j] == "\n" {
+                next_new_line = j;
+                break;
+            }
+            j += 1;
+            if j == preprocessed_list_content.len() {
+                next_new_line = j;
+            }
+        }
 
         let mut li = Node::create_normal_node("li".to_string());
         let li_content_start = i + preprocessed_list_content[i..].join("").find(" ").unwrap_or(preprocessed_list_content.len()) + 1;
@@ -530,45 +551,50 @@ fn process_list_items(list_content: Vec<&str>, list_type: String, list_level: us
         let mut temp_res = vec![li];
         let mut child_list_element = "xl";
         let mut child_list = Node::create_normal_node(child_list_element.to_string());
-        while preprocessed_list_content.len() > next_new_line + 1 &&
-            (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
-            let mut space_counter = 0;
-            let mut tab_counter = 0;
-            let mut child_list_type = list_type.clone();
+        if preprocessed_list_content.len() > next_new_line + 1 && (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
+            while preprocessed_list_content.len() > next_new_line + 1 &&
+                (preprocessed_list_content[next_new_line + 1] == " " || preprocessed_list_content[next_new_line + 1] == "\t") {
+                let mut space_counter = 0;
+                let mut tab_counter = 0;
+                let mut child_list_type = list_type.clone();
 
-            while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
-                let counter = next_new_line + 1 + space_counter + tab_counter;
-                if preprocessed_list_content[counter] == " " {
-                    space_counter += 1;
-                } else if preprocessed_list_content[counter] == "\t" {
-                    tab_counter += 1;
-                } else {
-                    child_list_type = preprocessed_list_content[counter].to_string();
-                    break;
+                while next_new_line + 1 + space_counter + tab_counter < preprocessed_list_content.len() {
+                    let counter = next_new_line + 1 + space_counter + tab_counter;
+                    if preprocessed_list_content[counter] == " " {
+                        space_counter += 1;
+                    } else if preprocessed_list_content[counter] == "\t" {
+                        tab_counter += 1;
+                    } else {
+                        child_list_type = preprocessed_list_content[counter].to_string();
+                        break;
+                    }
+                }
+                let level = (space_counter / 2) + tab_counter;
+                if child_list_element == "xl" {
+                    child_list_element = if let Ok(_) = child_list_type.parse::<usize>() { "ol" } else { "ul" };
+                    child_list = Node::create_normal_node(child_list_element.to_string());
+                }
+                if list_level < level {
+                    let option_new_next_new_line = preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..].join("").find("\n");
+                    let new_next_new_line = if let Some(d) = option_new_next_new_line { d + next_new_line + 1 + space_counter + tab_counter } else { preprocessed_list_content.len() };
+                    let local_result = process_list_items(preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..new_next_new_line].to_owned(),
+                                                          child_list_type, level);
+                    child_list.children.extend(local_result.0);
+                    footnotes.extend(local_result.1);
+                    next_new_line = new_next_new_line;
+                    i = next_new_line + 1;
                 }
             }
-            let level = (space_counter / 2) + tab_counter;
-            if child_list_element == "xl" {
-                child_list_element = if let Ok(_) = child_list_type.parse::<usize>() { "ol" } else { "ul" };
-                child_list = Node::create_normal_node(child_list_element.to_string());
-            }
-            if list_level < level {
-                let option_new_next_new_line = preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..].join("").find("\n");
-                let new_next_new_line = if let Some(d) = option_new_next_new_line { d + next_new_line + 1 + space_counter + tab_counter } else { preprocessed_list_content.len() };
-                let local_result = process_list_items(preprocessed_list_content[next_new_line + 1 + space_counter + tab_counter..new_next_new_line].to_owned(),
-                                            child_list_type, level);
-                child_list.children.extend(local_result.0);
-                footnotes.extend(local_result.1);
-                next_new_line = new_next_new_line;
-                i = next_new_line + 1;
-            }
         }
-        i = next_new_line + 1;
+        i = next_new_line;
 
         if child_list.children.len() > 0 {
             temp_res[0].children.push(child_list);
         }
         result.extend(temp_res);
+        if (i + 1 < preprocessed_list_content.len() && preprocessed_list_content[i] == "\n"  && preprocessed_list_content[i + 1] == "\n") {
+            return (result, footnotes, append_to_parent);
+        }
     }
     (result, footnotes, append_to_parent)
 }
@@ -594,7 +620,7 @@ mod tests {
     #[test]
     fn process_link_content() {
         let result = process_content("[Abc](def)".graphemes(true).collect::<Vec<&str>>(), false);
-        println!("{:?}", result.0);
+        println!("{:?}", result.0[0].to_string());
         assert_eq!(result.0.len(), 1);
         assert_eq!(result.0[0].name, "a");
         assert_eq!(result.0[0].attributes.contains_key("href"), true);
@@ -981,7 +1007,7 @@ mod tests {
         assert_eq!(result.0.children[0].children.len(), 1);
         assert_eq!(result.0.children[0].children[0].name, "code");
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc\n");
     }
 
     #[test]
@@ -1002,7 +1028,7 @@ mod tests {
         let some_attr = attr.unwrap().clone();
         assert_eq!(some_attr, DataType::String("language-css".to_string()));
         assert_eq!(result.0.children[0].children[0].children.len(), 1);
-        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc");
+        assert_eq!(result.0.children[0].children[0].children[0].text_content, "Abc\n");
     }
 
     #[test]
@@ -1160,7 +1186,8 @@ For"#;
         let result = parse_slothmark(text.to_string());
         println!("{}", result.0.to_string());
         let expected = r#"<pre class="language-"><code class="language-">Changing the behavior of elements like that based on context
-is anti-pattern in our opinion and should be discouraged.</code></pre><p>For</p>"#;
+is anti-pattern in our opinion and should be discouraged.
+</code></pre><p>For</p>"#;
         assert_eq!(result.0.to_string(), expected);
     }
 
@@ -1269,9 +1296,10 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-"><code class="language-">post                 |    is_empty
+        let expected = r#"<pre class="language-"><code class="language-">                 post                 |    is_empty     
 --------------------------------------+-----------------
- ff095bf4-63bf-4059-beff-74ac085c616c | empty</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
+ ff095bf4-63bf-4059-beff-74ac085c616c | empty
+</code></pre><h2>Resources</h2><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
         assert_eq!(str_res, expected);
     }
 
@@ -1287,7 +1315,8 @@ I"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-"><code class="language-"></code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
+        let expected = r#"<pre class="language-"><code class="language-"> 
+</code></pre><ul><li><a href="https://www.postgresql.org/docs/17/functions-conditional.html#FUNCTIONS-CASE">CASE expression documentation</a></li><li><a href="https://stackoverflow.com/a/7651432">StackOverflow answer about quotes</a></li></ul>"#;
         assert_eq!(str_res, expected);
     }
 
@@ -1303,7 +1332,9 @@ b { display: inline; }
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }</code></pre> "#;
+        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }
+</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }
+</code></pre> "#;
         assert_eq!(str_res, expected);
     }
 
@@ -1331,7 +1362,8 @@ Third"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫</code></pre>"#;
+        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫
+</code></pre>"#;
         assert_eq!(str_res, expected);
     }
 
@@ -1349,9 +1381,11 @@ Third"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫</code></pre><pre class="language-CSS"><code class="language-CSS">.a {
+        let expected = r#"<pre class="language-HTML"><code class="language-HTML">∫
+</code></pre><pre class="language-CSS"><code class="language-CSS">.a {
 	math-style: compact;
-}</code></pre> "#;
+}
+</code></pre> "#;
         assert_eq!(str_res, expected);
     }
 
@@ -1373,13 +1407,14 @@ Third"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<p>∫</p><pre class="language-HTML"><code class="language-HTML">∫</code></pre><pre class="language-CSS"><code class="language-CSS">.example-math-style-normal {
+        let expected = r#"<p>∫</p><pre class="language-HTML"><code class="language-HTML">∫
+</code></pre><pre class="language-CSS"><code class="language-CSS">.example-math-style-normal {
 	math-style: normal;
-}</code></pre>"#;
+}
+</code></pre>"#;
         assert_eq!(str_res, expected);
     }
 
-    // There's issue with text before html tag, see <section> and last generated thing
     #[test]
     fn test_compound_paragraph() {
         let text = r#"The `compact`.
@@ -1390,7 +1425,134 @@ Third"#;
         let result = parse_slothmark(text.to_string());
         let str_res = result.0.to_string();
         println!("{}", str_res);
-        let expected = r#"<p>The <code>compact</code>.</p><p><section>This is a text with a formula <math class="example-math-style-compact"><mrow><msubsup><mo movablelimits="false">∫</mo><mi>a</mi><mi>b</mi></msubsup><msup><mi>x</mi><mn>2</mn></msup><mspace width="0.1667em"></mspace><mi>d</mi><mi>x</mi></mrow>   </math> inside it because it is relevant.</section></p>
+        let expected = r#"<p>The <code>compact</code>.</p><p><section>This is a text with a formula <math class="example-math-style-compact"><mrow><msubsup><mo movablelimits="false">∫</mo><mi>a</mi><mi>b</mi></msubsup><msup><mi>x</mi><mn>2</mn></msup><mspace width="0.1667em"></mspace><mi>d</mi><mi>x</mi></mrow>   </math> inside it because it is relevant.</section></p>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_footnote() {
+        let text = r#"Cs[1. Alois Rašín by Jana Čechurová, CPress 2023], "#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<p>Cs<sup><a href="footnote-1">1</a></sup>, </p>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_link_in_list() {
+        let text = r#"- [Ein Artikel über web Scraping in JS](https://www.scrapingbee.com/blog/web-scraping-javascript/#jsdom-the-dom-for-node)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<ul><li><a href="https://www.scrapingbee.com/blog/web-scraping-javascript/#jsdom-the-dom-for-node">Ein Artikel über web Scraping in JS</a></li></ul>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_german_resources() {
+        let text = r#"## Ressourcen
+
+- [Ein Artikel über web Scraping in JS](https://www.scrapingbee.com/blog/web-scraping-javascript/#jsdom-the-dom-for-node)
+- [JSDOM Bibliothek](https://github.com/jsdom/jsdom#readme)
+- [Ein Artikel über Web scraping auf freeCodeCamp](https://www.freecodecamp.org/news/scraping-wikipedia-articles-with-python/)
+- [BeautifulSoup Dokumentation](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+- [Ein Artikel auf ProWebScriper über Bibliotheken in Python](https://prowebscraper.com/blog/best-web-scraping-libraries-in-python/)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<h2>Ressourcen</h2><ul><li><a href="https://www.scrapingbee.com/blog/web-scraping-javascript/#jsdom-the-dom-for-node">Ein Artikel über web Scraping in JS</a></li><li><a href="https://github.com/jsdom/jsdom#readme">JSDOM Bibliothek</a></li><li><a href="https://www.freecodecamp.org/news/scraping-wikipedia-articles-with-python/">Ein Artikel über Web scraping auf freeCodeCamp</a></li><li><a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc/">BeautifulSoup Dokumentation</a></li><li><a href="https://prowebscraper.com/blog/best-web-scraping-libraries-in-python/">Ein Artikel auf ProWebScriper über Bibliotheken in Python</a></li></ul>"#;
+        assert_eq!(str_res, expected);
+    }
+
+    #[test]
+    fn test_real() {
+        let text = r#"The reason into looking at the cooking times is that making food for me is a bit stressful activity. Too many things are going on at the same time and knowing which recipes are doable for me is important as my [spoons](https://en.wikipedia.org/wiki/Spoon_theory) are limited.
+
+Note: assumption is that the dataset is saved in variable called `recipes`.
+
+Let's look first at the total time of cooking because preparation and actual cooking often go one after another. There are exceptions like overnight marinading the meat but other than that we want to cook with freshly prepared ingredients.
+
+To do that in Python we use pandas and add the two columns together. Following code won't add a new column to the recipes table, it'll create a standalone [Series](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.html) object:
+
+```Python
+import pandas
+
+total_cooking_time = recipes['cooking_time_minutes'] + recipes['prep_time_minutes']
+```
+
+To take a look at the data let's use a histogram. In the chart below there's a basic Seaborn histogram with default options. From this we can see that quite a few recipes have total cooking time around an hour and two recipes take longer than 8 hours to make.
+
+<img src="https://www.sarahgebauer.com/sloth-content/2025/4/total_cooking.png" alt="Histogram with cooking times" />
+
+To take a look at the two outliers we can query with pandas:
+
+```Python
+recipes[recipes['cooking_time_minutes'] >= 480]
+```
+
+<table>
+<thead>
+<tr>
+<th>recipe_name</th>
+<th>cuisine</th>
+<th>ingredients</th>
+<th>cooking_time_minutes</th>
+<th>prep_time_minutes</th>
+<th>servings</th>
+<th>calories_per_serving</th>
+<th>dietary_restrictions</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>30</td>
+<td>Swedish Gravlax with Dill Sauce</td>
+<td>Swedish</td>
+<td>[&#39;Salmon fillet&#39;, &#39;Salt&#39;, &#39;Sugar&#39;, &#39;White pepp...</td>
+<td>720</td>
+<td>30</td>
+<td>8.0</td>
+<td>250.0</td>
+<td>[&#39;gluten-free&#39;, &#39;dairy-free&#39;]</td>
+</tr>
+<tr>
+<td>81</td>
+<td>Hawaiian Kalua Pig (Slow-Cooked Shredded Pork)</td>
+<td>Polynesian</td>
+<td>[&#39;Pork shoulder&#39;, &#39;Liquid smoke (optional)&#39;, &#39;...</td>
+<td>480</td>
+<td>15</td>
+<td>8.0</td>
+<td>400.0</td>
+<td>[&#39;gluten-free&#39;, &#39;dairy-free&#39;]</td>
+</tr>
+</tbody>
+</table>
+
+We can also try to do a bit more granular histogram but it won't reveal much more. Histogram with bin size of 5 looks like this:
+
+<img src="https://www.sarahgebauer.com/sloth-content/2025/4/total_cooking_5min.png" alt="Histogram with cooking times with 5 minute bins" />
+
+As I'd like to eat something and sinc dealing with heat can be more stressful than than the preparation, so let's look at the recipes which have same or shorter cooking time than prep time. We can do this with:
+
+```Python
+recipes[recipes['prep_time_minutes'] >= recipes['cooking_time_minutes']]
+```
+
+Depending on when the dataset was updated, it will result in 21 recipes. Some of them look doable.
+## Resources
+
+- [Data set on Kaggle](https://www.kaggle.com/datasets/prajwaldongre/collection-of-recipes-around-the-world/)"#;
+
+        let result = parse_slothmark(text.to_string());
+        let str_res = result.0.to_string();
+        println!("{}", str_res);
+        let expected = r#"<pre class="language-CSS"><code class="language-CSS">a { display: block; }</code></pre><pre class="language-CSS"><code class="language-CSS">b { display: inline; }</code></pre>
 "#;
         assert_eq!(str_res, expected);
     }

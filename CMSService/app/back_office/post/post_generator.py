@@ -17,7 +17,6 @@ import html
 from app.repositories.post_repositories import get_all_translations
 from app.utilities.utilities import get_related_posts
 from app.utilities.db_connection import db_connection
-from app.toes.markdown_parser import MarkdownParser, combine_footnotes
 from app.toes.toes import render_toe_from_string
 from app.back_office.post.post_types import PostTypes
 from app.toes.hooks import Hooks, Hook
@@ -415,6 +414,7 @@ class PostGenerator:
 
 	def generate_taxonomy(self, *args, taxonomy, language, output_path, post_type, title, **kwargs):
 		for item in taxonomy:
+			print(item['display_name'])
 			posts = self.get_posts_for_taxonomy(
 				post_type_uuid=post_type["uuid"],
 				post_type_slug=post_type["slug"],
